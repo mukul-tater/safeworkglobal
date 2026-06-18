@@ -24,6 +24,7 @@ import PartnerOnboarding from "./pages/partner/PartnerOnboarding";
 import BenefitsForEmployers from "./pages/BenefitsForEmployers";
 import Dashboard from "./pages/Dashboard";
 import { legacyEmployerRoutes } from "./routes/legacyEmployerRoutes";
+import { legacyPublicRoutes } from "./routes/legacyPublicRoutes";
 import { legacyWorkerRoutes } from "./routes/legacyWorkerRoutes";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import PartnerApprovals from "./pages/admin/PartnerApprovals";
@@ -98,6 +99,9 @@ function AppShell() {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/benefits-for-employers" element={<BenefitsForEmployers />} />
           <Route path="/auth" element={<Auth />} />
+
+          {/* Public pages used by employer hiring flow + marketing footer */}
+          {legacyPublicRoutes}
 
           {/* Phase-1 worker registration (backend API) */}
           <Route path="/register" element={<WorkerRegisterPage />} />

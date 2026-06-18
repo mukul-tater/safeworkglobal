@@ -231,7 +231,7 @@ export default function RecommendedWorkers() {
                             )}
                           </Button>
                           <Button size="sm" variant="outline" asChild>
-                            <Link to={`/workers/${w.user_id}`}>
+                            <Link to={`/worker-profile/${w.user_id}`}>
                               <Eye className="h-3 w-3 mr-1" /> View Profile
                             </Link>
                           </Button>
