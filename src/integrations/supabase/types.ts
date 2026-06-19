@@ -1042,6 +1042,89 @@ export type Database = {
           },
         ]
       }
+      partner_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          partner_profile_id: string
+          title: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          partner_profile_id: string
+          title: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          partner_profile_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_activities_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_incentives: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          incentive_type: Database["public"]["Enums"]["partner_incentive_type"]
+          partner_profile_id: string
+          worker_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          incentive_type: Database["public"]["Enums"]["partner_incentive_type"]
+          partner_profile_id: string
+          worker_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          incentive_type?: Database["public"]["Enums"]["partner_incentive_type"]
+          partner_profile_id?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_incentives_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_incentives_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "partner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_profiles: {
         Row: {
           aadhaar_back_url: string | null
@@ -1245,6 +1328,180 @@ export type Database = {
           years_in_operation?: number | null
         }
         Relationships: []
+      }
+      partner_worker_drafts: {
+        Row: {
+          created_at: string
+          current_step: number
+          draft_data: Json
+          id: string
+          partner_profile_id: string
+          photo_url: string | null
+          updated_at: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_step?: number
+          draft_data?: Json
+          id?: string
+          partner_profile_id: string
+          photo_url?: string | null
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_step?: number
+          draft_data?: Json
+          id?: string
+          partner_profile_id?: string
+          photo_url?: string | null
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_worker_drafts_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_worker_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["partner_worker_status"]
+          worker_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status: Database["public"]["Enums"]["partner_worker_status"]
+          worker_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["partner_worker_status"]
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_worker_status_history_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "partner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_workers: {
+        Row: {
+          created_at: string
+          district: string | null
+          expected_salary: number | null
+          experience_level: string
+          family_consent: boolean | null
+          full_name: string
+          id: string
+          migration_category:
+            | Database["public"]["Enums"]["migration_readiness_category"]
+            | null
+          migration_readiness_score: number | null
+          mobile: string
+          operator_notes: string | null
+          partner_profile_id: string
+          passport_available: boolean | null
+          photo_url: string | null
+          preferred_country: string | null
+          previous_gcc_experience: boolean | null
+          ready_to_relocate: boolean | null
+          skill: string
+          skill_level: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["partner_worker_status"]
+          updated_at: string
+          video_url: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          district?: string | null
+          expected_salary?: number | null
+          experience_level: string
+          family_consent?: boolean | null
+          full_name: string
+          id?: string
+          migration_category?:
+            | Database["public"]["Enums"]["migration_readiness_category"]
+            | null
+          migration_readiness_score?: number | null
+          mobile: string
+          operator_notes?: string | null
+          partner_profile_id: string
+          passport_available?: boolean | null
+          photo_url?: string | null
+          preferred_country?: string | null
+          previous_gcc_experience?: boolean | null
+          ready_to_relocate?: boolean | null
+          skill: string
+          skill_level?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_worker_status"]
+          updated_at?: string
+          video_url?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          district?: string | null
+          expected_salary?: number | null
+          experience_level?: string
+          family_consent?: boolean | null
+          full_name?: string
+          id?: string
+          migration_category?:
+            | Database["public"]["Enums"]["migration_readiness_category"]
+            | null
+          migration_readiness_score?: number | null
+          mobile?: string
+          operator_notes?: string | null
+          partner_profile_id?: string
+          passport_available?: boolean | null
+          photo_url?: string | null
+          preferred_country?: string | null
+          previous_gcc_experience?: boolean | null
+          ready_to_relocate?: boolean | null
+          skill?: string
+          skill_level?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_worker_status"]
+          updated_at?: string
+          video_url?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_workers_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -2071,11 +2328,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
+      admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
+      admin_set_user_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       assign_initial_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: undefined
       }
+      compute_partner_tier: {
+        Args: { p_placements: number }
+        Returns: Database["public"]["Enums"]["partner_tier"]
+      }
       ensure_whitelisted_admin: { Args: never; Returns: boolean }
+      generate_partner_code: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -2139,6 +2410,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "employer" | "worker" | "agent" | "partner"
+      migration_readiness_category:
+        | "placement_ready"
+        | "needs_preparation"
+        | "not_ready"
+      partner_incentive_type: "verified" | "interview_qualified" | "placement"
       partner_status:
         | "applied"
         | "under_review"
@@ -2147,6 +2423,14 @@ export type Database = {
         | "suspended"
         | "rejected"
       partner_tier: "bronze" | "silver" | "gold" | "platinum"
+      partner_worker_status:
+        | "registered"
+        | "verified"
+        | "shortlisted"
+        | "interview_scheduled"
+        | "interviewed"
+        | "selected"
+        | "placed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2275,6 +2559,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "employer", "worker", "agent", "partner"],
+      migration_readiness_category: [
+        "placement_ready",
+        "needs_preparation",
+        "not_ready",
+      ],
+      partner_incentive_type: ["verified", "interview_qualified", "placement"],
       partner_status: [
         "applied",
         "under_review",
@@ -2284,6 +2574,15 @@ export const Constants = {
         "rejected",
       ],
       partner_tier: ["bronze", "silver", "gold", "platinum"],
+      partner_worker_status: [
+        "registered",
+        "verified",
+        "shortlisted",
+        "interview_scheduled",
+        "interviewed",
+        "selected",
+        "placed",
+      ],
     },
   },
 } as const
