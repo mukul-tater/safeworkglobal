@@ -76,7 +76,7 @@ export default function AdminMessages() {
                     From {m.sender_id.slice(0, 8)}… → To {m.receiver_id.slice(0, 8)}… · {new Date(m.created_at).toLocaleString()}
                   </p>
                 </div>
-                <Badge variant={m.read ? "outline" : "secondary"}>{m.read ? "Read" : "Unread"}</Badge>
+                <Badge variant={m.is_read ? "outline" : "secondary"}>{m.is_read ? "Read" : "Unread"}</Badge>
               </div>
             </Card>
           ))}

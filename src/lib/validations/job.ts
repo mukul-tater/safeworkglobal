@@ -96,7 +96,7 @@ export const jobPostingSchema = jobPostingBaseSchema.refine(
   salaryRangeRefine.refine,
   {
     message: salaryRangeRefine.message,
-    path: [salaryRangeRefine.path],
+    path: salaryRangeRefine.path,
   }
 );
 
@@ -122,7 +122,7 @@ export const adminJobEditSchema = jobPostingBaseSchema
   })
   .refine(salaryRangeRefine.refine, {
     message: salaryRangeRefine.message,
-    path: [salaryRangeRefine.path],
+    path: salaryRangeRefine.path,
   });
 
 export type AdminJobEditFormData = z.infer<typeof adminJobEditSchema>;
