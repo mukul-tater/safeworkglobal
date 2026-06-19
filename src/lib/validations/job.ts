@@ -8,7 +8,7 @@ const salaryRangeRefine = {
     return true;
   },
   message: "Maximum salary must be greater than or equal to minimum salary" as const,
-  path: ["salary_max"] as const,
+  path: ["salary_max"] as (string | number)[],
 };
 
 const jobPostingBaseSchema = z.object({
@@ -96,7 +96,7 @@ export const jobPostingSchema = jobPostingBaseSchema.refine(
   salaryRangeRefine.refine,
   {
     message: salaryRangeRefine.message,
-    path: [salaryRangeRefine.path],
+    path: salaryRangeRefine.path,
   }
 );
 
@@ -122,7 +122,7 @@ export const adminJobEditSchema = jobPostingBaseSchema
   })
   .refine(salaryRangeRefine.refine, {
     message: salaryRangeRefine.message,
-    path: [salaryRangeRefine.path],
+    path: salaryRangeRefine.path,
   });
 
 export type AdminJobEditFormData = z.infer<typeof adminJobEditSchema>;

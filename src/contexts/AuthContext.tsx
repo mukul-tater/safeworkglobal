@@ -326,6 +326,7 @@ const noopAuth: AuthContextType = {
   logout: async () => {},
   hasRole: () => false,
   refreshProfile: async () => {},
+  refreshRole: async () => {},
   assignRole: async () => ({ success: false, error: 'Auth not ready' }),
 };
 

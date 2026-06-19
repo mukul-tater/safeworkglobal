@@ -31,7 +31,15 @@ export default function AdminContentModeration() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      setFlags(data || []);
+      setFlags(((data || []) as Array<Record<string, unknown>>).map((d) => ({
+        id: d.id as string,
+        content_type: d.content_type as string,
+        content_id: d.content_id as string,
+        reason: (d.flag_reason as string) ?? (d.description as string) ?? "",
+        status: d.status as string,
+        flagged_by: d.flagged_by as string,
+        created_at: d.created_at as string,
+      })));
     } catch (err) {
       console.error(err);
       toast.error("Failed to load content flags");

@@ -41,7 +41,7 @@ export default function AdminLoginPage() {
     const access = await ensureAdminAccess();
     if (!access.ok) {
       await supabase.auth.signOut();
-      setError(access.error);
+      setError((access as { ok: false; error: string }).error);
       setLoading(false);
       return;
     }
