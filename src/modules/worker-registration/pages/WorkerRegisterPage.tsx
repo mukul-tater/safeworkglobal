@@ -137,7 +137,7 @@ export default function WorkerRegisterPage() {
     }
 
     setSubmitting(true);
-    const result = await registerWorker(values);
+    const result = await registerWorker(values as Parameters<typeof registerWorker>[0]);
     setSubmitting(false);
 
     if (result.success) {

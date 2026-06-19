@@ -8,7 +8,7 @@ const salaryRangeRefine = {
     return true;
   },
   message: "Maximum salary must be greater than or equal to minimum salary" as const,
-  path: ["salary_max"] as const,
+  path: ["salary_max"] as (string | number)[],
 };
 
 const jobPostingBaseSchema = z.object({

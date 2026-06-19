@@ -14,7 +14,7 @@ interface MessageRow {
   receiver_id: string;
   content: string;
   created_at: string;
-  read: boolean;
+  is_read: boolean;
 }
 
 export default function AdminMessages() {
@@ -28,11 +28,11 @@ export default function AdminMessages() {
     try {
       const { data, error } = await supabase
         .from("messages")
-        .select("id, sender_id, receiver_id, content, created_at, read")
+        .select("id, sender_id, receiver_id, content, created_at, is_read")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      setMessages(data || []);
+      setMessages((data || []) as MessageRow[]);
     } catch (err) {
       console.error(err);
       toast.error("Failed to load messages");
