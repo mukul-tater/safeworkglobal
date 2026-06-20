@@ -86,7 +86,6 @@ export default function QuickEmployerSignup() {
   };
 
   const handleGoogle = async () => {
-  const handleGoogle = async () => {
     if (!companyName.trim()) {
       toast.error("Please enter your company name before continuing with Google");
       return;
