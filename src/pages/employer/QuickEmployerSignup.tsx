@@ -86,19 +86,40 @@ export default function QuickEmployerSignup() {
   };
 
   const handleGoogle = async () => {
+  const handleGoogle = async () => {
+    if (!companyName.trim()) {
+      toast.error("Please enter your company name before continuing with Google");
+      return;
+    }
     setLoading(true);
     try {
       // Pre-select the Employer role so the OAuth callback can auto-assign it
-      // without showing the role chooser again on /auth.
+      // without showing the role chooser again on /auth. Also persist the
+      // company name so /auth can write it to employer_profiles post-callback.
       sessionStorage.setItem("pending_oauth_role", "employer");
-      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/auth` });
+      sessionStorage.setItem("pending_employer_company", companyName.trim());
+      if (fullName.trim()) {
+        sessionStorage.setItem("pending_employer_full_name", fullName.trim());
+      }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/auth`,
+      });
       if (result.error) {
         sessionStorage.removeItem("pending_oauth_role");
-        toast.error("Google signup failed");
+        sessionStorage.removeItem("pending_employer_company");
+        sessionStorage.removeItem("pending_employer_full_name");
+        toast.error(
+          result.error instanceof Error ? result.error.message : "Google sign-in failed"
+        );
         setLoading(false);
+        return;
       }
-    } catch {
+      if (result.redirected) return; // Browser will redirect to Google
+    } catch (err: any) {
       sessionStorage.removeItem("pending_oauth_role");
+      sessionStorage.removeItem("pending_employer_company");
+      sessionStorage.removeItem("pending_employer_full_name");
+      toast.error(err?.message || "Google sign-in failed");
       setLoading(false);
     }
   };
