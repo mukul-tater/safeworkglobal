@@ -123,25 +123,22 @@ export default function Auth() {
     if (!isAuthenticated || !role || assigningRole) return;
 
     if (role === 'worker') {
-      if (isPhase1Worker) {
-        navigate('/home', { replace: true });
-        return;
-      }
-      let cancelled = false;
-      (async () => {
-        const bridgeResult = await completeWorkerGoogleBridge(loginWithGoogle);
-        if (cancelled) return;
-        if (bridgeResult === 'failed') {
-          setError('Could not open your worker dashboard. Please try again.');
-          return;
-        }
-        navigate(workerPathAfterGoogleBridge(bridgeResult), { replace: true });
-      })();
-      return () => {
-        cancelled = true;
-      };
+      navigate('/home', { replace: true });
+      return;
     }
 
+    if (role === 'employer') {
+      navigate('/employer/dashboard', { replace: true });
+      return;
+    }
+    if (role === 'partner') {
+      navigate('/emitra/dashboard', { replace: true });
+      return;
+    }
+    if (role === 'admin') {
+      navigate('/admin/dashboard', { replace: true });
+      return;
+    }
     navigate('/dashboard', { replace: true });
   }, [isAuthenticated, role, navigate, assigningRole, isPhase1Worker, loginWithGoogle]);
 
@@ -299,12 +296,7 @@ export default function Auth() {
       }
       toast.success(`Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!`);
       if (selectedRole === 'worker') {
-        const bridgeResult = await completeWorkerGoogleBridge(loginWithGoogle);
-        if (bridgeResult === 'failed') {
-          setError('Could not open your worker dashboard. Please try again.');
-          return;
-        }
-        navigate(workerPathAfterGoogleBridge(bridgeResult), { replace: true });
+        navigate('/home', { replace: true });
       } else if (selectedRole === 'employer') {
         // Apply any pending company/full-name captured from the
         // QuickEmployerSignup form before the Google OAuth redirect.
