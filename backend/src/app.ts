@@ -50,6 +50,11 @@ export function createApp() {
     uploadWorkerVideo.single('file'),
     workerOnboardingController.uploadVideo
   );
+  app.delete(
+    '/api/workers/onboarding/skills/:proofId/media',
+    authMiddleware,
+    workerOnboardingController.deleteSkillMedia
+  );
   app.post(
     '/api/workers/onboarding/review',
     authMiddleware,

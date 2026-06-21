@@ -124,6 +124,31 @@ export class WorkerOnboardingController {
     }
   };
 
+  deleteSkillMedia = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    try {
+      const proofId = Number(req.params.proofId);
+      const type = req.body?.type;
+      const mediaUrl = req.body?.mediaUrl;
+      if (type !== 'photo' && type !== 'video') {
+        throw new ValidationException({ type: ['Type must be photo or video'] });
+      }
+      if (!mediaUrl || typeof mediaUrl !== 'string') {
+        throw new ValidationException({ mediaUrl: ['Media URL is required'] });
+      }
+
+      const data = onboardingService.removeSkillMedia(
+        req.workerId!,
+        proofId,
+        type,
+        mediaUrl,
+        baseUrl(req)
+      );
+      res.json({ success: true, data, message: 'Media removed' } satisfies ApiSuccessResponseDto<typeof data>);
+    } catch (err) {
+      next(err);
+    }
+  };
+
   advanceToReview = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     try {
       const data = onboardingService.markReviewReady(req.workerId!, baseUrl(req));

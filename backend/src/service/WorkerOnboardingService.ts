@@ -150,6 +150,48 @@ export class WorkerOnboardingService {
     return this.getOnboarding(workerId, baseUrl);
   }
 
+  removeSkillMedia(
+    workerId: number,
+    proofId: number,
+    type: 'photo' | 'video',
+    mediaUrl: string,
+    baseUrl = ''
+  ) {
+    this.ensureWorkerExists(workerId);
+    const proof = this.skillProofRepo.findById(proofId, workerId);
+    if (!proof) throw new NotFoundException('Skill proof not found');
+
+    const paths = type === 'photo' ? proof.photoPaths : proof.videoPaths;
+    const relativePath = this.resolveMediaPath(paths, mediaUrl, baseUrl);
+    if (!relativePath) {
+      throw new NotFoundException('Media not found on this skill');
+    }
+
+    const updated = this.skillProofRepo.removeMedia(proofId, workerId, type, relativePath);
+    if (!updated) throw new NotFoundException('Skill proof not found');
+    this.syncSkillsStage(workerId);
+    return mapProof(updated, baseUrl);
+  }
+
+  private resolveMediaPath(storedPaths: string[], mediaUrl: string, baseUrl: string): string | null {
+    const normalizedUrl = mediaUrl.trim();
+    const prefix = baseUrl.replace(/\/$/, '');
+
+    for (const path of storedPaths) {
+      const fullUrl = path.startsWith('http') ? path : `${prefix}${path}`;
+      if (fullUrl === normalizedUrl || normalizedUrl.endsWith(path)) {
+        return path;
+      }
+    }
+
+    try {
+      const pathname = new URL(normalizedUrl).pathname;
+      return storedPaths.find((path) => pathname.endsWith(path) || pathname === path) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   markReviewReady(workerId: number, baseUrl = ''): WorkerOnboardingResponseDto {
     this.ensureWorkerExists(workerId);
     if (!this.skillProofRepo.hasValidSkillProof(workerId)) {

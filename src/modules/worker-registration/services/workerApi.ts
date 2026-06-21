@@ -232,4 +232,16 @@ export const workerApi = {
     }
     return body.data;
   },
+
+  deleteSkillMedia(
+    token: string,
+    proofId: number,
+    payload: { type: 'photo' | 'video'; mediaUrl: string }
+  ): Promise<import('../types/onboarding.types').WorkerSkillProof> {
+    return request(`/workers/onboarding/skills/${proofId}/media`, {
+      method: 'DELETE',
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
 };

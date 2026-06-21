@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Database, Loader2, CheckCircle, XCircle, IndianRupee } from 'lucide-react';
 import { seedService, DEMO_ACCOUNTS } from '@/services/SeedService';
+import { getSeedableCategories } from '@/data/jobSeedCatalog';
 
 export default function SeedDataButton() {
   const [loading, setLoading] = useState(false);
@@ -99,8 +100,8 @@ export default function SeedDataButton() {
         <div className="space-y-2">
           <h3 className="font-semibold text-sm">What will be created:</h3>
           <ul className="text-sm space-y-1 text-muted-foreground">
-            <li>• 100 sample job postings across 30+ countries</li>
-            <li>• Salaries in ₹50K–₹1L/month range (INR)</li>
+            <li>• 5+ jobs per category across {getSeedableCategories().length} trade categories</li>
+            <li>• GCC, Asia & Europe cities with varied ₹50K–₹1L/month salaries</li>
             <li>• Job skills and requirements for each posting</li>
             <li>• Worker profiles, applications, and notifications</li>
           </ul>

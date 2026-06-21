@@ -19,6 +19,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { useWorkerAuth } from '../context/WorkerAuthContext';
+import { useWorkerLanguage } from '../context/WorkerLanguageContext';
 import { workerApi } from '../services/workerApi';
 import type { District, Skill, State } from '../types/worker.types';
 import { EXPERIENCE_OPTIONS } from '../types/worker.types';
@@ -39,6 +40,7 @@ const STEP_ICONS = [User, MapPin, Briefcase, CheckCircle2];
 export default function WorkerOnboardingPage() {
   const navigate = useNavigate();
   const { token, worker, updateWorker } = useWorkerAuth();
+  const { t } = useWorkerLanguage();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -85,11 +87,6 @@ export default function WorkerOnboardingPage() {
   useEffect(() => {
     if (!token || !worker) return;
 
-    if (worker.onboardingCompleted) {
-      navigate('/home', { replace: true });
-      return;
-    }
-
     Promise.all([
       workerApi.getOnboarding(token),
       workerApi.getReferenceData(),
@@ -98,11 +95,12 @@ export default function WorkerOnboardingPage() {
         applyOnboarding(data);
         setStates(ref.states);
         setSkills(ref.skills);
-        setStep(Math.min(Math.max(data.currentStep, 1), 4));
+        const isEditMode = worker.onboardingCompleted || data.onboardingCompleted;
+        setStep(isEditMode ? 1 : Math.min(Math.max(data.currentStep, 1), 4));
       })
       .catch(() => toast.error('Failed to load onboarding data'))
       .finally(() => setLoading(false));
-  }, [token, worker, navigate]);
+  }, [token, worker]);
 
   useEffect(() => {
     if (!stateId) {
@@ -305,6 +303,20 @@ export default function WorkerOnboardingPage() {
     }
   };
 
+  const handleSaveAndReturn = async () => {
+    if (!token || !worker) return;
+    setSaving(true);
+    try {
+      await refreshOnboarding();
+      toast.success(t('onboarding.profileUpdated'));
+      navigate('/home', { replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleAddSkill = async () => {
     if (!token || !selectedSkillId) {
       toast.error('Select a skill first');
@@ -345,6 +357,27 @@ export default function WorkerOnboardingPage() {
     }
   };
 
+  const handleDeleteMedia = async (proofId: number, type: 'photo' | 'video', mediaUrl: string) => {
+    if (!token) return;
+    setSaving(true);
+    try {
+      const proof = await workerApi.deleteSkillMedia(token, proofId, { type, mediaUrl });
+      setSkillProofs((prev) => prev.map((p) => (p.id === proof.id ? proof : p)));
+      await refreshOnboarding();
+      toast.success(type === 'photo' ? 'Photo removed' : 'Video removed');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to remove media');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const goToStep = (targetStep: number) => {
+    const editing = worker?.onboardingCompleted || onboarding?.onboardingCompleted;
+    if (!editing || saving || uploading) return;
+    setStep(targetStep);
+  };
+
   const handleMediaUpload = async (file: File, type: 'photo' | 'video') => {
     if (!token || !activeProofId) return;
     setUploading(true);
@@ -376,21 +409,22 @@ export default function WorkerOnboardingPage() {
 
   const progress = (step / ONBOARDING_STEPS.length) * 100;
   const stage = (onboarding?.onboardingStage ?? 'REGISTERED') as OnboardingStage;
+  const isEditMode = worker.onboardingCompleted || (onboarding?.onboardingCompleted ?? false);
   const skillsWithMedia = skillProofs.filter(
     (p) => p.photoUrls.length > 0 || p.videoUrls.length > 0
   ).length;
 
   return (
     <RegistrationLayout
-      title="Complete Your Profile"
-      subtitle="Tell us about yourself to find GCC overseas jobs"
+      title={isEditMode ? t('onboarding.editTitle') : t('onboarding.completeTitle')}
+      subtitle={isEditMode ? t('onboarding.editSubtitle') : t('onboarding.completeSubtitle')}
       portalHomePath="/home"
     >
       <WorkerOnboardingStageBar
         currentStep={step}
         onboardingStage={stage}
         skillsWithMediaCount={skillsWithMedia}
-        onboardingCompleted={false}
+        onboardingCompleted={isEditMode}
       />
 
       <div className="mb-4 flex items-center gap-2">
@@ -398,15 +432,19 @@ export default function WorkerOnboardingPage() {
           const Icon = STEP_ICONS[s.id - 1];
           return (
             <div key={s.id} className="flex flex-1 items-center">
-              <div
+              <button
+                type="button"
+                disabled={!isEditMode || saving || uploading}
+                onClick={() => goToStep(s.id)}
                 className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-colors ${
                   step > s.id ? 'bg-green-500 text-white' :
                   step === s.id ? 'bg-primary text-primary-foreground' :
                   'bg-muted text-muted-foreground'
-                }`}
+                } ${isEditMode ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
+                aria-label={ONBOARDING_STEPS[s.id - 1].title}
               >
                 {step > s.id ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-              </div>
+              </button>
               {s.id < ONBOARDING_STEPS.length && (
                 <div className={`mx-1 h-0.5 flex-1 ${step > s.id ? 'bg-green-500' : 'bg-muted'}`} />
               )}
@@ -423,7 +461,7 @@ export default function WorkerOnboardingPage() {
             {step === 1 && 'Your basic details and home location in India'}
             {step === 2 && 'Your trade, experience, and preferred GCC job location'}
             {step === 3 && 'Upload photos or videos showing your skills — required to apply'}
-            {step === 4 && 'Review your profile before finishing'}
+            {step === 4 && (isEditMode ? 'Review your updated profile' : 'Review your profile before finishing')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -653,10 +691,32 @@ export default function WorkerOnboardingPage() {
                     </div>
                     <div className="flex flex-wrap gap-2 mb-3">
                       {proof.photoUrls.map((url) => (
-                        <img key={url} src={url} alt="Skill" className="h-16 w-16 rounded-md object-cover border" />
+                        <div key={url} className="relative group">
+                          <img src={url} alt="Skill" className="h-16 w-16 rounded-md object-cover border" />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMedia(proof.id, 'photo', url)}
+                            disabled={saving || uploading}
+                            className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive text-destructive-foreground p-0.5 opacity-90 hover:opacity-100"
+                            aria-label="Remove photo"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
                       ))}
                       {proof.videoUrls.map((url) => (
-                        <video key={url} src={url} className="h-16 w-24 rounded-md border object-cover" controls />
+                        <div key={url} className="relative group">
+                          <video src={url} className="h-16 w-24 rounded-md border object-cover" controls />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMedia(proof.id, 'video', url)}
+                            disabled={saving || uploading}
+                            className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive text-destructive-foreground p-0.5 opacity-90 hover:opacity-100"
+                            aria-label="Remove video"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
                       ))}
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -709,13 +769,20 @@ export default function WorkerOnboardingPage() {
             <ChevronLeft className="mr-1 h-4 w-4" /> Back
           </Button>
         ) : (
-          <Button variant="ghost" onClick={() => navigate('/home')}>Skip for now</Button>
+          <Button variant="ghost" onClick={() => navigate('/home')}>
+            {isEditMode ? t('onboarding.backToDashboard') : 'Skip for now'}
+          </Button>
         )}
 
         {step < 4 ? (
           <Button onClick={handleNext} disabled={saving || uploading}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Next <ChevronRight className="ml-1 h-4 w-4" />
+            {isEditMode ? 'Save & Continue' : 'Next'} <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        ) : isEditMode ? (
+          <Button onClick={handleSaveAndReturn} disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t('onboarding.saveAndReturn')}
           </Button>
         ) : (
           <Button onClick={handleComplete} disabled={saving}>

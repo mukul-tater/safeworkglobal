@@ -10,7 +10,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:jobs": "node scripts/seed-jobs.mjs",
+    "seed:jobs:sql": "npx tsx scripts/seed-jobs-export.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

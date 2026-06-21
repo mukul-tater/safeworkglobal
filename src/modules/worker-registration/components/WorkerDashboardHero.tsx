@@ -78,13 +78,21 @@ export default function WorkerDashboardHero({
         )}
 
         {onboardingCompleted ? (
-          <Button size="lg" className="rounded-xl gap-2 shadow-lg" asChild>
-            <Link to={jobsLink}>
-              <Briefcase className="h-5 w-5" />
-              {t("hero.browseJobs")}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button size="lg" className="rounded-xl gap-2 shadow-lg" asChild>
+              <Link to={jobsLink}>
+                <Briefcase className="h-5 w-5" />
+                {t("hero.browseJobs")}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="secondary" className="rounded-xl gap-2 shadow-lg" asChild>
+              <Link to="/onboarding">
+                <User className="h-5 w-5" />
+                {t("hero.editProfile")}
+              </Link>
+            </Button>
+          </div>
         ) : (
           <Button size="lg" className="rounded-xl gap-2 shadow-lg" asChild>
             <Link to="/onboarding">

@@ -131,7 +131,9 @@ export default function Jobs() {
           salaryMin: salaryMinVal,
           salaryMax: salaryMaxVal,
           type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
-          category: job.title.split(' ')[0],
+          category: job.title.includes(' - ')
+          ? job.title.split(' - ').slice(-1)[0]
+          : job.title.split(' ')[0],
           visaSponsorship: job.visa_sponsorship || false,
           postedDate: new Date(job.posted_at).toLocaleDateString(),
           postedAt: new Date(job.posted_at),
