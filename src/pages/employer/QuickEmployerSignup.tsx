@@ -43,7 +43,7 @@ export default function QuickEmployerSignup() {
         // bubble up unexplained.
         if (/already registered|already exists/i.test(error.message)) {
           toast.error("This email is already registered. Please sign in instead.");
-          navigate("/auth?role=employer");
+          navigate("/employer/login");
           return;
         }
         throw error;
@@ -70,7 +70,7 @@ export default function QuickEmployerSignup() {
           toast.error(
             `This account is already registered as a ${roleRow.role}. Please log in with the correct role.`
           );
-          navigate("/auth");
+          navigate("/employer/login");
           return;
         }
         await supabase.from("employer_profiles").update({ company_name: companyName.trim() }).eq("user_id", user.id);
