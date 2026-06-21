@@ -10,6 +10,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { emitraNavGroups, emitraProfileMenu } from '../config/emitraNav';
 import WorkerTimeline from '../components/WorkerTimeline';
+import SkillTestPanel from '../components/SkillTestPanel';
 import {
   getWorkerById, getWorkerStatusHistory, updateWorkerStatus, getSignedMediaUrl,
   getPartnerProfile,
@@ -140,6 +141,10 @@ export default function EmitraWorkerDetailPage() {
             <WorkerTimeline currentStatus={worker.status} history={history} />
           </CardContent>
         </Card>
+
+        <div className="md:col-span-2">
+          <SkillTestPanel workerId={worker.id} partnerProfileId={worker.partner_profile_id} />
+        </div>
       </div>
     </DashboardLayout>
   );
