@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { adminJobEditSchema, type AdminJobEditFormData } from "@/lib/validations/job";
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
+import JobBenefitsField from "@/components/employer/JobBenefitsField";
 
 export default function EditJob() {
   const { jobId } = useParams();
@@ -240,10 +241,11 @@ export default function EditJob() {
                   <Textarea id="requirements" {...register("requirements")} rows={4} />
                 </div>
 
-                <div>
-                  <Label htmlFor="benefits">Benefits</Label>
-                  <Textarea id="benefits" {...register("benefits")} rows={4} />
-                </div>
+                <JobBenefitsField
+                  value={watch("benefits") || ""}
+                  onChange={(v) => setValue("benefits", v, { shouldValidate: true })}
+                  error={errors.benefits?.message}
+                />
               </CardContent>
             </Card>
 

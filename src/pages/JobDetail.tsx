@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { formatSalaryINR } from '@/lib/utils';
+import { listJobBenefits } from '@/lib/jobBenefits';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -450,7 +451,14 @@ export default function JobDetail() {
                     <CardTitle>Benefits & Perks</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{job.benefits}</p>
+                    <ul className="space-y-2">
+                      {listJobBenefits(job.benefits).map((benefit) => (
+                        <li key={benefit} className="flex items-start gap-2 text-muted-foreground">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <span>{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </CardContent>
                 </Card>
               )}

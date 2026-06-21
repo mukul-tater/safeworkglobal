@@ -51,3 +51,12 @@ export function serializeJobBenefits(parsed: ParsedJobBenefits): string {
   lines.push(...extraParts);
   return lines.join('\n');
 }
+
+export function listJobBenefits(raw: string | null | undefined): string[] {
+  if (!raw?.trim()) return [];
+  return raw
+    .split(/\n+/)
+    .flatMap((line) => line.split(/[,;]+/))
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
