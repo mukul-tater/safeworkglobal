@@ -66,13 +66,13 @@ function Brand({ portalHomePath }: { portalHomePath: string }) {
   const { t } = useWorkerLanguage();
 
   return (
-    <Link to={portalHomePath} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0">
+    <a href="https://safeworkglobal.com" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0">
       <img src="/safework-global-logo.png" alt="SafeWork Global" className="h-8 w-8 rounded-lg" />
       <div className="hidden sm:block leading-tight">
         <span className="text-sm font-bold text-foreground font-heading block">SafeWork Global</span>
         <span className="text-[11px] text-muted-foreground">{t('registration.portal')}</span>
       </div>
-    </Link>
+    </a>
   );
 }
 
