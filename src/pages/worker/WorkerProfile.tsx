@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +16,13 @@ import ChangePasswordCard from "@/components/ChangePasswordCard";
 import ProfileSection from "@/components/profile/ProfileSection";
 import { workerProfileSchema, type WorkerProfileFormData } from "@/lib/validations/profile";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { ProfileSkeleton } from "@/components/ui/page-skeleton";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
+import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { saveWorkerProfilePartial, type WorkerProfileAutoSaveData } from "@/lib/autoSaveProfiles";
 import {
   Select,
   SelectContent,
@@ -53,7 +56,7 @@ export default function WorkerProfile() {
   const [uploadingResume, setUploadingResume] = useState(false);
   const [availability, setAvailability] = useState<string>("");
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<WorkerProfileFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch, control } = useForm<WorkerProfileFormData>({
     resolver: zodResolver(workerProfileSchema),
     defaultValues: {
       full_name: '',
@@ -67,6 +70,40 @@ export default function WorkerProfile() {
       expected_salary_min: 0,
       expected_salary_max: 0,
     }
+  });
+
+  const formValues = useWatch({ control });
+  const autoSaveData = useMemo<WorkerProfileAutoSaveData>(
+    () => ({
+      full_name: formValues.full_name ?? '',
+      phone: formValues.phone ?? '',
+      bio: formValues.bio ?? '',
+      skills: formValues.skills ?? '',
+      experience_years: formValues.experience_years ?? 0,
+      certifications: formValues.certifications ?? '',
+      has_passport: formValues.has_passport ?? false,
+      preferred_countries: formValues.preferred_countries ?? '',
+      expected_salary_min: formValues.expected_salary_min ?? 0,
+      expected_salary_max: formValues.expected_salary_max ?? 0,
+      nationality,
+      availability,
+    }),
+    [formValues, nationality, availability],
+  );
+
+  const handleAutoSave = useCallback(
+    async (data: WorkerProfileAutoSaveData) => {
+      if (!user) return;
+      await saveWorkerProfilePartial(user.id, data);
+      await refreshProfile();
+    },
+    [user, refreshProfile],
+  );
+
+  const { status: autoSaveStatus, markReady } = useAutoSave({
+    data: autoSaveData,
+    onSave: handleAutoSave,
+    enabled: !loading && !!user,
   });
 
   useEffect(() => {
@@ -120,6 +157,21 @@ export default function WorkerProfile() {
           setResumeUrl(docs[0].file_url);
           setResumeName(docs[0].document_name);
         }
+
+        markReady({
+          full_name: profile?.full_name || '',
+          phone: profile?.phone || '',
+          bio: workerProfile?.bio || '',
+          skills: '',
+          experience_years: workerProfile?.years_of_experience || 0,
+          certifications: '',
+          has_passport: workerProfile?.has_passport || false,
+          preferred_countries: workerProfile?.visa_countries?.join(', ') || '',
+          expected_salary_min: workerProfile?.expected_salary_min || 0,
+          expected_salary_max: workerProfile?.expected_salary_max || 0,
+          nationality: workerProfile?.nationality || '',
+          availability: workerProfile?.availability || '',
+        });
       } catch (error) {
         console.error('Error loading worker profile:', error);
         toast.error("Failed to load profile data");
@@ -129,45 +181,16 @@ export default function WorkerProfile() {
     };
 
     loadWorkerProfile();
-  }, [user, profile, setValue]);
+  }, [user, profile, setValue, markReady]);
 
   const onSubmit = async (data: WorkerProfileFormData) => {
     if (!user) return;
 
     try {
       setSaving(true);
-
-      // Update profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: data.full_name,
-          phone: data.phone || null,
-        })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      // Upsert worker_profiles table
-      const { error: workerError } = await supabase
-        .from('worker_profiles')
-        .upsert({
-          user_id: user.id,
-          bio: data.bio || null,
-          years_of_experience: data.experience_years || null,
-          expected_salary_min: data.expected_salary_min || null,
-          expected_salary_max: data.expected_salary_max || null,
-          visa_countries: data.preferred_countries ? data.preferred_countries.split(',').map(c => c.trim()) : null,
-          nationality: nationality || null,
-          availability: availability || null,
-          has_passport: data.has_passport || false,
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (workerError) throw workerError;
-
+      await saveWorkerProfilePartial(user.id, { ...data, nationality, availability });
       await refreshProfile();
+      markReady({ ...data, nationality, availability });
       toast.success("Profile updated successfully!");
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -219,6 +242,7 @@ export default function WorkerProfile() {
               <p className="text-xs text-muted-foreground mt-2 max-w-md leading-relaxed">
                 A complete profile with verified skills helps employers trust your application.
               </p>
+              <AutoSaveStatus status={autoSaveStatus} className="mt-2" />
             </div>
           </div>
         </div>

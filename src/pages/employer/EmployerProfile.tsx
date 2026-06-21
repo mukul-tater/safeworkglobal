@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { employerNavGroups, employerProfileMenu } from "@/config/employerNav";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,15 +14,18 @@ import AvatarUpload from "@/components/AvatarUpload";
 import { employerProfileSchema, type EmployerProfileFormData } from "@/lib/validations/profile";
 import ChangePasswordCard from "@/components/ChangePasswordCard";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
+import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { saveEmployerProfilePartial } from "@/lib/autoSaveProfiles";
 
 export default function EmployerProfile() {
   const { user, profile, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<EmployerProfileFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, control } = useForm<EmployerProfileFormData>({
     resolver: zodResolver(employerProfileSchema),
     defaultValues: {
       full_name: profile?.full_name || '',
@@ -34,6 +37,36 @@ export default function EmployerProfile() {
       company_size: '',
       website: '',
     }
+  });
+
+  const formValues = useWatch({ control });
+  const autoSaveData = useMemo(
+    () => ({
+      full_name: formValues.full_name ?? '',
+      phone: formValues.phone ?? '',
+      bio: formValues.bio ?? '',
+      company_name: formValues.company_name ?? '',
+      company_registration: formValues.company_registration ?? '',
+      industry: formValues.industry ?? '',
+      company_size: formValues.company_size ?? '',
+      website: formValues.website ?? '',
+    }),
+    [formValues],
+  );
+
+  const handleAutoSave = useCallback(
+    async (data: EmployerProfileFormData) => {
+      if (!user) return;
+      await saveEmployerProfilePartial(user.id, data);
+      await refreshProfile();
+    },
+    [user, refreshProfile],
+  );
+
+  const { status: autoSaveStatus, markReady } = useAutoSave({
+    data: autoSaveData,
+    onSave: handleAutoSave,
+    enabled: !loading && !!user,
   });
 
   useEffect(() => {
@@ -67,6 +100,27 @@ export default function EmployerProfile() {
         setValue('industry', empData.industry || '');
         setValue('company_size', empData.company_size || '');
         setValue('website', empData.website || '');
+        markReady({
+          full_name: profile?.full_name || '',
+          phone: profile?.phone || '',
+          bio: empData.bio || '',
+          company_name: empData.company_name || '',
+          company_registration: empData.company_registration || '',
+          industry: empData.industry || '',
+          company_size: empData.company_size || '',
+          website: empData.website || '',
+        });
+      } else if (profile) {
+        markReady({
+          full_name: profile.full_name || '',
+          phone: profile.phone || '',
+          bio: '',
+          company_name: '',
+          company_registration: '',
+          industry: '',
+          company_size: '',
+          website: '',
+        });
       }
     } catch (error) {
       console.error('Error loading employer profile:', error);
@@ -77,43 +131,16 @@ export default function EmployerProfile() {
   };
 
     loadEmployerProfile();
-  }, [user, profile, setValue]);
+  }, [user, profile, setValue, markReady]);
 
   const onSubmit = async (data: EmployerProfileFormData) => {
     if (!user) return;
 
     try {
       setSaving(true);
-
-      // Update profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: data.full_name,
-          phone: data.phone || null,
-        })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      // Upsert employer_profiles table
-      const { error: employerError } = await (supabase as any)
-        .from('employer_profiles')
-        .upsert({
-          user_id: user.id,
-          bio: data.bio || null,
-          company_name: data.company_name || null,
-          company_registration: data.company_registration || null,
-          industry: data.industry || null,
-          company_size: data.company_size || null,
-          website: data.website || null,
-        } as any, {
-          onConflict: 'user_id'
-        });
-
-      if (employerError) throw employerError;
-
+      await saveEmployerProfilePartial(user.id, data);
       await refreshProfile();
+      markReady(data);
       toast.success("Profile updated successfully!");
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -138,7 +165,10 @@ export default function EmployerProfile() {
   return (
     <DashboardLayout navGroups={employerNavGroups} portalLabel="Employer Portal" portalName="Employer Portal" profileMenuItems={employerProfileMenu}>
         <PortalBreadcrumb />
-        <h1 className="text-2xl md:text-3xl font-bold mb-8">Employer Profile</h1>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold">Employer Profile</h1>
+          <AutoSaveStatus status={autoSaveStatus} />
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="max-w-3xl space-y-6">
           {/* Avatar Section */}

@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { employerNavGroups, employerProfileMenu } from "@/config/employerNav";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,9 @@ import { CheckCircle, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { saveCompanyProfilePartial } from "@/lib/autoSaveProfiles";
 
 interface EmployerProfileData {
   company_name: string;
@@ -34,6 +37,20 @@ export default function CompanyProfile() {
     bio: ''
   });
 
+  const handleAutoSave = useCallback(
+    async (data: EmployerProfileData) => {
+      if (!user) return;
+      await saveCompanyProfilePartial(user.id, data);
+    },
+    [user],
+  );
+
+  const { status: autoSaveStatus, markReady } = useAutoSave({
+    data: formData,
+    onSave: handleAutoSave,
+    enabled: !loading && !!user,
+  });
+
   useEffect(() => {
     loadCompanyProfile();
   }, [user]);
@@ -52,14 +69,18 @@ export default function CompanyProfile() {
       if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
-        setFormData({
+        const next = {
           company_name: (data as any).company_name || '',
           company_registration: (data as any).company_registration || '',
           industry: (data as any).industry || '',
           company_size: (data as any).company_size || '',
           website: (data as any).website || '',
           bio: (data as any).bio || ''
-        });
+        };
+        setFormData(next);
+        markReady(next);
+      } else {
+        markReady(formData);
       }
     } catch (error) {
       console.error('Error loading company profile:', error);
@@ -74,17 +95,8 @@ export default function CompanyProfile() {
 
     try {
       setSaving(true);
-      const { error } = await (supabase as any)
-        .from('employer_profiles')
-        .upsert({
-          user_id: user.id,
-          ...formData
-        } as any, {
-          onConflict: 'user_id'
-        });
-
-      if (error) throw error;
-
+      await saveCompanyProfilePartial(user.id, formData);
+      markReady(formData);
       toast.success("Company profile updated successfully!");
     } catch (error) {
       console.error('Error saving company profile:', error);
@@ -112,9 +124,12 @@ export default function CompanyProfile() {
 
   return (
     <DashboardLayout navGroups={employerNavGroups} portalLabel="Employer Portal" portalName="Employer Portal" profileMenuItems={employerProfileMenu}>
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Company Profile & KYC</h1>
-          <p className="text-muted-foreground">Manage your company information and verification status</p>
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Company Profile & KYC</h1>
+            <p className="text-muted-foreground">Manage your company information and verification status</p>
+          </div>
+          <AutoSaveStatus status={autoSaveStatus} />
         </div>
 
         <div className="max-w-3xl space-y-6">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,9 @@ import {
   PROJECT_TYPES, AVAILABILITY_CHOICES, SHIFT_PREFERENCES,
   WORK_PREFERENCES, WAGE_TYPES, DESTINATION_COUNTRIES, NATIONALITIES,
 } from '@/lib/constants';
+import AutoSaveStatus from '@/components/profile/AutoSaveStatus';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { saveWorkerOnboardingPartial } from '@/lib/autoSaveProfiles';
 
 const STEPS = [
   { id: 1, title: 'Basic Details', icon: MapPin },
@@ -55,6 +58,46 @@ export default function WorkerOnboarding() {
   const [preferredShift, setPreferredShift] = useState('');
   const [workPreference, setWorkPreference] = useState('');
 
+  const autoSaveData = useMemo(
+    () => ({
+      fullName,
+      mobile,
+      currentCity,
+      country,
+      preferredWorkCity,
+      primaryWorkType,
+      secondarySkills,
+      experienceRange,
+      skillLevel,
+      projectTypes,
+      availability,
+      openToRelocation,
+      wageType,
+      wageAmount,
+      preferredShift,
+      workPreference,
+    }),
+    [
+      fullName, mobile, currentCity, country, preferredWorkCity, primaryWorkType,
+      secondarySkills, experienceRange, skillLevel, projectTypes, availability,
+      openToRelocation, wageType, wageAmount, preferredShift, workPreference,
+    ],
+  );
+
+  const handleAutoSave = useCallback(
+    async (data: typeof autoSaveData) => {
+      if (!user) return;
+      await saveWorkerOnboardingPartial(user.id, data);
+    },
+    [user],
+  );
+
+  const { status: autoSaveStatus, markReady } = useAutoSave({
+    data: autoSaveData,
+    onSave: handleAutoSave,
+    enabled: !!user,
+  });
+
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || '');
@@ -62,6 +105,77 @@ export default function WorkerOnboarding() {
       setEmail(profile.email || '');
     }
   }, [profile]);
+
+  useEffect(() => {
+    const loadDraft = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('worker_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!data) {
+        markReady({
+          fullName: profile?.full_name || '',
+          mobile: profile?.phone || '',
+          currentCity: '',
+          country: '',
+          preferredWorkCity: '',
+          primaryWorkType: '',
+          secondarySkills: [],
+          experienceRange: '',
+          skillLevel: '',
+          projectTypes: [],
+          availability: '',
+          openToRelocation: false,
+          wageType: '',
+          wageAmount: '',
+          preferredShift: '',
+          workPreference: '',
+        });
+        return;
+      }
+
+      const wp = data as Record<string, unknown>;
+      const next = {
+        fullName: profile?.full_name || fullName,
+        mobile: profile?.phone || mobile,
+        currentCity: (wp.current_city as string) || '',
+        country: (wp.country as string) || '',
+        preferredWorkCity: (wp.preferred_work_city as string) || '',
+        primaryWorkType: (wp.primary_work_type as string) || '',
+        secondarySkills: (wp.secondary_skills as string[]) || [],
+        experienceRange: (wp.experience_range as string) || '',
+        skillLevel: (wp.skill_level as string) || '',
+        projectTypes: (wp.project_types_worked as string[]) || [],
+        availability: (wp.availability as string) || '',
+        openToRelocation: Boolean(wp.open_to_relocation),
+        wageType: (wp.expected_wage_type as string) || '',
+        wageAmount: wp.expected_wage_amount != null ? String(wp.expected_wage_amount) : '',
+        preferredShift: (wp.preferred_shift as string) || '',
+        workPreference: (wp.work_preference as string) || '',
+      };
+
+      setCurrentCity(next.currentCity);
+      setCountry(next.country);
+      setPreferredWorkCity(next.preferredWorkCity);
+      setPrimaryWorkType(next.primaryWorkType);
+      setSecondarySkills(next.secondarySkills);
+      setExperienceRange(next.experienceRange);
+      setSkillLevel(next.skillLevel);
+      setProjectTypes(next.projectTypes);
+      setAvailability(next.availability);
+      setOpenToRelocation(next.openToRelocation);
+      setWageType(next.wageType);
+      setWageAmount(next.wageAmount);
+      setPreferredShift(next.preferredShift);
+      setWorkPreference(next.workPreference);
+      markReady(next);
+    };
+
+    void loadDraft();
+  }, [user, profile, markReady]);
 
   // Check if onboarding already completed
   useEffect(() => {
@@ -154,6 +268,7 @@ export default function WorkerOnboarding() {
           <p className="text-sm text-muted-foreground mt-1">
             Step {step} of {STEPS.length} — {STEPS[step - 1].title}
           </p>
+          <AutoSaveStatus status={autoSaveStatus} className="justify-center mt-2" />
         </div>
 
         {/* Step Indicator */}

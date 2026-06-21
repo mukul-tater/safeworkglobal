@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,9 @@ import {
 import {
   JOB_CATEGORIES, POPULAR_SKILLS, DESTINATION_COUNTRIES, NATIONALITIES, WORK_PREFERENCES, WAGE_TYPES,
 } from '@/lib/constants';
+import AutoSaveStatus from '@/components/profile/AutoSaveStatus';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { saveEmployerOnboardingPartial } from '@/lib/autoSaveProfiles';
 
 const EMPLOYER_ROLES = ['Owner', 'HR', 'Supervisor', 'Contractor'];
 const BUSINESS_TYPES = ['Construction', 'Industrial', 'Contractor', 'Vendor', 'Other'];
@@ -83,6 +86,60 @@ export default function EmployerOnboarding() {
   const [providesPPE, setProvidesPPE] = useState('');
   const [safetyLevel, setSafetyLevel] = useState('');
 
+  const autoSaveData = useMemo(
+    () => ({
+      fullName,
+      mobile,
+      companyName,
+      country,
+      employerRole,
+      businessType,
+      companySize,
+      workLocations,
+      officeAddress,
+      officeState,
+      cinNumber,
+      taxInfoNumber,
+      hiringRoles,
+      workerTypeNeeded,
+      workersRequired,
+      jobType,
+      preferredCountries,
+      expectedStartDate,
+      salaryType,
+      salaryAmount,
+      idType,
+      idNumber,
+      paymentMethod,
+      billingAddress,
+      gstNumber,
+      followsSafety,
+      providesPPE,
+      safetyLevel,
+    }),
+    [
+      fullName, mobile, companyName, country, employerRole, businessType, companySize,
+      workLocations, officeAddress, officeState, cinNumber, taxInfoNumber, hiringRoles,
+      workerTypeNeeded, workersRequired, jobType, preferredCountries, expectedStartDate,
+      salaryType, salaryAmount, idType, idNumber, paymentMethod, billingAddress, gstNumber,
+      followsSafety, providesPPE, safetyLevel,
+    ],
+  );
+
+  const handleAutoSave = useCallback(
+    async (data: typeof autoSaveData) => {
+      if (!user) return;
+      await saveEmployerOnboardingPartial(user.id, data);
+    },
+    [user],
+  );
+
+  const { status: autoSaveStatus, markReady } = useAutoSave({
+    data: autoSaveData,
+    onSave: handleAutoSave,
+    enabled: !!user,
+  });
+
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || '');
@@ -90,6 +147,113 @@ export default function EmployerOnboarding() {
       setEmail(profile.email || '');
     }
   }, [profile]);
+
+  useEffect(() => {
+    const loadDraft = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('employer_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!data) {
+        markReady({
+          fullName: profile?.full_name || '',
+          mobile: profile?.phone || '',
+          companyName: '',
+          country: '',
+          employerRole: '',
+          businessType: '',
+          companySize: '',
+          workLocations: [],
+          officeAddress: '',
+          officeState: '',
+          cinNumber: '',
+          taxInfoNumber: '',
+          hiringRoles: [],
+          workerTypeNeeded: '',
+          workersRequired: '',
+          jobType: '',
+          preferredCountries: [],
+          expectedStartDate: '',
+          salaryType: '',
+          salaryAmount: '',
+          idType: '',
+          idNumber: '',
+          paymentMethod: '',
+          billingAddress: '',
+          gstNumber: '',
+          followsSafety: false,
+          providesPPE: '',
+          safetyLevel: '',
+        });
+        return;
+      }
+
+      const ep = data as Record<string, unknown>;
+      const next = {
+        fullName: profile?.full_name || '',
+        mobile: profile?.phone || '',
+        companyName: (ep.company_name as string) || '',
+        country: (ep.country as string) || '',
+        employerRole: (ep.employer_role as string) || '',
+        businessType: (ep.business_type as string) || '',
+        companySize: (ep.company_size as string) || '',
+        workLocations: (ep.work_locations as string[]) || [],
+        officeAddress: (ep.office_address as string) || '',
+        officeState: (ep.office_state as string) || '',
+        cinNumber: (ep.cin_number as string) || '',
+        taxInfoNumber: (ep.tax_info_number as string) || '',
+        hiringRoles: (ep.hiring_roles as string[]) || [],
+        workerTypeNeeded: (ep.worker_type_needed as string) || '',
+        workersRequired: ep.workers_required != null ? String(ep.workers_required) : '',
+        jobType: (ep.job_type as string) || '',
+        preferredCountries: (ep.preferred_countries as string[]) || [],
+        expectedStartDate: (ep.expected_start_date as string) || '',
+        salaryType: (ep.salary_type as string) || '',
+        salaryAmount: ep.salary_amount != null ? String(ep.salary_amount) : '',
+        idType: (ep.id_type as string) || '',
+        idNumber: (ep.id_number as string) || '',
+        paymentMethod: (ep.payment_method_preference as string) || '',
+        billingAddress: (ep.billing_address as string) || '',
+        gstNumber: (ep.gst_number as string) || '',
+        followsSafety: Boolean(ep.follows_safety_standards),
+        providesPPE: (ep.provides_ppe as string) || '',
+        safetyLevel: (ep.site_safety_level as string) || '',
+      };
+
+      setCompanyName(next.companyName);
+      setCountry(next.country);
+      setEmployerRole(next.employerRole);
+      setBusinessType(next.businessType);
+      setCompanySize(next.companySize);
+      setWorkLocations(next.workLocations);
+      setOfficeAddress(next.officeAddress);
+      setOfficeState(next.officeState);
+      setCinNumber(next.cinNumber);
+      setTaxInfoNumber(next.taxInfoNumber);
+      setHiringRoles(next.hiringRoles);
+      setWorkerTypeNeeded(next.workerTypeNeeded);
+      setWorkersRequired(next.workersRequired);
+      setJobType(next.jobType);
+      setPreferredCountries(next.preferredCountries);
+      setExpectedStartDate(next.expectedStartDate);
+      setSalaryType(next.salaryType);
+      setSalaryAmount(next.salaryAmount);
+      setIdType(next.idType);
+      setIdNumber(next.idNumber);
+      setPaymentMethod(next.paymentMethod);
+      setBillingAddress(next.billingAddress);
+      setGstNumber(next.gstNumber);
+      setFollowsSafety(next.followsSafety);
+      setProvidesPPE(next.providesPPE);
+      setSafetyLevel(next.safetyLevel);
+      markReady(next);
+    };
+
+    void loadDraft();
+  }, [user, profile, markReady]);
 
   useEffect(() => {
     const checkOnboarding = async () => {
@@ -190,6 +354,7 @@ export default function EmployerOnboarding() {
           <p className="text-sm text-muted-foreground mt-1">
             Step {step} of {STEPS.length} — {STEPS[step - 1].title}
           </p>
+          <AutoSaveStatus status={autoSaveStatus} className="justify-center mt-2" />
         </div>
 
         {/* Step Indicator */}
