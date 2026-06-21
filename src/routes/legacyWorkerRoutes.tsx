@@ -23,8 +23,8 @@ import WorkerContractHistory from '@/pages/worker/ContractHistory';
 import WorkerPayments from '@/pages/worker/WorkerPayments';
 import WorkerVerificationStatus from '@/pages/worker/VerificationStatus';
 import WorkerOnboarding from '@/pages/worker/WorkerOnboarding';
-import WorkerTrust from '@/pages/worker/WorkerTrust';
 import ApplicationSuccess from '@/pages/worker/ApplicationSuccess';
+import WorkerGoogleLandingRedirect from '@/modules/worker-registration/pages/WorkerGoogleLandingRedirect';
 
 /** Must return <Route> directly — wrapper components break React Router v6 matching. */
 function workerRoute(path: string, page: ReactNode) {
@@ -40,7 +40,7 @@ function workerRoute(path: string, page: ReactNode) {
 /** Supabase/Lovable worker portal routes (restored from legacy App.tsx). */
 export const legacyWorkerRoutes = (
   <>
-    {workerRoute('/worker/trust', <WorkerTrust />)}
+    <Route path="/worker/trust" element={<WorkerGoogleLandingRedirect />} />
     <Route path="/worker/discover" element={<Navigate to="/jobs" replace />} />
     {workerRoute('/worker/application-success/:applicationId', <ApplicationSuccess />)}
     {workerRoute('/worker/onboarding', <WorkerOnboarding />)}

@@ -62,7 +62,7 @@ export default function QuickWorkerSignup() {
 
   useEffect(() => {
     if (isAuthenticated && role === 'worker') {
-      navigate('/worker/trust', { replace: true });
+      navigate('/home', { replace: true });
     }
   }, [isAuthenticated, role, navigate]);
 

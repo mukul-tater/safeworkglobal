@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
+import { useWorkerAuth } from '@/modules/worker-registration/context/WorkerAuthContext';
+import {
+  completeWorkerGoogleBridge,
+  workerPathAfterGoogleBridge,
+} from '@/modules/worker-registration/lib/completeWorkerGoogleBridge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +35,7 @@ export default function Auth() {
   const roleHint = (searchParams.get('role') as AppRole | null) || null;
   const modeHint = searchParams.get('mode'); // "signup" forces signup view
   const { login, signup, isAuthenticated, role, needsRoleSelection, profileLoading, assignRole, profile } = useAuth();
+  const { loginWithGoogle, isAuthenticated: isPhase1Worker } = useWorkerAuth();
   const [view, setView] = useState<AuthView>(
     modeHint === 'signup' ? 'role-select' : 'login'
   );
@@ -114,14 +120,30 @@ export default function Auth() {
 
   // Redirect once both auth + role are ready.
   useEffect(() => {
-    if (isAuthenticated && role && !assigningRole) {
-      if (role === 'worker') {
-        navigate('/worker/onboarding', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
+    if (!isAuthenticated || !role || assigningRole) return;
+
+    if (role === 'worker') {
+      if (isPhase1Worker) {
+        navigate('/home', { replace: true });
+        return;
       }
+      let cancelled = false;
+      (async () => {
+        const bridgeResult = await completeWorkerGoogleBridge(loginWithGoogle);
+        if (cancelled) return;
+        if (bridgeResult === 'failed') {
+          setError('Could not open your worker dashboard. Please try again.');
+          return;
+        }
+        navigate(workerPathAfterGoogleBridge(bridgeResult), { replace: true });
+      })();
+      return () => {
+        cancelled = true;
+      };
     }
-  }, [isAuthenticated, role, navigate, assigningRole]);
+
+    navigate('/dashboard', { replace: true });
+  }, [isAuthenticated, role, navigate, assigningRole, isPhase1Worker, loginWithGoogle]);
 
   // Step 1 — open the role chooser modal. We do NOT trigger OAuth yet.
   const openGoogleRoleChooser = (context: 'login' | 'signup') => {
@@ -276,9 +298,13 @@ export default function Auth() {
         return;
       }
       toast.success(`Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!`);
-      // Send to the streamlined start step for the chosen role.
       if (selectedRole === 'worker') {
-        navigate('/worker/trust', { replace: true });
+        const bridgeResult = await completeWorkerGoogleBridge(loginWithGoogle);
+        if (bridgeResult === 'failed') {
+          setError('Could not open your worker dashboard. Please try again.');
+          return;
+        }
+        navigate(workerPathAfterGoogleBridge(bridgeResult), { replace: true });
       } else if (selectedRole === 'employer') {
         // Apply any pending company/full-name captured from the
         // QuickEmployerSignup form before the Google OAuth redirect.

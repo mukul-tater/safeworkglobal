@@ -71,19 +71,7 @@ export default function Dashboard() {
         })();
         break;
       case 'worker':
-        (async () => {
-          try {
-            const { data } = await supabase
-              .from('worker_profiles')
-              .select('onboarding_completed')
-              .eq('user_id', user?.id || '')
-              .maybeSingle();
-            go(data?.onboarding_completed ? "/worker/dashboard" : "/worker/onboarding");
-          } catch (err) {
-            console.error('Worker onboarding check failed:', err);
-            go("/worker/dashboard");
-          }
-        })();
+        go('/home');
         break;
       default:
         go("/");

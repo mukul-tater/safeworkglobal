@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useWorkerAuth } from '../context/WorkerAuthContext';
 import { workerApi } from '../services/workerApi';
+import { readGoogleRegisterPrefill } from '../lib/completeWorkerGoogleBridge';
 import {
   workerRegisterSchema,
   type WorkerRegisterFormValues,
@@ -70,6 +71,14 @@ export default function WorkerRegisterPage() {
       navigate('/home', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    const prefill = readGoogleRegisterPrefill();
+    if (prefill) {
+      setValue('fullName', prefill.fullName);
+      setValue('email', prefill.email);
+    }
+  }, [setValue]);
 
   const handleSendOtp = async () => {
     const digits = mobileNumber.replace(/\D/g, '');
