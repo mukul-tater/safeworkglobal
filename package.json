@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run dev:all",
+    "dev:web": "vite",
     "dev:api": "npm run dev --prefix backend",
     "dev:all": "npm run dev:api & npm run dev",
     "build": "vite build",

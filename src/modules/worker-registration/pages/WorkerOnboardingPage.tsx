@@ -5,7 +5,8 @@ import {
   Camera, CheckCircle2, ChevronLeft, ChevronRight, Globe, Loader2, MapPin,
   Briefcase, Video, Trash2, User,
 } from 'lucide-react';
-import RegistrationLayout from '../components/RegistrationLayout';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { usePhase1WorkerNav } from '../hooks/usePhase1WorkerNav';
 import FormField from '../components/FormField';
 import WorkerOnboardingStageBar from '../components/WorkerOnboardingStageBar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +42,15 @@ export default function WorkerOnboardingPage() {
   const navigate = useNavigate();
   const { token, worker, updateWorker } = useWorkerAuth();
   const { t } = useWorkerLanguage();
+  const { navGroups, profileMenuItems, portalLabel, portalName } = usePhase1WorkerNav('onboarding');
+  const layoutProps = {
+    navGroups,
+    portalLabel,
+    portalName,
+    profileMenuItems,
+    portalHomePath: '/home' as const,
+    showLanguageSwitcher: true,
+  };
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -83,23 +93,36 @@ export default function WorkerOnboardingPage() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [activeProofId, setActiveProofId] = useState<number | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadOnboardingData = async () => {
+    if (!token || !worker) return;
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [data, ref] = await Promise.all([
+        workerApi.getOnboarding(token),
+        workerApi.getReferenceData(),
+      ]);
+      applyOnboarding(data);
+      setStates(ref.states);
+      setSkills(ref.skills);
+      const isEditMode = worker.onboardingCompleted || data.onboardingCompleted;
+      setStep(isEditMode ? 1 : Math.min(Math.max(data.currentStep, 1), 4));
+    } catch (err) {
+      const message = formatWorkerApiError(
+        err,
+        'Failed to load onboarding data. Make sure the worker API is running (npm run dev).'
+      );
+      setLoadError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!token || !worker) return;
-
-    Promise.all([
-      workerApi.getOnboarding(token),
-      workerApi.getReferenceData(),
-    ])
-      .then(([data, ref]) => {
-        applyOnboarding(data);
-        setStates(ref.states);
-        setSkills(ref.skills);
-        const isEditMode = worker.onboardingCompleted || data.onboardingCompleted;
-        setStep(isEditMode ? 1 : Math.min(Math.max(data.currentStep, 1), 4));
-      })
-      .catch(() => toast.error('Failed to load onboarding data'))
-      .finally(() => setLoading(false));
+    void loadOnboardingData();
   }, [token, worker]);
 
   useEffect(() => {
@@ -399,27 +422,55 @@ export default function WorkerOnboardingPage() {
 
   if (loading || !worker) {
     return (
-      <RegistrationLayout title="Complete Your Profile" subtitle="Loading..." portalHomePath="/home">
+      <DashboardLayout {...layoutProps}>
         <div className="flex justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </RegistrationLayout>
+      </DashboardLayout>
     );
   }
 
+  if (loadError) {
+    return (
+      <DashboardLayout {...layoutProps}>
+        <Card className="max-w-2xl mx-auto border-destructive/30">
+          <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+            <p className="text-sm text-muted-foreground max-w-md">{loadError}</p>
+            <p className="text-xs text-muted-foreground">
+              From the project folder run: <code className="rounded bg-muted px-1.5 py-0.5">npm run dev</code>
+            </p>
+            <Button onClick={() => void loadOnboardingData()}>Try again</Button>
+          </CardContent>
+        </Card>
+      </DashboardLayout>
+    );
+  }
+
+  if (!onboarding) {
+    return null;
+  }
+
   const progress = (step / ONBOARDING_STEPS.length) * 100;
-  const stage = (onboarding?.onboardingStage ?? 'REGISTERED') as OnboardingStage;
-  const isEditMode = worker.onboardingCompleted || (onboarding?.onboardingCompleted ?? false);
+  const stage = onboarding.onboardingStage as OnboardingStage;
+  const isEditMode = worker.onboardingCompleted || onboarding.onboardingCompleted;
   const skillsWithMedia = skillProofs.filter(
     (p) => p.photoUrls.length > 0 || p.videoUrls.length > 0
   ).length;
 
+  const pageTitle = isEditMode ? t('onboarding.editTitle') : t('onboarding.completeTitle');
+  const pageSubtitle = isEditMode ? t('onboarding.editSubtitle') : t('onboarding.completeSubtitle');
+
   return (
-    <RegistrationLayout
-      title={isEditMode ? t('onboarding.editTitle') : t('onboarding.completeTitle')}
-      subtitle={isEditMode ? t('onboarding.editSubtitle') : t('onboarding.completeSubtitle')}
-      portalHomePath="/home"
-    >
+    <DashboardLayout {...layoutProps}>
+      <div className="max-w-3xl mx-auto w-full">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold font-heading text-foreground tracking-tight mb-2">
+            {pageTitle}
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+            {pageSubtitle}
+          </p>
+        </div>
       <WorkerOnboardingStageBar
         currentStep={step}
         onboardingStage={stage}
@@ -740,7 +791,7 @@ export default function WorkerOnboardingPage() {
             </>
           )}
 
-          {step === 4 && onboarding && (
+          {step === 4 && (
             <div className="space-y-4 text-sm">
               <ReviewRow label="Name" value={worker.fullName} />
               <ReviewRow label="Location" value={`${onboarding.districtName}, ${onboarding.stateName}`} />
@@ -791,7 +842,8 @@ export default function WorkerOnboardingPage() {
           </Button>
         )}
       </div>
-    </RegistrationLayout>
+      </div>
+    </DashboardLayout>
   );
 }
 
