@@ -29,7 +29,7 @@ export default function QuickEmployerSignup() {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/employer/trust`,
+          emailRedirectTo: `${window.location.origin}/employer/dashboard`,
           data: {
             full_name: fullName.trim(),
             role: "employer",
@@ -77,7 +77,7 @@ export default function QuickEmployerSignup() {
       }
 
       toast.success("Welcome! Let's get you started.");
-      navigate("/employer/trust");
+      navigate("/employer/dashboard");
     } catch (err: any) {
       toast.error(err.message || "Signup failed");
     } finally {

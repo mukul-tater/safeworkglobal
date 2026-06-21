@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Navigate, Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import QuickEmployerSignup from '@/pages/employer/QuickEmployerSignup';
-import EmployerTrust from '@/pages/employer/EmployerTrust';
 import QuickPostJob from '@/pages/employer/QuickPostJob';
 import PilotOffer from '@/pages/employer/PilotOffer';
 import RecommendedWorkers from '@/pages/employer/RecommendedWorkers';
@@ -43,7 +42,7 @@ function employerRoute(path: string, page: ReactNode) {
 export const legacyEmployerRoutes = (
   <>
     <Route path="/employer/quick-signup" element={<QuickEmployerSignup />} />
-    {employerRoute('/employer/trust', <EmployerTrust />)}
+    <Route path="/employer/trust" element={<Navigate to="/employer/dashboard" replace />} />
     {employerRoute('/employer/quick-post-job', <QuickPostJob />)}
     {employerRoute('/employer/pilot-offer', <PilotOffer />)}
     {employerRoute('/employer/recommended-workers', <RecommendedWorkers />)}

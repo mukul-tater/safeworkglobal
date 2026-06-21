@@ -329,7 +329,7 @@ export default function Auth() {
         } catch {
           // Non-fatal — user can edit on the employer profile page.
         }
-        navigate('/employer/trust', { replace: true });
+        navigate('/employer/dashboard', { replace: true });
       } else {
         navigate('/emitra/register', { replace: true });
       }
