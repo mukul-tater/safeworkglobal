@@ -1425,10 +1425,12 @@ export type Database = {
           operator_notes: string | null
           partner_profile_id: string
           passport_available: boolean | null
+          phase1_worker_id: number | null
           photo_url: string | null
           preferred_country: string | null
           previous_gcc_experience: boolean | null
           ready_to_relocate: boolean | null
+          registration_source: string
           skill: string
           skill_level: string | null
           state: string | null
@@ -1453,10 +1455,12 @@ export type Database = {
           operator_notes?: string | null
           partner_profile_id: string
           passport_available?: boolean | null
+          phase1_worker_id?: number | null
           photo_url?: string | null
           preferred_country?: string | null
           previous_gcc_experience?: boolean | null
           ready_to_relocate?: boolean | null
+          registration_source?: string
           skill: string
           skill_level?: string | null
           state?: string | null
@@ -1481,10 +1485,12 @@ export type Database = {
           operator_notes?: string | null
           partner_profile_id?: string
           passport_available?: boolean | null
+          phase1_worker_id?: number | null
           photo_url?: string | null
           preferred_country?: string | null
           previous_gcc_experience?: boolean | null
           ready_to_relocate?: boolean | null
+          registration_source?: string
           skill?: string
           skill_level?: string | null
           state?: string | null
