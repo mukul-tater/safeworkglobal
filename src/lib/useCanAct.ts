@@ -25,36 +25,40 @@ export function useCanAct(role: ActRole): CanActResult {
     let cancelled = false;
     (async () => {
       const missing: string[] = [];
+      const { data: profile } = await (supabase as any)
+        .from('profiles')
+        .select('full_name, phone, email')
+        .eq('id', user.id)
+        .maybeSingle();
       if (role === 'worker') {
         const { data } = await (supabase as any)
           .from('worker_profiles')
-          .select('full_name, mobile_number, state, tenth_pass_confirmed, primary_skill')
+          .select('tenth_pass_confirmed, primary_skill')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (!data?.full_name) missing.push('full name');
-        if (!data?.mobile_number) missing.push('mobile number');
-        if (!data?.state) missing.push('state');
+        if (!profile?.full_name) missing.push('full name');
+        if (!profile?.phone) missing.push('mobile number');
         if (!data?.tenth_pass_confirmed) missing.push('10th-pass confirmation');
         if (!data?.primary_skill) missing.push('primary skill');
       } else if (role === 'employer') {
         const { data } = await (supabase as any)
           .from('employer_profiles')
-          .select('company_name, contact_name, email, country')
+          .select('company_name, country')
           .eq('user_id', user.id)
           .maybeSingle();
         if (!data?.company_name) missing.push('company name');
-        if (!data?.contact_name) missing.push('contact name');
-        if (!data?.email) missing.push('email');
+        if (!profile?.full_name) missing.push('contact name');
+        if (!profile?.email) missing.push('email');
         if (!data?.country) missing.push('company country');
       } else if (role === 'partner') {
         const { data } = await (supabase as any)
           .from('partner_profiles')
-          .select('full_name, mobile_number, centre_name, state')
+          .select('mobile, center_name, state')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (!data?.full_name) missing.push('full name');
-        if (!data?.mobile_number) missing.push('mobile number');
-        if (!data?.centre_name) missing.push('E-Mitra centre name');
+        if (!profile?.full_name) missing.push('full name');
+        if (!data?.mobile) missing.push('mobile number');
+        if (!data?.center_name) missing.push('E-Mitra centre name');
         if (!data?.state) missing.push('state');
       }
       if (cancelled) return;
