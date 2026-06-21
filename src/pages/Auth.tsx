@@ -73,11 +73,15 @@ export default function Auth() {
     if (roleHint === 'worker' || roleHint === 'employer' || roleHint === 'partner') {
       setSignupRole(roleHint);
       // Redirect to the dedicated quick-signup pages for worker/employer.
-      if (roleHint === 'worker') navigate('/register', { replace: true });
-      else if (roleHint === 'employer') navigate('/employer/quick-signup', { replace: true });
-      else setView('signup');
+      if (roleHint === 'worker') {
+        navigate(modeHint === 'signup' ? '/register' : '/login', { replace: true });
+      } else if (roleHint === 'employer') {
+        navigate(modeHint === 'signup' ? '/employer/quick-signup' : '/employer/login', { replace: true });
+      } else {
+        navigate(modeHint === 'signup' ? '/emitra/register' : '/emitra/login', { replace: true });
+      }
     }
-  }, [roleHint, isAuthenticated, navigate]);
+  }, [roleHint, modeHint, isAuthenticated, navigate]);
 
   // If an authenticated user lands here without a role (e.g. fresh Google
   // sign-in), force them into the role-select flow instead of redirecting.
