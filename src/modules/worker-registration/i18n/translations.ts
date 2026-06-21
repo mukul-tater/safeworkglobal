@@ -206,7 +206,7 @@ export const workerTranslations: Record<WorkerLocale, Record<TranslationKey, str
 export function interpolate(template: string, params?: TranslationParams): string {
   if (!params) return template;
   return Object.entries(params).reduce(
-    (result, [key, value]) => result.replaceAll(`{{${key}}}`, String(value)),
+    (result, [key, value]) => result.split(`{{${key}}}`).join(String(value)),
     template
   );
 }

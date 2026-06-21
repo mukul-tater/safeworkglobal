@@ -50,7 +50,7 @@ export async function completeWorkerGoogleBridge(
       return 'register';
     }
 
-    const loginResult = await loginWithGoogle(result);
+    const loginResult = await loginWithGoogle(result as WorkerAuthResponse);
     return loginResult.success ? 'home' : 'failed';
   } catch {
     return 'failed';
