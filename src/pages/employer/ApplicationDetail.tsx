@@ -14,13 +14,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, Mail, Phone, MapPin, Briefcase, Award, Star, 
-  FileText, Play, Download, CheckCircle, XCircle, Clock,
-  User, Globe, Calendar, DollarSign, Languages, Shield,
+  FileText, Download, CheckCircle, XCircle, Clock,
+  Globe, Calendar, DollarSign, Languages, Shield,
   BookmarkPlus, CalendarPlus, MessageSquare
 } from 'lucide-react';
 import { format } from 'date-fns';
 import VerificationBadge, { calculateVerificationLevel, VerificationLevel } from '@/components/worker/VerificationBadge';
-import { getWorkerDocumentSignedUrl } from '@/lib/storage';
+import { isWorkerKycVerified } from '@/lib/workerKyc';
+import { loadWorkerSkillsWithMedia, type WorkerSkillWithMedia } from '@/lib/workerSkillMedia';
 
 interface ApplicationData {
   id: string;
@@ -70,12 +71,7 @@ interface WorkerProfileData {
   ecr_category: string | null;
 }
 
-interface Skill {
-  id: string;
-  skill_name: string;
-  proficiency_level: string | null;
-  years_of_experience: number | null;
-}
+interface Skill extends WorkerSkillWithMedia {}
 
 interface Experience {
   id: string;
@@ -109,16 +105,6 @@ interface Document {
   uploaded_at: string | null;
 }
 
-interface Video {
-  id: string;
-  title: string;
-  description: string | null;
-  video_url: string;
-  thumbnail_url: string | null;
-  duration: number | null;
-  skills_demonstrated: string[] | null;
-}
-
 export default function ApplicationDetail() {
   const { applicationId } = useParams<{ applicationId: string }>();
   const navigate = useNavigate();
@@ -133,11 +119,11 @@ export default function ApplicationDetail() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [videos, setVideos] = useState<Video[]>([]);
   const [notes, setNotes] = useState('');
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [savingNotes, setSavingNotes] = useState(false);
   const [verificationLevel, setVerificationLevel] = useState<VerificationLevel>('not_verified');
+  const [kycVerified, setKycVerified] = useState(false);
 
   useEffect(() => {
     if (applicationId) {
@@ -170,36 +156,34 @@ export default function ApplicationDetail() {
         jobRes,
         profileRes,
         workerProfileRes,
-        skillsRes,
+        skillsWithMedia,
         experienceRes,
         certsRes,
         docsRes,
-        videosRes,
         shortlistRes
       ] = await Promise.all([
         supabase.from('jobs').select('*').eq('id', appData.job_id).maybeSingle(),
         supabase.from('profiles').select('*').eq('id', appData.worker_id).maybeSingle(),
         supabase.from('worker_profiles').select('*').eq('user_id', appData.worker_id).maybeSingle(),
-        supabase.from('worker_skills').select('*').eq('worker_id', appData.worker_id),
+        loadWorkerSkillsWithMedia(appData.worker_id),
         supabase.from('work_experience').select('*').eq('worker_id', appData.worker_id).order('start_date', { ascending: false }),
         supabase.from('worker_certifications').select('*').eq('worker_id', appData.worker_id),
         supabase.from('worker_documents').select('*').eq('worker_id', appData.worker_id),
-        supabase.from('worker_videos').select('*').eq('worker_id', appData.worker_id),
         supabase.from('shortlisted_workers').select('id').eq('employer_id', user?.id).eq('worker_id', appData.worker_id).maybeSingle()
       ]);
 
       if (jobRes.data) setJob(jobRes.data);
       if (profileRes.data) setProfile(profileRes.data);
       if (workerProfileRes.data) setWorkerProfile(workerProfileRes.data);
-      if (skillsRes.data) setSkills(skillsRes.data);
+      setSkills(skillsWithMedia);
       if (experienceRes.data) setExperiences(experienceRes.data);
       if (certsRes.data) setCertifications(certsRes.data);
       if (docsRes.data) setDocuments(docsRes.data);
-      if (videosRes.data) setVideos(videosRes.data);
       setIsShortlisted(!!shortlistRes.data);
       
       // Calculate verification level
       const docs = docsRes.data || [];
+      setKycVerified(isWorkerKycVerified(docs));
       const hasIdDoc = docs.some(
         (d: Document) => (d.document_type === 'passport' || d.document_type === 'id_card') && 
              d.verification_status === 'verified'
@@ -558,17 +542,26 @@ export default function ApplicationDetail() {
                           </div>
                         </div>
 
-                        {/* Contact Info */}
+                        {/* Contact Info — only after admin KYC verification */}
                         <div className="flex flex-wrap gap-4 mt-4 text-sm">
-                          <a href={`mailto:${profile.email}`} className="flex items-center gap-1 text-primary hover:underline">
-                            <Mail className="h-4 w-4" />
-                            {profile.email}
-                          </a>
-                          {profile.phone && (
-                            <a href={`tel:${profile.phone}`} className="flex items-center gap-1 text-primary hover:underline">
-                              <Phone className="h-4 w-4" />
-                              {profile.phone}
-                            </a>
+                          {kycVerified ? (
+                            <>
+                              <a href={`mailto:${profile.email}`} className="flex items-center gap-1 text-primary hover:underline">
+                                <Mail className="h-4 w-4" />
+                                {profile.email}
+                              </a>
+                              {profile.phone && (
+                                <a href={`tel:${profile.phone}`} className="flex items-center gap-1 text-primary hover:underline">
+                                  <Phone className="h-4 w-4" />
+                                  {profile.phone}
+                                </a>
+                              )}
+                            </>
+                          ) : (
+                            <p className="flex items-center gap-1 text-muted-foreground italic">
+                              <Shield className="h-4 w-4" />
+                              Contact details hidden until worker KYC is verified by admin
+                            </p>
                           )}
                         </div>
 
@@ -589,8 +582,10 @@ export default function ApplicationDetail() {
                             <div className="text-xs text-muted-foreground">Certifications</div>
                           </div>
                           <div className="text-center p-3 bg-muted/50 rounded-lg">
-                            <div className="text-2xl font-bold text-primary">{documents.length}</div>
-                            <div className="text-xs text-muted-foreground">Documents</div>
+                            <div className="text-2xl font-bold text-primary">
+                              {skills.reduce((acc, s) => acc + s.media.length, 0)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Skill Media</div>
                           </div>
                         </div>
 
@@ -626,71 +621,13 @@ export default function ApplicationDetail() {
                 </Card>
 
                 {/* Tabs Section */}
-                <Tabs defaultValue="cover-letter" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
-                    <TabsTrigger value="cover-letter">Cover Letter</TabsTrigger>
+                <Tabs defaultValue="skills" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
                     <TabsTrigger value="skills">Skills</TabsTrigger>
                     <TabsTrigger value="experience">Experience</TabsTrigger>
                     <TabsTrigger value="certifications">Certifications</TabsTrigger>
                     <TabsTrigger value="documents">Documents</TabsTrigger>
-                    <TabsTrigger value="videos">Videos</TabsTrigger>
                   </TabsList>
-
-                  {/* Cover Letter Tab */}
-                  <TabsContent value="cover-letter">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <FileText className="h-5 w-5" />
-                          Cover Letter & Resume
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {application.resume_url ? (
-                          <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                            <div className="flex items-center gap-3">
-                              <FileText className="h-8 w-8 text-primary" />
-                              <div>
-                                <p className="font-medium">Resume / CV</p>
-                                <p className="text-sm text-muted-foreground">
-                                  Submitted with this application
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={async () => {
-                                try {
-                                  const signed = await getWorkerDocumentSignedUrl(application.resume_url!);
-                                  window.open(signed, '_blank', 'noopener,noreferrer');
-                                } catch (err: any) {
-                                  toast.error(err?.message || 'Could not open resume');
-                                }
-                              }}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              View Resume
-                            </Button>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground italic">
-                            No resume attached to this application
-                          </p>
-                        )}
-                        <div className="border-t pt-4">
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                            Cover Letter
-                          </p>
-                          {application.cover_letter ? (
-                            <p className="whitespace-pre-wrap">{application.cover_letter}</p>
-                          ) : (
-                            <p className="text-muted-foreground italic">No cover letter provided</p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
 
                   {/* Skills Tab */}
                   <TabsContent value="skills">
@@ -698,26 +635,52 @@ export default function ApplicationDetail() {
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Star className="h-5 w-5" />
-                          Skills ({skills.length})
+                          Skills & Portfolio ({skills.length})
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
                         {skills.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {skills.map((skill) => (
-                              <div key={skill.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                <div>
-                                  <span className="font-medium">{skill.skill_name}</span>
-                                  {skill.years_of_experience && (
-                                    <span className="text-sm text-muted-foreground ml-2">
-                                      ({skill.years_of_experience} yrs)
-                                    </span>
+                              <div key={skill.id} className="p-4 border rounded-lg space-y-3">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div>
+                                    <span className="font-medium">{skill.skill_name}</span>
+                                    {skill.years_of_experience != null && (
+                                      <span className="text-sm text-muted-foreground ml-2">
+                                        ({skill.years_of_experience} yrs)
+                                      </span>
+                                    )}
+                                  </div>
+                                  {skill.proficiency_level && (
+                                    <Badge className={getProficiencyColor(skill.proficiency_level)}>
+                                      {skill.proficiency_level}
+                                    </Badge>
                                   )}
                                 </div>
-                                {skill.proficiency_level && (
-                                  <Badge className={getProficiencyColor(skill.proficiency_level)}>
-                                    {skill.proficiency_level}
-                                  </Badge>
+                                {skill.media.length > 0 ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {skill.media.map((m) =>
+                                      m.media_type === 'photo' ? (
+                                        <img
+                                          key={m.id}
+                                          src={m.url}
+                                          alt={skill.skill_name}
+                                          className="h-24 w-24 rounded-md object-cover border"
+                                        />
+                                      ) : (
+                                        <video
+                                          key={m.id}
+                                          src={m.url}
+                                          className="h-24 w-40 rounded-md border object-cover"
+                                          controls
+                                          preload="metadata"
+                                        />
+                                      ),
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground italic">No photos or videos for this skill</p>
                                 )}
                               </div>
                             ))}
@@ -864,55 +827,6 @@ export default function ApplicationDetail() {
                           </div>
                         ) : (
                           <p className="text-muted-foreground italic">No documents uploaded</p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  {/* Videos Tab */}
-                  <TabsContent value="videos">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Play className="h-5 w-5" />
-                          Videos ({videos.length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {videos.length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {videos.map((video) => (
-                              <div key={video.id} className="border rounded-lg overflow-hidden">
-                                <div className="aspect-video bg-muted flex items-center justify-center">
-                                  {video.thumbnail_url ? (
-                                    <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <Play className="h-12 w-12 text-muted-foreground" />
-                                  )}
-                                </div>
-                                <div className="p-3">
-                                  <h4 className="font-medium">{video.title}</h4>
-                                  {video.description && (
-                                    <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>
-                                  )}
-                                  {video.skills_demonstrated && video.skills_demonstrated.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                      {video.skills_demonstrated.map((skill, i) => (
-                                        <Badge key={i} variant="secondary" className="text-xs">{skill}</Badge>
-                                      ))}
-                                    </div>
-                                  )}
-                                  <Button variant="outline" size="sm" className="mt-2 w-full" asChild>
-                                    <a href={video.video_url} target="_blank" rel="noopener noreferrer">
-                                      <Play className="h-4 w-4 mr-2" /> Watch Video
-                                    </a>
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground italic">No videos uploaded</p>
                         )}
                       </CardContent>
                     </Card>

@@ -11,7 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { FileText, Star, User, Calendar, Search, Eye, MapPin, Briefcase, Phone, Globe, Award } from "lucide-react";
+import { FileText, Star, User, Calendar, Search, Eye, MapPin, Briefcase, Phone, Globe, Award, Shield } from "lucide-react";
+import { isWorkerKycVerified } from "@/lib/workerKyc";
 
 interface Application {
   id: string;
@@ -42,6 +43,7 @@ interface Application {
     skill_name: string;
     proficiency_level: string | null;
   }[];
+  kycVerified: boolean;
 }
 
 export default function ApplicationReview() {
@@ -77,28 +79,33 @@ export default function ApplicationReview() {
       const workerIds = applicationsData?.map(app => app.worker_id) || [];
       const jobIds = applicationsData?.map(app => app.job_id) || [];
 
-      const [profilesResult, workerProfilesResult, jobsResult, skillsResult] = await Promise.all([
+      const [profilesResult, workerProfilesResult, jobsResult, skillsResult, documentsResult] = await Promise.all([
         supabase.from("profiles").select("id, full_name, email, avatar_url, phone").in("id", workerIds),
         supabase.from("worker_profiles").select("user_id, years_of_experience, nationality, current_location, bio, availability, languages").in("user_id", workerIds),
         supabase.from("jobs").select("id, title").in("id", jobIds),
-        supabase.from("worker_skills").select("worker_id, skill_name, proficiency_level").in("worker_id", workerIds)
+        supabase.from("worker_skills").select("worker_id, skill_name, proficiency_level").in("worker_id", workerIds),
+        supabase.from("worker_documents").select("worker_id, document_type, verification_status").in("worker_id", workerIds),
       ]);
 
       if (profilesResult.error) throw profilesResult.error;
 
       // Combine the data
-      const enrichedApplications = applicationsData?.map(app => ({
-        ...app,
-        profiles: profilesResult.data?.find(profile => profile.id === app.worker_id) || {
-          full_name: null,
-          email: "",
-          avatar_url: null,
-          phone: null
-        },
-        job: jobsResult.data?.find(job => job.id === app.job_id) || null,
-        worker_profile: workerProfilesResult.data?.find(wp => wp.user_id === app.worker_id) || null,
-        skills: skillsResult.data?.filter(skill => skill.worker_id === app.worker_id) || []
-      })) || [];
+      const enrichedApplications = applicationsData?.map(app => {
+        const workerDocs = documentsResult.data?.filter((doc) => doc.worker_id === app.worker_id) || [];
+        return {
+          ...app,
+          profiles: profilesResult.data?.find(profile => profile.id === app.worker_id) || {
+            full_name: null,
+            email: "",
+            avatar_url: null,
+            phone: null
+          },
+          job: jobsResult.data?.find(job => job.id === app.job_id) || null,
+          worker_profile: workerProfilesResult.data?.find(wp => wp.user_id === app.worker_id) || null,
+          skills: skillsResult.data?.filter(skill => skill.worker_id === app.worker_id) || [],
+          kycVerified: isWorkerKycVerified(workerDocs),
+        };
+      }) || [];
 
       setApplications(enrichedApplications as any);
     } catch (error: any) {
@@ -286,13 +293,22 @@ export default function ApplicationReview() {
                         {app.profiles?.full_name || "Applicant"}
                       </h3>
                       
-                      {/* Contact Info */}
+                      {/* Contact Info — hidden until admin KYC verification */}
                       <div className="flex flex-wrap gap-2 md:gap-4 text-xs md:text-sm text-muted-foreground mb-3">
-                        <span className="truncate max-w-[200px]">{app.profiles?.email}</span>
-                        {app.profiles?.phone && (
-                          <span className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {app.profiles.phone}
+                        {app.kycVerified ? (
+                          <>
+                            <span className="truncate max-w-[200px]">{app.profiles?.email}</span>
+                            {app.profiles?.phone && (
+                              <span className="flex items-center gap-1">
+                                <Phone className="h-3 w-3" />
+                                {app.profiles.phone}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="flex items-center gap-1 italic">
+                            <Shield className="h-3 w-3" />
+                            Contact hidden until KYC verified
                           </span>
                         )}
                       </div>
@@ -341,13 +357,6 @@ export default function ApplicationReview() {
                             </Badge>
                           )}
                         </div>
-                      )}
-
-                      {/* Cover Letter Preview - Hidden on mobile */}
-                      {app.cover_letter && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2 italic hidden sm:block">
-                          "{app.cover_letter}"
-                        </p>
                       )}
 
                       {/* Applied Date */}
