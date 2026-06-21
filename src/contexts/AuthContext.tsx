@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { redirectToPublicHome } from '@/lib/signOut';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -239,6 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
     setRole(null);
     setHasResolvedRole(false);
+    redirectToPublicHome();
   };
 
   const hasRole = (checkRole: AppRole) => role === checkRole;

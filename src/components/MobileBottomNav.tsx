@@ -14,7 +14,6 @@ export default function MobileBottomNav() {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/");
   };
 
   const navItems = [

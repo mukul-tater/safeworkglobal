@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { redirectToPublicHome } from '@/lib/signOut';
 import type { WorkerAuthResponse, WorkerProfile } from '../types/worker.types';
 import { workerApi } from '../services/workerApi';
 
@@ -18,6 +19,7 @@ interface WorkerAuthContextValue {
   loginWithGoogle: (auth: WorkerAuthResponse) => Promise<{ success: boolean; error?: string }>;
   register: (payload: Parameters<typeof workerApi.register>[0]) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  clearWorkerSession: () => void;
   refreshProfile: () => Promise<void>;
   updateWorker: (worker: WorkerProfile) => void;
 }
@@ -97,10 +99,15 @@ export function WorkerAuthProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const clearWorkerSession = useCallback(() => {
     clearSession();
     setSession(null);
   }, []);
+
+  const logout = useCallback(() => {
+    clearWorkerSession();
+    redirectToPublicHome();
+  }, [clearWorkerSession]);
 
   const refreshProfile = useCallback(async () => {
     if (!session) return;
@@ -134,10 +141,11 @@ export function WorkerAuthProvider({ children }: { children: React.ReactNode }) 
       loginWithGoogle,
       register,
       logout,
+      clearWorkerSession,
       refreshProfile,
       updateWorker,
     }),
-    [session, loading, login, loginWithGoogle, register, logout, refreshProfile, updateWorker]
+    [session, loading, login, loginWithGoogle, register, logout, clearWorkerSession, refreshProfile, updateWorker]
   );
 
   return <WorkerAuthContext.Provider value={value}>{children}</WorkerAuthContext.Provider>;

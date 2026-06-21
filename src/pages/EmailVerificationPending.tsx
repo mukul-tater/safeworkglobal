@@ -85,7 +85,6 @@ export default function EmailVerificationPending() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/auth');
   };
 
   return (

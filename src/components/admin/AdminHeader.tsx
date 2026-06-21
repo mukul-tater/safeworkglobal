@@ -22,7 +22,6 @@ export default function AdminHeader() {
     try {
       await logout();
       toast.success("Logged out successfully");
-      navigate("/auth");
     } catch (error) {
       toast.error("Failed to logout");
     }

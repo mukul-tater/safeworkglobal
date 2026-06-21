@@ -38,7 +38,7 @@ export default function DashboardHeader({
   showLanguageSwitcher = false,
 }: DashboardHeaderProps) {
   const { user, profile, logout } = useAuth();
-  const { worker, logout: workerLogout, isAuthenticated: isWorkerSession } = useWorkerAuth();
+  const { worker, clearWorkerSession, isAuthenticated: isWorkerSession } = useWorkerAuth();
   const workerLang = useOptionalWorkerLanguage();
   const navigate = useNavigate();
 
@@ -51,15 +51,9 @@ export default function DashboardHeader({
 
   const handleLogout = async () => {
     try {
-      if (isWorkerSession) {
-        workerLogout();
-        toast.success("Logged out successfully");
-        navigate("/login");
-        return;
-      }
-      await logout();
       toast.success("Logged out successfully");
-      navigate("/auth");
+      if (isWorkerSession) clearWorkerSession();
+      await logout();
     } catch (error) {
       toast.error("Failed to logout");
     }
