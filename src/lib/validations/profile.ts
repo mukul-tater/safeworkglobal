@@ -26,12 +26,7 @@ export const workerProfileSchema = profileSchema.extend({
   certifications: z.string()
     .max(500, 'Certifications must be less than 500 characters')
     .optional(),
-  passport_number: z.string()
-    .max(20, 'Passport number must be less than 20 characters')
-    .optional(),
-  visa_type: z.string()
-    .max(50, 'Visa type must be less than 50 characters')
-    .optional(),
+  has_passport: z.boolean().optional(),
   preferred_countries: z.string()
     .max(200, 'Preferred countries must be less than 200 characters')
     .optional(),

@@ -1,26 +1,30 @@
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Loader2, Lock } from "lucide-react";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Loader2, Lock } from 'lucide-react';
+import ProfileSection from '@/components/profile/ProfileSection';
 
 export default function ChangePasswordCard() {
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      toast.error('Please enter and confirm your new password');
+      return;
+    }
     if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      toast.error('Password must be at least 6 characters');
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error('Passwords do not match');
       return;
     }
 
@@ -28,52 +32,55 @@ export default function ChangePasswordCard() {
       setSaving(true);
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-      toast.success("Password updated successfully!");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update password");
+      toast.success('Password updated successfully');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to update password';
+      toast.error(message);
     } finally {
       setSaving(false);
     }
   };
 
+  const canSubmit = newPassword.length > 0 && confirmPassword.length > 0 && !saving;
+
   return (
-    <Card className="p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Lock className="h-5 w-5 text-muted-foreground" />
-        <h2 className="text-xl font-bold">Change Password</h2>
-      </div>
-      <form onSubmit={handleChangePassword} className="space-y-4">
-        <div>
-          <Label htmlFor="new_password">New Password</Label>
+    <ProfileSection
+      title="Change Password"
+      description="Uses a separate action from Save profile above."
+      icon={Lock}
+    >
+      <form onSubmit={handleChangePassword} noValidate className="space-y-4 max-w-md">
+        <div className="space-y-1.5">
+          <Label htmlFor="new_password">New password</Label>
           <Input
             id="new_password"
             type="password"
+            autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Enter new password"
-            minLength={6}
-            required
+            placeholder="At least 6 characters"
+            className="h-11"
           />
         </div>
-        <div>
-          <Label htmlFor="confirm_password">Confirm New Password</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm_password">Confirm new password</Label>
           <Input
             id="confirm_password"
             type="password"
+            autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm new password"
-            minLength={6}
-            required
+            placeholder="Re-enter new password"
+            className="h-11"
           />
         </div>
-        <Button type="submit" disabled={saving} variant="outline" className="w-full">
+        <Button type="submit" disabled={!canSubmit} className="h-10 w-full sm:w-auto sm:min-w-[160px]">
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {saving ? "Updating..." : "Update Password"}
+          {saving ? 'Updating...' : 'Update password'}
         </Button>
       </form>
-    </Card>
+    </ProfileSection>
   );
 }

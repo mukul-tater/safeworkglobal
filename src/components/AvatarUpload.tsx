@@ -116,13 +116,24 @@ export default function AvatarUpload({
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <Avatar className="h-24 w-24">
-        <AvatarImage src={previewUrl || undefined} alt="Avatar" />
-        <AvatarFallback className="text-2xl">{fallbackText}</AvatarFallback>
-      </Avatar>
+    <div className="flex items-center gap-4 sm:gap-5">
+      <div className="relative group shrink-0">
+        <Avatar className="h-20 w-20 sm:h-24 sm:w-24 ring-2 ring-border/60 ring-offset-2 ring-offset-background">
+          <AvatarImage src={previewUrl || undefined} alt="Avatar" />
+          <AvatarFallback className="text-xl sm:text-2xl font-medium">{fallbackText}</AvatarFallback>
+        </Avatar>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="Change photo"
+        >
+          <Camera className="h-5 w-5 text-white" />
+        </button>
+      </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5 min-w-0">
         <input
           ref={fileInputRef}
           type="file"
@@ -131,19 +142,21 @@ export default function AvatarUpload({
           className="hidden"
           disabled={uploading}
         />
-        
+
         <Button
           type="button"
           variant="outline"
+          size="sm"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
+          className="w-fit h-9"
         >
           {uploading ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
           ) : (
-            <Camera className="h-4 w-4 mr-2" />
+            <Camera className="h-3.5 w-3.5 mr-1.5" />
           )}
-          {uploading ? 'Uploading...' : 'Change Avatar'}
+          {uploading ? 'Uploading...' : 'Change photo'}
         </Button>
 
         {previewUrl && (
@@ -153,15 +166,14 @@ export default function AvatarUpload({
             size="sm"
             onClick={handleRemoveAvatar}
             disabled={uploading}
+            className="w-fit h-8 text-muted-foreground"
           >
-            <X className="h-4 w-4 mr-2" />
+            <X className="h-3.5 w-3.5 mr-1" />
             Remove
           </Button>
         )}
 
-        <p className="text-xs text-muted-foreground">
-          JPG, PNG or WEBP. Max 5MB.
-        </p>
+        <p className="text-[11px] text-muted-foreground">JPG, PNG or WEBP · max 5MB</p>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
-import { useState, useEffect, useCallback } from 'react';
-import { Card } from "@/components/ui/card";
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Upload, FileText, Trash2 } from "lucide-react";
+import { Loader2, FileText, Trash2, User, Briefcase, FileCheck, Globe } from "lucide-react";
 import AvatarUpload from "@/components/AvatarUpload";
-import WorkerVideoUpload from "@/components/worker/WorkerVideoUpload";
+import WorkerSkillMedia from "@/components/worker/WorkerSkillMedia";
 import ChangePasswordCard from "@/components/ChangePasswordCard";
+import ProfileSection from "@/components/profile/ProfileSection";
 import { workerProfileSchema, type WorkerProfileFormData } from "@/lib/validations/profile";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -26,44 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import type { ReactNode } from "react";
-
-function ProfileSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: ReactNode;
-}) {
-  return (
-    <Card className="border-border/60 shadow-md overflow-hidden">
-      <div className="h-1 bg-gradient-to-r from-primary via-primary/80 to-cyan-500" />
-      <div className="p-6">
-        <h2 className="text-lg font-semibold font-heading">{title}</h2>
-        {description ? (
-          <p className="text-sm text-muted-foreground mt-1 mb-5">{description}</p>
-        ) : (
-          <div className="mb-5" />
-        )}
-        {children}
-      </div>
-    </Card>
-  );
-}
-
-interface WorkerVideo {
-  id: string;
-  title: string;
-  description: string | null;
-  video_url: string;
-  thumbnail_url: string | null;
-  duration: number | null;
-  skills_demonstrated: string[] | null;
-  views_count: number | null;
-  created_at: string | null;
-}
 
 const NATIONALITIES = [
   'India', 'Bangladesh', 'Pakistan', 'Nepal', 'Sri Lanka', 'Philippines',
@@ -71,17 +36,24 @@ const NATIONALITIES = [
   'Nigeria', 'Kenya', 'Ethiopia', 'Other'
 ];
 
+const AVAILABILITY_OPTIONS = [
+  { value: 'immediate', label: 'Immediate' },
+  { value: 'within_2_weeks', label: 'Within 2 weeks' },
+  { value: 'within_1_month', label: 'Within 1 month' },
+  { value: 'within_3_months', label: 'Within 3 months' },
+];
+
 export default function WorkerProfile() {
   const { user, profile, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [videos, setVideos] = useState<WorkerVideo[]>([]);
   const [nationality, setNationality] = useState<string>("");
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [resumeName, setResumeName] = useState<string | null>(null);
   const [uploadingResume, setUploadingResume] = useState(false);
+  const [availability, setAvailability] = useState<string>("");
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<WorkerProfileFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<WorkerProfileFormData>({
     resolver: zodResolver(workerProfileSchema),
     defaultValues: {
       full_name: '',
@@ -90,27 +62,12 @@ export default function WorkerProfile() {
       skills: '',
       experience_years: 0,
       certifications: '',
-      passport_number: '',
-      visa_type: '',
+      has_passport: false,
       preferred_countries: '',
       expected_salary_min: 0,
       expected_salary_max: 0,
     }
   });
-
-  const fetchVideos = useCallback(async () => {
-    if (!user) return;
-    
-    const { data, error } = await supabase
-      .from('worker_videos')
-      .select('*')
-      .eq('worker_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setVideos(data);
-    }
-  }, [user]);
 
   useEffect(() => {
     const loadWorkerProfile = async () => {
@@ -138,19 +95,16 @@ export default function WorkerProfile() {
         if (workerProfile) {
           setValue('bio', workerProfile.bio || '');
           setValue('experience_years', workerProfile.years_of_experience || 0);
-          setValue('passport_number', workerProfile.passport_number || '');
+          setValue('has_passport', workerProfile.has_passport || false);
           setValue('expected_salary_min', workerProfile.expected_salary_min || 0);
           setValue('expected_salary_max', workerProfile.expected_salary_max || 0);
           setNationality(workerProfile.nationality || '');
-          
-          // Map languages array to skills field (Primary Skills)
-          setValue('skills', workerProfile.languages?.join(', ') || '');
+          setAvailability(workerProfile.availability || '');
           
           // Map visa_countries array to preferred_countries field
           setValue('preferred_countries', workerProfile.visa_countries?.join(', ') || '');
           
           setValue('certifications', '');
-          setValue('visa_type', workerProfile.ecr_category || '');
         }
 
         // Fetch existing resume from worker_documents
@@ -175,8 +129,7 @@ export default function WorkerProfile() {
     };
 
     loadWorkerProfile();
-    fetchVideos();
-  }, [user, profile, setValue, fetchVideos]);
+  }, [user, profile, setValue]);
 
   const onSubmit = async (data: WorkerProfileFormData) => {
     if (!user) return;
@@ -202,14 +155,12 @@ export default function WorkerProfile() {
           user_id: user.id,
           bio: data.bio || null,
           years_of_experience: data.experience_years || null,
-          passport_number: data.passport_number || null,
           expected_salary_min: data.expected_salary_min || null,
           expected_salary_max: data.expected_salary_max || null,
-          languages: data.skills ? data.skills.split(',').map(s => s.trim()) : null,
-          ecr_category: data.visa_type || null,
           visa_countries: data.preferred_countries ? data.preferred_countries.split(',').map(c => c.trim()) : null,
           nationality: nationality || null,
-          has_passport: !!data.passport_number,
+          availability: availability || null,
+          has_passport: data.has_passport || false,
         }, {
           onConflict: 'user_id'
         });
@@ -246,32 +197,38 @@ export default function WorkerProfile() {
   }
 
   return layout(
-    <>
-      <PortalBreadcrumb />
+    <div className="max-w-3xl mx-auto">
+      <PortalBreadcrumb currentPageTitle="Profile" />
       <OnboardingStepper />
 
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold mb-1">My Profile</h1>
-        <p className="text-muted-foreground text-sm">
-          Keep your details up to date so employers can find and shortlist you faster.
-        </p>
+      {/* Profile hero */}
+      <div className="mb-6 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 shadow-sm overflow-hidden">
+        <div className="px-5 py-6 sm:px-6 sm:py-7">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-6">
+            <AvatarUpload
+              currentAvatarUrl={profile.avatar_url}
+              userId={user.id}
+              onUploadComplete={handleAvatarUploadComplete}
+              fallbackText={profile.full_name?.[0] || 'W'}
+            />
+            <div className="min-w-0 pt-1">
+              <h1 className="text-xl sm:text-2xl font-bold font-heading tracking-tight">
+                {profile.full_name || 'My Profile'}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">{user.email}</p>
+              <p className="text-xs text-muted-foreground mt-2 max-w-md leading-relaxed">
+                A complete profile with verified skills helps employers trust your application.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl space-y-6">
-        <ProfileSection title="Profile Picture" description="A clear photo helps employers trust your application.">
-          <AvatarUpload
-            currentAvatarUrl={profile.avatar_url}
-            userId={user.id}
-            onUploadComplete={handleAvatarUploadComplete}
-            fallbackText={profile.full_name?.[0] || 'W'}
-          />
-        </ProfileSection>
-
-        <WorkerVideoUpload workerId={user.id} videos={videos} onVideosChange={fetchVideos} />
-
+      <form id="worker-profile-form" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <ProfileSection
           title="Personal Information"
-          description="Basic contact details used across your worker account."
+          description="Contact details and a short bio for your worker profile."
+          icon={User}
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -344,9 +301,14 @@ export default function WorkerProfile() {
           </div>
         </ProfileSection>
 
+        <div id="skills">
+          <WorkerSkillMedia workerId={user.id} />
+        </div>
+
         <ProfileSection
           title="Resume / CV"
-          description="Upload your resume to attach it when applying for jobs."
+          description="Attach your resume when applying for jobs."
+          icon={FileText}
         >
           {resumeUrl ? (
             <div className="flex items-center justify-between gap-3 p-4 bg-muted/40 rounded-lg border border-border/60">
@@ -443,21 +405,8 @@ export default function WorkerProfile() {
           </div>
         </ProfileSection>
 
-        <ProfileSection title="Skills & Experience">
+        <ProfileSection title="Experience & Certifications" icon={Briefcase}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <Label htmlFor="skills">Primary Skills</Label>
-              <Input
-                id="skills"
-                placeholder="e.g., Welding, Electrical, Plumbing"
-                className={`mt-1.5 h-11 ${errors.skills ? 'border-destructive' : ''}`}
-                {...register('skills')}
-              />
-              {errors.skills && (
-                <p className="text-sm text-destructive mt-1">{errors.skills.message}</p>
-              )}
-            </div>
-
             <div>
               <Label htmlFor="experience_years">Years of Experience</Label>
               <Input
@@ -488,38 +437,56 @@ export default function WorkerProfile() {
           </div>
         </ProfileSection>
 
-        <ProfileSection title="Immigration Documents">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="passport_number">Passport Number</Label>
-              <Input
-                id="passport_number"
-                placeholder="Enter passport number"
-                className={`mt-1.5 h-11 ${errors.passport_number ? 'border-destructive' : ''}`}
-                {...register('passport_number')}
+        <ProfileSection
+          title="Travel Documents"
+          description="Let employers know about your passport and visa status."
+          icon={FileCheck}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-4">
+              <div>
+                <Label htmlFor="has_passport">Do you have a valid passport?</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  A valid passport is required for overseas employment.
+                </p>
+              </div>
+              <Switch
+                id="has_passport"
+                checked={watch('has_passport')}
+                onCheckedChange={(checked) => setValue('has_passport', checked)}
               />
-              {errors.passport_number && (
-                <p className="text-sm text-destructive mt-1">{errors.passport_number.message}</p>
-              )}
             </div>
 
-            <div>
-              <Label htmlFor="visa_type">Visa Type</Label>
-              <Input
-                id="visa_type"
-                placeholder="e.g., Work Visa, Employment Visa"
-                className={`mt-1.5 h-11 ${errors.visa_type ? 'border-destructive' : ''}`}
-                {...register('visa_type')}
-              />
-              {errors.visa_type && (
-                <p className="text-sm text-destructive mt-1">{errors.visa_type.message}</p>
-              )}
-            </div>
+            {watch('has_passport') && (
+              <p className="text-sm text-muted-foreground">
+                Upload your passport copy in{' '}
+                <Link to="/worker/documents" className="text-primary hover:underline">
+                  Documents
+                </Link>
+                .
+              </p>
+            )}
           </div>
         </ProfileSection>
 
-        <ProfileSection title="Work Preferences">
+        <ProfileSection title="Work Preferences" id="preferences" icon={Globe}>
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="availability">When can you start?</Label>
+              <Select value={availability} onValueChange={setAvailability}>
+                <SelectTrigger className="mt-1.5 h-11">
+                  <SelectValue placeholder="Select your availability" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABILITY_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label htmlFor="preferred_countries">Preferred Countries</Label>
               <Input
@@ -558,28 +525,26 @@ export default function WorkerProfile() {
           </div>
         </ProfileSection>
 
-        <Card className="border-border/60 shadow-md p-4 md:p-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button type="submit" disabled={saving} className="h-11 flex-1 font-medium">
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-11 sm:w-32"
-              onClick={() => reset()}
-              disabled={saving}
-            >
-              Reset
-            </Button>
-          </div>
-        </Card>
+        <div className="rounded-xl border border-border/60 bg-card shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row gap-2">
+          <Button type="submit" disabled={saving} className="h-10 flex-1 font-medium">
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {saving ? 'Saving...' : 'Save profile'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 sm:w-28"
+            onClick={() => reset()}
+            disabled={saving}
+          >
+            Reset
+          </Button>
+        </div>
       </form>
 
-      <div className="max-w-4xl mt-6">
+      <div className="mt-10 pt-8 border-t border-border/60">
         <ChangePasswordCard />
       </div>
-    </>,
+    </div>,
   );
 }

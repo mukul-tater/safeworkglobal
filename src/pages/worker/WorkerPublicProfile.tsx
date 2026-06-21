@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   MapPin, Globe, Mail, Phone, Award, Briefcase, FileCheck,
-  Calendar, Star, Play, CheckCircle2, XCircle, Clock,
+  Calendar, Star, CheckCircle2, XCircle, Clock,
   MessageSquare, Heart, ArrowLeft, Download
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,6 +73,13 @@ interface Skill {
   skill_name: string;
   proficiency_level: string | null;
   years_of_experience: number | null;
+  media: SkillMedia[];
+}
+
+interface SkillMedia {
+  id: string;
+  media_type: 'photo' | 'video';
+  url: string;
 }
 
 interface Document {
@@ -82,17 +89,6 @@ interface Document {
   file_url: string;
   verification_status: string;
   uploaded_at: string;
-}
-
-interface Video {
-  id: string;
-  title: string;
-  description: string | null;
-  video_url: string;
-  thumbnail_url: string | null;
-  skills_demonstrated: string[] | null;
-  views_count: number;
-  created_at: string;
 }
 
 export default function WorkerPublicProfile() {
@@ -108,7 +104,6 @@ export default function WorkerPublicProfile() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [allDocuments, setAllDocuments] = useState<Document[]>([]);
-  const [videos, setVideos] = useState<Video[]>([]);
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [verificationLevel, setVerificationLevel] = useState<VerificationLevel>('not_verified');
 
@@ -159,12 +154,55 @@ export default function WorkerPublicProfile() {
         .order('issue_date', { ascending: false });
       setCertifications(certData || []);
 
-      // Fetch skills
+      // Fetch skills with media
       const { data: skillsData } = await supabase
         .from('worker_skills')
         .select('*')
         .eq('worker_id', id);
-      setSkills(skillsData || []);
+
+      const skillIds = (skillsData ?? []).map((s) => s.id);
+      let mediaBySkill: Record<string, SkillMedia[]> = {};
+
+      if (skillIds.length > 0) {
+        const { data: mediaData } = await supabase
+          .from('worker_skill_media')
+          .select('id, skill_id, media_type, file_path')
+          .in('skill_id', skillIds)
+          .order('created_at', { ascending: true });
+
+        if (mediaData) {
+          const resolved = await Promise.all(
+            mediaData.map(async (m) => {
+              const { data: signed } = await supabase.storage
+                .from('worker-videos')
+                .createSignedUrl(m.file_path, 3600);
+              return {
+                id: m.id,
+                skill_id: m.skill_id,
+                media_type: m.media_type as 'photo' | 'video',
+                url: signed?.signedUrl ?? '',
+              };
+            }),
+          );
+
+          mediaBySkill = resolved.reduce<Record<string, SkillMedia[]>>((acc, m) => {
+            const entry: SkillMedia = {
+              id: m.id,
+              media_type: m.media_type,
+              url: m.url,
+            };
+            acc[m.skill_id] = [...(acc[m.skill_id] ?? []), entry];
+            return acc;
+          }, {});
+        }
+      }
+
+      setSkills(
+        (skillsData ?? []).map((s) => ({
+          ...s,
+          media: mediaBySkill[s.id] ?? [],
+        })),
+      );
 
       // Fetch all documents for verification level calculation
       const { data: allDocsData } = await supabase
@@ -177,14 +215,6 @@ export default function WorkerPublicProfile() {
       // Filter verified documents for display
       const verifiedDocs = (allDocsData || []).filter(d => d.verification_status === 'verified');
       setDocuments(verifiedDocs);
-
-      // Fetch videos
-      const { data: videosData } = await supabase
-        .from('worker_videos')
-        .select('*')
-        .eq('worker_id', id)
-        .order('created_at', { ascending: false });
-      setVideos(videosData || []);
       
       // Calculate verification level
       const hasIdDoc = (allDocsData || []).some(
@@ -495,11 +525,10 @@ export default function WorkerPublicProfile() {
 
           {/* Detailed Information Tabs */}
           <Tabs defaultValue="skills" className="mb-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="skills">Skills</TabsTrigger>
               <TabsTrigger value="experience">Experience</TabsTrigger>
               <TabsTrigger value="certifications">Certifications</TabsTrigger>
-              <TabsTrigger value="videos">Videos</TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
             </TabsList>
 
@@ -515,19 +544,44 @@ export default function WorkerPublicProfile() {
                   ) : (
                     <div className="grid md:grid-cols-2 gap-4">
                       {skills.map((skill) => (
-                        <div key={skill.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                          <div>
-                            <h4 className="font-semibold">{skill.skill_name}</h4>
-                            {skill.years_of_experience && (
-                              <p className="text-sm text-muted-foreground">
-                                {skill.years_of_experience} years experience
-                              </p>
+                        <div key={skill.id} className="p-4 bg-muted/50 rounded-lg space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <h4 className="font-semibold">{skill.skill_name}</h4>
+                              {skill.years_of_experience && (
+                                <p className="text-sm text-muted-foreground">
+                                  {skill.years_of_experience} years experience
+                                </p>
+                              )}
+                            </div>
+                            {skill.proficiency_level && (
+                              <Badge className={getProficiencyColor(skill.proficiency_level)}>
+                                {skill.proficiency_level}
+                              </Badge>
                             )}
                           </div>
-                          {skill.proficiency_level && (
-                            <Badge className={getProficiencyColor(skill.proficiency_level)}>
-                              {skill.proficiency_level}
-                            </Badge>
+                          {skill.media.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {skill.media.map((m) =>
+                                m.media_type === 'photo' ? (
+                                  <img
+                                    key={m.id}
+                                    src={m.url}
+                                    alt={skill.skill_name}
+                                    className="h-20 w-20 rounded-md object-cover border"
+                                  />
+                                ) : (
+                                  <video
+                                    key={m.id}
+                                    src={m.url}
+                                    className="h-20 w-32 rounded-md border object-cover"
+                                    controls
+                                  />
+                                ),
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">No photos or videos yet</p>
                           )}
                         </div>
                       ))}
@@ -623,60 +677,6 @@ export default function WorkerPublicProfile() {
                             >
                               View Credential →
                             </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Videos Tab */}
-            <TabsContent value="videos">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Skill Demonstration Videos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {videos.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No videos uploaded yet</p>
-                  ) : (
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {videos.map((video) => (
-                        <div key={video.id} className="group">
-                          <div className="relative aspect-video bg-muted rounded-lg overflow-hidden mb-3">
-                            {video.thumbnail_url ? (
-                              <img
-                                src={video.thumbnail_url}
-                                alt={video.title}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Play className="h-16 w-16 text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Button
-                                size="lg"
-                                className="rounded-full"
-                                onClick={() => window.open(video.video_url, '_blank')}
-                              >
-                                <Play className="h-6 w-6" />
-                              </Button>
-                            </div>
-                          </div>
-                          <h4 className="font-semibold mb-1">{video.title}</h4>
-                          {video.description && (
-                            <p className="text-sm text-muted-foreground mb-2">{video.description}</p>
-                          )}
-                          {video.skills_demonstrated && video.skills_demonstrated.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                              {video.skills_demonstrated.map((skill, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs">{skill}</Badge>
-                              ))}
-                            </div>
                           )}
                         </div>
                       ))}

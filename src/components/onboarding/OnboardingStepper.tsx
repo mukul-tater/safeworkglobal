@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { 
-  User, FileText, Briefcase, GraduationCap, Building2, 
-  CheckCircle2, ChevronRight, X, Mail, CalendarClock
+import {
+  User, FileText, Briefcase, Building2,
+  CheckCircle2, ChevronRight, X, Mail, CalendarClock, GraduationCap,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface OnboardingStep {
   id: string;
   title: string;
+  shortTitle: string;
   description: string;
   icon: React.ReactNode;
   route: string;
@@ -45,14 +45,14 @@ export default function OnboardingStepper({ onDismiss }: OnboardingStepperProps)
     if (!user) return;
 
     try {
-      // Email verification step (applies to all roles)
       const emailStep: OnboardingStep = {
         id: 'email',
         title: 'Verify Email',
+        shortTitle: 'Email',
         description: 'Confirm your email address',
-        icon: <Mail className="h-5 w-5" />,
+        icon: <Mail className="h-3.5 w-3.5" />,
         route: '/verify-email?send=1',
-        completed: isEmailVerified
+        completed: isEmailVerified,
       };
 
       if (role === 'worker') {
@@ -74,40 +74,44 @@ export default function OnboardingStepper({ onDismiss }: OnboardingStepperProps)
           {
             id: 'basic',
             title: 'Complete Basic Profile',
+            shortTitle: 'Profile',
             description: 'Add your name, phone, and bio',
-            icon: <User className="h-5 w-5" />,
+            icon: <User className="h-3.5 w-3.5" />,
             route: '/worker/profile',
-            completed: hasBasicInfo && hasBio
+            completed: hasBasicInfo && hasBio,
           },
           {
             id: 'documents',
             title: 'Upload Documents',
+            shortTitle: 'Documents',
             description: 'Add passport, ID, and certificates',
-            icon: <FileText className="h-5 w-5" />,
+            icon: <FileText className="h-3.5 w-3.5" />,
             route: '/worker/documents',
-            completed: hasDocs
+            completed: hasDocs,
           },
           {
             id: 'skills',
             title: 'Add Your Skills',
-            description: 'List your professional skills',
-            icon: <GraduationCap className="h-5 w-5" />,
-            route: '/worker/profile',
-            completed: hasSkills
+            shortTitle: 'Skills',
+            description: 'Add skills with photos or videos',
+            icon: <GraduationCap className="h-3.5 w-3.5" />,
+            route: '/worker/profile#skills',
+            completed: hasSkills,
           },
           {
             id: 'availability',
             title: 'Set Availability',
+            shortTitle: 'Availability',
             description: 'Tell employers when you can start',
-            icon: <CalendarClock className="h-5 w-5" />,
-            route: '/worker/profile',
-            completed: hasAvailability
-          }
+            icon: <CalendarClock className="h-3.5 w-3.5" />,
+            route: '/worker/profile#preferences',
+            completed: hasAvailability,
+          },
         ]);
       } else if (role === 'employer') {
         const [profileRes, jobsRes] = await Promise.all([
           supabase.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle(),
-          supabase.from('jobs').select('id').eq('employer_id', user.id)
+          supabase.from('jobs').select('id').eq('employer_id', user.id),
         ]);
 
         const employerProfile = profileRes.data;
@@ -120,27 +124,30 @@ export default function OnboardingStepper({ onDismiss }: OnboardingStepperProps)
           {
             id: 'basic',
             title: 'Complete Your Profile',
+            shortTitle: 'Profile',
             description: 'Add your name and contact info',
-            icon: <User className="h-5 w-5" />,
+            icon: <User className="h-3.5 w-3.5" />,
             route: '/employer/profile',
-            completed: hasBasicInfo
+            completed: hasBasicInfo,
           },
           {
             id: 'company',
             title: 'Company Information',
+            shortTitle: 'Company',
             description: 'Add company name and details',
-            icon: <Building2 className="h-5 w-5" />,
+            icon: <Building2 className="h-3.5 w-3.5" />,
             route: '/employer/company',
-            completed: hasCompanyInfo
+            completed: hasCompanyInfo,
           },
           {
             id: 'job',
             title: 'Post Your First Job',
+            shortTitle: 'First Job',
             description: 'Create a job listing to attract workers',
-            icon: <Briefcase className="h-5 w-5" />,
+            icon: <Briefcase className="h-3.5 w-3.5" />,
             route: '/employer/post-job',
-            completed: hasJobs
-          }
+            completed: hasJobs,
+          },
         ]);
       }
     } catch (error) {
@@ -150,7 +157,7 @@ export default function OnboardingStepper({ onDismiss }: OnboardingStepperProps)
     }
   };
 
-  const completedCount = steps.filter(s => s.completed).length;
+  const completedCount = steps.filter((s) => s.completed).length;
   const progress = steps.length > 0 ? (completedCount / steps.length) * 100 : 0;
   const isComplete = progress === 100;
 
@@ -161,71 +168,89 @@ export default function OnboardingStepper({ onDismiss }: OnboardingStepperProps)
 
   if (loading || dismissed || isComplete || steps.length === 0) return null;
 
-  const nextStep = steps.find(s => !s.completed);
+  const nextStep = steps.find((s) => !s.completed);
+  const nextIndex = nextStep ? steps.findIndex((s) => s.id === nextStep.id) : -1;
 
   return (
-    <Card className="p-6 mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            Complete Your Profile
-            <Badge variant="secondary">{completedCount}/{steps.length}</Badge>
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Complete these steps to unlock all features
+    <div className="mb-6 rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 border-b border-border/40 bg-muted/20">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">Profile setup</p>
+          <p className="text-xs text-muted-foreground">
+            {completedCount} of {steps.length} complete
           </p>
         </div>
-        <Button variant="ghost" size="icon" onClick={handleDismiss}>
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {nextStep && (
+            <Button size="sm" className="h-8 text-xs hidden sm:inline-flex" onClick={() => navigate(nextStep.route)}>
+              Continue
+              <ChevronRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleDismiss} aria-label="Dismiss">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      <Progress value={progress} className="h-2 mb-4" />
+      <div className="px-4 py-4 sm:px-5 space-y-4">
+        <Progress value={progress} className="h-1.5" />
 
-      <div className="space-y-3">
-        {steps.map((step, index) => (
-          <div
-            key={step.id}
-            className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
-              step.completed 
-                ? 'bg-success/10 text-success' 
-                : nextStep?.id === step.id 
-                  ? 'bg-primary/10 cursor-pointer hover:bg-primary/20' 
-                  : 'bg-muted/50 text-muted-foreground'
-            }`}
-            onClick={() => !step.completed && navigate(step.route)}
-          >
-            <div className={`p-2 rounded-full ${
-              step.completed ? 'bg-success/20' : 'bg-background'
-            }`}>
-              {step.completed ? (
-                <CheckCircle2 className="h-5 w-5 text-success" />
-              ) : (
-                step.icon
-              )}
+        <div className="flex items-start justify-between gap-1">
+          {steps.map((step, index) => {
+            const isCurrent = index === nextIndex;
+            const isPast = step.completed;
+            const isFuture = !isPast && !isCurrent;
+
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => !step.completed && navigate(step.route)}
+                disabled={step.completed}
+                className={cn(
+                  'flex flex-1 flex-col items-center gap-1.5 min-w-0 group',
+                  !step.completed && 'cursor-pointer',
+                )}
+              >
+                <div
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors',
+                    isPast && 'border-emerald-500 bg-emerald-500 text-white',
+                    isCurrent && 'border-primary bg-primary text-primary-foreground shadow-sm',
+                    isFuture && 'border-border bg-background text-muted-foreground',
+                  )}
+                >
+                  {isPast ? <CheckCircle2 className="h-4 w-4" /> : step.icon}
+                </div>
+                <span
+                  className={cn(
+                    'text-[10px] sm:text-xs font-medium text-center leading-tight truncate w-full px-0.5',
+                    isPast && 'text-emerald-600 dark:text-emerald-400',
+                    isCurrent && 'text-primary',
+                    isFuture && 'text-muted-foreground',
+                  )}
+                >
+                  {step.shortTitle}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {nextStep && (
+          <div className="rounded-lg bg-muted/40 px-3 py-2.5 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-foreground">Next: {nextStep.title}</p>
+              <p className="text-xs text-muted-foreground truncate">{nextStep.description}</p>
             </div>
-            <div className="flex-1">
-              <p className={`font-medium ${step.completed ? 'line-through opacity-70' : ''}`}>
-                {step.title}
-              </p>
-              <p className="text-xs text-muted-foreground">{step.description}</p>
-            </div>
-            {!step.completed && nextStep?.id === step.id && (
-              <ChevronRight className="h-5 w-5 text-primary" />
-            )}
+            <Button size="sm" variant="outline" className="h-8 shrink-0 sm:hidden" onClick={() => navigate(nextStep.route)}>
+              Go
+              <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
+            </Button>
           </div>
-        ))}
+        )}
       </div>
-
-      {nextStep && (
-        <Button 
-          className="w-full mt-4" 
-          onClick={() => navigate(nextStep.route)}
-        >
-          Continue: {nextStep.title}
-          <ChevronRight className="h-4 w-4 ml-2" />
-        </Button>
-      )}
-    </Card>
+    </div>
   );
 }
