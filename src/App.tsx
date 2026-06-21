@@ -41,6 +41,7 @@ import ComplianceCheck from "./pages/admin/ComplianceCheck";
 import Reports from "./pages/admin/Reports";
 import DisputeResolution from "./pages/admin/DisputeResolution";
 import ContactSubmissions from "./pages/admin/ContactSubmissions";
+import AdminPartnerRewards from "./pages/admin/AdminPartnerRewards";
 import AdminWorkers from "./pages/admin/AdminWorkers";
 import AdminEmployers from "./pages/admin/AdminEmployers";
 import AdminApplications from "./pages/admin/AdminApplications";
@@ -224,6 +225,7 @@ function AppShell() {
           <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />
           <Route path="/admin/disputes" element={<AdminRoute><DisputeResolution /></AdminRoute>} />
           <Route path="/admin/contact-submissions" element={<AdminRoute><ContactSubmissions /></AdminRoute>} />
+          <Route path="/admin/partner-rewards" element={<AdminRoute><AdminPartnerRewards /></AdminRoute>} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
           <Route path="*" element={<NotFound />} />
