@@ -41,9 +41,9 @@ export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean 
 }
 
 export function usePhase1WorkerNavItems(
-  baseItems: NavGroup[number]['items'],
+  baseItems: NavGroup['items'],
   profileLabel: string,
-): NavGroup[number]['items'] {
+): NavGroup['items'] {
   const { isWorker, canBrowseJobs, onboardingPath } = useWorkerJobAccess();
 
   return useMemo(() => {

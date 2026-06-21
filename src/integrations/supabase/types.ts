@@ -2287,6 +2287,48 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_skill_media: {
+        Row: {
+          created_at: string | null
+          file_path: string
+          id: string
+          media_type: string
+          skill_id: string
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_path: string
+          id?: string
+          media_type: string
+          skill_id: string
+          worker_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string
+          id?: string
+          media_type?: string
+          skill_id?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_skill_media_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "worker_skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_skill_media_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "worker_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       worker_skills: {
         Row: {
           created_at: string | null
