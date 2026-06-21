@@ -463,8 +463,10 @@ export default function WorkerPublicProfile() {
                       <p className="text-sm text-muted-foreground">Certificates</p>
                     </div>
                     <div className="text-center p-3 bg-muted/50 rounded-lg">
-                      <p className="text-2xl font-bold text-primary">{videos.length}</p>
-                      <p className="text-sm text-muted-foreground">Videos</p>
+                      <p className="text-2xl font-bold text-primary">
+                        {skills.reduce((acc, s) => acc + ((s as any).media?.length ?? 0), 0)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Media</p>
                     </div>
                   </div>
 
