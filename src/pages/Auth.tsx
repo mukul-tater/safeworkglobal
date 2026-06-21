@@ -280,6 +280,29 @@ export default function Auth() {
       if (selectedRole === 'worker') {
         navigate('/worker/trust', { replace: true });
       } else if (selectedRole === 'employer') {
+        // Apply any pending company/full-name captured from the
+        // QuickEmployerSignup form before the Google OAuth redirect.
+        try {
+          const pendingCompany = sessionStorage.getItem('pending_employer_company');
+          const pendingFullName = sessionStorage.getItem('pending_employer_full_name');
+          sessionStorage.removeItem('pending_employer_company');
+          sessionStorage.removeItem('pending_employer_full_name');
+          const { data: { user: u } } = await supabase.auth.getUser();
+          if (u && pendingCompany) {
+            await supabase
+              .from('employer_profiles')
+              .update({ company_name: pendingCompany })
+              .eq('user_id', u.id);
+          }
+          if (u && pendingFullName) {
+            await supabase
+              .from('profiles')
+              .update({ full_name: pendingFullName })
+              .eq('id', u.id);
+          }
+        } catch {
+          // Non-fatal — user can edit on the employer profile page.
+        }
         navigate('/employer/trust', { replace: true });
       } else {
         navigate('/emitra/register', { replace: true });

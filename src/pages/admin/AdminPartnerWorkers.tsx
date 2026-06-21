@@ -54,15 +54,15 @@ export default function AdminPartnerWorkers() {
         throw error;
       }
 
-      const partnerIds = [...new Set((partnerWorkers || []).map((w: { partner_profile_id: string }) => w.partner_profile_id))];
+      const partnerIds = [...new Set((partnerWorkers || []).map((w: { partner_profile_id: string }) => w.partner_profile_id))] as string[];
       let partnerMap: Record<string, { company_name?: string; partner_code?: string; emitra_id?: string }> = {};
 
       if (partnerIds.length > 0) {
-        const { data: partners } = await supabase
+        const { data: partners } = await (supabase as any)
           .from("partner_profiles")
           .select("id, company_name, partner_code, emitra_id")
           .in("id", partnerIds);
-        partnerMap = Object.fromEntries((partners || []).map((p) => [p.id, p]));
+        partnerMap = Object.fromEntries(((partners || []) as Array<{ id: string; company_name?: string; partner_code?: string; emitra_id?: string }>).map((p) => [p.id, p]));
       }
 
       const rows: PartnerWorkerRow[] = (partnerWorkers || []).map((w: Record<string, unknown>) => {
