@@ -71,7 +71,7 @@ export default function Dashboard() {
         })();
         break;
       case 'worker':
-        go('/home');
+        go('/worker/dashboard');
         break;
       default:
         go("/");
