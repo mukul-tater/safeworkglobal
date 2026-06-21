@@ -279,12 +279,19 @@ export default function WorkerProfile() {
             </div>
 
             <div>
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">Phone Number *</Label>
               <Input
                 id="phone"
+                type="tel"
+                inputMode="numeric"
+                maxLength={10}
                 placeholder="10-digit mobile number"
                 className={`mt-1.5 h-11 ${errors.phone ? 'border-destructive' : ''}`}
-                {...register('phone')}
+                {...register('phone', {
+                  onChange: (e) => {
+                    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  },
+                })}
               />
               {errors.phone && (
                 <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>

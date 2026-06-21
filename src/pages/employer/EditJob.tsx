@@ -20,6 +20,7 @@ import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
+import { todayDateInputValue } from "@/lib/validations/common";
 import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { saveJobPartial, type JobPostAutoSaveData } from "@/lib/autoSaveJobs";
@@ -364,7 +365,7 @@ export default function EmployerEditJob() {
                 </div>
                 <div>
                   <Label htmlFor="expires_at">Expiry Date *</Label>
-                  <Input id="expires_at" type="date" {...register("expires_at")} />
+                  <Input id="expires_at" type="date" min={todayDateInputValue()} {...register("expires_at")} />
                 </div>
               </div>
 

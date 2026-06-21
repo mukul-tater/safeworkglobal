@@ -24,6 +24,12 @@ import {
 import AutoSaveStatus from '@/components/profile/AutoSaveStatus';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { saveEmployerOnboardingPartial } from '@/lib/autoSaveProfiles';
+import { validateSchema } from '@/lib/validations/common';
+import {
+  employerOnboardingStep1Schema,
+  employerOnboardingStep2Schema,
+  employerOnboardingStep3Schema,
+} from '@/lib/validations/onboarding';
 
 const EMPLOYER_ROLES = ['Owner', 'HR', 'Supervisor', 'Contractor'];
 const BUSINESS_TYPES = ['Construction', 'Industrial', 'Contractor', 'Vendor', 'Other'];
@@ -45,6 +51,7 @@ export default function EmployerOnboarding() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   // Step 1
@@ -286,6 +293,47 @@ export default function EmployerOnboarding() {
   const canProceedStep2 = businessType && companySize;
   const canProceedStep3 = hiringRoles.length > 0 && workerTypeNeeded && workersRequired;
 
+  const handleNext = () => {
+    if (step === 1) {
+      const result = validateSchema(employerOnboardingStep1Schema, {
+        fullName,
+        mobile,
+        companyName,
+        country,
+        employerRole,
+      });
+      if (!result.success) {
+        setStepErrors(result.errors);
+        toast.error(Object.values(result.errors)[0]);
+        return;
+      }
+    } else if (step === 2) {
+      const result = validateSchema(employerOnboardingStep2Schema, {
+        businessType,
+        companySize,
+      });
+      if (!result.success) {
+        setStepErrors(result.errors);
+        toast.error(Object.values(result.errors)[0]);
+        return;
+      }
+    } else if (step === 3) {
+      const result = validateSchema(employerOnboardingStep3Schema, {
+        hiringRoles,
+        workerTypeNeeded,
+        workersRequired,
+        expectedStartDate,
+      });
+      if (!result.success) {
+        setStepErrors(result.errors);
+        toast.error(Object.values(result.errors)[0]);
+        return;
+      }
+    }
+    setStepErrors({});
+    setStep((s) => s + 1);
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
@@ -387,11 +435,20 @@ export default function EmployerOnboarding() {
                 <div className="space-y-1.5">
                   <Label>Full Name *</Label>
                   <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" />
+                  {stepErrors.fullName && <p className="text-sm text-destructive">{stepErrors.fullName}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Mobile Number *</Label>
-                  <Input value={mobile} onChange={e => setMobile(e.target.value)} placeholder="+91 98765 43210" type="tel" />
+                  <Input
+                    value={mobile}
+                    onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="10-digit mobile number"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                  />
                   <p className="text-xs text-muted-foreground">WhatsApp verification will be sent to this number</p>
+                  {stepErrors.mobile && <p className="text-sm text-destructive">{stepErrors.mobile}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Email (verify later)</Label>
@@ -400,6 +457,7 @@ export default function EmployerOnboarding() {
                 <div className="space-y-1.5">
                   <Label>Company Name *</Label>
                   <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g. ABC Constructions" />
+                  {stepErrors.companyName && <p className="text-sm text-destructive">{stepErrors.companyName}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -556,6 +614,7 @@ export default function EmployerOnboarding() {
                   <div className="space-y-1.5">
                     <Label>Expected Start Date</Label>
                     <Input type="date" value={expectedStartDate} onChange={e => setExpectedStartDate(e.target.value)} />
+                    {stepErrors.expectedStartDate && <p className="text-sm text-destructive">{stepErrors.expectedStartDate}</p>}
                   </div>
                 </div>
 
@@ -708,7 +767,7 @@ export default function EmployerOnboarding() {
 
           {step < STEPS.length ? (
             <Button
-              onClick={() => setStep(s => s + 1)}
+              onClick={handleNext}
               disabled={
                 step === 1 ? !canProceedStep1 :
                 step === 2 ? !canProceedStep2 :
@@ -729,7 +788,7 @@ export default function EmployerOnboarding() {
         {/* Skip entire setup — user can complete details later from profile */}
         <p className="text-center mt-3">
           <button
-            onClick={step === STEPS.length ? handleSave : () => setStep(s => s + 1)}
+            onClick={step === STEPS.length ? handleSave : handleNext}
             disabled={saving}
             className="text-sm text-muted-foreground hover:text-foreground underline mr-3"
           >

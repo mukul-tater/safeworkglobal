@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Building2, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
+import { validateSchema } from "@/lib/validations/common";
+import { quickEmployerSignupSchema } from "@/lib/validations/onboarding";
 
 export default function QuickEmployerSignup() {
   const navigate = useNavigate();
@@ -18,19 +20,24 @@ export default function QuickEmployerSignup() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim() || password.length < 6) {
-      toast.error("Please fill all fields (password min 6 chars)");
+    const validation = validateSchema(quickEmployerSignupSchema, {
+      fullName,
+      email,
+      password,
+    });
+    if (!validation.success) {
+      toast.error(Object.values(validation.errors)[0]);
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
+        email: validation.data.email.trim(),
+        password: validation.data.password,
         options: {
           emailRedirectTo: `${window.location.origin}/employer/dashboard`,
           data: {
-            full_name: fullName.trim(),
+            full_name: validation.data.fullName.trim(),
             role: "employer",
           },
         },

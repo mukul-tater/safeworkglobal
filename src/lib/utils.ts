@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { formatJobSalaryNative } from "@/lib/jobSalaryUtils";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -19,14 +20,16 @@ export function formatSalaryINR(
   max: number | null | undefined,
   currency: string = 'INR'
 ): string {
-  const toINR = (val: number) => (currency === 'INR' ? val : val * 83);
+  if (currency !== 'INR') {
+    return formatJobSalaryNative(min, max, currency, 'Salary not specified');
+  }
 
   if (min == null && max == null) return 'Salary not specified';
   if (min != null && max != null) {
-    return `₹${toINR(min).toLocaleString('en-IN')} - ₹${toINR(max).toLocaleString('en-IN')}`;
+    return `₹${min.toLocaleString('en-IN')} - ₹${max.toLocaleString('en-IN')}`;
   }
-  if (min != null) return `From ₹${toINR(min).toLocaleString('en-IN')}`;
-  return `Up to ₹${toINR(max!).toLocaleString('en-IN')}`;
+  if (min != null) return `From ₹${min.toLocaleString('en-IN')}`;
+  return `Up to ₹${max!.toLocaleString('en-IN')}`;
 }
 
 /**
@@ -48,9 +51,11 @@ export function formatExpectedSalary(
 export function formatSalaryLakh(
   min: number | null | undefined,
   max: number | null | undefined,
-  currency: string = 'USD'
+  currency: string = 'INR'
 ): string {
-  const toINR = (val: number) => (currency === 'INR' ? val : val * 83);
+  if (currency !== 'INR') {
+    return formatJobSalaryNative(min, max, currency);
+  }
 
   const toLakhLabel = (inr: number) => {
     const lakhs = inr / 100_000;
@@ -64,10 +69,10 @@ export function formatSalaryLakh(
 
   if (min == null && max == null) return 'Salary on application';
   if (min != null && max != null) {
-    return `${toLakhLabel(toINR(min))} – ${toLakhLabel(toINR(max))}`;
+    return `${toLakhLabel(min)} – ${toLakhLabel(max)}`;
   }
-  if (min != null) return `From ${toLakhLabel(toINR(min))}`;
-  return `Up to ${toLakhLabel(toINR(max!))}`;
+  if (min != null) return `From ${toLakhLabel(min)}`;
+  return `Up to ${toLakhLabel(max!)}`;
 }
 
 export function debounce<T extends (...args: any[]) => void>(

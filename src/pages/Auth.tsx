@@ -14,6 +14,7 @@ import { lovable } from '@/integrations/lovable/index';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { passwordValidation } from '@/components/ValidatedInput';
+import { isValidIndianMobile } from '@/lib/validations/common';
 
 type AuthView = 'login' | 'signup' | 'forgot' | 'role-select';
 type LoginMethod = 'email' | 'mobile';
@@ -227,6 +228,7 @@ export default function Auth() {
     if (!signupRole) { setError('Please select a role'); return; }
     if (!signupName.trim()) { setError('Full name is required'); return; }
     if (!signupPhone.trim()) { setError('Mobile number is required'); return; }
+    if (!isValidIndianMobile(signupPhone)) { setError('Enter a valid 10-digit Indian mobile number'); return; }
     {
       const pwErr = passwordValidation(signupPassword);
       if (pwErr) { setError(pwErr); return; }
@@ -495,7 +497,17 @@ export default function Auth() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="signup-phone">Mobile Number *</Label>
-                    <Input id="signup-phone" type="tel" placeholder="+91 98765 43210" value={signupPhone} onChange={e => setSignupPhone(e.target.value)} required className="h-11" />
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="10-digit mobile number"
+                      value={signupPhone}
+                      onChange={e => setSignupPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      required
+                      className="h-11"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="signup-email">Email (recommended)</Label>

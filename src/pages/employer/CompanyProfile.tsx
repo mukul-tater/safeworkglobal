@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { saveCompanyProfilePartial } from "@/lib/autoSaveProfiles";
+import { companyProfileSchema } from "@/lib/validations/profile";
+import { validateSchema } from "@/lib/validations/common";
 
 interface EmployerProfileData {
   company_name: string;
@@ -28,6 +30,7 @@ export default function CompanyProfile() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<EmployerProfileData>({
     company_name: '',
     company_registration: '',
@@ -93,10 +96,18 @@ export default function CompanyProfile() {
   const handleSave = async () => {
     if (!user) return;
 
+    const validation = validateSchema(companyProfileSchema, formData);
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      toast.error(Object.values(validation.errors)[0]);
+      return;
+    }
+    setFieldErrors({});
+
     try {
       setSaving(true);
-      await saveCompanyProfilePartial(user.id, formData);
-      markReady(formData);
+      await saveCompanyProfilePartial(user.id, validation.data);
+      markReady(validation.data);
       toast.success("Company profile updated successfully!");
     } catch (error) {
       console.error('Error saving company profile:', error);
@@ -181,6 +192,7 @@ export default function CompanyProfile() {
                   value={formData.company_name} 
                   onChange={(e) => handleChange('company_name', e.target.value)}
                 />
+                {fieldErrors.company_name && <p className="text-sm text-destructive mt-1">{fieldErrors.company_name}</p>}
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -192,23 +204,25 @@ export default function CompanyProfile() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="industry">Industry Type</Label>
+                  <Label htmlFor="industry">Industry Type *</Label>
                   <Input 
                     id="industry"
                     value={formData.industry} 
                     onChange={(e) => handleChange('industry', e.target.value)}
                   />
+                  {fieldErrors.industry && <p className="text-sm text-destructive mt-1">{fieldErrors.industry}</p>}
                 </div>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="company_size">Company Size</Label>
+                  <Label htmlFor="company_size">Company Size *</Label>
                   <Input 
                     id="company_size"
                     value={formData.company_size} 
                     onChange={(e) => handleChange('company_size', e.target.value)}
                     placeholder="e.g., 50-100 employees"
                   />
+                  {fieldErrors.company_size && <p className="text-sm text-destructive mt-1">{fieldErrors.company_size}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Year Established</label>

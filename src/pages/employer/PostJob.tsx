@@ -24,6 +24,7 @@ import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { saveJobDraftPartial, loadJobDraftById, loadLatestJobDraft, hasJobContent, type JobPostAutoSaveData } from "@/lib/autoSaveJobs";
+import { todayDateInputValue } from "@/lib/validations/common";
 import {
   readPostJobDraftCache,
   writePostJobDraftCache,
@@ -559,6 +560,7 @@ export default function PostJob() {
                     <Input
                       id="expires_at"
                       type="date"
+                      min={todayDateInputValue()}
                       {...register("expires_at")}
                     />
                     {errors.expires_at && (

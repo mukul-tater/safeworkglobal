@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { formatSalaryLakh } from '@/lib/utils';
-import { SALARY_FILTER_MIN, SALARY_FILTER_MAX } from '@/lib/jobSalaryUtils';
+import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 
 const JOBS_PER_PAGE = 24;
 
@@ -116,8 +116,8 @@ export default function Jobs() {
       }
 
       const formattedJobs: Job[] = (data || []).map((job: any) => {
-        const salaryMinVal = job.salary_min == null ? null : (job.currency === 'INR' ? job.salary_min : job.salary_min * 83);
-        const salaryMaxVal = job.salary_max == null ? null : (job.currency === 'INR' ? job.salary_max : job.salary_max * 83);
+        const salaryMinVal = job.salary_min == null ? null : convertSalaryToINR(job.salary_min, job.currency);
+        const salaryMaxVal = job.salary_max == null ? null : convertSalaryToINR(job.salary_max, job.currency);
         
         return {
           id: job.id,

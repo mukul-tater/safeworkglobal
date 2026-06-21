@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { requiredFutureDateString, optionalFutureDateString } from "@/lib/validations/common";
 
 const salaryRangeRefine = {
   refine: (data: { salary_min?: number; salary_max?: number }) => {
@@ -82,8 +83,7 @@ const jobPostingBaseSchema = z.object({
 
   remote_allowed: z.boolean().default(false),
 
-  expires_at: z.string()
-    .min(1, "Expiry date is required"),
+  expires_at: requiredFutureDateString,
 
   skills: z.array(z.string().trim().min(1)).optional().default([]),
 
@@ -109,7 +109,7 @@ export const adminJobEditSchema = jobPostingBaseSchema
     requirements: z
       .union([z.string().trim().max(3000), z.literal("")])
       .optional(),
-    expires_at: z.string().optional().or(z.literal("")),
+    expires_at: optionalFutureDateString,
     status: z.enum([
       "DRAFT",
       "PENDING",

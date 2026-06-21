@@ -210,11 +210,18 @@ export default function EmployerProfile() {
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">Phone Number *</Label>
                 <Input
                   id="phone"
-                  {...register('phone')}
-                  placeholder="+1234567890"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
+                  {...register('phone', {
+                    onChange: (e) => {
+                      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    },
+                  })}
+                  placeholder="10-digit mobile number"
                   className={errors.phone ? 'border-destructive' : ''}
                 />
                 {errors.phone && (

@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { INDIAN_MOBILE_REGEX } from '@/lib/validations/common';
 
-const phoneRegex = /^[6-9]\d{9}$/;
+const phoneRegex = INDIAN_MOBILE_REGEX;
 
 const emailSchema = z.string().trim().email('Enter a valid email address').max(255);
 

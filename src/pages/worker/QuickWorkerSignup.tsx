@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Loader2, Phone, Mail, ShieldCheck, CheckCircle2, ArrowLeft, HardHat } from 'lucide-react';
 import { NATIONALITIES } from '@/lib/constants';
 import { lovable } from '@/integrations/lovable/index';
+import { isValidIndianMobile, normalizeIndianMobile } from '@/lib/validations/common';
 
 type Method = 'mobile' | 'email';
 type Step = 'form' | 'otp';
@@ -68,10 +69,10 @@ export default function QuickWorkerSignup() {
 
   const validate = (): string | null => {
     if (!name.trim()) return 'Please enter your name';
+    if (name.trim().length < 2) return 'Name must be at least 2 characters';
     if (!country) return 'Please select your country';
     if (method === 'mobile') {
-      const digits = mobile.replace(/\D/g, '');
-      if (digits.length < 8) return 'Please enter a valid mobile number';
+      if (!isValidIndianMobile(mobile)) return 'Enter a valid 10-digit Indian mobile number';
     } else {
       if (!/^\S+@\S+\.\S+$/.test(email)) return 'Please enter a valid email';
     }
@@ -266,7 +267,7 @@ export default function QuickWorkerSignup() {
                       type="tel"
                       placeholder="+91 98765 43210"
                       value={mobile}
-                      onChange={(e) => setMobile(e.target.value)}
+                      onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
                       required
                       className="h-11"
                     />

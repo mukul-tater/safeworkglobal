@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { X, MapPin, Building2, DollarSign, Briefcase, Check, Zap, Clock, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
+import { formatSalaryLakh } from '@/lib/utils';
 
 interface CompareJob {
   id: string;
@@ -57,8 +59,8 @@ export default function JobComparisonDrawer({
     let maxSalary = 0;
     
     jobs.forEach(job => {
-      const inrMin = job.currency === 'INR' ? job.salary_min : job.salary_min * 83;
-      const inrMax = job.currency === 'INR' ? job.salary_max : job.salary_max * 83;
+      const inrMin = convertSalaryToINR(job.salary_min, job.currency);
+      const inrMax = convertSalaryToINR(job.salary_max, job.currency);
       minSalary = Math.min(minSalary, inrMin / 1000);
       maxSalary = Math.max(maxSalary, inrMax / 1000);
     });
@@ -83,7 +85,7 @@ export default function JobComparisonDrawer({
       }
       
       // Salary range filter
-      const inrMin = job.currency === 'INR' ? job.salary_min : job.salary_min * 83;
+      const inrMin = convertSalaryToINR(job.salary_min, job.currency);
       const salaryInK = inrMin / 1000;
       
       if (salaryInK < salaryRange[0] || salaryInK > salaryRange[1]) {
@@ -94,11 +96,8 @@ export default function JobComparisonDrawer({
     });
   }, [jobs, visaOnly, salaryRange]);
 
-  const formatSalary = (min: number, max: number, currency: string) => {
-    const inrMin = currency === 'INR' ? min : min * 83;
-    const inrMax = currency === 'INR' ? max : max * 83;
-    return `₹${(inrMin / 1000).toFixed(0)}K - ₹${(inrMax / 1000).toFixed(0)}K`;
-  };
+  const formatSalary = (min: number, max: number, currency: string) =>
+    formatSalaryLakh(min, max, currency);
 
   const getDaysAgo = (dateString: string) => {
     const days = Math.floor((Date.now() - new Date(dateString).getTime()) / (1000 * 60 * 60 * 24));

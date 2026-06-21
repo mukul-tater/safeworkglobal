@@ -22,6 +22,11 @@ import {
 import AutoSaveStatus from '@/components/profile/AutoSaveStatus';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { saveWorkerOnboardingPartial } from '@/lib/autoSaveProfiles';
+import { validateSchema } from '@/lib/validations/common';
+import {
+  workerOnboardingStep1Schema,
+  workerOnboardingStep2Schema,
+} from '@/lib/validations/onboarding';
 
 const STEPS = [
   { id: 1, title: 'Basic Details', icon: MapPin },
@@ -33,6 +38,7 @@ export default function WorkerOnboarding() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   // Step 1 — Basic Details
@@ -208,6 +214,36 @@ export default function WorkerOnboarding() {
   const canProceedStep1 = fullName.trim() && mobile.trim() && currentCity.trim() && country;
   const canProceedStep2 = primaryWorkType && experienceRange && skillLevel;
 
+  const handleNext = () => {
+    if (step === 1) {
+      const result = validateSchema(workerOnboardingStep1Schema, {
+        fullName,
+        mobile,
+        currentCity,
+        country,
+        preferredWorkCity,
+      });
+      if (!result.success) {
+        setStepErrors(result.errors);
+        toast.error(Object.values(result.errors)[0]);
+        return;
+      }
+    } else if (step === 2) {
+      const result = validateSchema(workerOnboardingStep2Schema, {
+        primaryWorkType,
+        experienceRange,
+        skillLevel,
+      });
+      if (!result.success) {
+        setStepErrors(result.errors);
+        toast.error(Object.values(result.errors)[0]);
+        return;
+      }
+    }
+    setStepErrors({});
+    setStep((s) => s + 1);
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
@@ -301,11 +337,20 @@ export default function WorkerOnboarding() {
                 <div className="space-y-1.5">
                   <Label>Full Name *</Label>
                   <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" />
+                  {stepErrors.fullName && <p className="text-sm text-destructive">{stepErrors.fullName}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Mobile Number *</Label>
-                  <Input value={mobile} onChange={e => setMobile(e.target.value)} placeholder="+91 98765 43210" type="tel" />
+                  <Input
+                    value={mobile}
+                    onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="10-digit mobile number"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                  />
                   <p className="text-xs text-muted-foreground">WhatsApp verification will be sent to this number</p>
+                  {stepErrors.mobile && <p className="text-sm text-destructive">{stepErrors.mobile}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Email (optional)</Label>
@@ -315,6 +360,7 @@ export default function WorkerOnboarding() {
                   <div className="space-y-1.5">
                     <Label>Current City *</Label>
                     <Input value={currentCity} onChange={e => setCurrentCity(e.target.value)} placeholder="e.g. Mumbai" />
+                    {stepErrors.currentCity && <p className="text-sm text-destructive">{stepErrors.currentCity}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <Label>Country *</Label>
@@ -326,6 +372,7 @@ export default function WorkerOnboarding() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {stepErrors.country && <p className="text-sm text-destructive">{stepErrors.country}</p>}
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -348,6 +395,7 @@ export default function WorkerOnboarding() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {stepErrors.primaryWorkType && <p className="text-sm text-destructive">{stepErrors.primaryWorkType}</p>}
                 </div>
 
                 <div className="space-y-1.5">
@@ -377,6 +425,7 @@ export default function WorkerOnboarding() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {stepErrors.experienceRange && <p className="text-sm text-destructive">{stepErrors.experienceRange}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <Label>Skill Level *</Label>
@@ -388,6 +437,7 @@ export default function WorkerOnboarding() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {stepErrors.skillLevel && <p className="text-sm text-destructive">{stepErrors.skillLevel}</p>}
                   </div>
                 </div>
 
@@ -499,7 +549,7 @@ export default function WorkerOnboarding() {
 
           {step < STEPS.length ? (
             <Button
-              onClick={() => setStep(s => s + 1)}
+              onClick={handleNext}
               disabled={step === 1 ? !canProceedStep1 : step === 2 ? !canProceedStep2 : false}
             >
               Next <ChevronRight className="h-4 w-4 ml-1" />

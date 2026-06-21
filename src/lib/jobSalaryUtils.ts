@@ -1,3 +1,54 @@
+/** Display symbols for supported job salary currencies. */
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  INR: '₹',
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  AED: 'AED',
+  SAR: 'SAR',
+  QAR: 'QAR',
+};
+
+/** Approximate monthly rates to INR — used for salary filter comparisons only, not display. */
+const CURRENCY_TO_INR: Record<string, number> = {
+  INR: 1,
+  USD: 83,
+  EUR: 90,
+  GBP: 105,
+  AED: 22.7,
+  SAR: 22.1,
+  QAR: 22.8,
+};
+
+export function convertSalaryToINR(amount: number, currency: string): number {
+  const rate = CURRENCY_TO_INR[currency] ?? 1;
+  return Math.round(amount * rate);
+}
+
+function formatNativeAmount(amount: number, currency: string): string {
+  const sym = CURRENCY_SYMBOLS[currency] ?? currency;
+  const formatted = amount.toLocaleString('en-IN');
+  if (currency === 'INR' || currency === 'USD' || currency === 'EUR' || currency === 'GBP') {
+    return `${sym}${formatted}`;
+  }
+  return `${sym} ${formatted}`;
+}
+
+/** Formats a salary range in the job's own currency (no FX conversion). */
+export function formatJobSalaryNative(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  currency: string = 'INR',
+  emptyLabel = 'Salary on application',
+): string {
+  if (min == null && max == null) return emptyLabel;
+  if (min != null && max != null) {
+    return `${formatNativeAmount(min, currency)} – ${formatNativeAmount(max, currency)}`;
+  }
+  if (min != null) return `From ${formatNativeAmount(min, currency)}`;
+  return `Up to ${formatNativeAmount(max!, currency)}`;
+}
+
 /** Practical monthly salary range for skilled overseas blue-collar jobs (INR). */
 export const SALARY_FLOOR_INR = 50_000;
 export const SALARY_CEILING_INR = 100_000;
