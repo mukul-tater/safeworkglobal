@@ -3,10 +3,7 @@ import { formatSalaryINR } from '@/lib/utils';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import MobileBottomNav from '@/components/MobileBottomNav';
-import ScrollReveal from '@/components/ScrollReveal';
+import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
 import SEOHead from '@/components/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -335,31 +332,21 @@ export default function JobDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
-        <Header />
-        <MobileBottomNav />
-        <main className="flex-1 py-6 md:py-10">
-          <JobDetailSkeleton />
-        </main>
-        <Footer />
-      </div>
+      <PublicOrWorkerPortalLayout page="jobs">
+        <JobDetailSkeleton />
+      </PublicOrWorkerPortalLayout>
     );
   }
 
   if (!job) {
     return (
-      <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
-        <Header />
-        <MobileBottomNav />
-        <main className="flex-1 py-6 md:py-10">
-          <div className="container mx-auto px-4 sm:px-6 text-center py-12">
-            <h1 className="text-2xl font-bold mb-4">Job Not Found</h1>
-            <p className="text-muted-foreground mb-6">This job listing may have been removed or expired.</p>
-            <Button onClick={() => navigate('/jobs')}>Browse All Jobs</Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <PublicOrWorkerPortalLayout page="jobs">
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold mb-4">Job Not Found</h1>
+          <p className="text-muted-foreground mb-6">This job listing may have been removed or expired.</p>
+          <Button onClick={() => navigate('/jobs')}>Browse All Jobs</Button>
+        </div>
+      </PublicOrWorkerPortalLayout>
     );
   }
 
@@ -404,27 +391,25 @@ export default function JobDetail() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
-      <SEOHead
-        title={`${job.title} at ${companyName} | SafeWorkGlobal`}
-        description={`Apply for ${job.title} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(job.salary_min, job.salary_max, job.currency)}/month.`}
-        keywords={`${job.title}, ${job.location} jobs, ${job.country} jobs, ${companyName} careers, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
-        canonicalUrl={`${window.location.origin}/jobs/${job.slug}`}
-        ogType="article"
-        structuredData={jobStructuredData}
-      />
-      <Header />
-      <MobileBottomNav />
-      
-      <main className="flex-1 py-6 md:py-10">
-        <div className="container mx-auto px-4 sm:px-6">
-          {/* Back Button */}
-          <Link to="/jobs">
-            <Button variant="ghost" className="mb-6">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Jobs
-            </Button>
-          </Link>
+    <PublicOrWorkerPortalLayout
+      page="jobs"
+      publicHead={
+        <SEOHead
+          title={`${job.title} at ${companyName} | SafeWorkGlobal`}
+          description={`Apply for ${job.title} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(job.salary_min, job.salary_max, job.currency)}/month.`}
+          keywords={`${job.title}, ${job.location} jobs, ${job.country} jobs, ${companyName} careers, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
+          canonicalUrl={`${window.location.origin}/jobs/${job.slug}`}
+          ogType="article"
+          structuredData={jobStructuredData}
+        />
+      }
+    >
+      <Link to="/jobs">
+        <Button variant="ghost" className="mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Jobs
+        </Button>
+      </Link>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
@@ -663,12 +648,6 @@ export default function JobDetail() {
               </Card>
             </div>
           </div>
-        </div>
-      </main>
-
-      <ScrollReveal>
-        <Footer />
-      </ScrollReveal>
 
       {/* Application Dialog */}
       <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
@@ -729,6 +708,6 @@ export default function JobDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PublicOrWorkerPortalLayout>
   );
 }

@@ -48,11 +48,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
+      ...options,
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
-      ...options,
     });
   } catch {
     if (MOCK_FALLBACK_ROUTES.has(path)) {

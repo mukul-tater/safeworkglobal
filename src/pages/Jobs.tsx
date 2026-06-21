@@ -1,10 +1,7 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
 import { useState, useEffect, useMemo } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import MobileBottomNav from '@/components/MobileBottomNav';
 import SEOHead from '@/components/SEOHead';
+import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
+import { useWorkerAuth } from '@/modules/worker-registration/context/WorkerAuthContext';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,7 +39,8 @@ interface Job {
 type SortOption = 'recent' | 'salary-high' | 'salary-low' | 'country-asc' | 'country-desc';
 
 export default function Jobs() {
-  const { user, role, isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated: isPhase1Worker } = useWorkerAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState<JobFilters>({
@@ -335,105 +333,102 @@ export default function Jobs() {
     </Card>
   );
 
-  // Worker Portal Layout
-  if (role === 'worker') {
-    return (
-      <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
-            <div className="mb-5 md:mb-8">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2">Find Your Next Global Opportunity</h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                Browse thousands of international job opportunities with visa sponsorship
-              </p>
-            </div>
+  const jobsContent = (
+    <>
+      <header className="mb-5 md:mb-8">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2">Find Your Next Global Opportunity</h1>
+        <p className="text-sm md:text-base text-muted-foreground">
+          Browse thousands of international job opportunities with visa sponsorship
+        </p>
+      </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[340px_1fr] gap-4 lg:gap-6">
-              {/* Filters Sidebar */}
-              <aside className="order-2 lg:order-1">
-                <JobSearchFilters
-                  filters={filters}
-                  onFiltersChange={setFilters}
-                  onSearch={handleSearch}
-                  onSaveSearch={() => setShowSaveDialog(true)}
-                  loading={loading}
-                />
-                
-                <Card className="mt-4 p-4 hidden lg:block">
-                  <Link to="/worker/saved-searches">
-                    <Button variant="outline" className="w-full">
-                      View Saved Searches
-                    </Button>
-                  </Link>
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[340px_1fr] gap-4 lg:gap-6">
+        <aside className="order-2 lg:order-1">
+          <JobSearchFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            onSearch={handleSearch}
+            onSaveSearch={() => setShowSaveDialog(true)}
+            loading={loading}
+          />
+
+          {isAuthenticated && !isPhase1Worker && (
+            <Card className="mt-4 p-4 hidden lg:block">
+              <Link to="/worker/saved-searches">
+                <Button variant="outline" className="w-full">
+                  View Saved Searches
+                </Button>
+              </Link>
+            </Card>
+          )}
+        </aside>
+
+        <div className="space-y-3 md:space-y-4 order-1 lg:order-2">
+          <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
+            <h2 className="text-base sm:text-lg md:text-xl font-semibold">
+              {loading ? 'Searching...' : `${jobs.length} Jobs Found`}
+            </h2>
+            <select
+              className="border rounded-lg px-3 py-2 text-sm bg-card w-full xs:w-auto"
+              value={sortOption}
+              onChange={(e) => handleSortChange(e.target.value as SortOption)}
+            >
+              <option value="recent">Most Recent</option>
+              <option value="salary-high">Salary (High to Low)</option>
+              <option value="salary-low">Salary (Low to High)</option>
+              <option value="country-asc">Country (A-Z)</option>
+              <option value="country-desc">Country (Z-A)</option>
+            </select>
+          </div>
+
+          {loading ? (
+            <Card className="p-8 md:p-12 text-center">
+              <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground text-sm md:text-base">Loading jobs...</p>
+            </Card>
+          ) : (
+            <>
+              {paginatedJobs.map((job) => (
+                <JobCard key={job.id} job={job} />
+              ))}
+
+              {jobs.length === 0 && (
+                <Card className="p-8 md:p-12 text-center">
+                  <Briefcase className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg md:text-xl font-semibold mb-2">No jobs found</h3>
+                  <p className="text-muted-foreground text-sm md:text-base">
+                    Try adjusting your filters or search criteria
+                  </p>
                 </Card>
-              </aside>
+              )}
 
-              {/* Job Listings */}
-              <div className="space-y-3 md:space-y-4 order-1 lg:order-2">
-                <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
-                  <h2 className="text-base sm:text-lg md:text-xl font-semibold">
-                    {loading ? 'Searching...' : `${jobs.length} Jobs Found`}
-                  </h2>
-                  <select 
-                    className="border rounded-lg px-3 py-2 text-sm bg-card w-full xs:w-auto"
-                    value={sortOption}
-                    onChange={(e) => handleSortChange(e.target.value as SortOption)}
-                  >
-                    <option value="recent">Most Recent</option>
-                    <option value="salary-high">Salary (High to Low)</option>
-                    <option value="salary-low">Salary (Low to High)</option>
-                    <option value="country-asc">Country (A-Z)</option>
-                    <option value="country-desc">Country (Z-A)</option>
-                  </select>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-4">
+                  <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground px-3">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                    Next <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
                 </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
-                {loading ? (
-                  <Card className="p-8 md:p-12 text-center">
-                    <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground text-sm md:text-base">Loading jobs...</p>
-                  </Card>
-                ) : (
-                  <>
-                    {paginatedJobs.map((job) => (
-                      <JobCard key={job.id} job={job} />
-                    ))}
+      <SavedSearchDialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        onSave={handleSaveSearch}
+      />
+    </>
+  );
 
-                    {jobs.length === 0 && (
-                      <Card className="p-8 md:p-12 text-center">
-                        <Briefcase className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg md:text-xl font-semibold mb-2">No Jobs Found</h3>
-                        <p className="text-muted-foreground text-sm md:text-base">
-                          Try adjusting your filters to see more results
-                        </p>
-                      </Card>
-                    )}
-
-                    {totalPages > 1 && (
-                      <div className="flex items-center justify-center gap-2 pt-4">
-                        <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                          <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-                        </Button>
-                        <span className="text-sm text-muted-foreground px-3">
-                          Page {currentPage} of {totalPages}
-                        </span>
-                        <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                          Next <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            <SavedSearchDialog
-              open={showSaveDialog}
-              onOpenChange={setShowSaveDialog}
-              onSave={handleSaveSearch}
-            />
-          </DashboardLayout>
-    );
-  }
-
-  // Structured data for job listings
+  // Structured data for job listings (public SEO only)
   const jobListingStructuredData = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -460,116 +455,21 @@ export default function Jobs() {
     }))
   };
 
-  // Default Public Layout
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
-      <SEOHead
-        title="International Jobs | Find Global Opportunities | SafeWorkGlobal"
-        description="Browse 900+ international job opportunities for skilled workers in construction, electrical, welding, and more. Visa sponsorship available across 40+ countries."
-        keywords="international jobs, overseas jobs, visa sponsorship jobs, construction jobs abroad, welding jobs overseas, skilled worker jobs, gulf jobs, middle east jobs"
-        canonicalUrl={`${window.location.origin}/jobs`}
-        ogType="website"
-        structuredData={jobListingStructuredData}
-      />
-      <Header />
-      <MobileBottomNav />
-      
-      <main className="flex-1 container mx-auto px-4 sm:px-6 py-6 md:py-10">
-        <header className="mb-5 md:mb-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2">Find Your Next Global Opportunity</h1>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Browse thousands of international job opportunities with visa sponsorship
-          </p>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[340px_1fr] gap-4 lg:gap-6">
-          {/* Filters Sidebar */}
-          <aside className="order-2 lg:order-1">
-            <JobSearchFilters
-              filters={filters}
-              onFiltersChange={setFilters}
-              onSearch={handleSearch}
-              onSaveSearch={() => setShowSaveDialog(true)}
-              loading={loading}
-            />
-            
-            {user && (
-              <Card className="mt-4 p-4 hidden lg:block">
-                <Link to="/worker/saved-searches">
-                  <Button variant="outline" className="w-full">
-                    View Saved Searches
-                  </Button>
-                </Link>
-              </Card>
-            )}
-          </aside>
-
-          {/* Job Listings */}
-          <div className="space-y-3 md:space-y-4 order-1 lg:order-2">
-            <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
-              <h2 className="text-base sm:text-lg md:text-xl font-semibold">
-                {loading ? 'Searching...' : `${jobs.length} Jobs Found`}
-              </h2>
-              <select 
-                className="border rounded-lg px-3 py-2 text-sm bg-card w-full xs:w-auto"
-                value={sortOption}
-                onChange={(e) => handleSortChange(e.target.value as SortOption)}
-              >
-                <option value="recent">Most Recent</option>
-                <option value="salary-high">Salary (High to Low)</option>
-                <option value="salary-low">Salary (Low to High)</option>
-                <option value="country-asc">Country (A-Z)</option>
-                <option value="country-desc">Country (Z-A)</option>
-              </select>
-            </div>
-
-            {loading ? (
-              <Card className="p-8 md:p-12 text-center">
-                <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground text-sm md:text-base">Loading jobs...</p>
-              </Card>
-            ) : (
-              <>
-                {paginatedJobs.map((job) => (
-                  <JobCard key={job.id} job={job} />
-                ))}
-
-                {jobs.length === 0 && (
-                  <Card className="p-8 md:p-12 text-center">
-                    <Briefcase className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg md:text-xl font-semibold mb-2">No jobs found</h3>
-                    <p className="text-muted-foreground text-sm md:text-base">
-                      Try adjusting your filters or search criteria
-                    </p>
-                  </Card>
-                )}
-
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 pt-4">
-                    <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                      <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-                    </Button>
-                    <span className="text-sm text-muted-foreground px-3">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                      Next <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </main>
-
-      <Footer />
-
-      <SavedSearchDialog
-        open={showSaveDialog}
-        onOpenChange={setShowSaveDialog}
-        onSave={handleSaveSearch}
-      />
-    </div>
+    <PublicOrWorkerPortalLayout
+      page="jobs"
+      publicHead={
+        <SEOHead
+          title="International Jobs | Find Global Opportunities | SafeWorkGlobal"
+          description="Browse 900+ international job opportunities for skilled workers in construction, electrical, welding, and more. Visa sponsorship available across 40+ countries."
+          keywords="international jobs, overseas jobs, visa sponsorship jobs, construction jobs abroad, welding jobs overseas, skilled worker jobs, gulf jobs, middle east jobs"
+          canonicalUrl={`${window.location.origin}/jobs`}
+          ogType="website"
+          structuredData={jobListingStructuredData}
+        />
+      }
+    >
+      {jobsContent}
+    </PublicOrWorkerPortalLayout>
   );
 }

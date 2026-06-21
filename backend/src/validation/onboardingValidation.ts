@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 const pincodeRegex = /^[1-9]\d{5}$/;
 
+const emptyToUndefined = (val: unknown) =>
+  val === '' || val === null || val === undefined ? undefined : val;
+
 export const GCC_COUNTRIES = [
   'UAE',
   'Saudi Arabia',
@@ -22,14 +25,23 @@ export const EDUCATION_LEVELS = [
 
 export const onboardingStep1Schema = z.object({
   step: z.literal(1),
-  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  dateOfBirth: z
+    .string()
+    .min(1, 'Date of birth is required')
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Enter a valid date of birth'),
   gender: z.enum(['MALE', 'FEMALE', 'OTHER'], { required_error: 'Gender is required' }),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  email: z.preprocess(
+    emptyToUndefined,
+    z.string().trim().email('Invalid email').optional()
+  ),
   address: z.string().trim().min(5, 'Address is required').max(500),
   pincode: z.string().regex(pincodeRegex, 'Enter a valid 6-digit pincode'),
   stateId: z.coerce.number().int().positive('State is required'),
   districtId: z.coerce.number().int().positive('District is required'),
-  educationLevel: z.enum(EDUCATION_LEVELS).optional().or(z.literal('')),
+  educationLevel: z.preprocess(
+    emptyToUndefined,
+    z.enum(EDUCATION_LEVELS).optional()
+  ),
 });
 
 export const onboardingStep2Schema = z.object({
@@ -44,11 +56,17 @@ export const onboardingStep2Schema = z.object({
     required_error: 'Availability is required',
   }),
   openToRelocation: z.boolean(),
-  expectedSalaryMin: z.coerce.number().positive('Expected salary must be positive').optional(),
+  expectedSalaryMin: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().positive('Expected salary must be positive').optional()
+  ),
   expectedSalaryCurrency: z.enum(['INR', 'AED', 'SAR', 'QAR', 'USD']).default('AED'),
   languages: z.array(z.string()).min(1, 'Select at least one language'),
-  secondarySkillIds: z.array(z.number().int().positive()).max(5).optional(),
-  previousEmployer: z.string().trim().max(150).optional().or(z.literal('')),
+  secondarySkillIds: z.array(z.coerce.number().int().positive()).max(5).optional(),
+  previousEmployer: z.preprocess(
+    emptyToUndefined,
+    z.string().trim().max(150).optional()
+  ),
 });
 
 export const skillProofCreateSchema = z.object({

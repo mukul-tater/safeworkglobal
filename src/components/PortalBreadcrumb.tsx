@@ -64,6 +64,11 @@ interface PortalBreadcrumbProps {
   currentPageTitle?: string;
 }
 
+const phase1WorkerRouteLabels: BreadcrumbConfig = {
+  home: "Dashboard",
+  onboarding: "Complete Profile",
+};
+
 export default function PortalBreadcrumb({ currentPageTitle }: PortalBreadcrumbProps) {
   const location = useLocation();
   const pathSegments = location.pathname.split("/").filter(Boolean);
@@ -71,12 +76,42 @@ export default function PortalBreadcrumb({ currentPageTitle }: PortalBreadcrumbP
   if (pathSegments.length === 0) return null;
 
   const getLabel = (segment: string): string => {
-    return routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
+    return routeLabels[segment] || phase1WorkerRouteLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
   };
 
   const buildPath = (index: number): string => {
     return "/" + pathSegments.slice(0, index + 1).join("/");
   };
+
+  // Phase-1 worker portal (/home, /onboarding)
+  const isPhase1WorkerPage = pathSegments[0] === "home" || pathSegments[0] === "onboarding";
+  if (isPhase1WorkerPage) {
+    const currentSegment = pathSegments[0];
+    const pageLabel = currentPageTitle || getLabel(currentSegment);
+
+    return (
+      <Breadcrumb className="mb-4">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/home" className="flex items-center gap-1.5">
+                <Home className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Worker Portal</span>
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          {currentSegment !== "home" && (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{pageLabel}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </>
+          )}
+        </BreadcrumbList>
+      </Breadcrumb>
+    );
+  }
 
   // Determine the portal type based on the first segment
   const portalType = pathSegments[0];

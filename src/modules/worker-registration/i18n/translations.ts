@@ -1,0 +1,194 @@
+import type { TranslationParams, WorkerLocale } from "./types";
+
+export type TranslationKey = keyof typeof en;
+
+const en = {
+  "lang.label": "Language",
+
+  "nav.portalLabel": "Worker Portal",
+  "nav.overview": "Overview",
+  "nav.dashboard": "Dashboard",
+  "nav.jobs": "Find Jobs",
+  "nav.completeProfile": "Complete Profile",
+
+  "header.home": "Home",
+  "header.help": "Help & Support",
+  "header.signOut": "Sign Out",
+
+  "trust.freeTitle": "Register & apply — ₹0",
+  "trust.freeSub": "Account and applying are completely free",
+  "trust.feeTitle": "Fee only after selection",
+  "trust.feeSub": "₹35,400 only when you are selected",
+
+  "hero.brand": "SafeWorkGlobal",
+  "hero.greeting": "Hello, {{name}}!",
+  "hero.jobReady": "You are job-ready — browse verified overseas jobs and apply.",
+  "hero.stepsRemaining": "{{count}} step(s) left — then you can apply for {{skill}}jobs abroad.",
+  "hero.almostThere": "Almost there — finish your profile to apply.",
+  "hero.stepProgress": "Step {{current}}/{{total}} — {{title}}",
+  "hero.browseJobs": "Browse overseas jobs",
+  "hero.completeProfile": "Complete your profile",
+
+  "jobs.title": "Overseas jobs",
+  "jobs.subtitleCountry": "Verified jobs in {{country}}",
+  "jobs.subtitleDefault": "UAE, Saudi, Qatar and more countries",
+  "jobs.viewAll": "View all",
+  "jobs.lockTitle": "Complete your profile to apply",
+  "jobs.lockSub": "You can still browse salaries below.",
+  "jobs.empty": "New jobs coming soon. Chat with us on WhatsApp.",
+  "jobs.browseAll": "Browse all jobs",
+  "jobs.perMonth": "/ month",
+  "jobs.verified": "Verified",
+
+  "checklist.remaining": "{{count}} item(s) left",
+  "checklist.allDone": "All done!",
+  "checklist.remainingSub": "Complete these steps — then you can apply",
+  "checklist.completeSub": "Profile complete — start applying",
+  "checklist.personal": "Personal details",
+  "checklist.personalHint": "Name, date of birth, address",
+  "checklist.location": "Location",
+  "checklist.locationHint": "Your state and district",
+  "checklist.work": "Skill & country",
+  "checklist.workHint": "Skill and target country abroad",
+  "checklist.skillProof": "Work photos/videos",
+  "checklist.skillProofDone": "{{count}} skill(s) uploaded",
+  "checklist.skillProofEmpty": "At least 1 photo or video",
+
+  "stats.skills": "Skill proof",
+  "stats.country": "Country",
+  "stats.applications": "Applications",
+
+  "quickActions.more": "More options",
+  "quickActions.browseMore": "Browse more jobs",
+  "quickActions.browseMoreDesc": "UAE, Saudi, Qatar — all countries",
+  "quickActions.updateProof": "Update photos/videos",
+  "quickActions.updateProofDesc": "Show employers your work",
+  "quickActions.needHelp": "Need help?",
+  "quickActions.needHelpDesc": "Chat with us on WhatsApp",
+  "quickActions.browseJobs": "Browse jobs",
+  "quickActions.unlockJobs": "Unlock job browsing",
+  "quickActions.browseJobsDesc": "See salaries — complete profile to apply",
+  "quickActions.unlockJobsDesc": "Complete the first 2 steps first",
+  "quickActions.updateProfile": "Update profile",
+  "quickActions.updateProfileDesc": "Details, skill and country",
+  "quickActions.whatsapp": "Ask on WhatsApp",
+  "quickActions.whatsappDesc": "Questions? We will help",
+
+  "whatsapp.label": "WhatsApp",
+  "whatsapp.aria": "Get help on WhatsApp",
+  "whatsapp.message": "Hello, I need help with SafeWorkGlobal.",
+
+  "onboarding.step1": "Personal & Location",
+  "onboarding.step2": "Work & GCC Jobs",
+  "onboarding.step3": "Skills & Proof",
+  "onboarding.step4": "Review & Finish",
+
+  "registration.portal": "Worker Portal",
+  "registration.overseasJobs": "Overseas Jobs",
+  "registration.backToPortal": "← Worker Portal",
+  "registration.findJob": "Find a Job",
+  "registration.createAccount": "Create Account",
+  "registration.signIn": "Sign In",
+} as const;
+
+const hi: Record<TranslationKey, string> = {
+  "lang.label": "भाषा",
+
+  "nav.portalLabel": "Worker Portal",
+  "nav.overview": "ओवरव्यू",
+  "nav.dashboard": "डैशबोर्ड",
+  "nav.jobs": "नौकरियां खोजें",
+  "nav.completeProfile": "प्रोफाइल पूरी करें",
+
+  "header.home": "होम",
+  "header.help": "मदद और सहायता",
+  "header.signOut": "साइन आउट",
+
+  "trust.freeTitle": "रजिस्टर और अप्लाई — ₹0",
+  "trust.freeSub": "अकाउंट और अप्लाई बिल्कुल मुफ्त",
+  "trust.feeTitle": "फीस सिर्फ सेलेक्शन के बाद",
+  "trust.feeSub": "₹35,400 तभी जब आप सेलेक्ट हों",
+
+  "hero.brand": "SafeWorkGlobal",
+  "hero.greeting": "नमस्ते, {{name}}!",
+  "hero.jobReady": "आप job-ready हैं — वेरिफाइड विदेशी नौकरियां देखें और अप्लाई करें।",
+  "hero.stepsRemaining": "{{count}} स्टेप बाकी — फिर {{skill}}की विदेशी नौकरी के लिए अप्लाई कर सकते हैं।",
+  "hero.almostThere": "बस थोड़ा सा और — प्रोफाइल पूरी करके अप्लाई करें।",
+  "hero.stepProgress": "स्टेप {{current}}/{{total}} — {{title}}",
+  "hero.browseJobs": "विदेशी नौकरियां देखें",
+  "hero.completeProfile": "प्रोफाइल पूरी करें",
+
+  "jobs.title": "विदेशी नौकरियां",
+  "jobs.subtitleCountry": "{{country}} में वेरिफाइड नौकरियां",
+  "jobs.subtitleDefault": "UAE, Saudi, Qatar और और देश",
+  "jobs.viewAll": "सब देखें",
+  "jobs.lockTitle": "अप्लाई के लिए प्रोफाइल पूरी करें",
+  "jobs.lockSub": "नीचे सैलरी देख सकते हैं।",
+  "jobs.empty": "नई नौकरियां जल्द आएंगी। WhatsApp पर बात करें।",
+  "jobs.browseAll": "सारी नौकरियां देखें",
+  "jobs.perMonth": "/ महीना",
+  "jobs.verified": "वेरिफाइड",
+
+  "checklist.remaining": "{{count}} चीज़ें बाकी",
+  "checklist.allDone": "सब हो गया!",
+  "checklist.remainingSub": "ये स्टेप पूरे करें — फिर अप्लाई कर सकते हैं",
+  "checklist.completeSub": "प्रोफाइल पूरी — अब अप्लाई करें",
+  "checklist.personal": "अपनी जानकारी",
+  "checklist.personalHint": "नाम, जन्म तिथि, पता",
+  "checklist.location": "लोकेशन",
+  "checklist.locationHint": "अपना राज्य और जिला",
+  "checklist.work": "काम और देश",
+  "checklist.workHint": "स्किल और विदेश का देश",
+  "checklist.skillProof": "काम की फोटो/वीडियो",
+  "checklist.skillProofDone": "{{count}} स्किल अपलोड हो गई",
+  "checklist.skillProofEmpty": "कम से कम 1 फोटो या वीडियो",
+
+  "stats.skills": "स्किल प्रूफ",
+  "stats.country": "देश",
+  "stats.applications": "अप्लिकेशन",
+
+  "quickActions.more": "और विकल्प",
+  "quickActions.browseMore": "और नौकरियां देखें",
+  "quickActions.browseMoreDesc": "UAE, Saudi, Qatar — सभी देश",
+  "quickActions.updateProof": "फोटो/वीडियो अपडेट करें",
+  "quickActions.updateProofDesc": "एम्प्लॉयर्स को अपना काम दिखाएं",
+  "quickActions.needHelp": "मदद चाहिए?",
+  "quickActions.needHelpDesc": "WhatsApp पर सीधे बात करें",
+  "quickActions.browseJobs": "नौकरियां देखें",
+  "quickActions.unlockJobs": "नौकरियां अनलॉक करें",
+  "quickActions.browseJobsDesc": "सैलरी देखें — अप्लाई के लिए प्रोफाइल पूरी करें",
+  "quickActions.unlockJobsDesc": "पहले 2 स्टेप पूरे करें",
+  "quickActions.updateProfile": "प्रोफाइल अपडेट",
+  "quickActions.updateProfileDesc": "जानकारी, स्किल और देश सेट करें",
+  "quickActions.whatsapp": "WhatsApp पर पूछें",
+  "quickActions.whatsappDesc": "कोई सवाल? हम मदद करेंगे",
+
+  "whatsapp.label": "WhatsApp",
+  "whatsapp.aria": "WhatsApp पर मदद लें",
+  "whatsapp.message": "नमस्ते, मुझे SafeWorkGlobal पर मदद चाहिए।",
+
+  "onboarding.step1": "व्यक्तिगत जानकारी और लोकेशन",
+  "onboarding.step2": "काम और GCC नौकरियां",
+  "onboarding.step3": "स्किल और प्रूफ",
+  "onboarding.step4": "रिव्यू और फिनिश",
+
+  "registration.portal": "Worker Portal",
+  "registration.overseasJobs": "विदेशी नौकरियां",
+  "registration.backToPortal": "← Worker Portal",
+  "registration.findJob": "नौकरी खोजें",
+  "registration.createAccount": "अकाउंट बनाएं",
+  "registration.signIn": "साइन इन",
+};
+
+export const workerTranslations: Record<WorkerLocale, Record<TranslationKey, string>> = {
+  en,
+  hi,
+};
+
+export function interpolate(template: string, params?: TranslationParams): string {
+  if (!params) return template;
+  return Object.entries(params).reduce(
+    (result, [key, value]) => result.replaceAll(`{{${key}}}`, String(value)),
+    template
+  );
+}

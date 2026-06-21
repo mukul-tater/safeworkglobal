@@ -22,6 +22,7 @@ interface DashboardSidebarProps {
   navItems?: NavItem[];
   navGroups?: NavGroup[];
   portalLabel: string;
+  portalHomePath?: string;
 }
 
 function NavGroupSection({ group, onNavigate }: { group: NavGroup; onNavigate: () => void }) {
@@ -66,7 +67,7 @@ function NavGroupSection({ group, onNavigate }: { group: NavGroup; onNavigate: (
   );
 }
 
-export default function DashboardSidebar({ navItems, navGroups, portalLabel }: DashboardSidebarProps) {
+export default function DashboardSidebar({ navItems, navGroups, portalLabel, portalHomePath = "/" }: DashboardSidebarProps) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
@@ -75,7 +76,7 @@ export default function DashboardSidebar({ navItems, navGroups, portalLabel }: D
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      <Link to="/" className="flex items-center gap-2.5 mb-5 hover:opacity-80 transition-opacity shrink-0">
+      <Link to={portalHomePath} className="flex items-center gap-2.5 mb-5 hover:opacity-80 transition-opacity shrink-0">
         <img src="/safework-global-logo.png" alt="SafeWorkGlobal" className="h-7 w-7" />
         <span className="text-lg font-bold text-foreground font-heading">SafeWorkGlobal</span>
       </Link>

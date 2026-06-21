@@ -27,6 +27,12 @@ import {
   AVAILABILITY_OPTIONS, EDUCATION_OPTIONS, GENDER_OPTIONS,
   GCC_CITIES, GCC_COUNTRIES, LANGUAGE_OPTIONS, ONBOARDING_STEPS, SALARY_CURRENCIES,
 } from '../types/onboarding.types';
+import {
+  onboardingStep1Schema,
+  onboardingStep2Schema,
+  formatZodFieldErrors,
+} from '../validation/onboardingSchema';
+import { formatWorkerApiError, mapWorkerApiFieldErrors } from '../utils/apiErrors';
 
 const STEP_ICONS = [User, MapPin, Briefcase, CheckCircle2];
 
@@ -74,6 +80,7 @@ export default function WorkerOnboardingPage() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [activeProofId, setActiveProofId] = useState<number | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!token || !worker) return;
@@ -104,6 +111,13 @@ export default function WorkerOnboardingPage() {
     }
     workerApi.getDistricts(Number(stateId)).then(setDistricts).catch(() => setDistricts([]));
   }, [stateId]);
+
+  useEffect(() => {
+    if (!districtId || districts.length === 0) return;
+    if (!districts.some((d) => String(d.id) === districtId)) {
+      setDistrictId('');
+    }
+  }, [districts, districtId]);
 
   const applyOnboarding = (data: WorkerOnboardingData) => {
     setOnboarding(data);
@@ -158,22 +172,56 @@ export default function WorkerOnboardingPage() {
 
   const validateStep = (): string | null => {
     if (step === 1) {
-      if (!dateOfBirth) return 'Date of birth is required';
-      if (!gender) return 'Gender is required';
-      if (address.trim().length < 5) return 'Address is required';
-      if (!/^[1-9]\d{5}$/.test(pincode)) return 'Enter a valid 6-digit pincode';
-      if (!stateId) return 'Select your state';
-      if (!districtId) return 'Select your district';
-      if (email && !/^\S+@\S+\.\S+$/.test(email)) return 'Enter a valid email';
+      if (districts.length > 0 && districtId && !districts.some((d) => String(d.id) === districtId)) {
+        return 'Select a district that matches your state';
+      }
+
+      const parsed = onboardingStep1Schema.safeParse({
+        step: 1,
+        dateOfBirth,
+        gender,
+        email: email.trim(),
+        address,
+        pincode: pincode.trim(),
+        stateId,
+        districtId,
+        educationLevel: educationLevel || undefined,
+      });
+
+      if (!parsed.success) {
+        const errors = formatZodFieldErrors(parsed.error);
+        setFieldErrors(errors);
+        return Object.values(errors)[0] ?? 'Please fix the highlighted fields';
+      }
+      setFieldErrors({});
+      return null;
     }
+
     if (step === 2) {
-      if (!primarySkillId) return 'Select your primary skill';
-      if (!experienceLevel) return 'Select your experience';
-      if (!preferredGccCountry) return 'Select a GCC country';
-      if (!preferredGccCity) return 'Select or enter a city';
-      if (!availability) return 'Select availability';
-      if (languages.length === 0) return 'Select at least one language';
+      const parsed = onboardingStep2Schema.safeParse({
+        step: 2,
+        primarySkillId,
+        experienceLevel,
+        preferredGccCountry,
+        preferredGccCity,
+        availability,
+        openToRelocation,
+        expectedSalaryMin: expectedSalaryMin || undefined,
+        expectedSalaryCurrency,
+        languages,
+        secondarySkillIds,
+        previousEmployer: previousEmployer.trim() || undefined,
+      });
+
+      if (!parsed.success) {
+        const errors = formatZodFieldErrors(parsed.error);
+        setFieldErrors(errors);
+        return Object.values(errors)[0] ?? 'Please fix the highlighted fields';
+      }
+      setFieldErrors({});
+      return null;
     }
+
     if (step === 3) {
       const hasMedia = skillProofs.some(
         (p) => p.photoUrls.length > 0 || p.videoUrls.length > 0
@@ -194,34 +242,38 @@ export default function WorkerOnboardingPage() {
     setSaving(true);
     try {
       if (step === 1) {
-        await workerApi.saveOnboardingStep(token, {
+        const payload = onboardingStep1Schema.parse({
           step: 1,
           dateOfBirth,
           gender,
-          email,
+          email: email.trim(),
           address,
-          pincode,
-          stateId: Number(stateId),
-          districtId: Number(districtId),
+          pincode: pincode.trim(),
+          stateId,
+          districtId,
           educationLevel: educationLevel || undefined,
         });
+
+        await workerApi.saveOnboardingStep(token, payload);
         await refreshOnboarding();
         setStep(2);
       } else if (step === 2) {
-        await workerApi.saveOnboardingStep(token, {
+        const payload = onboardingStep2Schema.parse({
           step: 2,
-          primarySkillId: Number(primarySkillId),
+          primarySkillId,
           experienceLevel,
           preferredGccCountry,
           preferredGccCity,
           availability,
           openToRelocation,
-          expectedSalaryMin: expectedSalaryMin ? Number(expectedSalaryMin) : undefined,
+          expectedSalaryMin: expectedSalaryMin || undefined,
           expectedSalaryCurrency,
           languages,
           secondarySkillIds,
-          previousEmployer,
+          previousEmployer: previousEmployer.trim() || undefined,
         });
+
+        await workerApi.saveOnboardingStep(token, payload);
         await refreshOnboarding();
         setStep(3);
       } else if (step === 3) {
@@ -230,7 +282,9 @@ export default function WorkerOnboardingPage() {
         setStep(4);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save');
+      const apiFieldErrors = mapWorkerApiFieldErrors(err);
+      if (apiFieldErrors) setFieldErrors(apiFieldErrors);
+      toast.error(formatWorkerApiError(err, 'Failed to save'));
     } finally {
       setSaving(false);
     }
@@ -312,7 +366,7 @@ export default function WorkerOnboardingPage() {
 
   if (loading || !worker) {
     return (
-      <RegistrationLayout title="Complete Your Profile" subtitle="Loading...">
+      <RegistrationLayout title="Complete Your Profile" subtitle="Loading..." portalHomePath="/home">
         <div className="flex justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -330,6 +384,7 @@ export default function WorkerOnboardingPage() {
     <RegistrationLayout
       title="Complete Your Profile"
       subtitle="Tell us about yourself to find GCC overseas jobs"
+      portalHomePath="/home"
     >
       <WorkerOnboardingStageBar
         currentStep={step}
@@ -374,10 +429,10 @@ export default function WorkerOnboardingPage() {
         <CardContent className="space-y-5">
           {step === 1 && (
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label="Date of Birth" required>
+              <FormField label="Date of Birth" required error={fieldErrors.dateOfBirth}>
                 <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
               </FormField>
-              <FormField label="Gender" required>
+              <FormField label="Gender" required error={fieldErrors.gender}>
                 <Select value={gender} onValueChange={setGender}>
                   <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                   <SelectContent>
@@ -387,7 +442,7 @@ export default function WorkerOnboardingPage() {
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="State" required>
+              <FormField label="State" required error={fieldErrors.stateId}>
                 <Select value={stateId} onValueChange={(v) => { setStateId(v); setDistrictId(''); }}>
                   <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
                   <SelectContent>
@@ -397,7 +452,7 @@ export default function WorkerOnboardingPage() {
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="District" required>
+              <FormField label="District" required error={fieldErrors.districtId}>
                 <Select value={districtId} onValueChange={setDistrictId} disabled={!stateId}>
                   <SelectTrigger><SelectValue placeholder="Select district" /></SelectTrigger>
                   <SelectContent>
@@ -407,7 +462,7 @@ export default function WorkerOnboardingPage() {
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="Education (optional)" className="sm:col-span-2">
+              <FormField label="Education (optional)" className="sm:col-span-2" error={fieldErrors.educationLevel}>
                 <Select value={educationLevel} onValueChange={setEducationLevel}>
                   <SelectTrigger><SelectValue placeholder="Select if applicable — not required" /></SelectTrigger>
                   <SelectContent>
@@ -417,13 +472,13 @@ export default function WorkerOnboardingPage() {
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="Email (optional)" className="sm:col-span-2">
+              <FormField label="Email (optional)" className="sm:col-span-2" error={fieldErrors.email}>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
               </FormField>
-              <FormField label="Full Address" required className="sm:col-span-2">
+              <FormField label="Full Address" required className="sm:col-span-2" error={fieldErrors.address}>
                 <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Village, street, landmark" />
               </FormField>
-              <FormField label="Pincode" required>
+              <FormField label="Pincode" required error={fieldErrors.pincode}>
                 <Input inputMode="numeric" maxLength={6} value={pincode}
                   onChange={(e) => setPincode(e.target.value.replace(/\D/g, ''))} placeholder="6-digit pincode" />
               </FormField>

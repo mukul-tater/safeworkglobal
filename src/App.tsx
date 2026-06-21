@@ -65,6 +65,7 @@ import {
   WorkerDashboardPage,
   WorkerProtectedRoute,
   WorkerOnboardingPage,
+  WorkerLanguageProvider,
 } from "./modules/worker-registration";
 import { useIsActiveModuleRoute } from "./modules/worker-registration/hooks/useIsWorkerRegistrationRoute";
 
@@ -240,13 +241,15 @@ function App() {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <WorkerAuthProvider>
-              <AuthProvider>
-                <ErrorBoundary>
-                  <AppShell />
-                </ErrorBoundary>
-              </AuthProvider>
-            </WorkerAuthProvider>
+            <WorkerLanguageProvider>
+              <WorkerAuthProvider>
+                <AuthProvider>
+                  <ErrorBoundary>
+                    <AppShell />
+                  </ErrorBoundary>
+                </AuthProvider>
+              </WorkerAuthProvider>
+            </WorkerLanguageProvider>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

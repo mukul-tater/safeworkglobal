@@ -141,8 +141,8 @@ export default function WorkerRegisterPage() {
     setSubmitting(false);
 
     if (result.success) {
-      toast.success('Account created! Complete your profile next.');
-      navigate('/onboarding', { replace: true });
+      toast.success('Account created! Welcome to your dashboard.');
+      navigate('/home', { replace: true });
     } else {
       toast.error(result.error || 'Registration failed');
     }

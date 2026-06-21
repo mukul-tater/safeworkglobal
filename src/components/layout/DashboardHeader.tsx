@@ -1,5 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkerAuth } from "@/modules/worker-registration/context/WorkerAuthContext";
+import { useOptionalWorkerLanguage } from "@/modules/worker-registration/context/WorkerLanguageContext";
+import WorkerLanguageSwitcher from "@/modules/worker-registration/components/WorkerLanguageSwitcher";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +16,7 @@ import { LogOut, User, Home, HelpCircle, LucideIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import NotificationDrawer from "@/components/NotificationDrawer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface ProfileMenuItem {
   label: string;
@@ -24,12 +27,24 @@ interface ProfileMenuItem {
 interface DashboardHeaderProps {
   portalName: string;
   profileMenuItems?: ProfileMenuItem[];
+  portalHomePath?: string;
+  showLanguageSwitcher?: boolean;
 }
 
-export default function DashboardHeader({ portalName, profileMenuItems = [] }: DashboardHeaderProps) {
+export default function DashboardHeader({
+  portalName,
+  profileMenuItems = [],
+  portalHomePath = "/",
+  showLanguageSwitcher = false,
+}: DashboardHeaderProps) {
   const { user, profile, logout } = useAuth();
   const { worker, logout: workerLogout, isAuthenticated: isWorkerSession } = useWorkerAuth();
+  const workerLang = useOptionalWorkerLanguage();
   const navigate = useNavigate();
+
+  const homeLabel = showLanguageSwitcher && workerLang ? workerLang.t("header.home") : "Home";
+  const helpLabel = showLanguageSwitcher && workerLang ? workerLang.t("header.help") : "Help & Support";
+  const signOutLabel = showLanguageSwitcher && workerLang ? workerLang.t("header.signOut") : "Sign Out";
 
   const displayName = worker?.fullName || profile?.full_name || "User";
   const displaySubtext = worker?.mobileNumber || user?.email || "";
@@ -57,17 +72,19 @@ export default function DashboardHeader({ portalName, profileMenuItems = [] }: D
       <div className="flex h-14 md:h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3 ml-12 md:ml-0">
           <Link
-            to="/"
+            to={portalHomePath}
             className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Home className="h-4 w-4" />
-            <span className="text-sm font-medium">Home</span>
+            <span className="text-sm font-medium">{homeLabel}</span>
           </Link>
           <span className="hidden md:inline text-border">/</span>
           <h1 className="text-base md:text-lg font-semibold text-foreground">{portalName}</h1>
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
+          {showLanguageSwitcher && <WorkerLanguageSwitcher />}
+          <ThemeToggle />
           <NotificationDrawer />
 
           <DropdownMenu>
@@ -97,12 +114,12 @@ export default function DashboardHeader({ portalName, profileMenuItems = [] }: D
               ))}
               <DropdownMenuItem onClick={() => navigate("/contact")} className="cursor-pointer">
                 <HelpCircle className="mr-2 h-4 w-4" />
-                <span>Help & Support</span>
+                <span>{helpLabel}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign Out</span>
+                <span>{signOutLabel}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
-import { Briefcase, Home, LogIn, Menu, UserPlus } from 'lucide-react';
+import { Briefcase, LogIn, Menu, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import WorkerLanguageSwitcher from './WorkerLanguageSwitcher';
+import { useWorkerLanguage } from '../context/WorkerLanguageContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -14,14 +16,15 @@ interface RegistrationLayoutProps {
   footer?: React.ReactNode;
   /** Center content vertically — ideal for login */
   centered?: boolean;
-  maxWidth?: 'md' | 'lg' | '2xl' | '3xl';
+  maxWidth?: 'md' | 'lg' | '2xl' | '3xl' | '5xl' | '6xl';
+  /** Stay within worker portal instead of main marketing site */
+  portalHomePath?: string;
 }
 
-const publicNav = [
-  { path: '/worker-start', label: 'Find a Job', icon: Briefcase },
-  { path: '/register', label: 'Create Account', icon: UserPlus },
-  { path: '/login', label: 'Sign In', icon: LogIn },
-  { path: '/', label: 'Back to Home', icon: Home },
+const publicNavPaths = [
+  { path: '/worker-start', key: 'registration.findJob' as const, icon: Briefcase },
+  { path: '/register', key: 'registration.createAccount' as const, icon: UserPlus },
+  { path: '/login', key: 'registration.signIn' as const, icon: LogIn },
 ] as const;
 
 const maxWidthClass = {
@@ -29,14 +32,17 @@ const maxWidthClass = {
   lg: 'max-w-lg',
   '2xl': 'max-w-2xl',
   '3xl': 'max-w-3xl',
+  '5xl': 'max-w-5xl',
+  '6xl': 'max-w-6xl',
 } as const;
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
+  const { t } = useWorkerLanguage();
 
   return (
     <nav className="space-y-1">
-      {publicNav.map((item) => {
+      {publicNavPaths.map((item) => {
         const Icon = item.icon;
         const isActive = location.pathname === item.path;
         return (
@@ -52,7 +58,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             )}
           >
             <Icon className={cn('h-4 w-4 shrink-0', !isActive && 'opacity-70')} />
-            <span className="truncate">{item.label}</span>
+            <span className="truncate">{t(item.key)}</span>
           </Link>
         );
       })}
@@ -60,19 +66,21 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function SidebarBrand() {
+function SidebarBrand({ portalHomePath }: { portalHomePath: string }) {
+  const { t } = useWorkerLanguage();
+
   return (
     <>
-      <Link to="/" className="flex items-center gap-2.5 mb-6 hover:opacity-80 transition-opacity shrink-0">
+      <Link to={portalHomePath} className="flex items-center gap-2.5 mb-6 hover:opacity-80 transition-opacity shrink-0">
         <img src="/safework-global-logo.png" alt="SafeWork Global" className="h-8 w-8 rounded-lg" />
         <div>
           <span className="text-base font-bold text-foreground font-heading leading-tight block">SafeWork Global</span>
-          <span className="text-[11px] text-muted-foreground">Worker Portal</span>
+          <span className="text-[11px] text-muted-foreground">{t('registration.portal')}</span>
         </div>
       </Link>
       <div className="px-1 mb-4">
         <span className="text-[11px] uppercase tracking-widest text-muted-foreground/80 font-semibold">
-          Overseas Jobs
+          {t('registration.overseasJobs')}
         </span>
       </div>
     </>
@@ -86,14 +94,16 @@ export default function RegistrationLayout({
   footer,
   centered = false,
   maxWidth = '2xl',
+  portalHomePath = '/worker-start',
 }: RegistrationLayoutProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { t } = useWorkerLanguage();
 
   return (
     <div className="flex min-h-screen bg-background w-full">
       <aside className="hidden md:flex flex-col w-[260px] bg-card border-r border-border min-h-screen p-5 shrink-0">
-        <SidebarBrand />
+        <SidebarBrand portalHomePath={portalHomePath} />
         <SidebarNav />
       </aside>
 
@@ -115,23 +125,26 @@ export default function RegistrationLayout({
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="left" className="w-72 p-5 flex flex-col">
-                    <SidebarBrand />
+                    <SidebarBrand portalHomePath={portalHomePath} />
                     <SidebarNav onNavigate={() => setMenuOpen(false)} />
                   </SheetContent>
                 </Sheet>
               )}
               <div className="md:hidden flex items-center gap-2">
                 <img src="/safework-global-logo.png" alt="SafeWork Global" className="h-7 w-7 rounded-md" />
-                <span className="text-sm font-bold font-heading">Worker Portal</span>
+                <span className="text-sm font-bold font-heading">{t('registration.portal')}</span>
               </div>
               <Link
-                to="/"
+                to={portalHomePath}
                 className="hidden md:inline-flex text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                ← Back to SafeWork Global
+                {t('registration.backToPortal')}
               </Link>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <WorkerLanguageSwitcher />
+              <ThemeToggle />
+            </div>
           </div>
         </header>
 
