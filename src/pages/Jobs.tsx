@@ -12,7 +12,7 @@ import SavedSearchDialog from '@/components/search/SavedSearchDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { formatSalaryLakh } from '@/lib/utils';
+import JobSalaryText from '@/components/JobSalaryText';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 
 const JOBS_PER_PAGE = 24;
@@ -24,7 +24,10 @@ interface Job {
   company: string;
   location: string;
   country: string;
-  salary: string;
+  salaryDisplay: string | null;
+  rawSalaryMin: number | null;
+  rawSalaryMax: number | null;
+  currency: string;
   salaryMin: number | null;
   salaryMax: number | null;
   type: string;
@@ -126,7 +129,10 @@ export default function Jobs() {
           company: companyMap[job.employer_id] || 'Company',
           location: `${job.location}, ${job.country}`,
           country: job.country,
-          salary: job.salary_display || formatSalaryLakh(job.salary_min, job.salary_max, job.currency),
+          salaryDisplay: job.salary_display ?? null,
+          rawSalaryMin: job.salary_min ?? null,
+          rawSalaryMax: job.salary_max ?? null,
+          currency: job.currency || 'INR',
           salaryMin: salaryMinVal,
           salaryMax: salaryMaxVal,
           type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
@@ -296,7 +302,15 @@ export default function Jobs() {
           <span className="truncate max-w-[140px] sm:max-w-[200px]">{job.location}</span>
         </span>
         <span className="flex items-center gap-1 font-medium text-foreground">
-          {job.salary}
+          {job.salaryDisplay ? (
+            <span>{job.salaryDisplay}</span>
+          ) : (
+            <JobSalaryText
+              min={job.rawSalaryMin}
+              max={job.rawSalaryMax}
+              currency={job.currency}
+            />
+          )}
         </span>
         <span className="flex items-center gap-1">
           <Briefcase className="h-3.5 w-3.5" />

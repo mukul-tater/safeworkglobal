@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatSalaryINR } from '@/lib/utils';
+import JobSalaryText from '@/components/JobSalaryText';
 import { MapPin, Briefcase, ArrowRight, Sparkles, ShieldCheck, ChevronRight } from 'lucide-react';
 
 interface Job {
@@ -180,7 +180,11 @@ export default function WorkerDiscover() {
                         </div>
                         {(job.salary_min != null || job.salary_max != null) && (
                           <p className="font-semibold text-sm text-primary">
-                            {formatSalaryINR(job.salary_min, job.salary_max, job.currency)}
+                            <JobSalaryText
+                              min={job.salary_min}
+                              max={job.salary_max}
+                              currency={job.currency}
+                            />
                           </p>
                         )}
                       </div>

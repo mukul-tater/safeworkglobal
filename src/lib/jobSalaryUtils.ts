@@ -34,6 +34,75 @@ function formatNativeAmount(amount: number, currency: string): string {
   return `${sym} ${formatted}`;
 }
 
+export interface JobSalaryDisplay {
+  primary: string;
+  inrLine: string | null;
+}
+
+function formatInrAmountLabel(inr: number): string {
+  if (inr >= 100_000) {
+    const lakhs = inr / 100_000;
+    const rounded = Math.round(lakhs * 10) / 10;
+    const text = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+    return `₹${text}L`;
+  }
+  return `₹${inr.toLocaleString('en-IN')}`;
+}
+
+function formatInrPrimaryLine(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  emptyLabel: string,
+): string {
+  if (min == null && max == null) return emptyLabel;
+  if (min != null && max != null) {
+    return `${formatInrAmountLabel(min)} – ${formatInrAmountLabel(max)}`;
+  }
+  if (min != null) return `From ${formatInrAmountLabel(min)}`;
+  return `Up to ${formatInrAmountLabel(max!)}`;
+}
+
+function formatInrEquivalentLine(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  currency: string,
+): string | null {
+  if (currency === 'INR') return null;
+  if (min == null && max == null) return null;
+
+  if (min != null && max != null) {
+    const inrMin = convertSalaryToINR(min, currency);
+    const inrMax = convertSalaryToINR(max, currency);
+    return `≈ ${formatInrAmountLabel(inrMin)} – ${formatInrAmountLabel(inrMax)}`;
+  }
+  if (min != null) {
+    return `≈ From ${formatInrAmountLabel(convertSalaryToINR(min, currency))}`;
+  }
+  return `≈ Up to ${formatInrAmountLabel(convertSalaryToINR(max!, currency))}`;
+}
+
+/** Primary salary line plus optional INR equivalent for foreign currencies. */
+export function getJobSalaryDisplay(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  currency: string = 'INR',
+  emptyLabel = 'Salary on application',
+): JobSalaryDisplay {
+  if (min == null && max == null) {
+    return { primary: emptyLabel, inrLine: null };
+  }
+
+  const primary =
+    currency === 'INR'
+      ? formatInrPrimaryLine(min, max, emptyLabel)
+      : formatJobSalaryNative(min, max, currency, emptyLabel);
+
+  return {
+    primary,
+    inrLine: formatInrEquivalentLine(min, max, currency),
+  };
+}
+
 /** Formats a salary range in the job's own currency (no FX conversion). */
 export function formatJobSalaryNative(
   min: number | null | undefined,

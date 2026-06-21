@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { formatJobSalaryNative } from "@/lib/jobSalaryUtils";
+import { getJobSalaryDisplay } from "@/lib/jobSalaryUtils";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -20,16 +20,8 @@ export function formatSalaryINR(
   max: number | null | undefined,
   currency: string = 'INR'
 ): string {
-  if (currency !== 'INR') {
-    return formatJobSalaryNative(min, max, currency, 'Salary not specified');
-  }
-
-  if (min == null && max == null) return 'Salary not specified';
-  if (min != null && max != null) {
-    return `₹${min.toLocaleString('en-IN')} - ₹${max.toLocaleString('en-IN')}`;
-  }
-  if (min != null) return `From ₹${min.toLocaleString('en-IN')}`;
-  return `Up to ₹${max!.toLocaleString('en-IN')}`;
+  const { primary, inrLine } = getJobSalaryDisplay(min, max, currency, 'Salary not specified');
+  return inrLine ? `${primary} (${inrLine})` : primary;
 }
 
 /**
@@ -53,26 +45,8 @@ export function formatSalaryLakh(
   max: number | null | undefined,
   currency: string = 'INR'
 ): string {
-  if (currency !== 'INR') {
-    return formatJobSalaryNative(min, max, currency);
-  }
-
-  const toLakhLabel = (inr: number) => {
-    const lakhs = inr / 100_000;
-    if (lakhs >= 1) {
-      const rounded = Math.round(lakhs * 10) / 10;
-      const text = rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
-      return `₹${text}L`;
-    }
-    return `₹${Math.round(inr / 1000)}K`;
-  };
-
-  if (min == null && max == null) return 'Salary on application';
-  if (min != null && max != null) {
-    return `${toLakhLabel(min)} – ${toLakhLabel(max)}`;
-  }
-  if (min != null) return `From ${toLakhLabel(min)}`;
-  return `Up to ${toLakhLabel(max!)}`;
+  const { primary, inrLine } = getJobSalaryDisplay(min, max, currency);
+  return inrLine ? `${primary}\n${inrLine}` : primary;
 }
 
 export function debounce<T extends (...args: any[]) => void>(

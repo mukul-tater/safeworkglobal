@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Briefcase, Lock, MapPin } from "lucide-react";
-import { formatSalaryLakh } from "@/lib/utils";
+import JobSalaryText from "@/components/JobSalaryText";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
 
@@ -25,11 +25,6 @@ interface Props {
   readonly preferredCountry?: string | null;
   readonly canApply: boolean;
   readonly canBrowseJobs?: boolean;
-}
-
-function displaySalary(job: JobPreview): string {
-  if (job.salary_display) return job.salary_display;
-  return formatSalaryLakh(job.salary_min, job.salary_max, job.currency);
 }
 
 function hasSalary(job: JobPreview): boolean {
@@ -173,12 +168,28 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                       </span>
                     </div>
                     {hasSalary(job) && (
-                      <p className="text-lg font-bold text-primary">
-                        {displaySalary(job)}
-                        <span className="text-xs font-normal text-muted-foreground ml-1.5">
-                          {t("jobs.perMonth")}
-                        </span>
-                      </p>
+                      job.salary_display ? (
+                        <p className="text-lg font-bold text-primary">
+                          {job.salary_display}
+                          <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                            {t("jobs.perMonth")}
+                          </span>
+                        </p>
+                      ) : (
+                        <div>
+                          <JobSalaryText
+                            min={job.salary_min}
+                            max={job.salary_max}
+                            currency={job.currency}
+                            primaryClassName="text-lg font-bold text-primary"
+                            inrClassName="text-xs font-normal"
+                            className="gap-0.5"
+                          />
+                          <span className="text-xs font-normal text-muted-foreground">
+                            {t("jobs.perMonth")}
+                          </span>
+                        </div>
+                      )
                     )}
                   </div>
                   {hasSalary(job) && (

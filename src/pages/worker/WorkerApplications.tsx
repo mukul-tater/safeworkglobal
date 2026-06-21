@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ApplicationListSkeleton } from "@/components/ui/page-skeleton";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
-import { formatSalaryINR } from "@/lib/utils";
+import JobSalaryText from "@/components/JobSalaryText";
 
 interface JobData {
   title: string;
@@ -145,7 +145,11 @@ export default function WorkerApplications() {
                             {(app.job.salary_min != null || app.job.salary_max != null) && (
                               <span className="flex items-center gap-1">
                                 <DollarSign className="h-4 w-4" />
-                                {formatSalaryINR(app.job.salary_min, app.job.salary_max, app.job.currency)}
+                              <JobSalaryText
+                                min={app.job.salary_min}
+                                max={app.job.salary_max}
+                                currency={app.job.currency}
+                              />
                               </span>
                             )}
                           </>

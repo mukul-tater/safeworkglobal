@@ -12,7 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Bookmark, MapPin, Briefcase, Trash2, Loader2, ExternalLink } from "lucide-react";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
-import { formatSalaryINR } from "@/lib/utils";
+import JobSalaryText from "@/components/JobSalaryText";
 
 interface SavedJob {
   id: string;
@@ -133,7 +133,11 @@ export default function SavedJobs() {
                         {job.location}, {job.country}
                       </span>
                       <span className="font-medium text-foreground">
-                        {formatSalaryINR(job.salary_min, job.salary_max, job.currency)}
+                      <JobSalaryText
+                        min={job.salary_min}
+                        max={job.salary_max}
+                        currency={job.currency}
+                      />
                       </span>
                     </div>
                   </div>

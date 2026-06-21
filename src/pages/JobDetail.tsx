@@ -1,4 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
+import JobSalaryText from '@/components/JobSalaryText';
 import { formatSalaryINR } from '@/lib/utils';
 import { listJobBenefits } from '@/lib/jobBenefits';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -394,9 +395,13 @@ export default function JobDetail() {
                       <span>{job.location}, {job.country}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <span className="font-semibold text-foreground">
-                        {formatSalaryINR(job.salary_min, job.salary_max, job.currency)}
-                      </span>
+                      <JobSalaryText
+                        min={job.salary_min}
+                        max={job.salary_max}
+                        currency={job.currency}
+                        emptyLabel="Salary not specified"
+                        primaryClassName="font-semibold text-foreground"
+                      />
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="h-4 w-4 shrink-0" />

@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Building2, Clock, ArrowRight, Bookmark, Share2, Zap, Sparkles, BadgeCheck } from 'lucide-react';
-import { formatSalaryLakh } from '@/lib/utils';
+import JobSalaryText from '@/components/JobSalaryText';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 
@@ -29,11 +29,6 @@ interface FeaturedJob {
   job_skills: {
     skill_name: string;
   }[];
-}
-
-function displaySalary(job: FeaturedJob): string {
-  if (job.salary_display) return job.salary_display;
-  return formatSalaryLakh(job.salary_min, job.salary_max, job.currency);
 }
 
 function hasSalary(job: FeaturedJob): boolean {
@@ -220,7 +215,16 @@ export default function FeaturedJobs() {
 
                     {hasSalary(job) && (
                       <div className="rounded-lg bg-primary/5 border border-primary/10 px-3 py-2 mb-3">
-                        <p className="text-lg font-bold text-primary">{displaySalary(job)}</p>
+                        {job.salary_display ? (
+                          <p className="text-lg font-bold text-primary">{job.salary_display}</p>
+                        ) : (
+                          <JobSalaryText
+                            min={job.salary_min}
+                            max={job.salary_max}
+                            currency={job.currency}
+                            primaryClassName="text-lg font-bold text-primary"
+                          />
+                        )}
                         <p className="text-xs text-muted-foreground">per month (approx.)</p>
                       </div>
                     )}
