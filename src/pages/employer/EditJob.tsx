@@ -92,8 +92,8 @@ export default function EmployerEditJob() {
   });
 
   useEffect(() => {
-    if (jobId && user) fetchJob();
-  }, [jobId, user]);
+    if (jobId && user?.id) fetchJob();
+  }, [jobId, user?.id]);
 
   const fetchJob = async () => {
     try {

@@ -100,9 +100,9 @@ export default function WorkerOnboarding() {
 
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || '');
-      setMobile(profile.phone || '');
-      setEmail(profile.email || '');
+      setFullName((prev) => prev || profile.full_name || '');
+      setMobile((prev) => prev || profile.phone || '');
+      setEmail((prev) => prev || profile.email || '');
     }
   }, [profile]);
 

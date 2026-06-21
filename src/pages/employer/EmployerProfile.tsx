@@ -58,9 +58,8 @@ export default function EmployerProfile() {
     async (data: EmployerProfileFormData) => {
       if (!user) return;
       await saveEmployerProfilePartial(user.id, data);
-      await refreshProfile();
     },
-    [user, refreshProfile],
+    [user],
   );
 
   const { status: autoSaveStatus, markReady } = useAutoSave({
@@ -131,7 +130,7 @@ export default function EmployerProfile() {
   };
 
     loadEmployerProfile();
-  }, [user, profile, setValue, markReady]);
+  }, [user?.id, markReady]);
 
   const onSubmit = async (data: EmployerProfileFormData) => {
     if (!user) return;

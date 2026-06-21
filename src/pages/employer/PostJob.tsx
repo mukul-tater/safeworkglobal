@@ -23,13 +23,37 @@ import JobTitleAutocomplete from "@/components/employer/JobTitleAutocomplete";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { saveJobDraftPartial, type JobPostAutoSaveData } from "@/lib/autoSaveJobs";
+import { saveJobDraftPartial, loadJobDraftById, loadLatestJobDraft, hasJobContent, type JobPostAutoSaveData } from "@/lib/autoSaveJobs";
+import {
+  readPostJobDraftCache,
+  writePostJobDraftCache,
+  clearPostJobDraftCache,
+} from "@/lib/postJobDraftStorage";
+
+const EMPTY_JOB_DRAFT: JobPostAutoSaveData = {
+  title: "",
+  description: "",
+  requirements: "",
+  benefits: "",
+  responsibilities: "",
+  location: "",
+  country: "",
+  job_type: "",
+  experience_level: "",
+  currency: "INR",
+  openings: 1,
+  visa_sponsorship: false,
+  remote_allowed: false,
+  expires_at: "",
+  skills: [],
+};
 
 export default function PostJob() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const draftJobIdRef = useRef<string | null>(null);
@@ -41,6 +65,7 @@ export default function PostJob() {
     setValue,
     watch,
     control,
+    reset,
   } = useForm<JobPostingFormData>({
     resolver: zodResolver(jobPostingSchema),
     defaultValues: {
@@ -85,7 +110,14 @@ export default function PostJob() {
     async (data: JobPostAutoSaveData) => {
       if (!user) return;
       const id = await saveJobDraftPartial(user.id, draftJobIdRef.current, data);
-      if (id) draftJobIdRef.current = id;
+      if (id) {
+        draftJobIdRef.current = id;
+        writePostJobDraftCache(user.id, {
+          jobId: id,
+          data,
+          updatedAt: Date.now(),
+        });
+      }
     },
     [user],
   );
@@ -93,28 +125,104 @@ export default function PostJob() {
   const { status: autoSaveStatus, markReady } = useAutoSave({
     data: autoSaveData,
     onSave: handleAutoSave,
-    enabled: !!user,
+    enabled: !!user && draftLoaded,
   });
 
+  const applyDraft = useCallback(
+    (data: JobPostAutoSaveData, jobId: string | null) => {
+      draftJobIdRef.current = jobId;
+      setSkills(data.skills);
+      reset({
+        title: data.title,
+        description: data.description,
+        requirements: data.requirements,
+        benefits: data.benefits,
+        responsibilities: data.responsibilities,
+        location: data.location,
+        country: data.country,
+        job_type: data.job_type as JobPostingFormData["job_type"],
+        experience_level: data.experience_level as JobPostingFormData["experience_level"],
+        salary_min: data.salary_min,
+        salary_max: data.salary_max,
+        currency: data.currency as JobPostingFormData["currency"],
+        openings: data.openings,
+        visa_sponsorship: data.visa_sponsorship,
+        remote_allowed: data.remote_allowed,
+        expires_at: data.expires_at,
+        status: "DRAFT",
+        skills: data.skills,
+      });
+      markReady(data);
+    },
+    [markReady, reset],
+  );
+
   useEffect(() => {
-    markReady({
-      title: "",
-      description: "",
-      requirements: "",
-      benefits: "",
-      responsibilities: "",
-      location: "",
-      country: "",
-      job_type: "",
-      experience_level: "",
-      currency: "INR",
-      openings: 1,
-      visa_sponsorship: false,
-      remote_allowed: false,
-      expires_at: "",
-      skills: [],
-    });
-  }, [markReady]);
+    if (!user?.id) return;
+
+    let cancelled = false;
+
+    const loadDraft = async () => {
+      const cache = readPostJobDraftCache(user.id);
+      let restored: JobPostAutoSaveData | null = cache?.data ?? null;
+      let jobId = cache?.jobId ?? null;
+
+      if (cache?.data && hasJobContent(cache.data)) {
+        applyDraft(cache.data, jobId);
+      }
+
+      try {
+        if (jobId) {
+          const fromDb = await loadJobDraftById(user.id, jobId);
+          if (!cancelled && fromDb) {
+            restored = fromDb.data;
+            jobId = fromDb.jobId;
+          }
+        } else if (!restored || !hasJobContent(restored)) {
+          const latest = await loadLatestJobDraft(user.id);
+          if (!cancelled && latest && hasJobContent(latest.data)) {
+            restored = latest.data;
+            jobId = latest.jobId;
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load job draft:", error);
+      }
+
+      if (!cancelled) {
+        if (restored && hasJobContent(restored)) {
+          applyDraft(restored, jobId);
+          writePostJobDraftCache(user.id, {
+            jobId,
+            data: restored,
+            updatedAt: Date.now(),
+          });
+        } else if (!cache?.data || !hasJobContent(cache.data)) {
+          markReady(EMPTY_JOB_DRAFT);
+        }
+        setDraftLoaded(true);
+      }
+    };
+
+    void loadDraft();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, applyDraft, markReady]);
+
+  useEffect(() => {
+    if (!user?.id || !draftLoaded) return;
+
+    const timer = setTimeout(() => {
+      writePostJobDraftCache(user.id, {
+        jobId: draftJobIdRef.current,
+        data: autoSaveData,
+        updatedAt: Date.now(),
+      });
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [autoSaveData, draftLoaded, user?.id]);
 
   const addSkill = () => {
     const trimmedSkill = skillInput.trim();
@@ -207,6 +315,7 @@ export default function PostJob() {
       }
 
       markReady({ ...autoSaveData, status: data.status });
+      clearPostJobDraftCache(user.id);
 
       toast({
         title: "Success",

@@ -95,9 +95,8 @@ export default function WorkerProfile() {
     async (data: WorkerProfileAutoSaveData) => {
       if (!user) return;
       await saveWorkerProfilePartial(user.id, data);
-      await refreshProfile();
     },
-    [user, refreshProfile],
+    [user],
   );
 
   const { status: autoSaveStatus, markReady } = useAutoSave({
@@ -181,7 +180,7 @@ export default function WorkerProfile() {
     };
 
     loadWorkerProfile();
-  }, [user, profile, setValue, markReady]);
+  }, [user?.id, markReady]);
 
   const onSubmit = async (data: WorkerProfileFormData) => {
     if (!user) return;
