@@ -165,6 +165,7 @@ export class WorkerService {
       registrationSource: worker.registrationSource,
       status: worker.status,
       onboardingCompleted: onboarding?.onboardingCompleted ?? false,
+      onboardingStage: onboarding?.onboardingStage ?? 'REGISTERED',
       createdDate: worker.createdDate,
       updatedDate: worker.updatedDate,
     };

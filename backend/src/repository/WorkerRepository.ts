@@ -121,6 +121,35 @@ export class WorkerRepository {
       WHERE id = ?
     `).run(profileCompletionPercentage, status, id);
   }
+
+  updateProfileFields(
+    id: number,
+    fields: {
+      stateId?: number;
+      districtId?: number;
+      primarySkillId?: number;
+      experienceLevel?: ExperienceLevel;
+    }
+  ): void {
+    const worker = this.findById(id);
+    if (!worker) return;
+
+    db.prepare(`
+      UPDATE workers SET
+        state_id = ?,
+        district_id = ?,
+        primary_skill_id = ?,
+        experience_level = ?,
+        updated_date = datetime('now')
+      WHERE id = ?
+    `).run(
+      fields.stateId ?? worker.stateId,
+      fields.districtId ?? worker.districtId,
+      fields.primarySkillId ?? worker.primarySkillId,
+      fields.experienceLevel ?? worker.experienceLevel,
+      id
+    );
+  }
 }
 
 export class LocationRepository {

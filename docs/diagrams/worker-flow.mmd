@@ -1,0 +1,89 @@
+flowchart TB
+    subgraph ENTRY["Entry paths"]
+        AD["Organic worker<br/>(ads / social / referral)"]
+        EM["E-Mitra center<br/>(partner assisted)"]
+    end
+
+    AD --> REG_O["Self register on mobile web<br/>OTP, name, 10th pass"]
+    EM --> REG_E["Partner fills FULL profile<br/>Partner portal + worker OTP"]
+
+    REG_O --> ST1
+    REG_E --> ST1
+
+    subgraph ST1["Stage 1 — Registered"]
+        S1["Mobile verified<br/>Basic identity<br/>10th pass confirmed<br/>State / district"]
+    end
+
+    ST1 --> ST2
+
+    subgraph ST2["Stage 2 — Profile basics"]
+        S2["Primary trade / skill<br/>Experience<br/>Preferred GCC country + city<br/>Availability"]
+    end
+
+    ST2 --> BROWSE["Can BROWSE GCC jobs<br/>country + city filters"]
+
+    BROWSE --> ST3
+
+    subgraph ST3["Stage 3 — Skills uploaded KPI"]
+        S3["Add skills with proof<br/>Photos of work<br/>Skill videos<br/>Certificates optional"]
+    end
+
+    ST3 --> JOBREADY["Status: Job-ready<br/>skills uploaded = success metric"]
+
+    JOBREADY --> APPLY["Can APPLY to jobs"]
+
+    APPLY --> ST4
+
+    subgraph ST4["Stage 4 — Skill test conditional"]
+        T1{"Employer skill test?"}
+        T1 -->|Pass| ST5
+        T1 -->|Fail| RETEST["Retrain / retry"]
+        RETEST --> BROWSE
+    end
+
+    subgraph ST5["Stage 5 — Passport and emigration paid via E-Mitra"]
+        P1["No passport OK until here"]
+        P2["After test pass: pay passport help"]
+        P3["Passport + ECR or ECNR"]
+    end
+
+    ST4 --> ST5
+
+    ST5 --> ST6
+
+    subgraph ST6["Stage 6 — Pre-departure paid services"]
+        M1["Medical exam"]
+        M2["Training / PDOT"]
+        M3["Documents verified"]
+    end
+
+    ST6 --> ST7
+
+    subgraph ST7["Stage 7 — Hired and travel"]
+        H1["Shortlist, interview, offer"]
+        H2["Contract signed"]
+        H3["Visa processing"]
+        H4["Flight / deployment"]
+    end
+
+    ST7 --> DONE["Working overseas GCC"]
+
+    subgraph SUPPORT["Support all channels"]
+        WA["WhatsApp"]
+        CALL["Call center"]
+        CENTER["E-Mitra center"]
+        APP["In-app messages"]
+    end
+
+    BROWSE -.-> SUPPORT
+    JOBREADY -.-> SUPPORT
+
+    subgraph PAID["Paid E-Mitra services worker sees fee only"]
+        PP["Passport help"]
+        TR["Training"]
+        MD["Medical"]
+    end
+
+    ST5 --> PP
+    ST6 --> TR
+    ST6 --> MD

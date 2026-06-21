@@ -62,6 +62,10 @@ CREATE TABLE IF NOT EXISTS worker_onboarding (
   expected_salary_min REAL,
   expected_salary_currency TEXT DEFAULT 'INR',
   languages TEXT,
+  education_level TEXT,
+  preferred_gcc_country TEXT,
+  preferred_gcc_city TEXT,
+  onboarding_stage TEXT NOT NULL DEFAULT 'REGISTERED',
   current_step INTEGER NOT NULL DEFAULT 1,
   onboarding_completed INTEGER NOT NULL DEFAULT 0,
   created_date TEXT NOT NULL DEFAULT (datetime('now')),
@@ -70,3 +74,19 @@ CREATE TABLE IF NOT EXISTS worker_onboarding (
 );
 
 CREATE INDEX IF NOT EXISTS idx_worker_onboarding_worker ON worker_onboarding(worker_id);
+
+CREATE TABLE IF NOT EXISTS worker_skill_proofs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  worker_id INTEGER NOT NULL,
+  skill_id INTEGER NOT NULL,
+  experience_years REAL,
+  photo_paths TEXT NOT NULL DEFAULT '[]',
+  video_paths TEXT NOT NULL DEFAULT '[]',
+  created_date TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_date TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (worker_id) REFERENCES workers(id),
+  FOREIGN KEY (skill_id) REFERENCES skills(id),
+  UNIQUE(worker_id, skill_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_worker_skill_proofs_worker ON worker_skill_proofs(worker_id);

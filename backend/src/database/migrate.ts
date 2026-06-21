@@ -41,4 +41,45 @@ export function runMigrations(): void {
       );
     }
   }
+
+  const onboardingColumns = db.prepare('PRAGMA table_info(worker_onboarding)').all() as { name: string }[];
+  const onboardingColNames = new Set(onboardingColumns.map((c) => c.name));
+  if (onboardingColumns.length > 0) {
+    if (!onboardingColNames.has('education_level')) {
+      db.exec('ALTER TABLE worker_onboarding ADD COLUMN education_level TEXT');
+    }
+    if (!onboardingColNames.has('preferred_gcc_country')) {
+      db.exec('ALTER TABLE worker_onboarding ADD COLUMN preferred_gcc_country TEXT');
+    }
+    if (!onboardingColNames.has('preferred_gcc_city')) {
+      db.exec('ALTER TABLE worker_onboarding ADD COLUMN preferred_gcc_city TEXT');
+    }
+    if (!onboardingColNames.has('onboarding_stage')) {
+      db.exec(
+        "ALTER TABLE worker_onboarding ADD COLUMN onboarding_stage TEXT NOT NULL DEFAULT 'REGISTERED'"
+      );
+    }
+  }
+
+  const skillProofsExists = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='worker_skill_proofs'")
+    .get();
+  if (!skillProofsExists) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS worker_skill_proofs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        worker_id INTEGER NOT NULL,
+        skill_id INTEGER NOT NULL,
+        experience_years REAL,
+        photo_paths TEXT NOT NULL DEFAULT '[]',
+        video_paths TEXT NOT NULL DEFAULT '[]',
+        created_date TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_date TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (worker_id) REFERENCES workers(id),
+        FOREIGN KEY (skill_id) REFERENCES skills(id),
+        UNIQUE(worker_id, skill_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_worker_skill_proofs_worker ON worker_skill_proofs(worker_id);
+    `);
+  }
 }

@@ -4,82 +4,79 @@ import {
   SkillRepository,
 } from '../repository/WorkerRepository.js';
 import { WorkerOnboardingRepository } from '../repository/WorkerOnboardingRepository.js';
-import type { WorkerOnboardingResponseDto, SaveOnboardingStepDto } from '../dto/WorkerOnboardingDto.js';
+import { WorkerSkillProofRepository } from '../repository/WorkerSkillProofRepository.js';
+import type {
+  WorkerOnboardingResponseDto,
+  SaveOnboardingStepDto,
+} from '../dto/WorkerOnboardingDto.js';
+import { mapSkillProof as mapProof } from '../dto/WorkerOnboardingDto.js';
 import type { WorkerProfileResponseDto } from '../dto/WorkerDto.js';
-import type { WorkerStatus } from '../entity/Worker.js';
-import { NotFoundException } from '../exception/AppException.js';
+import type { ExperienceLevel, WorkerStatus } from '../entity/Worker.js';
+import type { OnboardingStage } from '../entity/WorkerOnboarding.js';
+import { NotFoundException, ValidationException } from '../exception/AppException.js';
 
-const STEP_COMPLETION: Record<1 | 2 | 3, number> = {
-  1: 40,
-  2: 65,
-  3: 80,
+const STEP_COMPLETION: Record<1 | 2, number> = {
+  1: 35,
+  2: 60,
 };
 
 export class WorkerOnboardingService {
   constructor(
     private readonly workerRepo = new WorkerRepository(),
     private readonly onboardingRepo = new WorkerOnboardingRepository(),
+    private readonly skillProofRepo = new WorkerSkillProofRepository(),
     private readonly locationRepo = new LocationRepository(),
     private readonly skillRepo = new SkillRepository()
   ) {}
 
-  getOnboarding(workerId: number): WorkerOnboardingResponseDto {
+  getOnboarding(workerId: number, baseUrl = ''): WorkerOnboardingResponseDto {
     this.ensureWorkerExists(workerId);
     let record = this.onboardingRepo.findByWorkerId(workerId);
     if (!record) {
       record = this.onboardingRepo.createEmpty(workerId);
     }
-    return this.toResponse(record);
+    return this.toResponse(workerId, record, baseUrl);
   }
 
-  saveStep(workerId: number, dto: SaveOnboardingStepDto): WorkerOnboardingResponseDto {
+  saveStep(workerId: number, dto: SaveOnboardingStepDto, baseUrl = ''): WorkerOnboardingResponseDto {
     this.ensureWorkerExists(workerId);
-
-    const input = this.buildUpsertInput(workerId, dto);
-    const record = this.onboardingRepo.upsert(input);
-
-    const completion = STEP_COMPLETION[dto.step];
-    const status: WorkerStatus = dto.step < 3 ? 'PROFILE_INCOMPLETE' : record.onboardingCompleted ? 'PROFILE_COMPLETED' : 'PROFILE_INCOMPLETE';
-    this.workerRepo.updateProgress(workerId, completion, status);
-
-    return this.toResponse(record);
-  }
-
-  complete(workerId: number, dto: SaveOnboardingStepDto & { step: 3 }): {
-    onboarding: WorkerOnboardingResponseDto;
-    worker: WorkerProfileResponseDto;
-  } {
-    this.ensureWorkerExists(workerId);
-
-    const input = {
-      ...this.buildUpsertInput(workerId, dto),
-      currentStep: 3,
-      onboardingCompleted: true,
-    };
-    const record = this.onboardingRepo.upsert(input);
-
-    const completion = record.hasPassport ? 90 : 80;
-    const status: WorkerStatus = record.hasPassport ? 'PASSPORT_AVAILABLE' : 'PROFILE_COMPLETED';
-    this.workerRepo.updateProgress(workerId, completion, status);
-
-    return { onboarding: this.toResponse(record), worker: this.buildWorkerProfile(workerId) };
-  }
-
-  private buildUpsertInput(workerId: number, dto: SaveOnboardingStepDto) {
-    const base = { workerId, currentStep: Math.min(dto.step + 1, 3) as number };
 
     if (dto.step === 1) {
-      return {
-        ...base,
+      if (!dto.stateId || !dto.districtId) {
+        throw new ValidationException({ stateId: ['State and district are required'] });
+      }
+      if (!this.locationRepo.districtBelongsToState(dto.districtId, dto.stateId)) {
+        throw new ValidationException({ districtId: ['District does not belong to selected state'] });
+      }
+
+      this.workerRepo.updateProfileFields(workerId, {
+        stateId: dto.stateId,
+        districtId: dto.districtId,
+      });
+
+      const record = this.onboardingRepo.upsert({
+        workerId,
         dateOfBirth: dto.dateOfBirth ?? null,
         gender: dto.gender ?? null,
         email: dto.email || null,
         address: dto.address ?? null,
         pincode: dto.pincode ?? null,
-      };
+        educationLevel: dto.educationLevel || null,
+        currentStep: 2,
+        onboardingStage: 'PROFILE_COMPLETE',
+      });
+
+      this.workerRepo.updateProgress(workerId, STEP_COMPLETION[1], 'PROFILE_INCOMPLETE');
+      return this.toResponse(workerId, record, baseUrl);
     }
 
     if (dto.step === 2) {
+      if (!dto.primarySkillId) {
+        throw new ValidationException({ primarySkillId: ['Primary skill is required'] });
+      }
+      if (!this.skillRepo.findById(dto.primarySkillId)) {
+        throw new NotFoundException('Invalid primary skill');
+      }
       if (dto.secondarySkillIds?.length) {
         for (const skillId of dto.secondarySkillIds) {
           if (!this.skillRepo.findById(skillId)) {
@@ -87,53 +84,186 @@ export class WorkerOnboardingService {
           }
         }
       }
-      return {
-        ...base,
+
+      this.workerRepo.updateProfileFields(workerId, {
+        primarySkillId: dto.primarySkillId,
+        experienceLevel: dto.experienceLevel as ExperienceLevel,
+      });
+
+      const record = this.onboardingRepo.upsert({
+        workerId,
         secondarySkillIds: dto.secondarySkillIds ?? [],
         previousEmployer: dto.previousEmployer || null,
-        hasPassport: dto.hasPassport ?? false,
-        passportNumber: dto.hasPassport ? dto.passportNumber || null : null,
-        ecrStatus: dto.ecrStatus ?? null,
-      };
+        preferredGccCountry: dto.preferredGccCountry ?? null,
+        preferredGccCity: dto.preferredGccCity ?? null,
+        preferredCountries: dto.preferredGccCountry ? [dto.preferredGccCountry] : [],
+        availability: dto.availability ?? null,
+        openToRelocation: dto.openToRelocation ?? true,
+        expectedSalaryMin: dto.expectedSalaryMin ?? null,
+        expectedSalaryCurrency: dto.expectedSalaryCurrency ?? 'AED',
+        languages: dto.languages ?? [],
+        currentStep: 3,
+        onboardingStage: 'PROFILE_COMPLETE',
+      });
+
+      this.workerRepo.updateProgress(workerId, STEP_COMPLETION[2], 'PROFILE_INCOMPLETE');
+      return this.toResponse(workerId, record, baseUrl);
     }
 
+    throw new ValidationException({ step: ['Invalid step'] });
+  }
+
+  listSkillProofs(workerId: number, baseUrl = '') {
+    this.ensureWorkerExists(workerId);
+    return this.skillProofRepo.findByWorkerId(workerId).map((p) => mapProof(p, baseUrl));
+  }
+
+  addSkillProof(workerId: number, skillId: number, experienceYears?: number, baseUrl = '') {
+    this.ensureWorkerExists(workerId);
+    if (!this.skillRepo.findById(skillId)) {
+      throw new NotFoundException('Invalid skill');
+    }
+    const proof = this.skillProofRepo.upsert(workerId, skillId, experienceYears ?? null);
+    this.syncSkillsStage(workerId);
+    return mapProof(proof, baseUrl);
+  }
+
+  uploadSkillMedia(
+    workerId: number,
+    proofId: number,
+    type: 'photo' | 'video',
+    relativePath: string,
+    baseUrl = ''
+  ) {
+    this.ensureWorkerExists(workerId);
+    const updated = this.skillProofRepo.appendMedia(proofId, workerId, type, relativePath);
+    if (!updated) throw new NotFoundException('Skill proof not found');
+    this.syncSkillsStage(workerId);
+    return mapProof(updated, baseUrl);
+  }
+
+  removeSkillProof(workerId: number, proofId: number, baseUrl = '') {
+    this.ensureWorkerExists(workerId);
+    const deleted = this.skillProofRepo.delete(proofId, workerId);
+    if (!deleted) throw new NotFoundException('Skill proof not found');
+    this.syncSkillsStage(workerId);
+    return this.getOnboarding(workerId, baseUrl);
+  }
+
+  markReviewReady(workerId: number, baseUrl = ''): WorkerOnboardingResponseDto {
+    this.ensureWorkerExists(workerId);
+    if (!this.skillProofRepo.hasValidSkillProof(workerId)) {
+      throw new ValidationException({
+        skillProofs: ['Add at least one skill with a photo or video before continuing'],
+      });
+    }
+    const record = this.onboardingRepo.upsert({ workerId, currentStep: 4 });
+    return this.toResponse(workerId, record, baseUrl);
+  }
+
+  complete(workerId: number, baseUrl = ''): {
+    onboarding: WorkerOnboardingResponseDto;
+    worker: WorkerProfileResponseDto;
+  } {
+    this.ensureWorkerExists(workerId);
+
+    if (!this.skillProofRepo.hasValidSkillProof(workerId)) {
+      throw new ValidationException({
+        skillProofs: ['Upload at least one skill with a photo or video before completing'],
+      });
+    }
+
+    const record = this.onboardingRepo.upsert({
+      workerId,
+      currentStep: 4,
+      onboardingStage: 'JOB_READY',
+      onboardingCompleted: true,
+    });
+
+    this.workerRepo.updateProgress(workerId, 100, 'JOB_READY');
+
     return {
-      ...base,
-      preferredCountries: dto.preferredCountries ?? [],
-      availability: dto.availability ?? null,
-      openToRelocation: dto.openToRelocation ?? true,
-      expectedSalaryMin: dto.expectedSalaryMin ?? null,
-      expectedSalaryCurrency: dto.expectedSalaryCurrency ?? 'INR',
-      languages: dto.languages ?? [],
+      onboarding: this.toResponse(workerId, record, baseUrl),
+      worker: this.buildWorkerProfile(workerId),
     };
   }
 
-  private toResponse(record: import('../entity/WorkerOnboarding.js').WorkerOnboarding): WorkerOnboardingResponseDto {
+  private syncSkillsStage(workerId: number): void {
+    const hasMedia = this.skillProofRepo.hasValidSkillProof(workerId);
+    const stage: OnboardingStage = hasMedia ? 'SKILLS_UPLOADED' : 'PROFILE_COMPLETE';
+    const completion = hasMedia ? 85 : STEP_COMPLETION[2];
+    const status: WorkerStatus = hasMedia ? 'PROFILE_COMPLETED' : 'PROFILE_INCOMPLETE';
+
+    this.onboardingRepo.upsert({ workerId, onboardingStage: stage });
+    if (!this.onboardingRepo.findByWorkerId(workerId)?.onboardingCompleted) {
+      this.workerRepo.updateProgress(workerId, completion, status);
+    }
+  }
+
+  private toResponse(
+    workerId: number,
+    record: import('../entity/WorkerOnboarding.js').WorkerOnboarding,
+    baseUrl: string
+  ): WorkerOnboardingResponseDto {
+    const worker = this.workerRepo.findById(workerId)!;
+    const state = this.locationRepo.findStateById(worker.stateId);
+    const district = this.locationRepo.findDistrictById(worker.districtId);
+    const primarySkill = this.skillRepo.findById(worker.primarySkillId);
+
     const secondarySkillNames = record.secondarySkillIds
       .map((id) => this.skillRepo.findById(id)?.name)
       .filter((name): name is string => !!name);
 
+    const skillProofs = this.skillProofRepo.findByWorkerId(workerId).map((p) => mapProof(p, baseUrl));
+    const skillsWithMediaCount = this.skillProofRepo.countWithMedia(workerId);
+
+    const profileComplete =
+      !!record.dateOfBirth &&
+      !!record.gender &&
+      !!record.address &&
+      !!record.pincode &&
+      worker.stateId > 0 &&
+      worker.districtId > 0;
+
+    const workPrefsComplete =
+      !!record.preferredGccCountry &&
+      !!record.preferredGccCity &&
+      !!record.availability &&
+      record.languages.length > 0 &&
+      worker.primarySkillId > 0;
+
     return {
-      workerId: record.workerId,
+      workerId,
       dateOfBirth: record.dateOfBirth,
       gender: record.gender,
       email: record.email,
       address: record.address,
       pincode: record.pincode,
+      educationLevel: record.educationLevel,
+      stateId: worker.stateId,
+      stateName: state?.name ?? '',
+      districtId: worker.districtId,
+      districtName: district?.name ?? '',
+      primarySkillId: worker.primarySkillId,
+      primarySkillName: primarySkill?.name ?? '',
+      experienceLevel: worker.experienceLevel,
       secondarySkillIds: record.secondarySkillIds,
       secondarySkillNames,
       previousEmployer: record.previousEmployer,
-      hasPassport: record.hasPassport,
-      passportNumber: record.passportNumber,
-      ecrStatus: record.ecrStatus,
-      preferredCountries: record.preferredCountries,
+      preferredGccCountry: record.preferredGccCountry,
+      preferredGccCity: record.preferredGccCity,
       availability: record.availability,
       openToRelocation: record.openToRelocation,
       expectedSalaryMin: record.expectedSalaryMin,
       expectedSalaryCurrency: record.expectedSalaryCurrency,
       languages: record.languages,
+      onboardingStage: record.onboardingStage,
       currentStep: record.currentStep,
       onboardingCompleted: record.onboardingCompleted,
+      skillProofs,
+      skillsWithMediaCount,
+      canBrowseJobs: profileComplete && workPrefsComplete,
+      canApplyToJobs: record.onboardingCompleted && skillsWithMediaCount > 0,
     };
   }
 
@@ -164,6 +294,8 @@ export class WorkerOnboardingService {
       registrationSource: worker.registrationSource,
       status: worker.status,
       onboardingCompleted: onboarding?.onboardingCompleted ?? false,
+      onboardingStage: onboarding?.onboardingStage ?? 'REGISTERED',
+      skillsWithMediaCount: this.skillProofRepo.countWithMedia(workerId),
       createdDate: worker.createdDate,
       updatedDate: worker.updatedDate,
     };

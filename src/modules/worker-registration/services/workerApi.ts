@@ -165,11 +165,71 @@ export const workerApi = {
     });
   },
 
-  completeOnboarding(token: string, payload: Record<string, unknown>): Promise<OnboardingCompleteResult> {
+  completeOnboarding(token: string): Promise<OnboardingCompleteResult> {
     return request('/workers/onboarding/complete', {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify({}),
+    });
+  },
+
+  advanceToReview(token: string): Promise<WorkerOnboardingData> {
+    return request('/workers/onboarding/review', {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify({}),
+    });
+  },
+
+  listSkillProofs(token: string): Promise<import('../types/onboarding.types').WorkerSkillProof[]> {
+    return request('/workers/onboarding/skills', { headers: authHeaders(token) });
+  },
+
+  addSkillProof(
+    token: string,
+    payload: { skillId: number; experienceYears?: number }
+  ): Promise<import('../types/onboarding.types').WorkerSkillProof> {
+    return request('/workers/onboarding/skills', {
       method: 'POST',
       headers: authHeaders(token),
       body: JSON.stringify(payload),
     });
+  },
+
+  deleteSkillProof(token: string, proofId: number): Promise<WorkerOnboardingData> {
+    return request(`/workers/onboarding/skills/${proofId}`, {
+      method: 'DELETE',
+      headers: authHeaders(token),
+    });
+  },
+
+  async uploadSkillPhoto(token: string, proofId: number, file: File): Promise<import('../types/onboarding.types').WorkerSkillProof> {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await fetch(`${API_BASE}/workers/onboarding/skills/${proofId}/photos`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    const body = await response.json();
+    if (!response.ok || !body.success) {
+      throw new Error(body.message || 'Photo upload failed');
+    }
+    return body.data;
+  },
+
+  async uploadSkillVideo(token: string, proofId: number, file: File): Promise<import('../types/onboarding.types').WorkerSkillProof> {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await fetch(`${API_BASE}/workers/onboarding/skills/${proofId}/videos`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+    const body = await response.json();
+    if (!response.ok || !body.success) {
+      throw new Error(body.message || 'Video upload failed');
+    }
+    return body.data;
   },
 };

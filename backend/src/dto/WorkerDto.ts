@@ -49,6 +49,8 @@ export interface WorkerProfileResponseDto {
   registrationSource: string;
   status: string;
   onboardingCompleted: boolean;
+  onboardingStage?: string;
+  skillsWithMediaCount?: number;
   createdDate: string;
   updatedDate: string;
 }

@@ -38,6 +38,8 @@ export interface WorkerProfile {
   registrationSource: string;
   status: string;
   onboardingCompleted: boolean;
+  onboardingStage?: string;
+  skillsWithMediaCount?: number;
   createdDate: string;
   updatedDate: string;
 }
