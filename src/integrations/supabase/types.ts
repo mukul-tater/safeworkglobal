@@ -1329,6 +1329,30 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_reward_config: {
+        Row: {
+          id: boolean
+          placement_reward_amount: number
+          updated_at: string
+          updated_by: string | null
+          worker_fee_amount: number
+        }
+        Insert: {
+          id?: boolean
+          placement_reward_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+          worker_fee_amount?: number
+        }
+        Update: {
+          id?: boolean
+          placement_reward_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+          worker_fee_amount?: number
+        }
+        Relationships: []
+      }
       partner_worker_drafts: {
         Row: {
           created_at: string
@@ -1369,6 +1393,63 @@ export type Database = {
             columns: ["partner_profile_id"]
             isOneToOne: false
             referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_worker_skill_tests: {
+        Row: {
+          created_at: string
+          evaluated_at: string | null
+          evaluated_by: string | null
+          fee_received: boolean
+          id: string
+          notes: string | null
+          partner_profile_id: string
+          partner_worker_id: string
+          stage: Database["public"]["Enums"]["partner_skill_test_stage"]
+          status: Database["public"]["Enums"]["partner_skill_test_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          fee_received?: boolean
+          id?: string
+          notes?: string | null
+          partner_profile_id: string
+          partner_worker_id: string
+          stage: Database["public"]["Enums"]["partner_skill_test_stage"]
+          status?: Database["public"]["Enums"]["partner_skill_test_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          fee_received?: boolean
+          id?: string
+          notes?: string | null
+          partner_profile_id?: string
+          partner_worker_id?: string
+          stage?: Database["public"]["Enums"]["partner_skill_test_stage"]
+          status?: Database["public"]["Enums"]["partner_skill_test_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_worker_skill_tests_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_worker_skill_tests_partner_worker_id_fkey"
+            columns: ["partner_worker_id"]
+            isOneToOne: false
+            referencedRelation: "partner_workers"
             referencedColumns: ["id"]
           },
         ]
@@ -2118,10 +2199,12 @@ export type Database = {
           passport_number: string | null
           preferred_shift: string | null
           preferred_work_city: string | null
+          primary_skill: string | null
           primary_work_type: string | null
           project_types_worked: string[] | null
           secondary_skills: string[] | null
           skill_level: string | null
+          tenth_pass_confirmed: boolean
           updated_at: string | null
           user_id: string
           visa_countries: string[] | null
@@ -2153,10 +2236,12 @@ export type Database = {
           passport_number?: string | null
           preferred_shift?: string | null
           preferred_work_city?: string | null
+          primary_skill?: string | null
           primary_work_type?: string | null
           project_types_worked?: string[] | null
           secondary_skills?: string[] | null
           skill_level?: string | null
+          tenth_pass_confirmed?: boolean
           updated_at?: string | null
           user_id: string
           visa_countries?: string[] | null
@@ -2188,10 +2273,12 @@ export type Database = {
           passport_number?: string | null
           preferred_shift?: string | null
           preferred_work_city?: string | null
+          primary_skill?: string | null
           primary_work_type?: string | null
           project_types_worked?: string[] | null
           secondary_skills?: string[] | null
           skill_level?: string | null
+          tenth_pass_confirmed?: boolean
           updated_at?: string | null
           user_id?: string
           visa_countries?: string[] | null
@@ -2421,6 +2508,8 @@ export type Database = {
         | "needs_preparation"
         | "not_ready"
       partner_incentive_type: "verified" | "interview_qualified" | "placement"
+      partner_skill_test_stage: "partner" | "phone" | "physical"
+      partner_skill_test_status: "pending" | "passed" | "failed"
       partner_status:
         | "applied"
         | "under_review"
@@ -2571,6 +2660,8 @@ export const Constants = {
         "not_ready",
       ],
       partner_incentive_type: ["verified", "interview_qualified", "placement"],
+      partner_skill_test_stage: ["partner", "phone", "physical"],
+      partner_skill_test_status: ["pending", "passed", "failed"],
       partner_status: [
         "applied",
         "under_review",

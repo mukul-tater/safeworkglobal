@@ -1,126 +1,101 @@
-## Scope (this milestone only)
+## Goal
 
-In: Convert existing `agent` role to `partner` (e-Mitra), full multi-step partner onboarding, document uploads, admin approval workflow, partner dashboard shell, notifications.
-
-Out (future milestones): Worker registration by partners, External Opportunities (Adzuna), partner earnings payouts, employer/worker rework.
+Move all three role portals (Worker, Employer, E-Mitra Partner) to a unified flow: public marketing pages with no sidebar → Google or email sign-in/sign-up → role dashboard → optional profile completion → role-specific actions. Wipe demo jobs/applications. Add E-Mitra reward & 3-stage skill-test scaffolding.
 
 ---
 
-## 1. Rename `agent` → `partner` (e-Mitra)
+## 1. Public layout (pre-login)
 
-`agent` is currently a near-empty role (one dashboard page, sparse references). We rename in place rather than adding a parallel role.
+- Remove the role sidebar from public landing pages: Worker landing (`/worker`-ish landing currently showing "Worker Portal" sidebar), Employer landing ("Hire Workers" page), Partner landing ("Become a SafeWork Partner" page).
+- New public layout: top nav + hero + CTAs only. Two clear CTAs on every role landing: **"Continue with Google"** and **"Sign up with email"** (plus "Sign in" link).
+- Sidebar (role nav) renders only inside `/<role>/dashboard/*` after auth.
+- Keep the existing dark theme + design tokens. No new visual identity.
 
-**DB migration (single migration):**
-- Add `'partner'` value to `app_role` enum, then update all `user_roles` rows from `agent` → `partner`. (Postgres enums can't drop values cleanly while in use; we keep `agent` in the enum but stop writing it.)
-- Rename table `agent_profiles` → `partner_profiles` and update its RLS policies/trigger names.
-- Update `assign_initial_role()` and `handle_new_user()` to handle `partner` (insert into `partner_profiles`).
-- Update `seed_demo_users()` (only the role mapping branch — no agent-specific seed logic exists today).
+## 2. Auth flow (all three roles)
 
-**Code rename:**
-- `AppRole` type in `src/contexts/AuthContext.tsx`: `'agent'` → `'partner'`.
-- `src/pages/agent/AgentDashboard.tsx` → `src/pages/partner/PartnerDashboard.tsx` (kept as a shell; real content built in §3).
-- All route paths `/agent/*` → `/partner/*` in `App.tsx`.
-- Role-select UI in `Auth.tsx`, `Dashboard.tsx` redirect map, `AccessDenied`, mobile nav, admin UserManagement filters, resource pages mentioning "agents" — replace with "Partner (e-Mitra)".
-- `integrations/supabase/types.ts` regenerates automatically after migration.
+- Single auth entry per role, both methods enabled:
+  - Google (via existing `lovable.auth.signInWithOAuth("google")`) — on first sign-in, `handle_new_user` creates `profiles` row, then we call `assign_initial_role(<role>)` from the client based on which landing page they came from.
+  - Email/password — same flow, role passed via `raw_user_meta_data.role`.
+- On success → redirect to `/worker/dashboard`, `/employer/dashboard`, or `/partner/dashboard`.
+- Profile-completion banners (dismissible) inside the dashboard, **not** blocking gates.
 
-## 2. Partner onboarding (5-step wizard)
+## 3. Minimum-to-act gating
 
-New route: `/partner/onboarding` (protected, role=partner, mandatory until `submitted_at` is set — same pattern as worker/employer onboarding).
+| Role | Minimum required before main action |
+|------|-------------------------------------|
+| Worker | full name + mobile + 10th-pass confirmed + state + **primary skill** → can browse & apply |
+| Employer | company name + your name + work email + **company country** → can post a job |
+| Partner | full name + mobile + E-Mitra centre name + state → can submit worker applications (after admin approval) |
 
-**Schema (`partner_profiles` after rename + new columns):**
+Everything else (passport, address, education detail, skills media, banking, documents) is optional but nudged via progress card.
 
-```
--- Business info
-center_name, owner_name, mobile, whatsapp, email,
-state, district, address, pincode
+## 4. Worker module
 
--- Identity
-aadhaar_number, pan_number,
-aadhaar_front_url, aadhaar_back_url, pan_card_url, shop_photo_url
+- Profile fields: full name, mobile, address, state, district, DOB, gender, education (10th-pass mandatory), passport (yes/no + number if yes), ECR, languages, expected salary, GCC country/city preference, availability.
+- **Primary skill + secondary skills**, each skill needs at least one photo or video for "verified skill" badge (already partially exists — wire into onboarding step 3).
+- After basic-min fields complete: unlock jobs list and apply button.
+- Pre-selection education banners (10th-pass requirement, "FREE to register/browse/apply", ₹35,400 only after selection + interview) stay on the worker landing page.
 
--- Business details
-years_in_operation int, services_offered text[],
-monthly_footfall int,
-offers_passport_service bool, offers_doc_scanning bool, offers_worker_registration bool
+## 5. Employer module
 
--- Bank
-account_holder, account_number, ifsc, upi_id
+- Quick signup → dashboard → "Post a job" available immediately after the 4 min fields.
+- Profile completion (industry, size, address, KYC docs) nudged, not blocking.
+- Employer sees only workers who applied to their jobs (existing rule).
 
--- Declarations + workflow
-accepted_terms bool, accepted_privacy bool, confirmed_accuracy bool,
-status partner_status DEFAULT 'applied'  -- enum: applied|under_review|approved|active|suspended|rejected
-submitted_at, reviewed_at, reviewed_by, rejection_reason
-```
+## 6. E-Mitra Partner module
 
-Plus retain existing columns. Add CHECK trigger to validate Aadhaar (12 digits), PAN format, IFSC, pincode.
+- Quick signup → "Pending admin approval" dashboard state.
+- After admin approval (existing flow): can register workers (organic worker schema, `registration_source = 'PARTNER'`, linked to `partner_profile_id`).
+- New: **3-stage skill-test tracker** per partner-registered worker:
+  1. Partner local test (partner marks pass/fail with notes)
+  2. SafeWork phone interview (admin/ops marks)
+  3. Physical test (admin marks) — gated on ₹35,400 fee marked "received" by admin
+- New: **Placement reward** — ₹1,000 default, configurable in `partner_reward_config` table; credited via existing `partner_incentives` when worker status → `placed`. Update existing trigger to read amount from config table.
 
-**Wizard steps** (`src/pages/partner/PartnerOnboarding.tsx` + step components):
-1. Business Information
-2. Identity Verification (with file uploads)
-3. Business Details
-4. Bank Details
-5. Declarations + Review & Submit
+## 7. Data wipe (now)
 
-Use existing `OnboardingStepper`, `FileUpload`, `ValidatedInput`, `zod` validations. Persist progress on each step (upsert into `partner_profiles`). On final submit set `status='under_review'`, `submitted_at=now()`.
+- Delete ALL rows from: `jobs`, `job_skills`, `job_applications`, `application_status_history`, `saved_jobs`, `interviews`, `offers`, `job_formalities`, `shortlisted_workers`, `saved_searches`.
+- **Keep** all auth users, profiles, worker_profiles, employer_profiles, partner_profiles, worker_skills, reference data (skills/states/countries seed).
+- (Removing other non-listed users is **not** done per your answer — only jobs/applications wiped.)
 
-**Storage:** new private bucket `partner-documents` with RLS — owner can CRUD their own folder, admin can read all. Add helper in `src/lib/storage.ts` for signed URLs.
+## 8. Out of scope (for this pass)
 
-## 3. Partner dashboard shell
-
-`/partner/dashboard` (gate: `status IN ('approved','active')` — otherwise redirect to onboarding or show "Application under review" state).
-
-Overview cards (zeros for now, wired to real counts when worker module ships):
-- Workers Registered / Verified / Interviewed / Placed
-- Total Earnings (₹0 placeholder with "Payouts coming soon")
-
-Recent Activity feed (empty state) and Earnings section (empty state) — built as reusable cards so the worker module can populate them later.
-
-Sidebar: Dashboard, My Profile, Workers (disabled w/ tooltip "Coming soon"), Earnings (disabled), Documents, Notifications.
-
-## 4. Admin approval workflow
-
-New admin page `/admin/partners` (`src/pages/admin/PartnerApprovals.tsx`):
-- Tabs: Pending (`applied`+`under_review`), Approved, Active, Suspended, Rejected
-- Row → drawer with full application, document previews (signed URLs)
-- Actions: Approve (→ `approved`, then auto `active`), Reject (require reason), Suspend, Reactivate. Each writes to `admin_actions` audit table.
-- Add nav item in `AdminSidebar` and a stat card on `AdminDashboard`.
-
-New table `admin_actions(id, admin_id, target_type, target_id, action, reason, metadata jsonb, created_at)` with RLS (admin-only read; insert via security-definer fn).
-
-## 5. Notifications
-
-Reuse existing `notifications` table. Emit on:
-- Partner submits application → all admins
-- Admin approves / rejects / suspends → that partner
-Use existing `NotificationCenter` UI; no new components needed.
-
-## 6. Public/marketing touchpoints
-
-- Update `Auth.tsx` role-select chip from "Agent" → "Partner (e-Mitra)".
-- Update homepage / resource pages that mention "Agents" to "e-Mitra Partners" (one-line text changes).
+- Real payment gateway for ₹35,400 / ₹1,000 (admin-marked only).
+- Actual skill-test scoring engine.
+- Mobile (React Native) app changes — web only.
+- Renaming / merging Phase-1 SQLite backend with Supabase (still two stacks; Supabase remains source of truth for this flow).
 
 ---
 
-## Files created (new)
-- `supabase/migrations/<ts>_partner_renaming_and_onboarding.sql`
-- `src/pages/partner/PartnerDashboard.tsx` (replaces agent dashboard)
-- `src/pages/partner/PartnerOnboarding.tsx` + `steps/{BusinessInfo,Identity,BusinessDetails,BankDetails,Declarations}.tsx`
-- `src/pages/admin/PartnerApprovals.tsx`
-- `src/components/partner/{PartnerSidebar,PartnerHeader,PartnerStatusBanner}.tsx`
-- `src/config/partnerNav.ts`
-- `src/lib/validations/partner.ts`
+## Technical details
 
-## Files edited
-- `src/App.tsx` (routes), `src/contexts/AuthContext.tsx` (role type + redirect), `src/pages/Auth.tsx`, `src/pages/Dashboard.tsx`, `src/pages/AccessDenied.tsx`, `src/components/MobileBottomNav.tsx`, `src/components/admin/AdminSidebar.tsx`, `src/pages/admin/AdminDashboard.tsx`, `src/pages/admin/UserManagement.tsx`, `src/lib/storage.ts`, plus copy-only updates to homepage/resource pages mentioning agents.
+### DB migrations
+1. Wipe SQL on jobs + application-related tables.
+2. New table `partner_reward_config` (single row, amount numeric, updated_at).
+3. New table `partner_worker_skill_tests` (worker_id, stage enum partner|phone|physical, status, notes, fee_paid bool, created_by, timestamps) + RLS for partner read-own / admin all.
+4. Update `handle_partner_worker_status_change` to read `placed` reward from `partner_reward_config` instead of hardcoded 750.
+5. Add `tenth_pass_confirmed boolean` + `primary_skill text` to `worker_profiles` if missing.
+6. Add `country` to `employer_profiles` already exists — verify.
 
-## Files deleted
-- `src/pages/agent/AgentDashboard.tsx`
+### Frontend
+- New `src/layouts/PublicRoleLayout.tsx` (top nav + footer, no sidebar). Apply to `/worker`, `/employer`, `/partner` landing routes.
+- Existing `EmitraLayout`, worker portal layout, employer layout: only mount inside authenticated routes.
+- Replace landing pages' sidebar with hero + dual-CTA (Google + email).
+- New `src/pages/auth/RoleAuth.tsx` (one component, role param) used by `/worker/auth`, `/employer/auth`, `/partner/auth` — Google button + email form, role inferred from path.
+- Dashboard gating helper `useCanAct(role)` returns booleans for browse/apply/post-job/register-worker; dashboards show progress card with deep-links to remaining fields.
+- Partner dashboard: add "Skill tests" section per worker with 3 cards (partner / phone / physical).
+- Admin: new `/admin/partner-rewards` page to edit `partner_reward_config` and mark fees received.
+
+### Files removed/repurposed
+- `src/pages/worker/QuickWorkerSignup.tsx` → folded into new `RoleAuth`.
+- Sidebar nav configs (`phase1WorkerNav.ts`, `emitraNav.ts`, employer nav) gated to authenticated routes only.
 
 ---
 
-## Out of scope confirmation
-- No `workers`, `worker_documents`, `worker_videos`, `external_jobs`, `job_sync_logs` tables created here.
-- No Adzuna edge function or cron.
-- No payout / commission logic — earnings cards are placeholders.
+## Open questions (please confirm)
 
-If this looks right I'll start with the migration (single approval), then ship the code in one pass.
+1. Should the worker landing keep the long educational panel (10th-pass / FREE / ₹35,400) or move it behind a "Learn more" expander to keep the hero focused?
+2. For Google sign-up, if the user picks the wrong landing page (e.g. signs in via Worker but already has Employer role), should we (a) reject with a message, (b) auto-redirect to existing role dashboard, or (c) allow multi-role on same auth user?
+3. The Phase-1 SQLite backend (`backend/`) currently powers `/register`, `/login`, `/home`, `/onboarding`. Confirm we are **deprecating** that path and routing all new worker auth through Supabase — or do you want to keep Phase-1 for organic workers?
+
+Once you confirm (or say "just proceed with sensible defaults"), I'll execute in this order: DB migration → wipe data → public layout + auth pages → dashboard gating → partner skill-test UI → admin reward config.
