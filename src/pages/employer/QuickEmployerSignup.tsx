@@ -12,14 +12,13 @@ import { lovable } from "@/integrations/lovable/index";
 export default function QuickEmployerSignup() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [companyName, setCompanyName] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!companyName.trim() || !fullName.trim() || !email.trim() || password.length < 6) {
+    if (!fullName.trim() || !email.trim() || password.length < 6) {
       toast.error("Please fill all fields (password min 6 chars)");
       return;
     }
@@ -33,7 +32,6 @@ export default function QuickEmployerSignup() {
           data: {
             full_name: fullName.trim(),
             role: "employer",
-            company_name: companyName.trim(),
           },
         },
       });
@@ -73,7 +71,6 @@ export default function QuickEmployerSignup() {
           navigate("/employer/login");
           return;
         }
-        await supabase.from("employer_profiles").update({ company_name: companyName.trim() }).eq("user_id", user.id);
       }
 
       toast.success("Welcome! Let's get you started.");
@@ -86,17 +83,11 @@ export default function QuickEmployerSignup() {
   };
 
   const handleGoogle = async () => {
-    if (!companyName.trim()) {
-      toast.error("Please enter your company name before continuing with Google");
-      return;
-    }
     setLoading(true);
     try {
       // Pre-select the Employer role so the OAuth callback can auto-assign it
-      // without showing the role chooser again on /auth. Also persist the
-      // company name so /auth can write it to employer_profiles post-callback.
+      // without showing the role chooser again on /auth.
       sessionStorage.setItem("pending_oauth_role", "employer");
-      sessionStorage.setItem("pending_employer_company", companyName.trim());
       if (fullName.trim()) {
         sessionStorage.setItem("pending_employer_full_name", fullName.trim());
       }
@@ -105,7 +96,6 @@ export default function QuickEmployerSignup() {
       });
       if (result.error) {
         sessionStorage.removeItem("pending_oauth_role");
-        sessionStorage.removeItem("pending_employer_company");
         sessionStorage.removeItem("pending_employer_full_name");
         toast.error(
           result.error instanceof Error ? result.error.message : "Google sign-in failed"
@@ -116,7 +106,6 @@ export default function QuickEmployerSignup() {
       if (result.redirected) return; // Browser will redirect to Google
     } catch (err: any) {
       sessionStorage.removeItem("pending_oauth_role");
-      sessionStorage.removeItem("pending_employer_company");
       sessionStorage.removeItem("pending_employer_full_name");
       toast.error(err?.message || "Google sign-in failed");
       setLoading(false);
@@ -155,10 +144,6 @@ export default function QuickEmployerSignup() {
           </div>
 
           <form onSubmit={handleSignup} className="space-y-3">
-            <div>
-              <Label htmlFor="company">Company name *</Label>
-              <Input id="company" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Acme Construction Ltd" disabled={loading} />
-            </div>
             <div>
               <Label htmlFor="name">Your name *</Label>
               <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full name" disabled={loading} />

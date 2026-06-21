@@ -13,7 +13,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { isPartnerOperational, getPartnerProfile } from '../services/emitraService';
-import GoogleAuthButton, { AuthDivider } from '@/modules/worker-registration/components/GoogleAuthButton';
 
 type Method = 'mobile' | 'email';
 type Step = 'credentials' | 'otp';
@@ -202,9 +201,6 @@ export default function EmitraLoginPage() {
               <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
           )}
-
-          <GoogleAuthButton label="Sign in with Google" role="partner" />
-          <AuthDivider />
 
           {method === 'mobile' ? (
             step === 'credentials' ? (
