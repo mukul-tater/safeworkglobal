@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Camera, Loader2, Plus, Trash2, Video, Wrench } from 'lucide-react';
 import ProfileSection from '@/components/profile/ProfileSection';
+import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
 
 const STORAGE_BUCKET = 'worker-videos';
 
@@ -347,36 +348,16 @@ export default function WorkerSkillMedia({ workerId }: WorkerSkillMediaProps) {
                   </Button>
                 </div>
 
-                {skill.media.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {skill.media.map((m) => (
-                      <div key={m.id} className="relative">
-                        {m.media_type === 'photo' ? (
-                          <img
-                            src={m.url}
-                            alt={skill.skill_name}
-                            className="h-20 w-20 rounded-lg object-cover border border-border/60"
-                          />
-                        ) : (
-                          <video
-                            src={m.url}
-                            className="h-20 w-28 rounded-lg border border-border/60 object-cover bg-black"
-                            controls
-                          />
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMedia(m)}
-                          disabled={saving || uploading}
-                          className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive text-destructive-foreground p-0.5 shadow-sm"
-                          aria-label={`Remove ${m.media_type}`}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="mb-3">
+                  <SkillMediaGallery
+                    items={skill.media}
+                    label={skill.skill_name}
+                    onDelete={handleDeleteMedia}
+                    deleteDisabled={saving || uploading}
+                    thumbnailPhotoClassName="h-20 w-20"
+                    thumbnailVideoClassName="h-20 w-28"
+                  />
+                </div>
 
                 <div className="flex flex-wrap gap-2">
                   <Button

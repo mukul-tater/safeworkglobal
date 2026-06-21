@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import VerificationBadge, { calculateVerificationLevel, VerificationLevel } from '@/components/worker/VerificationBadge';
 import { isWorkerKycVerified } from '@/lib/workerKyc';
 import { loadWorkerSkillsWithMedia, type WorkerSkillWithMedia } from '@/lib/workerSkillMedia';
+import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
 
 interface ApplicationData {
   id: string;
@@ -658,30 +659,13 @@ export default function ApplicationDetail() {
                                     </Badge>
                                   )}
                                 </div>
-                                {skill.media.length > 0 ? (
-                                  <div className="flex flex-wrap gap-2">
-                                    {skill.media.map((m) =>
-                                      m.media_type === 'photo' ? (
-                                        <img
-                                          key={m.id}
-                                          src={m.url}
-                                          alt={skill.skill_name}
-                                          className="h-24 w-24 rounded-md object-cover border"
-                                        />
-                                      ) : (
-                                        <video
-                                          key={m.id}
-                                          src={m.url}
-                                          className="h-24 w-40 rounded-md border object-cover"
-                                          controls
-                                          preload="metadata"
-                                        />
-                                      ),
-                                    )}
-                                  </div>
-                                ) : (
-                                  <p className="text-xs text-muted-foreground italic">No photos or videos for this skill</p>
-                                )}
+                                <SkillMediaGallery
+                                  items={skill.media}
+                                  label={skill.skill_name}
+                                  thumbnailPhotoClassName="h-24 w-24"
+                                  thumbnailVideoClassName="h-24 w-40"
+                                  emptyMessage="No photos or videos for this skill"
+                                />
                               </div>
                             ))}
                           </div>

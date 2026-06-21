@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import VerificationBadge, { calculateVerificationLevel, VerificationLevel } from '@/components/worker/VerificationBadge';
 import SendJobRequestDialog from '@/components/employer/SendJobRequestDialog';
+import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
 
 interface WorkerProfile {
   user_id: string;
@@ -562,29 +563,11 @@ export default function WorkerPublicProfile() {
                               </Badge>
                             )}
                           </div>
-                          {skill.media.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                              {skill.media.map((m) =>
-                                m.media_type === 'photo' ? (
-                                  <img
-                                    key={m.id}
-                                    src={m.url}
-                                    alt={skill.skill_name}
-                                    className="h-20 w-20 rounded-md object-cover border"
-                                  />
-                                ) : (
-                                  <video
-                                    key={m.id}
-                                    src={m.url}
-                                    className="h-20 w-32 rounded-md border object-cover"
-                                    controls
-                                  />
-                                ),
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">No photos or videos yet</p>
-                          )}
+                          <SkillMediaGallery
+                            items={skill.media}
+                            label={skill.skill_name}
+                            emptyMessage="No photos or videos yet"
+                          />
                         </div>
                       ))}
                     </div>
