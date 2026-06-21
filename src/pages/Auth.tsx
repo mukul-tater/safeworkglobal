@@ -123,7 +123,7 @@ export default function Auth() {
     if (!isAuthenticated || !role || assigningRole) return;
 
     if (role === 'worker') {
-      navigate('/home', { replace: true });
+      navigate(isPhase1Worker ? '/home' : '/worker/dashboard', { replace: true });
       return;
     }
 
@@ -296,7 +296,7 @@ export default function Auth() {
       }
       toast.success(`Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!`);
       if (selectedRole === 'worker') {
-        navigate('/home', { replace: true });
+        navigate(isPhase1Worker ? '/home' : '/worker/dashboard', { replace: true });
       } else if (selectedRole === 'employer') {
         // Apply any pending company/full-name captured from the
         // QuickEmployerSignup form before the Google OAuth redirect.
