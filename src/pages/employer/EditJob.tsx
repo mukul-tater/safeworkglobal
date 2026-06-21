@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { employerNavGroups, employerProfileMenu } from "@/config/employerNav";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,16 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { jobPostingSchema, type JobPostingFormData } from "@/lib/validations/job";
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
+import JobBenefitsField from "@/components/employer/JobBenefitsField";
+import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { saveJobPartial, type JobPostAutoSaveData } from "@/lib/autoSaveJobs";
 
 export default function EmployerEditJob() {
   const { jobId } = useParams();
@@ -37,6 +41,7 @@ export default function EmployerEditJob() {
     setValue,
     watch,
     reset,
+    control,
   } = useForm<JobPostingFormData>({
     resolver: zodResolver(jobPostingSchema),
   });
@@ -46,6 +51,45 @@ export default function EmployerEditJob() {
   const currency = watch("currency");
   const visaSponsorship = watch("visa_sponsorship");
   const remoteAllowed = watch("remote_allowed");
+  const formValues = useWatch({ control });
+
+  const autoSaveData = useMemo<JobPostAutoSaveData>(
+    () => ({
+      title: formValues.title ?? "",
+      description: formValues.description ?? "",
+      requirements: formValues.requirements ?? "",
+      benefits: formValues.benefits ?? "",
+      responsibilities: formValues.responsibilities ?? "",
+      location: formValues.location ?? "",
+      country: formValues.country ?? "",
+      job_type: formValues.job_type ?? "",
+      experience_level: formValues.experience_level ?? "",
+      salary_min: formValues.salary_min,
+      salary_max: formValues.salary_max,
+      currency: formValues.currency ?? "INR",
+      openings: formValues.openings ?? 1,
+      visa_sponsorship: formValues.visa_sponsorship ?? false,
+      remote_allowed: formValues.remote_allowed ?? false,
+      expires_at: formValues.expires_at ?? "",
+      skills,
+      status: formValues.status,
+    }),
+    [formValues, skills],
+  );
+
+  const handleAutoSave = useCallback(
+    async (data: JobPostAutoSaveData) => {
+      if (!user || !jobId) return;
+      await saveJobPartial(user.id, jobId, data);
+    },
+    [user, jobId],
+  );
+
+  const { status: autoSaveStatus, markReady } = useAutoSave({
+    data: autoSaveData,
+    onSave: handleAutoSave,
+    enabled: !loading && !!user && !!jobId,
+  });
 
   useEffect(() => {
     if (jobId && user) fetchJob();
@@ -89,6 +133,26 @@ export default function EmployerEditJob() {
         expires_at: job.expires_at ? job.expires_at.split("T")[0] : "",
         status: job.status as any,
         skills: skillNames,
+      });
+      markReady({
+        title: job.title,
+        description: job.description,
+        requirements: job.requirements || "",
+        benefits: job.benefits || "",
+        responsibilities: job.responsibilities || "",
+        location: job.location,
+        country: job.country,
+        job_type: job.job_type,
+        experience_level: job.experience_level,
+        salary_min: job.salary_min || undefined,
+        salary_max: job.salary_max || undefined,
+        currency: job.currency,
+        openings: job.openings,
+        visa_sponsorship: job.visa_sponsorship || false,
+        remote_allowed: job.remote_allowed || false,
+        expires_at: job.expires_at ? job.expires_at.split("T")[0] : "",
+        skills: skillNames,
+        status: job.status,
       });
     } catch (error: any) {
       toast({ title: "Error", description: "Failed to load job details. You may not have permission.", variant: "destructive" });
@@ -155,6 +219,8 @@ export default function EmployerEditJob() {
         if (skillsError) throw skillsError;
       }
 
+      markReady({ ...autoSaveData, status: data.status });
+
       toast({ title: "Success", description: "Job updated successfully" });
       navigate("/employer/manage-jobs");
     } catch (error: any) {
@@ -177,11 +243,14 @@ export default function EmployerEditJob() {
   return (
     <DashboardLayout navGroups={employerNavGroups} portalLabel="Employer Portal" portalName="Employer Portal" profileMenuItems={employerProfileMenu}>
       <PortalBreadcrumb />
-      <div className="flex items-center gap-4 mb-6 md:mb-8">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/employer/manage-jobs")}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl md:text-3xl font-bold">Edit Job</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6 md:mb-8">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/employer/manage-jobs")}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl md:text-3xl font-bold">Edit Job</h1>
+        </div>
+        <AutoSaveStatus status={autoSaveStatus} />
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -207,10 +276,11 @@ export default function EmployerEditJob() {
                 <Label htmlFor="requirements">Requirements</Label>
                 <Textarea id="requirements" {...register("requirements")} rows={4} />
               </div>
-              <div>
-                <Label htmlFor="benefits">Benefits</Label>
-                <Textarea id="benefits" {...register("benefits")} rows={4} />
-              </div>
+              <JobBenefitsField
+                value={watch("benefits") || ""}
+                onChange={(v) => setValue("benefits", v, { shouldValidate: true })}
+                error={errors.benefits?.message}
+              />
             </CardContent>
           </Card>
 

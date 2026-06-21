@@ -12,14 +12,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { jobPostingSchema, type JobPostingFormData } from "@/lib/validations/job";
-import { useState } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { X, Plus } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobTitleAutocomplete from "@/components/employer/JobTitleAutocomplete";
+import JobBenefitsField from "@/components/employer/JobBenefitsField";
+import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { saveJobDraftPartial, type JobPostAutoSaveData } from "@/lib/autoSaveJobs";
 
 export default function PostJob() {
   const { user } = useAuth();
@@ -28,6 +32,7 @@ export default function PostJob() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
+  const draftJobIdRef = useRef<string | null>(null);
 
   const {
     register,
@@ -35,6 +40,7 @@ export default function PostJob() {
     formState: { errors },
     setValue,
     watch,
+    control,
   } = useForm<JobPostingFormData>({
     resolver: zodResolver(jobPostingSchema),
     defaultValues: {
@@ -50,7 +56,65 @@ export default function PostJob() {
   const jobType = watch("job_type");
   const experienceLevel = watch("experience_level");
   const currency = watch("currency");
-  const status = watch("status");
+  const formValues = useWatch({ control });
+
+  const autoSaveData = useMemo<JobPostAutoSaveData>(
+    () => ({
+      title: formValues.title ?? "",
+      description: formValues.description ?? "",
+      requirements: formValues.requirements ?? "",
+      benefits: formValues.benefits ?? "",
+      responsibilities: formValues.responsibilities ?? "",
+      location: formValues.location ?? "",
+      country: formValues.country ?? "",
+      job_type: formValues.job_type ?? "",
+      experience_level: formValues.experience_level ?? "",
+      salary_min: formValues.salary_min,
+      salary_max: formValues.salary_max,
+      currency: formValues.currency ?? "INR",
+      openings: formValues.openings ?? 1,
+      visa_sponsorship: formValues.visa_sponsorship ?? false,
+      remote_allowed: formValues.remote_allowed ?? false,
+      expires_at: formValues.expires_at ?? "",
+      skills,
+    }),
+    [formValues, skills],
+  );
+
+  const handleAutoSave = useCallback(
+    async (data: JobPostAutoSaveData) => {
+      if (!user) return;
+      const id = await saveJobDraftPartial(user.id, draftJobIdRef.current, data);
+      if (id) draftJobIdRef.current = id;
+    },
+    [user],
+  );
+
+  const { status: autoSaveStatus, markReady } = useAutoSave({
+    data: autoSaveData,
+    onSave: handleAutoSave,
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    markReady({
+      title: "",
+      description: "",
+      requirements: "",
+      benefits: "",
+      responsibilities: "",
+      location: "",
+      country: "",
+      job_type: "",
+      experience_level: "",
+      currency: "INR",
+      openings: 1,
+      visa_sponsorship: false,
+      remote_allowed: false,
+      expires_at: "",
+      skills: [],
+    });
+  }, [markReady]);
 
   const addSkill = () => {
     const trimmedSkill = skillInput.trim();
@@ -104,27 +168,45 @@ export default function PostJob() {
         posted_at: data.status === "ACTIVE" ? new Date().toISOString() : null,
       };
 
-      const { data: job, error: jobError } = await supabase
-        .from("jobs")
-        .insert(jobData)
-        .select()
-        .single();
+      let jobId = draftJobIdRef.current;
 
-      if (jobError) throw jobError;
+      if (jobId) {
+        const { error: jobError } = await supabase
+          .from("jobs")
+          .update(jobData)
+          .eq("id", jobId)
+          .eq("employer_id", user.id);
 
-      // Add skills if any
-      if (skills.length > 0 && job) {
-        const skillsData = skills.map(skill => ({
-          job_id: job.id,
-          skill_name: skill,
-        }));
+        if (jobError) throw jobError;
+      } else {
+        const { data: job, error: jobError } = await supabase
+          .from("jobs")
+          .insert(jobData)
+          .select()
+          .single();
 
-        const { error: skillsError } = await supabase
-          .from("job_skills")
-          .insert(skillsData);
-
-        if (skillsError) throw skillsError;
+        if (jobError) throw jobError;
+        jobId = job.id;
       }
+
+      // Sync skills
+      if (jobId) {
+        await supabase.from("job_skills").delete().eq("job_id", jobId);
+        if (skills.length > 0) {
+          const skillsData = skills.map(skill => ({
+            job_id: jobId,
+            skill_name: skill,
+          }));
+
+          const { error: skillsError } = await supabase
+            .from("job_skills")
+            .insert(skillsData);
+
+          if (skillsError) throw skillsError;
+        }
+      }
+
+      markReady({ ...autoSaveData, status: data.status });
 
       toast({
         title: "Success",
@@ -148,7 +230,10 @@ export default function PostJob() {
   return (
     <DashboardLayout navGroups={employerNavGroups} portalLabel="Employer Portal" portalName="Employer Portal" profileMenuItems={employerProfileMenu}>
         <PortalBreadcrumb />
-        <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">Post a New Job</h1>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold">Post a New Job</h1>
+          <AutoSaveStatus status={autoSaveStatus} />
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-6">
@@ -212,18 +297,11 @@ export default function PostJob() {
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="benefits">Benefits</Label>
-                  <Textarea
-                    id="benefits"
-                    {...register("benefits")}
-                    placeholder="List benefits and perks..."
-                    rows={4}
-                  />
-                  {errors.benefits && (
-                    <p className="text-sm text-destructive mt-1">{errors.benefits.message}</p>
-                  )}
-                </div>
+                <JobBenefitsField
+                  value={watch("benefits") || ""}
+                  onChange={(v) => setValue("benefits", v, { shouldValidate: true })}
+                  error={errors.benefits?.message}
+                />
               </CardContent>
             </Card>
 
