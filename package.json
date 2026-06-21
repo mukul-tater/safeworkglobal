@@ -13,7 +13,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "seed:jobs": "node scripts/seed-jobs.mjs",
-    "seed:jobs:sql": "npx tsx scripts/seed-jobs-export.ts"
+    "seed:jobs:sql": "npx tsx scripts/seed-jobs-export.ts",
+    "reset:phase0": "node scripts/phase0-reset-platform-data.mjs",
+    "reset:phase0:backend": "node scripts/phase0-reset-backend-workers.mjs",
+    "reset:phase0:all": "npm run reset:phase0 && npm run reset:phase0:backend"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

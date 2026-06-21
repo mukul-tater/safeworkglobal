@@ -1,5 +1,4 @@
--- Run once in Supabase Dashboard → SQL Editor to fix admin login.
--- File: scripts/fix-admin-login.sql
+-- Phase 0: restrict auto-admin promotion to production admin accounts only.
 
 CREATE OR REPLACE FUNCTION public.handle_admin_user()
 RETURNS trigger

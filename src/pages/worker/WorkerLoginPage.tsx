@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, Briefcase, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Loader2, HardHat, Lock, Mail } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
 
-export default function EmployerLoginPage() {
+export default function WorkerLoginPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated, role } = useAuth();
   const [email, setEmail] = useState('');
@@ -22,8 +22,8 @@ export default function EmployerLoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isAuthenticated && role === 'employer') {
-      navigate('/employer/dashboard', { replace: true });
+    if (isAuthenticated && role === 'worker') {
+      navigate('/worker/dashboard', { replace: true });
     }
   }, [isAuthenticated, role, navigate]);
 
@@ -44,7 +44,7 @@ export default function EmployerLoginPage() {
         .select('role')
         .eq('user_id', user.id)
         .maybeSingle();
-      if (roleRow?.role && roleRow.role !== 'employer') {
+      if (roleRow?.role && roleRow.role !== 'worker') {
         await supabase.auth.signOut();
         setError(
           `This account is registered as a ${roleRow.role}. Please sign in from the correct portal.`
@@ -54,14 +54,14 @@ export default function EmployerLoginPage() {
       }
     }
     toast.success('Welcome back!');
-    navigate('/employer/dashboard', { replace: true });
+    navigate('/worker/dashboard', { replace: true });
   };
 
   const handleGoogle = async () => {
     setError('');
     setGoogleLoading(true);
     try {
-      sessionStorage.setItem('pending_oauth_role', 'employer');
+      sessionStorage.setItem('pending_oauth_role', 'worker');
       const result = await lovable.auth.signInWithOAuth('google', {
         redirect_uri: `${window.location.origin}/auth`,
       });
@@ -82,17 +82,22 @@ export default function EmployerLoginPage() {
       <div className="fixed inset-0 pointer-events-none" style={{ background: 'var(--gradient-mesh)' }} />
       <div className="w-full max-w-[440px] relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-4">
-            <Briefcase className="h-7 w-7 text-primary" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-success/10 mb-4">
+            <HardHat className="h-7 w-7 text-success" />
           </div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">Employer Login</h1>
+          <h1 className="text-2xl font-heading font-bold text-foreground">Worker Login</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Sign in to hire verified workers and manage your jobs.
+            Sign in to browse jobs, apply, and track your applications.
           </p>
         </div>
 
+        <div className="mb-4 mx-auto w-fit flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
+          <HardHat className="h-3.5 w-3.5" />
+          Signing in as a Worker
+        </div>
+
         <Card className="shadow-lg border-border/60 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-primary via-primary/80 to-info" />
+          <div className="h-1 bg-gradient-to-r from-success via-success/80 to-primary" />
           <CardContent className="p-6">
             {error && (
               <Alert variant="destructive" className="mb-4">
@@ -129,13 +134,13 @@ export default function EmployerLoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="employer-email">Work Email</Label>
+                <Label htmlFor="worker-email">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
-                    id="employer-email"
+                    id="worker-email"
                     type="email"
-                    placeholder="you@company.com"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -144,11 +149,11 @@ export default function EmployerLoginPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="employer-password">Password</Label>
+                <Label htmlFor="worker-password">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
-                    id="employer-password"
+                    id="worker-password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={password}
@@ -169,22 +174,22 @@ export default function EmployerLoginPage() {
               </div>
               <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In to Employer Portal
+                Sign In to Worker Portal
               </Button>
             </form>
 
             <p className="text-sm text-center text-muted-foreground pt-4 mt-4 border-t border-border">
-              New employer?{' '}
-              <Link to="/employer/quick-signup" className="text-primary font-medium hover:underline">
-                Create a company account
+              New worker?{' '}
+              <Link to="/worker/quick-signup" className="text-primary font-medium hover:underline">
+                Create your profile
               </Link>
             </p>
           </CardContent>
         </Card>
 
         <p className="text-xs text-center text-muted-foreground mt-6">
-          Looking for a job?{' '}
-          <Link to="/worker/login" className="text-primary hover:underline">Worker sign in</Link>
+          Hiring workers?{' '}
+          <Link to="/employer/login" className="text-primary hover:underline">Employer sign in</Link>
           {' · '}
           <Link to="/emitra/login" className="text-primary hover:underline">Partner sign in</Link>
         </p>

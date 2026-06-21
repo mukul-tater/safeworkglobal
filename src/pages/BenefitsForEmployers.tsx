@@ -114,13 +114,13 @@ export default function BenefitsForEmployers() {
   const { isAuthenticated, role } = useAuth();
 
   const handleHire = () => {
-    if (!isAuthenticated) return navigate("/auth?role=employer&mode=signup");
+    if (!isAuthenticated) return navigate("/employer/quick-signup");
     if (role === "employer") return navigate("/employer/dashboard");
     if (role === "worker") {
       toast.error("You're logged in as a Worker. Sign out to access employer features.");
       return;
     }
-    navigate("/auth?role=employer");
+    navigate("/employer/quick-signup");
   };
 
   return (

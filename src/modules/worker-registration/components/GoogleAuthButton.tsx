@@ -3,21 +3,29 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { lovable } from '@/integrations/lovable';
+import type { AppRole } from '@/contexts/AuthContext';
 
 interface Props {
   label?: string;
+  /** Role assigned after OAuth when the account has no role yet. */
+  role?: AppRole;
+  /** Called before redirecting to Google (e.g. stash partial form fields). */
+  onBeforeOAuth?: () => void;
 }
 
 /** Lovable Google OAuth — same flow as /auth and QuickWorkerSignup. */
 export default function GoogleAuthButton({
   label = 'Continue with Google',
+  role = 'worker',
+  onBeforeOAuth,
 }: Props) {
   const [loading, setLoading] = useState(false);
 
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      sessionStorage.setItem('pending_oauth_role', 'worker');
+      onBeforeOAuth?.();
+      sessionStorage.setItem('pending_oauth_role', role);
       const result = await lovable.auth.signInWithOAuth('google', {
         redirect_uri: `${window.location.origin}/auth`,
       });

@@ -26,6 +26,10 @@ import {
   emitraBankSchema, emitraDocumentsSchema, emitraDeclarationsSchema,
 } from '../validations/emitra';
 import { getPartnerProfile, savePartnerApplication } from '../services/emitraService';
+import GoogleAuthButton, { AuthDivider } from '@/modules/worker-registration/components/GoogleAuthButton';
+
+const PARTNER_NAME_KEY = 'pending_partner_full_name';
+const PARTNER_EMAIL_KEY = 'pending_partner_email';
 
 const STEPS = [
   { id: 1, title: 'Personal Info', icon: User },
@@ -69,6 +73,11 @@ export default function EmitraRegisterPage() {
       return;
     }
     (async () => {
+      const pendingName = sessionStorage.getItem(PARTNER_NAME_KEY);
+      const pendingEmail = sessionStorage.getItem(PARTNER_EMAIL_KEY);
+      if (pendingName) sessionStorage.removeItem(PARTNER_NAME_KEY);
+      if (pendingEmail) sessionStorage.removeItem(PARTNER_EMAIL_KEY);
+
       const row = await getPartnerProfile(user.id);
       if (row) {
         if (row.submitted_at) {
@@ -78,6 +87,8 @@ export default function EmitraRegisterPage() {
         setData(d => ({
           ...d,
           ...row,
+          owner_name: row.owner_name || pendingName || d.owner_name || '',
+          email: row.email || pendingEmail || user.email || d.email || '',
           worker_categories: row.worker_categories || [],
           has_computer: row.has_computer ?? false,
           has_scanner: row.has_scanner ?? false,
@@ -89,10 +100,31 @@ export default function EmitraRegisterPage() {
         }));
         if (row.current_step) setStep(Math.min(Math.max(row.current_step, 1), STEPS.length));
         if (row.mobile_verified) setMobileVerified(true);
+      } else {
+        const meta = user.user_metadata || {};
+        setData(d => ({
+          ...d,
+          owner_name:
+            pendingName ||
+            (meta.full_name as string) ||
+            (meta.name as string) ||
+            d.owner_name ||
+            '',
+          email: pendingEmail || user.email || d.email || '',
+        }));
       }
       setLoading(false);
     })();
   }, [user, navigate]);
+
+  const stashPartnerPrefill = () => {
+    if (data.owner_name?.trim()) {
+      sessionStorage.setItem(PARTNER_NAME_KEY, data.owner_name.trim());
+    }
+    if (data.email?.trim()) {
+      sessionStorage.setItem(PARTNER_EMAIL_KEY, data.email.trim());
+    }
+  };
 
   const validateStep = (): boolean => {
     setErrors({});
@@ -378,7 +410,16 @@ export default function EmitraRegisterPage() {
 
         <div className="px-5 py-6 md:px-7 md:py-7">
         {step === 1 && (
-          <div className="grid sm:grid-cols-2 gap-4">
+          <>
+            <div className="mb-6">
+              <GoogleAuthButton
+                label="Continue with Google"
+                role="partner"
+                onBeforeOAuth={stashPartnerPrefill}
+              />
+              <AuthDivider />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Full Name" error={errors.owner_name} required>
               <Input className="h-11" value={data.owner_name || ''} onChange={e => update({ owner_name: e.target.value })} />
             </Field>
@@ -414,6 +455,7 @@ export default function EmitraRegisterPage() {
                 onChange={e => update({ whatsapp: e.target.value.replace(/\D/g, '') })} />
             </Field>
           </div>
+          </>
         )}
 
         {step === 2 && (

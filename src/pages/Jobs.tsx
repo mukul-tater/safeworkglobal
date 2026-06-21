@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import SEOHead from '@/components/SEOHead';
 import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
-import { useWorkerAuth } from '@/modules/worker-registration/context/WorkerAuthContext';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,8 +38,7 @@ interface Job {
 type SortOption = 'recent' | 'salary-high' | 'salary-low' | 'country-asc' | 'country-desc';
 
 export default function Jobs() {
-  const { user, isAuthenticated } = useAuth();
-  const { isAuthenticated: isPhase1Worker } = useWorkerAuth();
+  const { user, isAuthenticated, role } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [filters, setFilters] = useState<JobFilters>({
@@ -354,7 +352,7 @@ export default function Jobs() {
             loading={loading}
           />
 
-          {isAuthenticated && !isPhase1Worker && (
+          {isAuthenticated && role === 'worker' && (
             <Card className="mt-4 p-4 hidden lg:block">
               <Link to="/worker/saved-searches">
                 <Button variant="outline" className="w-full">

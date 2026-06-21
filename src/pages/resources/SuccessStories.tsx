@@ -121,7 +121,7 @@ export default function SuccessStories() {
         <p className="text-sm text-muted-foreground mb-4">
           Create your free profile and get matched with verified overseas employers within 48 hours.
         </p>
-        <Link to="/register">
+        <Link to="/worker/quick-signup">
           <Button size="lg" className="rounded-xl">
             Start your journey <ArrowRight className="ml-2 h-4 w-4" />
           </Button>

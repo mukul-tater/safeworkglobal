@@ -11,24 +11,24 @@ const Footer = () => {
 
   // Worker "Create Profile" — gated by auth + role
   const handleCreateProfile = () => {
-    if (!isAuthenticated) return navigate('/auth?role=worker&mode=signup');
+    if (!isAuthenticated) return navigate('/worker/quick-signup');
     if (role === 'worker') return navigate('/worker/dashboard');
     if (role === 'employer') {
       toast.error("You're logged in as an Employer. Sign out to create a Worker profile.");
       return;
     }
-    navigate('/auth?role=worker');
+    navigate('/worker/quick-signup');
   };
 
   // Employer destinations — gated by auth + role
   const goEmployer = (workerPath: string) => () => {
-    if (!isAuthenticated) return navigate('/auth?role=employer&mode=signup');
+    if (!isAuthenticated) return navigate('/employer/quick-signup');
     if (role === 'employer') return navigate(workerPath);
     if (role === 'worker') {
       toast.error("You're logged in as a Worker. Sign out to access employer features.");
       return;
     }
-    navigate('/auth?role=employer');
+    navigate('/employer/quick-signup');
   };
 
   return (

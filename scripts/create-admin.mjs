@@ -14,9 +14,9 @@ import { createClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
 
 const ALLOWED = new Set([
-  'admin@safeworkglobal.com',
-  'ops@safeworkglobal.com',
-  'admin@safeworkglobal.demo',
+  'gurpreetsinghelectrician@gmail.com',
+  'kailash@safeworkglobal.com',
+  'mukul@safeworkglobal.com',
 ]);
 
 function loadEnv() {
@@ -33,7 +33,7 @@ function loadEnv() {
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  let email = 'admin@safeworkglobal.demo';
+  let email = 'kailash@safeworkglobal.com';
   let password = `SwgAdmin!${randomBytes(4).toString('hex')}`;
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--email' && args[i + 1]) email = args[++i].toLowerCase();

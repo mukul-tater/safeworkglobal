@@ -62,7 +62,7 @@ export default function QuickWorkerSignup() {
 
   useEffect(() => {
     if (isAuthenticated && role === 'worker') {
-      navigate('/home', { replace: true });
+      navigate('/worker/dashboard', { replace: true });
     }
   }, [isAuthenticated, role, navigate]);
 
@@ -314,7 +314,7 @@ export default function QuickWorkerSignup() {
 
                 <p className="text-xs text-center text-muted-foreground pt-1">
                   Already have an account?{' '}
-                  <button type="button" onClick={() => navigate('/auth')} className="text-primary font-medium hover:underline">
+                  <button type="button" onClick={() => navigate('/worker/login')} className="text-primary font-medium hover:underline">
                     Sign in
                   </button>
                 </p>

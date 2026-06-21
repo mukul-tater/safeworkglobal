@@ -143,7 +143,7 @@ const Header = () => {
                       I want to…
                     </p>
                     <button
-                      onClick={() => navigate('/worker-start')}
+                      onClick={() => navigate('/worker/quick-signup')}
                       className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors"
                     >
                       <div className="p-2 rounded-lg bg-success/10 text-success">
@@ -180,7 +180,7 @@ const Header = () => {
                     </button>
                     <div className="border-t border-border my-2" />
                     <button
-                      onClick={() => navigate('/login')}
+                      onClick={() => navigate('/worker/login')}
                       className="w-full text-xs text-center text-primary hover:underline py-1"
                     >
                       Already registered as a worker? Sign in
@@ -298,7 +298,7 @@ const Header = () => {
                       variant="default"
                       size="lg"
                       className="w-full justify-start gap-3"
-                      onClick={() => { navigate('/worker-start'); closeMobileMenu(); }}
+                      onClick={() => { navigate('/worker/quick-signup'); closeMobileMenu(); }}
                     >
                       <HardHat className="h-4 w-4" />
                       Find a job (Worker signup)
@@ -322,7 +322,7 @@ const Header = () => {
                       Partner
                     </Button>
                     <button
-                      onClick={() => { navigate('/login'); closeMobileMenu(); }}
+                      onClick={() => { navigate('/worker/login'); closeMobileMenu(); }}
                       className="w-full text-xs text-center text-primary hover:underline py-1"
                     >
                       Already registered as a worker? Sign in

@@ -60,12 +60,6 @@ import {
 } from "./modules/emitra";
 import {
   WorkerAuthProvider,
-  WorkerRegistrationHome,
-  WorkerRegisterPage,
-  WorkerLoginPage,
-  WorkerDashboardPage,
-  WorkerProtectedRoute,
-  WorkerOnboardingPage,
   WorkerLanguageProvider,
 } from "./modules/worker-registration";
 import { useIsActiveModuleRoute } from "./modules/worker-registration/hooks/useIsWorkerRegistrationRoute";
@@ -105,31 +99,16 @@ function AppShell() {
           {/* Public pages used by employer hiring flow + marketing footer */}
           {legacyPublicRoutes}
 
-          {/* Phase-1 worker registration (backend API) */}
-          <Route path="/register" element={<WorkerRegisterPage />} />
-          <Route path="/login" element={<WorkerLoginPage />} />
-          <Route path="/worker/quick-signup" element={<Navigate to="/register" replace />} />
-          <Route path="/worker-start" element={<WorkerRegistrationHome />} />
+          {/* Worker auth — dedicated pages (legacy Supabase flow) */}
+          <Route path="/register" element={<Navigate to="/worker/quick-signup" replace />} />
+          <Route path="/login" element={<Navigate to="/worker/login" replace />} />
+          <Route path="/worker-start" element={<Navigate to="/worker/quick-signup" replace />} />
+          <Route path="/home" element={<Navigate to="/worker/dashboard" replace />} />
+          <Route path="/onboarding" element={<Navigate to="/worker/onboarding" replace />} />
 
           {/* Employer portal */}
           {legacyEmployerRoutes}
 
-          <Route
-            path="/home"
-            element={
-              <WorkerProtectedRoute>
-                <WorkerDashboardPage />
-              </WorkerProtectedRoute>
-            }
-          />
-          <Route
-            path="/onboarding"
-            element={
-              <WorkerProtectedRoute>
-                <WorkerOnboardingPage />
-              </WorkerProtectedRoute>
-            }
-          />
           {/* Legacy Supabase worker portal */}
           {legacyWorkerRoutes}
 

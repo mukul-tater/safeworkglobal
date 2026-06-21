@@ -175,7 +175,7 @@ export default function FeaturedJobs() {
             <p className="text-muted-foreground mb-4">
               New jobs are being added regularly. Sign up free to get notified when openings match your skills.
             </p>
-            <Link to="/register">
+            <Link to="/worker/quick-signup">
               <Button size="lg" className="rounded-xl gap-2">
                 Sign Up Free
                 <ArrowRight className="h-4 w-4" />

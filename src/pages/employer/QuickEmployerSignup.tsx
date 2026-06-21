@@ -184,7 +184,7 @@ export default function QuickEmployerSignup() {
 
           <p className="text-center text-xs text-muted-foreground mt-4">
             Already have an account?{" "}
-            <button type="button" className="text-primary font-medium hover:underline" onClick={() => navigate("/auth")}>Log in</button>
+            <button type="button" className="text-primary font-medium hover:underline" onClick={() => navigate("/employer/login")}>Log in</button>
           </p>
         </CardContent>
       </Card>

@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
-import { useWorkerAuth } from '@/modules/worker-registration/context/WorkerAuthContext';
-import {
-  completeWorkerGoogleBridge,
-  workerPathAfterGoogleBridge,
-} from '@/modules/worker-registration/lib/completeWorkerGoogleBridge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,7 +30,6 @@ export default function Auth() {
   const roleHint = (searchParams.get('role') as AppRole | null) || null;
   const modeHint = searchParams.get('mode'); // "signup" forces signup view
   const { login, signup, isAuthenticated, role, needsRoleSelection, profileLoading, assignRole, profile } = useAuth();
-  const { loginWithGoogle, isAuthenticated: isPhase1Worker } = useWorkerAuth();
   const [view, setView] = useState<AuthView>(
     modeHint === 'signup' ? 'role-select' : 'login'
   );
@@ -65,21 +59,15 @@ export default function Auth() {
   // Forgot
   const [resetEmail, setResetEmail] = useState('');
 
-  // If a role hint is provided in the URL (?role=worker|employer), funnel
-  // the user straight into that signup flow without showing the role picker.
+  // Legacy ?role= query links → dedicated portal pages (no shared /auth signup forms).
   useEffect(() => {
-    if (!roleHint) return;
-    if (isAuthenticated) return; // already logged in — let other effects handle it
-    if (roleHint === 'worker' || roleHint === 'employer' || roleHint === 'partner') {
-      setSignupRole(roleHint);
-      // Redirect to the dedicated quick-signup pages for worker/employer.
-      if (roleHint === 'worker') {
-        navigate(modeHint === 'signup' ? '/register' : '/login', { replace: true });
-      } else if (roleHint === 'employer') {
-        navigate(modeHint === 'signup' ? '/employer/quick-signup' : '/employer/login', { replace: true });
-      } else {
-        navigate(modeHint === 'signup' ? '/emitra/register' : '/emitra/login', { replace: true });
-      }
+    if (!roleHint || isAuthenticated) return;
+    if (roleHint === 'worker') {
+      navigate(modeHint === 'signup' ? '/worker/quick-signup' : '/worker/login', { replace: true });
+    } else if (roleHint === 'employer') {
+      navigate(modeHint === 'signup' ? '/employer/quick-signup' : '/employer/login', { replace: true });
+    } else if (roleHint === 'partner') {
+      navigate(modeHint === 'signup' ? '/emitra/register' : '/emitra/login', { replace: true });
     }
   }, [roleHint, modeHint, isAuthenticated, navigate]);
 
@@ -127,7 +115,7 @@ export default function Auth() {
     if (!isAuthenticated || !role || assigningRole) return;
 
     if (role === 'worker') {
-      navigate(isPhase1Worker ? '/home' : '/worker/dashboard', { replace: true });
+      navigate('/worker/dashboard', { replace: true });
       return;
     }
 
@@ -144,7 +132,7 @@ export default function Auth() {
       return;
     }
     navigate('/dashboard', { replace: true });
-  }, [isAuthenticated, role, navigate, assigningRole, isPhase1Worker, loginWithGoogle]);
+  }, [isAuthenticated, role, navigate, assigningRole]);
 
   // Step 1 — open the role chooser modal. We do NOT trigger OAuth yet.
   const openGoogleRoleChooser = (context: 'login' | 'signup') => {
@@ -300,7 +288,7 @@ export default function Auth() {
       }
       toast.success(`Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!`);
       if (selectedRole === 'worker') {
-        navigate(isPhase1Worker ? '/home' : '/worker/dashboard', { replace: true });
+        navigate('/worker/dashboard', { replace: true });
       } else if (selectedRole === 'employer') {
         // Apply any pending company/full-name captured from the
         // QuickEmployerSignup form before the Google OAuth redirect.
@@ -332,16 +320,16 @@ export default function Auth() {
       return;
     }
 
-    // Not authenticated yet — original signup flow.
+    // Not authenticated yet — send to the role-specific portal page.
     if (selectedRole === 'worker') {
-      navigate('/register');
+      navigate('/worker/quick-signup');
       return;
     }
     if (selectedRole === 'employer') {
       navigate('/employer/quick-signup');
       return;
     }
-    setView('signup');
+    navigate('/emitra/register');
   };
 
   const GoogleButton = ({ label, context = 'login' }: { label: string; context?: 'login' | 'signup' }) => (

@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { formatSalaryINR } from '@/lib/utils';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWorkerAuth } from '@/modules/worker-registration/context/WorkerAuthContext';
-import { workerApi } from '@/modules/worker-registration/services/workerApi';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
 import SEOHead from '@/components/SEOHead';
@@ -56,8 +54,7 @@ export default function JobDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated, role } = useAuth();
-  const { isAuthenticated: isPhase1Worker, token: phase1Token, worker: phase1Worker } = useWorkerAuth();
-  const isLoggedIn = isAuthenticated || isPhase1Worker;
+  const isLoggedIn = isAuthenticated;
   const { toast } = useToast();
   
   const [job, setJob] = useState<JobData | null>(null);
@@ -67,7 +64,6 @@ export default function JobDetail() {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [canApplyToJobs, setCanApplyToJobs] = useState(false);
   useEffect(() => {
     let cancelled = false;
     // Safety net: never let the page sit in "loading" forever.
@@ -118,23 +114,7 @@ export default function JobDetail() {
         }
 
         // Check if user has already applied and if job is saved
-        if (!cancelled) {
-          if (isPhase1Worker && phase1Token) {
-            const [applicationStatus, onboarding] = await Promise.all([
-              workerApi.checkJobApplication(phase1Token, jobData.id).catch(() => ({ applied: false })),
-              workerApi.getOnboarding(phase1Token).catch(() => null),
-            ]);
-            if (!cancelled) {
-              setHasApplied(applicationStatus.applied);
-              setCanApplyToJobs(
-                onboarding?.canApplyToJobs ??
-                  Boolean(
-                    phase1Worker?.onboardingCompleted &&
-                      (phase1Worker?.skillsWithMediaCount ?? 0) > 0
-                  )
-              );
-            }
-          } else if (user) {
+        if (!cancelled && user) {
             const { data: application } = await supabase
               .from('job_applications')
               .select('id')
@@ -152,7 +132,6 @@ export default function JobDetail() {
               .maybeSingle();
 
             setIsSaved(!!savedJob);
-          }
         }
       } catch (error) {
         console.error('Error loading job:', error);
@@ -168,19 +147,15 @@ export default function JobDetail() {
       clearTimeout(watchdog);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, user?.id, isPhase1Worker, phase1Token, phase1Worker?.onboardingCompleted, phase1Worker?.skillsWithMediaCount]);
+  }, [slug, user?.id]);
 
   const handleApplyClick = () => {
     if (!isLoggedIn) {
-      navigate('/login', { state: { returnTo: `/jobs/${slug}` } });
+      navigate('/worker/login', { state: { returnTo: `/jobs/${slug}` } });
       return;
     }
     if (role === 'employer') {
       toast({ title: 'Not Allowed', description: 'Employers cannot apply for jobs.', variant: 'destructive' });
-      return;
-    }
-    if (isPhase1Worker && !canApplyToJobs) {
-      navigate('/onboarding');
       return;
     }
     void handleApply();
@@ -191,16 +166,6 @@ export default function JobDetail() {
     setApplying(true);
 
     try {
-      if (isPhase1Worker && phase1Token) {
-        await workerApi.applyToJob(phase1Token, {
-          jobId: job.id,
-          employerId: job.employer_id,
-        });
-        setHasApplied(true);
-        toast({ title: 'Application Submitted!', description: 'Your application has been sent to the employer' });
-        return;
-      }
-
       if (!user) return;
 
       const inserted = await withRetry(
@@ -260,15 +225,7 @@ export default function JobDetail() {
 
   const handleSave = async () => {
     if (!isLoggedIn) {
-      navigate('/login', { state: { returnTo: `/jobs/${slug}` } });
-      return;
-    }
-
-    if (isPhase1Worker) {
-      toast({
-        title: 'Coming soon',
-        description: 'Saved jobs will be available in a future update.',
-      });
+      navigate('/worker/login', { state: { returnTo: `/jobs/${slug}` } });
       return;
     }
 
@@ -558,8 +515,6 @@ export default function JobDetail() {
                         </>
                       ) : !isLoggedIn ? (
                         'Sign Up to Apply'
-                      ) : isPhase1Worker && !canApplyToJobs ? (
-                        'Complete Profile to Apply'
                       ) : (
                         'Apply Now'
                       )}
