@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { formatSalaryINR } from '@/lib/utils';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
+import WorkerJobsGate from '@/modules/worker-registration/components/WorkerJobsGate';
 import SEOHead from '@/components/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -290,23 +291,23 @@ export default function JobDetail() {
     }
   };
 
+  const layout = (content: ReactNode, publicHead?: ReactNode) => (
+    <PublicOrWorkerPortalLayout page="jobs" publicHead={publicHead}>
+      <WorkerJobsGate>{content}</WorkerJobsGate>
+    </PublicOrWorkerPortalLayout>
+  );
+
   if (loading) {
-    return (
-      <PublicOrWorkerPortalLayout page="jobs">
-        <JobDetailSkeleton />
-      </PublicOrWorkerPortalLayout>
-    );
+    return layout(<JobDetailSkeleton />);
   }
 
   if (!job) {
-    return (
-      <PublicOrWorkerPortalLayout page="jobs">
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold mb-4">Job Not Found</h1>
-          <p className="text-muted-foreground mb-6">This job listing may have been removed or expired.</p>
-          <Button onClick={() => navigate('/jobs')}>Browse All Jobs</Button>
-        </div>
-      </PublicOrWorkerPortalLayout>
+    return layout(
+      <div className="text-center py-12">
+        <h1 className="text-2xl font-bold mb-4">Job Not Found</h1>
+        <p className="text-muted-foreground mb-6">This job listing may have been removed or expired.</p>
+        <Button onClick={() => navigate('/jobs')}>Browse All Jobs</Button>
+      </div>,
     );
   }
 
@@ -350,20 +351,8 @@ export default function JobDetail() {
     "skills": job.job_skills?.map(s => s.skill_name).join(', ') || undefined
   };
 
-  return (
-    <PublicOrWorkerPortalLayout
-      page="jobs"
-      publicHead={
-        <SEOHead
-          title={`${job.title} at ${companyName} | SafeWorkGlobal`}
-          description={`Apply for ${job.title} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(job.salary_min, job.salary_max, job.currency)}/month.`}
-          keywords={`${job.title}, ${job.location} jobs, ${job.country} jobs, ${companyName} careers, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
-          canonicalUrl={`${window.location.origin}/jobs/${job.slug}`}
-          ogType="article"
-          structuredData={jobStructuredData}
-        />
-      }
-    >
+  return layout(
+    <>
       <Link to="/jobs">
         <Button variant="ghost" className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -613,6 +602,14 @@ export default function JobDetail() {
               </Card>
             </div>
           </div>
-    </PublicOrWorkerPortalLayout>
+    </>,
+    <SEOHead
+      title={`${job.title} at ${companyName} | SafeWorkGlobal`}
+      description={`Apply for ${job.title} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(job.salary_min, job.salary_max, job.currency)}/month.`}
+      keywords={`${job.title}, ${job.location} jobs, ${job.country} jobs, ${companyName} careers, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
+      canonicalUrl={`${window.location.origin}/jobs/${job.slug}`}
+      ogType="article"
+      structuredData={jobStructuredData}
+    />,
   );
 }

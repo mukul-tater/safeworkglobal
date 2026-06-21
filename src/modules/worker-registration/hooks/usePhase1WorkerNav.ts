@@ -2,6 +2,7 @@ import { LayoutDashboard, Search, User } from "lucide-react";
 import type { NavGroup } from "@/components/layout/DashboardSidebar";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
 import { useWorkerAuth } from "../context/WorkerAuthContext";
+import { usePhase1WorkerNavItems } from "./useWorkerNavGroups";
 
 export type WorkerPortalPage = "dashboard" | "jobs" | "onboarding";
 
@@ -16,15 +17,18 @@ export function usePhase1WorkerNav(page: WorkerPortalPage = "dashboard") {
     onboarding: profileLabel,
   };
 
+  const baseNavItems = [
+    { path: "/home", icon: LayoutDashboard, label: t("nav.dashboard") },
+    { path: "/jobs", icon: Search, label: t("nav.jobs") },
+    { path: "/onboarding", icon: User, label: profileLabel },
+  ];
+  const navItems = usePhase1WorkerNavItems(baseNavItems, profileLabel);
+
   const navGroups: NavGroup[] = [
     {
       label: t("nav.overview"),
       defaultOpen: true,
-      items: [
-        { path: "/home", icon: LayoutDashboard, label: t("nav.dashboard") },
-        { path: "/jobs", icon: Search, label: t("nav.jobs") },
-        { path: "/onboarding", icon: User, label: profileLabel },
-      ],
+      items: navItems,
     },
   ];
 

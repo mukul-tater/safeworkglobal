@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import SEOHead from '@/components/SEOHead';
 import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
+import WorkerJobsGate from '@/modules/worker-registration/components/WorkerJobsGate';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -469,7 +470,7 @@ export default function Jobs() {
         />
       }
     >
-      {jobsContent}
+      <WorkerJobsGate>{jobsContent}</WorkerJobsGate>
     </PublicOrWorkerPortalLayout>
   );
 }

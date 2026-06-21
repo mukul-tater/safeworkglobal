@@ -1,5 +1,7 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import { workerProfileMenu } from "@/config/workerNav";
+import WorkerJobsGate from "@/modules/worker-registration/components/WorkerJobsGate";
+import { useWorkerNavGroups } from "@/modules/worker-registration/hooks/useWorkerNavGroups";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +35,7 @@ interface SavedJob {
 
 export default function SavedJobs() {
   const { user } = useAuth();
+  const { navGroups } = useWorkerNavGroups();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [savedJobs, setSavedJobs] = useState<SavedJob[]>([]);
@@ -75,7 +78,8 @@ export default function SavedJobs() {
   };
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <DashboardLayout navGroups={navGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+      <WorkerJobsGate>
       <PortalBreadcrumb />
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Saved Jobs</h1>
@@ -161,6 +165,7 @@ export default function SavedJobs() {
           })}
         </div>
       )}
+      </WorkerJobsGate>
     </DashboardLayout>
   );
 }

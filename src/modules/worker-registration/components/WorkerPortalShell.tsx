@@ -4,12 +4,14 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { useAuth } from "@/contexts/AuthContext";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import { workerProfileMenu } from "@/config/workerNav";
 import type { WorkerPortalPage } from "../hooks/usePhase1WorkerNav";
+import { useWorkerNavGroups } from "../hooks/useWorkerNavGroups";
 
 export function useWorkerPortalShell(page: WorkerPortalPage = "dashboard") {
   const { role } = useAuth();
   const isLegacyWorker = role === "worker";
+  const { navGroups } = useWorkerNavGroups();
 
   if (isLegacyWorker) {
     const legacyPortalName =
@@ -18,7 +20,7 @@ export function useWorkerPortalShell(page: WorkerPortalPage = "dashboard") {
     return {
       usePortalLayout: true as const,
       layoutProps: {
-        navGroups: workerNavGroups,
+        navGroups,
         portalLabel: "Worker Portal",
         portalName: legacyPortalName,
         profileMenuItems: workerProfileMenu,

@@ -24,6 +24,7 @@ interface JobPreview {
 interface Props {
   readonly preferredCountry?: string | null;
   readonly canApply: boolean;
+  readonly canBrowseJobs?: boolean;
 }
 
 function displaySalary(job: JobPreview): string {
@@ -35,12 +36,17 @@ function hasSalary(job: JobPreview): boolean {
   return Boolean(job.salary_display || job.salary_min != null || job.salary_max != null);
 }
 
-export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply }: Props) {
+export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, canBrowseJobs = true }: Props) {
   const { t } = useWorkerLanguage();
   const [jobs, setJobs] = useState<JobPreview[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!canBrowseJobs) {
+      setLoading(false);
+      return;
+    }
+
     const loadJobs = async () => {
       try {
         let query = supabase
@@ -78,11 +84,25 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply }: 
     };
 
     loadJobs();
-  }, [preferredCountry]);
+  }, [preferredCountry, canBrowseJobs]);
 
   const jobsLink = preferredCountry
     ? `/jobs?location=${encodeURIComponent(preferredCountry)}`
     : "/jobs";
+
+  if (!canBrowseJobs) {
+    return (
+      <section className="mb-5">
+        <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/25 px-4 py-4 text-sm">
+          <Lock className="h-5 w-5 text-amber-600 shrink-0" />
+          <div>
+            <p className="font-medium text-foreground">{t("jobs.lockBrowseTitle")}</p>
+            <p className="text-muted-foreground text-xs mt-0.5">{t("jobs.lockBrowseSub")}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (loading) {
     return (

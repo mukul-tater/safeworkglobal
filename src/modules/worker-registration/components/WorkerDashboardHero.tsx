@@ -15,6 +15,7 @@ interface Props {
   readonly totalSteps: number;
   readonly stepsRemaining: number;
   readonly jobsLink: string;
+  readonly canBrowseJobs: boolean;
 }
 
 const STEP_KEYS: TranslationKey[] = [
@@ -33,6 +34,7 @@ export default function WorkerDashboardHero({
   totalSteps,
   stepsRemaining,
   jobsLink,
+  canBrowseJobs,
 }: Props) {
   const { t } = useWorkerLanguage();
   const skillPrefix = primarySkillName ? `${primarySkillName} ` : "";
@@ -77,7 +79,7 @@ export default function WorkerDashboardHero({
           </div>
         )}
 
-        {onboardingCompleted ? (
+        {canBrowseJobs ? (
           <div className="flex flex-wrap gap-3">
             <Button size="lg" className="rounded-xl gap-2 shadow-lg" asChild>
               <Link to={jobsLink}>
@@ -86,12 +88,22 @@ export default function WorkerDashboardHero({
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button size="lg" variant="secondary" className="rounded-xl gap-2 shadow-lg" asChild>
-              <Link to="/onboarding">
-                <User className="h-5 w-5" />
-                {t("hero.editProfile")}
-              </Link>
-            </Button>
+            {!onboardingCompleted && (
+              <Button size="lg" variant="secondary" className="rounded-xl gap-2 shadow-lg" asChild>
+                <Link to="/onboarding">
+                  <User className="h-5 w-5" />
+                  {t("hero.completeProfile")}
+                </Link>
+              </Button>
+            )}
+            {onboardingCompleted && (
+              <Button size="lg" variant="secondary" className="rounded-xl gap-2 shadow-lg" asChild>
+                <Link to="/onboarding">
+                  <User className="h-5 w-5" />
+                  {t("hero.editProfile")}
+                </Link>
+              </Button>
+            )}
           </div>
         ) : (
           <Button size="lg" className="rounded-xl gap-2 shadow-lg" asChild>

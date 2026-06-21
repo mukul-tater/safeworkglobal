@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatSalaryINR } from '@/lib/utils';
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
-import { Briefcase, FileText, MessageSquare, TrendingUp, User } from "lucide-react";
+import { Briefcase, FileText, Lock, MessageSquare, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DocumentVerificationCard from "@/components/worker/DocumentVerificationCard";
@@ -15,7 +15,9 @@ import { DashboardSkeleton } from "@/components/ui/page-skeleton";
 import { Link } from "react-router-dom";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import { formatDistanceToNow } from "date-fns";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import { workerProfileMenu } from "@/config/workerNav";
+import { useWorkerNavGroups } from "@/modules/worker-registration/hooks/useWorkerNavGroups";
+import { useWorkerJobAccess } from "@/modules/worker-registration/hooks/useWorkerJobAccess";
 
 interface RecentActivity {
   id: string;
@@ -39,6 +41,8 @@ interface RecommendedJob {
 
 export default function WorkerDashboard() {
   const { profile } = useAuth();
+  const { navGroups } = useWorkerNavGroups();
+  const { canBrowseJobs, onboardingPath } = useWorkerJobAccess();
   const [documents, setDocuments] = useState([]);
   const [workerProfile, setWorkerProfile] = useState<any>(null);
   const [skills, setSkills] = useState([]);
@@ -108,14 +112,14 @@ export default function WorkerDashboard() {
 
   if (loading) {
     return (
-      <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+      <DashboardLayout navGroups={navGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
         <DashboardSkeleton />
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <DashboardLayout navGroups={navGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
       <PortalBreadcrumb />
       <OnboardingStepper />
 
@@ -194,6 +198,7 @@ export default function WorkerDashboard() {
 
         <Card className="p-5">
           <h2 className="text-lg font-bold mb-3">Recommended Jobs</h2>
+          {canBrowseJobs ? (
           <div className="space-y-3">
             {recommendedJobs.length > 0 ? recommendedJobs.map((job) => (
               <Link key={job.id} to={`/jobs/${job.slug || job.id}`} className="block">
@@ -212,6 +217,23 @@ export default function WorkerDashboard() {
               <p className="text-muted-foreground text-center py-6 text-sm">No jobs available</p>
             )}
           </div>
+          ) : (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-50 dark:bg-amber-950/25 p-4">
+              <Lock className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-sm">Complete your profile to view jobs</p>
+                <p className="text-xs text-muted-foreground mt-1 mb-3">
+                  Finish onboarding to browse verified overseas job listings.
+                </p>
+                <Link
+                  to={onboardingPath}
+                  className="text-sm text-primary font-medium hover:underline"
+                >
+                  Complete profile →
+                </Link>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </DashboardLayout>

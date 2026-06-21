@@ -67,6 +67,8 @@ export default function WorkerDashboardPage() {
   const stepsRemaining = onboarding ? countRemainingSteps(onboarding) : 4;
   const primarySkillName = onboarding?.primarySkillName ?? worker.primarySkillName;
 
+  const canBrowseJobs = onboarding?.canBrowseJobs || worker.onboardingCompleted;
+
   const jobsLink = onboarding?.preferredGccCountry
     ? `/jobs?location=${encodeURIComponent(onboarding.preferredGccCountry)}`
     : "/jobs";
@@ -87,11 +89,13 @@ export default function WorkerDashboardPage() {
         totalSteps={ONBOARDING_STEPS.length}
         stepsRemaining={stepsRemaining}
         jobsLink={jobsLink}
+        canBrowseJobs={canBrowseJobs}
       />
 
       <WorkerFeaturedJobsStrip
         preferredCountry={onboarding?.preferredGccCountry}
         canApply={canApply}
+        canBrowseJobs={canBrowseJobs}
       />
 
       {needsOnboarding && onboarding && (
@@ -108,7 +112,7 @@ export default function WorkerDashboardPage() {
       )}
 
       <WorkerQuickActions
-        canBrowseJobs={onboarding?.canBrowseJobs || worker.onboardingCompleted}
+        canBrowseJobs={canBrowseJobs}
         onboardingCompleted={worker.onboardingCompleted}
         preferredGccCountry={onboarding?.preferredGccCountry}
       />
