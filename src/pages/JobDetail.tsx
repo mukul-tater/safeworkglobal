@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { formatSalaryINR } from '@/lib/utils';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkerAuth } from '@/modules/worker-registration/context/WorkerAuthContext';
+import { workerApi } from '@/modules/worker-registration/services/workerApi';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
 import SEOHead from '@/components/SEOHead';
@@ -10,14 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { 
-  MapPin, Building2, Briefcase, Clock, 
-  CheckCircle2, ArrowLeft, Users, Globe, Shield, Calendar,
-  Share2, Bookmark, Upload, FileText, Loader2
+  MapPin, Building2, 
+  CheckCircle2, ArrowLeft, Users, Shield, Calendar,
+  Share2, Bookmark, Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -58,6 +56,8 @@ export default function JobDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated, role } = useAuth();
+  const { isAuthenticated: isPhase1Worker, token: phase1Token, worker: phase1Worker } = useWorkerAuth();
+  const isLoggedIn = isAuthenticated || isPhase1Worker;
   const { toast } = useToast();
   
   const [job, setJob] = useState<JobData | null>(null);
@@ -67,10 +67,7 @@ export default function JobDetail() {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showApplyDialog, setShowApplyDialog] = useState(false);
-  const [coverLetter, setCoverLetter] = useState('');
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [uploadingResume, setUploadingResume] = useState(false);
+  const [canApplyToJobs, setCanApplyToJobs] = useState(false);
   useEffect(() => {
     let cancelled = false;
     // Safety net: never let the page sit in "loading" forever.
@@ -121,25 +118,41 @@ export default function JobDetail() {
         }
 
         // Check if user has already applied and if job is saved
-        if (user && !cancelled) {
-          const { data: application } = await supabase
-            .from('job_applications')
-            .select('id')
-            .eq('worker_id', user.id)
-            .eq('job_id', jobData.id)
-            .maybeSingle();
+        if (!cancelled) {
+          if (isPhase1Worker && phase1Token) {
+            const [applicationStatus, onboarding] = await Promise.all([
+              workerApi.checkJobApplication(phase1Token, jobData.id).catch(() => ({ applied: false })),
+              workerApi.getOnboarding(phase1Token).catch(() => null),
+            ]);
+            if (!cancelled) {
+              setHasApplied(applicationStatus.applied);
+              setCanApplyToJobs(
+                onboarding?.canApplyToJobs ??
+                  Boolean(
+                    phase1Worker?.onboardingCompleted &&
+                      (phase1Worker?.skillsWithMediaCount ?? 0) > 0
+                  )
+              );
+            }
+          } else if (user) {
+            const { data: application } = await supabase
+              .from('job_applications')
+              .select('id')
+              .eq('worker_id', user.id)
+              .eq('job_id', jobData.id)
+              .maybeSingle();
 
-          setHasApplied(!!application);
+            setHasApplied(!!application);
 
-          // Check if job is saved
-          const { data: savedJob } = await supabase
-            .from('saved_jobs')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('job_id', jobData.id)
-            .maybeSingle();
+            const { data: savedJob } = await supabase
+              .from('saved_jobs')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('job_id', jobData.id)
+              .maybeSingle();
 
-          setIsSaved(!!savedJob);
+            setIsSaved(!!savedJob);
+          }
         }
       } catch (error) {
         console.error('Error loading job:', error);
@@ -155,54 +168,40 @@ export default function JobDetail() {
       clearTimeout(watchdog);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, user?.id]);
+  }, [slug, user?.id, isPhase1Worker, phase1Token, phase1Worker?.onboardingCompleted, phase1Worker?.skillsWithMediaCount]);
 
-  const openApplyDialog = () => {
-    if (!isAuthenticated) {
-      navigate('/register', { state: { returnTo: `/jobs/${slug}` } });
+  const handleApplyClick = () => {
+    if (!isLoggedIn) {
+      navigate('/login', { state: { returnTo: `/jobs/${slug}` } });
       return;
     }
     if (role === 'employer') {
       toast({ title: 'Not Allowed', description: 'Employers cannot apply for jobs.', variant: 'destructive' });
       return;
     }
-    setShowApplyDialog(true);
+    if (isPhase1Worker && !canApplyToJobs) {
+      navigate('/onboarding');
+      return;
+    }
+    void handleApply();
   };
 
   const handleApply = async () => {
-    if (!user || !job) return;
+    if (!job || applying) return;
     setApplying(true);
 
     try {
-      let resumeUrl: string | null = null;
-
-      // Upload resume if provided
-      if (resumeFile) {
-        setUploadingResume(true);
-        const fileExt = resumeFile.name.split('.').pop();
-        const filePath = `${user.id}/${Date.now()}-resume.${fileExt}`;
-
-        await withRetry(
-          async () => {
-            const { error: uploadError } = await supabase.storage
-              .from('worker-documents')
-              .upload(filePath, resumeFile);
-            if (uploadError) throw uploadError;
-          },
-          {
-            onAttempt: (n) => {
-              if (n > 1) toast({ title: `Retrying upload… (${n}/3)` });
-            },
-          }
-        );
-
-        const { data: urlData } = supabase.storage
-          .from('worker-documents')
-          .getPublicUrl(filePath);
-        
-        resumeUrl = urlData.publicUrl;
-        setUploadingResume(false);
+      if (isPhase1Worker && phase1Token) {
+        await workerApi.applyToJob(phase1Token, {
+          jobId: job.id,
+          employerId: job.employer_id,
+        });
+        setHasApplied(true);
+        toast({ title: 'Application Submitted!', description: 'Your application has been sent to the employer' });
+        return;
       }
+
+      if (!user) return;
 
       const inserted = await withRetry(
         async () => {
@@ -213,8 +212,7 @@ export default function JobDetail() {
               worker_id: user.id,
               employer_id: job.employer_id,
               status: 'PENDING',
-              cover_letter: coverLetter || 'Application submitted through platform',
-              resume_url: resumeUrl,
+              cover_letter: 'Application submitted through platform',
             })
             .select('id')
             .single();
@@ -229,9 +227,7 @@ export default function JobDetail() {
       );
 
       setHasApplied(true);
-      setShowApplyDialog(false);
       toast({ title: 'Application Submitted!', description: 'Your application has been sent to the employer' });
-      // Route to success screen for instant feedback + tracking nudge
       if (inserted?.id) {
         navigate(`/worker/application-success/${inserted.id}`);
       }
@@ -243,7 +239,6 @@ export default function JobDetail() {
       });
     } finally {
       setApplying(false);
-      setUploadingResume(false);
     }
   };
 
@@ -264,8 +259,16 @@ export default function JobDetail() {
   };
 
   const handleSave = async () => {
-    if (!isAuthenticated) {
+    if (!isLoggedIn) {
       navigate('/login', { state: { returnTo: `/jobs/${slug}` } });
+      return;
+    }
+
+    if (isPhase1Worker) {
+      toast({
+        title: 'Coming soon',
+        description: 'Saved jobs will be available in a future update.',
+      });
       return;
     }
 
@@ -539,17 +542,24 @@ export default function JobDetail() {
                   ) : (
                     <Button 
                       size="lg" 
-                      onClick={openApplyDialog}
+                      onClick={handleApplyClick}
                       disabled={hasApplied || applying || job.status !== 'ACTIVE'}
                       className="w-full"
                     >
-                      {hasApplied ? (
+                      {applying ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Applying...
+                        </>
+                      ) : hasApplied ? (
                         <>
                           <CheckCircle2 className="mr-2 h-5 w-5" />
                           Already Applied
                         </>
-                      ) : !isAuthenticated ? (
+                      ) : !isLoggedIn ? (
                         'Sign Up to Apply'
+                      ) : isPhase1Worker && !canApplyToJobs ? (
+                        'Complete Profile to Apply'
                       ) : (
                         'Apply Now'
                       )}
@@ -648,66 +658,6 @@ export default function JobDetail() {
               </Card>
             </div>
           </div>
-
-      {/* Application Dialog */}
-      <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
-        <DialogContent className="max-w-lg mx-4">
-          <DialogHeader>
-            <DialogTitle>Apply for {job.title}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <Label htmlFor="coverLetter">Cover Letter</Label>
-              <Textarea
-                id="coverLetter"
-                value={coverLetter}
-                onChange={(e) => setCoverLetter(e.target.value)}
-                placeholder="Tell the employer why you're a great fit for this role..."
-                rows={5}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">Optional but recommended</p>
-            </div>
-            <div>
-              <Label htmlFor="resume">Resume / CV</Label>
-              <div className="mt-1">
-                <Input
-                  id="resume"
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                  className="cursor-pointer"
-                />
-                <p className="text-xs text-muted-foreground mt-1">PDF, DOC, or DOCX (max 10MB)</p>
-              </div>
-              {resumeFile && (
-                <div className="flex items-center gap-2 mt-2 text-sm text-primary">
-                  <FileText className="h-4 w-4" />
-                  <span className="truncate">{resumeFile.name}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setShowApplyDialog(false)} disabled={applying}>
-              Cancel
-            </Button>
-            <Button onClick={handleApply} disabled={applying}>
-              {applying ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {uploadingResume ? 'Uploading resume...' : 'Submitting...'}
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Submit Application
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </PublicOrWorkerPortalLayout>
   );
 }

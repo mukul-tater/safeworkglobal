@@ -244,4 +244,21 @@ export const workerApi = {
       body: JSON.stringify(payload),
     });
   },
+
+  checkJobApplication(token: string, jobId: string): Promise<{ applied: boolean; applicationId?: number }> {
+    return request(`/workers/applications/status?jobId=${encodeURIComponent(jobId)}`, {
+      headers: authHeaders(token),
+    });
+  },
+
+  applyToJob(
+    token: string,
+    payload: { jobId: string; employerId: string; coverLetter?: string }
+  ): Promise<{ id: number }> {
+    return request('/workers/applications', {
+      method: 'POST',
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    });
+  },
 };

@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'node:path';
 import { workerController } from './controller/WorkerController.js';
 import { workerOnboardingController } from './controller/WorkerOnboardingController.js';
+import { workerJobApplicationController } from './controller/WorkerJobApplicationController.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 import { errorHandler } from './exception/errorHandler.js';
 import { uploadWorkerPhoto, uploadWorkerVideo, uploadsRoot } from './middleware/uploadMiddleware.js';
@@ -61,6 +62,13 @@ export function createApp() {
     workerOnboardingController.advanceToReview
   );
   app.post('/api/workers/onboarding/complete', authMiddleware, workerOnboardingController.complete);
+
+  app.get(
+    '/api/workers/applications/status',
+    authMiddleware,
+    workerJobApplicationController.getStatus
+  );
+  app.post('/api/workers/applications', authMiddleware, workerJobApplicationController.apply);
 
   app.use(errorHandler);
 

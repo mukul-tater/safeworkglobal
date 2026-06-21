@@ -64,6 +64,27 @@ export function runMigrations(): void {
   const skillProofsExists = db
     .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='worker_skill_proofs'")
     .get();
+  const applicationsExists = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='worker_job_applications'")
+    .get();
+  if (!applicationsExists) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS worker_job_applications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        worker_id INTEGER NOT NULL,
+        job_id TEXT NOT NULL,
+        employer_id TEXT NOT NULL,
+        cover_letter TEXT,
+        resume_url TEXT,
+        status TEXT NOT NULL DEFAULT 'PENDING',
+        applied_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (worker_id) REFERENCES workers(id),
+        UNIQUE(worker_id, job_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_worker_job_applications_worker ON worker_job_applications(worker_id);
+    `);
+  }
+
   if (!skillProofsExists) {
     db.exec(`
       CREATE TABLE IF NOT EXISTS worker_skill_proofs (

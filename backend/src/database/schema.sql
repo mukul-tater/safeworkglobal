@@ -90,3 +90,18 @@ CREATE TABLE IF NOT EXISTS worker_skill_proofs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_worker_skill_proofs_worker ON worker_skill_proofs(worker_id);
+
+CREATE TABLE IF NOT EXISTS worker_job_applications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  worker_id INTEGER NOT NULL,
+  job_id TEXT NOT NULL,
+  employer_id TEXT NOT NULL,
+  cover_letter TEXT,
+  resume_url TEXT,
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  applied_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (worker_id) REFERENCES workers(id),
+  UNIQUE(worker_id, job_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_worker_job_applications_worker ON worker_job_applications(worker_id);
