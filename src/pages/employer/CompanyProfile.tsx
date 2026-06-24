@@ -106,8 +106,8 @@ export default function CompanyProfile() {
 
     try {
       setSaving(true);
-      await saveCompanyProfilePartial(user.id, validation.data);
-      markReady(validation.data);
+      await saveCompanyProfilePartial(user.id, validation.data as any);
+      markReady(validation.data as any);
       toast.success("Company profile updated successfully!");
     } catch (error) {
       console.error('Error saving company profile:', error);
