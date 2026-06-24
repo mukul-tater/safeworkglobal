@@ -9,19 +9,19 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   QAR: 'QAR',
 };
 
-/** Approximate monthly rates to INR — used for salary filter comparisons only, not display. */
-const CURRENCY_TO_INR: Record<string, number> = {
+/**
+ * Approximate filter-only rates. NEVER shown to users.
+ * Real FX rates live in the `fx_rates` table (admin-managed). Until that is
+ * populated, foreign-currency jobs fall back to a coarse rate of 1 in the INR
+ * filter, which intentionally keeps them visible across the slider.
+ */
+const APPROX_FILTER_RATES: Record<string, number> = {
   INR: 1,
-  USD: 83,
-  EUR: 90,
-  GBP: 105,
-  AED: 22.7,
-  SAR: 22.1,
-  QAR: 22.8,
 };
 
+/** Filter-only conversion. Returns the native amount when no rate is known. */
 export function convertSalaryToINR(amount: number, currency: string): number {
-  const rate = CURRENCY_TO_INR[currency] ?? 1;
+  const rate = APPROX_FILTER_RATES[currency] ?? 1;
   return Math.round(amount * rate);
 }
 
@@ -62,23 +62,17 @@ function formatInrPrimaryLine(
   return `Up to ${formatInrAmountLabel(max!)}`;
 }
 
+/**
+ * INR-equivalent display intentionally disabled until a real FX feed lands.
+ * We show actual native amounts only (AED 3,000, SAR 2,500, …) — never a
+ * fake INR conversion.
+ */
 function formatInrEquivalentLine(
-  min: number | null | undefined,
-  max: number | null | undefined,
-  currency: string,
+  _min: number | null | undefined,
+  _max: number | null | undefined,
+  _currency: string,
 ): string | null {
-  if (currency === 'INR') return null;
-  if (min == null && max == null) return null;
-
-  if (min != null && max != null) {
-    const inrMin = convertSalaryToINR(min, currency);
-    const inrMax = convertSalaryToINR(max, currency);
-    return `≈ ${formatInrAmountLabel(inrMin)} – ${formatInrAmountLabel(inrMax)}`;
-  }
-  if (min != null) {
-    return `≈ From ${formatInrAmountLabel(convertSalaryToINR(min, currency))}`;
-  }
-  return `≈ Up to ${formatInrAmountLabel(convertSalaryToINR(max!, currency))}`;
+  return null;
 }
 
 /** Primary salary line plus optional INR equivalent for foreign currencies. */
