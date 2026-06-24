@@ -173,8 +173,8 @@ export default function AdminWorkers() {
                   </div>
                   {w.skills.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {w.skills.slice(0, 4).map((s) => (
-                        <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                      {Array.from(new Set(w.skills)).slice(0, 4).map((s, idx) => (
+                        <Badge key={`${s}-${idx}`} variant="outline" className="text-xs">{s}</Badge>
                       ))}
                     </div>
                   )}
