@@ -518,6 +518,30 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_rates: {
+        Row: {
+          currency_code: string
+          id: string
+          inr_per_unit: number
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          currency_code: string
+          id?: string
+          inr_per_unit: number
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          currency_code?: string
+          id?: string
+          inr_per_unit?: number
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interviews: {
         Row: {
           application_id: string
