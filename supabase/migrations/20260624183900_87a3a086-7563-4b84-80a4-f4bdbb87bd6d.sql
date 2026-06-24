@@ -1,0 +1,343 @@
+
+-- 1) Auto-generate partner_code when status transitions to approved
+CREATE OR REPLACE FUNCTION public.assign_partner_code_on_approval()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.status = 'approved' AND COALESCE(NEW.partner_code, '') = '' THEN
+    NEW.partner_code := public.generate_partner_code();
+    IF NEW.approved_at IS NULL THEN NEW.approved_at := now(); END IF;
+  END IF;
+  RETURN NEW;
+END $$;
+
+DROP TRIGGER IF EXISTS trg_assign_partner_code ON public.partner_profiles;
+CREATE TRIGGER trg_assign_partner_code
+  BEFORE INSERT OR UPDATE OF status ON public.partner_profiles
+  FOR EACH ROW EXECUTE FUNCTION public.assign_partner_code_on_approval();
+
+-- 2) Backfill: any already-approved partner missing a code gets one
+UPDATE public.partner_profiles
+SET status = status  -- no-op to fire the trigger
+WHERE status = 'approved' AND COALESCE(partner_code,'') = '';
+
+-- 3) Fix seed to use ON CONFLICT DO UPDATE so handle_new_user's
+--    auto-created blank row is filled with real data.
+CREATE OR REPLACE FUNCTION public.seed_officials_demo()
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'extensions', 'pg_temp'
+AS $function$
+DECLARE
+  v_uid uuid;
+  v_partner_uid uuid;
+  v_emp_uid uuid;
+  v_worker_uids uuid[] := ARRAY[]::uuid[];
+  v_partner_uids uuid[] := ARRAY[]::uuid[];
+  v_job_ids uuid[] := ARRAY[]::uuid[];
+  v_job_id uuid;
+  v_partner_id uuid;
+  v_email text;
+  v_workers_seeded int := 0;
+  v_employers_seeded int := 0;
+  v_jobs_seeded int := 0;
+  v_partners_seeded int := 0;
+  v_apps_seeded int := 0;
+  rec record;
+  i int;
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin'::app_role) THEN
+    RAISE EXCEPTION 'Only admins can seed demo data';
+  END IF;
+
+  -- Clean previous demo set
+  DELETE FROM public.partner_profiles
+    WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE 'demo+%@safeworkglobal.demo');
+  DELETE FROM public.worker_profiles
+    WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE 'demo+%@safeworkglobal.demo');
+  DELETE FROM public.employer_profiles
+    WHERE user_id IN (SELECT id FROM auth.users WHERE email LIKE 'demo+%@safeworkglobal.demo');
+  DELETE FROM auth.users WHERE email LIKE 'demo+%@safeworkglobal.demo';
+
+  -- Partners
+  FOR rec IN
+    SELECT * FROM (VALUES
+      ('demo+partner1@safeworkglobal.demo','Rajesh Sharma','Jaipur Connect eMitra','Jaipur','Rajasthan','+919812340001','approved'::partner_status),
+      ('demo+partner2@safeworkglobal.demo','Anita Verma','Lucknow Skill Hub','Lucknow','Uttar Pradesh','+919812340002','approved'::partner_status),
+      ('demo+partner3@safeworkglobal.demo','Suresh Yadav','Patna Migrants Centre','Patna','Bihar','+919812340003','approved'::partner_status),
+      ('demo+partner4@safeworkglobal.demo','Lakshmi Nair','Kochi Skills eMitra','Kochi','Kerala','+919812340004','applied'::partner_status)
+    ) AS t(email, name, center, city, state, mobile, status)
+  LOOP
+    v_partner_uid := gen_random_uuid();
+    INSERT INTO auth.users (instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,
+      raw_app_meta_data,raw_user_meta_data,created_at,updated_at,
+      confirmation_token,recovery_token,email_change_token_new,email_change)
+    VALUES ('00000000-0000-0000-0000-000000000000', v_partner_uid,'authenticated','authenticated',
+      rec.email, extensions.crypt('Demo@1234', extensions.gen_salt('bf')),
+      now(), '{"provider":"email","providers":["email"]}'::jsonb,
+      jsonb_build_object('full_name', rec.name, 'role','partner'),
+      now(), now(),'','','','');
+    INSERT INTO auth.identities (id,user_id,identity_data,provider,provider_id,last_sign_in_at,created_at,updated_at)
+    VALUES (gen_random_uuid(), v_partner_uid,
+      jsonb_build_object('sub', v_partner_uid::text,'email',rec.email),
+      'email', v_partner_uid::text, now(), now(), now());
+
+    INSERT INTO public.user_roles (user_id, role) VALUES (v_partner_uid,'partner') ON CONFLICT DO NOTHING;
+    INSERT INTO public.profiles (id,email,full_name,phone,mobile_verified)
+    VALUES (v_partner_uid, rec.email, rec.name, rec.mobile, true)
+    ON CONFLICT (id) DO UPDATE SET full_name=EXCLUDED.full_name, phone=EXCLUDED.phone;
+
+    INSERT INTO public.partner_profiles (
+      user_id, center_name, owner_name, mobile, email, village_city, state,
+      status, current_step, tier, mobile_verified,
+      submitted_at, approved_at, approved_by,
+      accepted_terms, accepted_privacy, confirmed_accuracy
+    ) VALUES (
+      v_partner_uid, rec.center, rec.name, rec.mobile, rec.email, rec.city, rec.state,
+      rec.status, 6, 'bronze', true,
+      now() - interval '7 days',
+      CASE WHEN rec.status='approved' THEN now() - interval '5 days' END,
+      CASE WHEN rec.status='approved' THEN auth.uid() END,
+      true, true, true
+    )
+    ON CONFLICT (user_id) DO UPDATE SET
+      center_name = EXCLUDED.center_name,
+      owner_name  = EXCLUDED.owner_name,
+      mobile      = EXCLUDED.mobile,
+      email       = EXCLUDED.email,
+      village_city= EXCLUDED.village_city,
+      state       = EXCLUDED.state,
+      status      = EXCLUDED.status,
+      current_step= EXCLUDED.current_step,
+      tier        = EXCLUDED.tier,
+      mobile_verified = true,
+      submitted_at = EXCLUDED.submitted_at,
+      approved_at  = EXCLUDED.approved_at,
+      approved_by  = EXCLUDED.approved_by,
+      accepted_terms = true,
+      accepted_privacy = true,
+      confirmed_accuracy = true;
+
+    v_partner_uids := v_partner_uids || v_partner_uid;
+    v_partners_seeded := v_partners_seeded + 1;
+  END LOOP;
+
+  -- Employers + jobs
+  FOR rec IN
+    SELECT * FROM (VALUES
+      ('demo+emp01@safeworkglobal.demo','Faisal Al-Mansouri','Al Habtoor Construction','Construction','UAE','Dubai','AED'),
+      ('demo+emp02@safeworkglobal.demo','Khalid Al-Otaibi','Saudi Binladin Group','Construction','Saudi Arabia','Riyadh','SAR'),
+      ('demo+emp03@safeworkglobal.demo','Mohammed Al-Thani','Qatari Diar Real Estate','Real Estate','Qatar','Doha','QAR'),
+      ('demo+emp04@safeworkglobal.demo','Ahmed Al-Sabah','Kuwait Oil Services','Oil & Gas','Kuwait','Kuwait City','KWD'),
+      ('demo+emp05@safeworkglobal.demo','Salim Al-Busaidi','Oman Marine Logistics','Logistics','Oman','Muscat','OMR'),
+      ('demo+emp06@safeworkglobal.demo','Hamad Al-Khalifa','Bahrain Hospitality Group','Hospitality','Bahrain','Manama','BHD'),
+      ('demo+emp07@safeworkglobal.demo','Tan Wei Ming','Singapore BuildTech','Construction','Singapore','Singapore','SGD'),
+      ('demo+emp08@safeworkglobal.demo','Lim Boon Heng','KL Facilities Sdn Bhd','Facilities Mgmt','Malaysia','Kuala Lumpur','MYR'),
+      ('demo+emp09@safeworkglobal.demo','Yousef Al-Hashemi','Emirates Steel Industries','Manufacturing','UAE','Abu Dhabi','AED'),
+      ('demo+emp10@safeworkglobal.demo','Naser Al-Ghamdi','NEOM Infrastructure','Construction','Saudi Arabia','Tabuk','SAR'),
+      ('demo+emp11@safeworkglobal.demo','Abdullah Al-Kuwari','Qatar Hospitality Services','Hospitality','Qatar','Doha','QAR'),
+      ('demo+emp12@safeworkglobal.demo','Rashid Al-Maktoum','Dubai Logistics City','Logistics','UAE','Dubai','AED')
+    ) AS t(email, contact, company, industry, country, city, currency)
+  LOOP
+    v_emp_uid := gen_random_uuid();
+    INSERT INTO auth.users (instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,
+      raw_app_meta_data,raw_user_meta_data,created_at,updated_at,
+      confirmation_token,recovery_token,email_change_token_new,email_change)
+    VALUES ('00000000-0000-0000-0000-000000000000', v_emp_uid,'authenticated','authenticated',
+      rec.email, extensions.crypt('Demo@1234', extensions.gen_salt('bf')),
+      now(), '{"provider":"email","providers":["email"]}'::jsonb,
+      jsonb_build_object('full_name', rec.contact,'role','employer'),
+      now(), now(),'','','','');
+    INSERT INTO auth.identities (id,user_id,identity_data,provider,provider_id,last_sign_in_at,created_at,updated_at)
+    VALUES (gen_random_uuid(), v_emp_uid,
+      jsonb_build_object('sub', v_emp_uid::text,'email',rec.email),
+      'email', v_emp_uid::text, now(), now(), now());
+
+    INSERT INTO public.user_roles (user_id, role) VALUES (v_emp_uid,'employer') ON CONFLICT DO NOTHING;
+    INSERT INTO public.profiles (id,email,full_name,mobile_verified)
+    VALUES (v_emp_uid, rec.email, rec.contact, true)
+    ON CONFLICT (id) DO UPDATE SET full_name=EXCLUDED.full_name;
+
+    INSERT INTO public.employer_profiles (user_id, company_name, industry, country, office_state, business_type, company_size, onboarding_completed, follows_safety_standards, provides_ppe, site_safety_level)
+    VALUES (v_emp_uid, rec.company, rec.industry, rec.country, rec.city, 'Private Limited', '500-1000', true, true, 'Yes', 'High')
+    ON CONFLICT (user_id) DO UPDATE SET
+      company_name = EXCLUDED.company_name,
+      industry     = EXCLUDED.industry,
+      country      = EXCLUDED.country,
+      office_state = EXCLUDED.office_state,
+      business_type= EXCLUDED.business_type,
+      company_size = EXCLUDED.company_size,
+      onboarding_completed = true,
+      follows_safety_standards = true,
+      provides_ppe = 'Yes',
+      site_safety_level = 'High';
+
+    v_employers_seeded := v_employers_seeded + 1;
+
+    FOR i IN 1..2 LOOP
+      v_job_id := gen_random_uuid();
+      INSERT INTO public.jobs (id, employer_id, title, description, requirements, benefits,
+        location, country, job_type, experience_level, salary_min, salary_max, currency,
+        openings, visa_sponsorship, status, posted_at, expires_at)
+      VALUES (
+        v_job_id, v_emp_uid,
+        CASE i WHEN 1 THEN (ARRAY['Electrician','Welder','Plumber','Mason','Carpenter','HVAC Technician'])[1 + (v_employers_seeded % 6)]
+               ELSE (ARRAY['Driver','Helper','Foreman','Steel Fixer','Painter','Scaffolder'])[1 + (v_employers_seeded % 6)] END
+          || ' — ' || rec.city,
+        'Hiring at ' || rec.company || '. Long-term overseas placement with visa sponsorship and accommodation.',
+        '2+ years experience. Valid passport. Willing to relocate to ' || rec.country || '.',
+        'Visa, accommodation, transport, food allowance, annual leave + return ticket.',
+        rec.city, rec.country, 'FULL_TIME',
+        (ARRAY['ENTRY','INTERMEDIATE','SENIOR'])[1 + (i % 3)],
+        CASE rec.currency
+          WHEN 'AED' THEN 2200 + (i*300) WHEN 'SAR' THEN 2100 + (i*300)
+          WHEN 'QAR' THEN 2400 + (i*300) WHEN 'KWD' THEN 220 + (i*40)
+          WHEN 'OMR' THEN 210 + (i*30)  WHEN 'BHD' THEN 240 + (i*30)
+          WHEN 'SGD' THEN 1800 + (i*200) WHEN 'MYR' THEN 2200 + (i*300)
+          ELSE 50000 + (i*5000) END,
+        CASE rec.currency
+          WHEN 'AED' THEN 3500 + (i*300) WHEN 'SAR' THEN 3300 + (i*300)
+          WHEN 'QAR' THEN 3600 + (i*300) WHEN 'KWD' THEN 350 + (i*40)
+          WHEN 'OMR' THEN 320 + (i*30)  WHEN 'BHD' THEN 360 + (i*30)
+          WHEN 'SGD' THEN 2800 + (i*200) WHEN 'MYR' THEN 3500 + (i*300)
+          ELSE 80000 + (i*5000) END,
+        rec.currency, 5 + i, true, 'ACTIVE', now() - (i || ' days')::interval, now() + interval '60 days'
+      );
+      v_job_ids := v_job_ids || v_job_id;
+      v_jobs_seeded := v_jobs_seeded + 1;
+    END LOOP;
+  END LOOP;
+
+  -- Workers
+  FOR i IN 1..30 LOOP
+    v_uid := gen_random_uuid();
+    v_email := 'demo+worker' || lpad(i::text,2,'0') || '@safeworkglobal.demo';
+
+    INSERT INTO auth.users (instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,
+      raw_app_meta_data,raw_user_meta_data,created_at,updated_at,
+      confirmation_token,recovery_token,email_change_token_new,email_change)
+    VALUES ('00000000-0000-0000-0000-000000000000', v_uid,'authenticated','authenticated',
+      v_email, extensions.crypt('Demo@1234', extensions.gen_salt('bf')),
+      now(), '{"provider":"email","providers":["email"]}'::jsonb,
+      jsonb_build_object('full_name',
+        (ARRAY['Ramesh','Suresh','Mahesh','Dinesh','Mukesh','Naresh','Vinod','Ashok','Manoj','Rakesh',
+               'Sanjay','Vijay','Rajesh','Anil','Sunil','Sandeep','Amit','Deepak','Vikas','Prakash',
+               'Kishore','Mohan','Mahendra','Bhanu','Pradeep','Arun','Anand','Kartik','Lokesh','Hemant'])[i] || ' '
+        || (ARRAY['Kumar','Singh','Sharma','Verma','Yadav','Gupta','Patel','Reddy','Nair','Pillai'])[1+(i%10)],
+        'role','worker'),
+      now() - ((30-i) || ' days')::interval, now(),'','','','');
+    INSERT INTO auth.identities (id,user_id,identity_data,provider,provider_id,last_sign_in_at,created_at,updated_at)
+    VALUES (gen_random_uuid(), v_uid,
+      jsonb_build_object('sub', v_uid::text,'email',v_email),
+      'email', v_uid::text, now(), now(), now());
+
+    INSERT INTO public.user_roles (user_id, role) VALUES (v_uid,'worker') ON CONFLICT DO NOTHING;
+    INSERT INTO public.profiles (id,email,full_name,phone,mobile_verified)
+    VALUES (v_uid, v_email,
+      (ARRAY['Ramesh','Suresh','Mahesh','Dinesh','Mukesh','Naresh','Vinod','Ashok','Manoj','Rakesh',
+             'Sanjay','Vijay','Rajesh','Anil','Sunil','Sandeep','Amit','Deepak','Vikas','Prakash',
+             'Kishore','Mohan','Mahendra','Bhanu','Pradeep','Arun','Anand','Kartik','Lokesh','Hemant'])[i] || ' '
+      || (ARRAY['Kumar','Singh','Sharma','Verma','Yadav','Gupta','Patel','Reddy','Nair','Pillai'])[1+(i%10)],
+      '+9198' || lpad((10000000 + i*131)::text, 8, '0'), true)
+    ON CONFLICT (id) DO UPDATE SET full_name=EXCLUDED.full_name;
+
+    v_partner_id := NULL;
+    IF i > 15 THEN
+      SELECT id INTO v_partner_id FROM public.partner_profiles
+        WHERE user_id = v_partner_uids[1 + ((i-15) % array_length(v_partner_uids,1))]
+          AND status = 'approved';
+    END IF;
+
+    INSERT INTO public.worker_profiles (
+      user_id, bio, nationality, current_city, current_location, country,
+      primary_work_type, years_of_experience, skill_level,
+      expected_salary_min, expected_salary_max, currency,
+      availability, has_passport, has_visa, languages, ecr_status, ecr_category,
+      open_to_relocation, preferred_shift, onboarding_completed,
+      source_type, source_partner_id, review_status
+    ) VALUES (
+      v_uid,
+      'Experienced ' || (ARRAY['Electrician','Welder','Plumber','Mason','Carpenter','HVAC Technician','Driver','Helper'])[1+(i%8)] || ' seeking GCC placement.',
+      'Indian',
+      (ARRAY['Jaipur','Lucknow','Patna','Kochi','Chennai','Chandigarh','Bhubaneswar','Kolkata'])[1+(i%8)],
+      (ARRAY['Jaipur, Rajasthan','Lucknow, Uttar Pradesh','Patna, Bihar','Kochi, Kerala','Chennai, Tamil Nadu','Chandigarh, Punjab','Bhubaneswar, Odisha','Kolkata, West Bengal'])[1+(i%8)],
+      'India',
+      (ARRAY['Electrician','Welder','Plumber','Mason','Carpenter','HVAC Technician','Driver','Helper'])[1+(i%8)],
+      2 + (i % 12),
+      (ARRAY['Helper','Semi Skilled','Skilled'])[1 + (i % 3)],
+      (40000 + (i*500))::numeric, (75000 + (i*500))::numeric, 'INR',
+      'Immediate', (i % 3 <> 0), (i % 5 = 0),
+      ARRAY['Hindi','English'],
+      CASE WHEN i % 3 <> 0 THEN 'required' ELSE 'not_checked' END,
+      CASE WHEN i % 3 <> 0 THEN 'ECR' END,
+      true, 'Day', true,
+      CASE WHEN v_partner_id IS NOT NULL THEN 'emitra' ELSE 'organic' END,
+      v_partner_id,
+      CASE WHEN v_partner_id IS NULL THEN 'not_required'
+           WHEN i % 4 = 0 THEN 'pending'
+           ELSE 'approved' END
+    )
+    ON CONFLICT (user_id) DO UPDATE SET
+      bio = EXCLUDED.bio, nationality='Indian',
+      current_city = EXCLUDED.current_city, current_location = EXCLUDED.current_location, country='India',
+      primary_work_type = EXCLUDED.primary_work_type, years_of_experience = EXCLUDED.years_of_experience,
+      skill_level = EXCLUDED.skill_level,
+      expected_salary_min = EXCLUDED.expected_salary_min,
+      expected_salary_max = EXCLUDED.expected_salary_max, currency='INR',
+      availability = EXCLUDED.availability,
+      has_passport = EXCLUDED.has_passport, has_visa = EXCLUDED.has_visa,
+      languages = EXCLUDED.languages, ecr_status = EXCLUDED.ecr_status,
+      ecr_category = EXCLUDED.ecr_category, open_to_relocation = true,
+      preferred_shift = 'Day', onboarding_completed = true,
+      source_type = EXCLUDED.source_type,
+      source_partner_id = EXCLUDED.source_partner_id,
+      review_status = EXCLUDED.review_status;
+
+    INSERT INTO public.worker_skills (worker_id, skill_name, proficiency_level, years_of_experience)
+    VALUES (v_uid,
+      (ARRAY['Electrician','Welder','Plumber','Mason','Carpenter','HVAC Technician','Driver','Helper'])[1+(i%8)],
+      (ARRAY['beginner','intermediate','advanced'])[1+(i%3)],
+      2 + (i % 12))
+    ON CONFLICT DO NOTHING;
+
+    v_worker_uids := v_worker_uids || v_uid;
+    v_workers_seeded := v_workers_seeded + 1;
+  END LOOP;
+
+  -- Applications
+  FOR i IN 1..array_length(v_worker_uids,1) LOOP
+    v_job_id := v_job_ids[1 + (i % array_length(v_job_ids,1))];
+    INSERT INTO public.job_applications (job_id, worker_id, employer_id, status, applied_at)
+    VALUES (
+      v_job_id, v_worker_uids[i],
+      (SELECT employer_id FROM public.jobs WHERE id = v_job_id),
+      (ARRAY['PENDING','SHORTLISTED','REVIEWING','INTERVIEWED','REJECTED','OFFERED','HIRED','PENDING','SHORTLISTED','HIRED'])[1+(i%10)],
+      now() - ((30 - i) || ' days')::interval
+    ) ON CONFLICT DO NOTHING;
+    v_apps_seeded := v_apps_seeded + 1;
+
+    IF i % 2 = 0 THEN
+      v_job_id := v_job_ids[1 + ((i+5) % array_length(v_job_ids,1))];
+      INSERT INTO public.job_applications (job_id, worker_id, employer_id, status, applied_at)
+      VALUES (
+        v_job_id, v_worker_uids[i],
+        (SELECT employer_id FROM public.jobs WHERE id = v_job_id),
+        (ARRAY['PENDING','SHORTLISTED','REJECTED','APPROVED','OFFERED'])[1+(i%5)],
+        now() - ((20 - (i%20)) || ' days')::interval
+      ) ON CONFLICT DO NOTHING;
+      v_apps_seeded := v_apps_seeded + 1;
+    END IF;
+  END LOOP;
+
+  RETURN jsonb_build_object(
+    'workers', v_workers_seeded,
+    'employers', v_employers_seeded,
+    'jobs', v_jobs_seeded,
+    'partners', v_partners_seeded,
+    'applications', v_apps_seeded
+  );
+END $function$;
