@@ -2731,6 +2731,7 @@ export type Database = {
         }[]
       }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
+      seed_officials_demo: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "employer" | "worker" | "agent" | "partner"
