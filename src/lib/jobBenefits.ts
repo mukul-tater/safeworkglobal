@@ -42,7 +42,7 @@ export function parseJobBenefits(raw: string | null | undefined): ParsedJobBenef
 }
 
 export function serializeJobBenefits(parsed: ParsedJobBenefits): string {
-  const lines = [...parsed.selected];
+  const lines: string[] = [...parsed.selected];
   const extraParts = parsed.additional
     .split(/[,;\n]+/)
     .map((s) => s.trim())

@@ -1137,6 +1137,9 @@ export type Database = {
           address: string | null
           address_proof_url: string | null
           agency_name: string | null
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
           bio: string | null
           center_name: string | null
           commission_rate: number | null
@@ -1204,6 +1207,9 @@ export type Database = {
           address?: string | null
           address_proof_url?: string | null
           agency_name?: string | null
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           bio?: string | null
           center_name?: string | null
           commission_rate?: number | null
@@ -1271,6 +1277,9 @@ export type Database = {
           address?: string | null
           address_proof_url?: string | null
           agency_name?: string | null
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           bio?: string | null
           center_name?: string | null
           commission_rate?: number | null
@@ -1736,6 +1745,67 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_transactions: {
+        Row: {
+          amount: number
+          application_id: string | null
+          created_at: string
+          id: string
+          job_id: string | null
+          partner_id: string
+          status: string
+          updated_at: string
+          withdrawal_id: string | null
+          worker_id: string
+        }
+        Insert: {
+          amount: number
+          application_id?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          partner_id: string
+          status?: string
+          updated_at?: string
+          withdrawal_id?: string | null
+          worker_id: string
+        }
+        Update: {
+          amount?: number
+          application_id?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          partner_id?: string
+          status?: string
+          updated_at?: string
+          withdrawal_id?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_transactions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_transactions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_transactions_withdrawal_fk"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "withdrawal_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_jobs: {
         Row: {
           created_at: string
@@ -1932,6 +2002,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          account_holder: string | null
+          account_number: string | null
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          id: string
+          ifsc: string | null
+          paid_at: string | null
+          partner_id: string
+          payment_reference: string | null
+          processed_at: string | null
+          processed_by: string | null
+          rejection_reason: string | null
+          status: string
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          account_holder?: string | null
+          account_number?: string | null
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          ifsc?: string | null
+          paid_at?: string | null
+          partner_id: string
+          payment_reference?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          account_holder?: string | null
+          account_number?: string | null
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          ifsc?: string | null
+          paid_at?: string | null
+          partner_id?: string
+          payment_reference?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       work_experience: {
         Row: {
@@ -2194,6 +2329,7 @@ export type Database = {
           id: string
           languages: string[] | null
           nationality: string | null
+          onboarded_at: string | null
           onboarding_completed: boolean | null
           open_to_relocation: boolean | null
           passport_number: string | null
@@ -2202,8 +2338,13 @@ export type Database = {
           primary_skill: string | null
           primary_work_type: string | null
           project_types_worked: string[] | null
+          review_notes: string | null
+          review_rejection_reason: string | null
+          review_status: string
           secondary_skills: string[] | null
           skill_level: string | null
+          source_partner_id: string | null
+          source_type: string
           tenth_pass_confirmed: boolean
           updated_at: string | null
           user_id: string
@@ -2231,6 +2372,7 @@ export type Database = {
           id?: string
           languages?: string[] | null
           nationality?: string | null
+          onboarded_at?: string | null
           onboarding_completed?: boolean | null
           open_to_relocation?: boolean | null
           passport_number?: string | null
@@ -2239,8 +2381,13 @@ export type Database = {
           primary_skill?: string | null
           primary_work_type?: string | null
           project_types_worked?: string[] | null
+          review_notes?: string | null
+          review_rejection_reason?: string | null
+          review_status?: string
           secondary_skills?: string[] | null
           skill_level?: string | null
+          source_partner_id?: string | null
+          source_type?: string
           tenth_pass_confirmed?: boolean
           updated_at?: string | null
           user_id: string
@@ -2268,6 +2415,7 @@ export type Database = {
           id?: string
           languages?: string[] | null
           nationality?: string | null
+          onboarded_at?: string | null
           onboarding_completed?: boolean | null
           open_to_relocation?: boolean | null
           passport_number?: string | null
@@ -2276,8 +2424,13 @@ export type Database = {
           primary_skill?: string | null
           primary_work_type?: string | null
           project_types_worked?: string[] | null
+          review_notes?: string | null
+          review_rejection_reason?: string | null
+          review_status?: string
           secondary_skills?: string[] | null
           skill_level?: string | null
+          source_partner_id?: string | null
+          source_type?: string
           tenth_pass_confirmed?: boolean
           updated_at?: string | null
           user_id?: string
@@ -2285,7 +2438,15 @@ export type Database = {
           work_preference?: string | null
           years_of_experience?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "worker_profiles_source_partner_id_fkey"
+            columns: ["source_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       worker_skill_media: {
         Row: {
@@ -2465,6 +2626,10 @@ export type Database = {
     Functions: {
       admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
       admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
+      admin_mark_withdrawal_paid: {
+        Args: { p_payment_reference?: string; p_withdrawal_id: string }
+        Returns: undefined
+      }
       admin_set_user_role: {
         Args: {
           p_role: Database["public"]["Enums"]["app_role"]

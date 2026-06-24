@@ -87,7 +87,12 @@ export default function PartnerApprovals() {
     setActing(true);
     try {
       const patch: Record<string, any> = { reviewed_by: user.id, reviewed_at: new Date().toISOString() };
-      if (action === "approve") patch.status = "active";
+      if (action === "approve") {
+        patch.status = "approved";
+        patch.approved_by = user.id;
+        patch.approved_at = new Date().toISOString();
+        patch.approval_notes = reason || null;
+      }
       else if (action === "reject") { patch.status = "rejected"; patch.rejection_reason = reason; }
       else if (action === "suspend") { patch.status = "suspended"; patch.rejection_reason = reason; }
       else if (action === "reactivate") { patch.status = "active"; patch.rejection_reason = null; }

@@ -73,10 +73,10 @@ export const optionalFutureDateString = z
 export function validateSchema<T>(
   schema: z.ZodType<T>,
   data: unknown,
-): { success: true; data: T } | { success: false; errors: Record<string, string> } {
+): { success: boolean; data: T; errors: Record<string, string> } {
   const result = schema.safeParse(data);
   if (result.success) {
-    return { success: true, data: result.data };
+    return { success: true, data: result.data, errors: {} };
   }
 
   const errors: Record<string, string> = {};
@@ -84,7 +84,7 @@ export function validateSchema<T>(
     const key = issue.path.join('.') || '_form';
     if (!errors[key]) errors[key] = issue.message;
   }
-  return { success: false, errors };
+  return { success: false, data: data as T, errors };
 }
 
 export function todayDateInputValue(): string {

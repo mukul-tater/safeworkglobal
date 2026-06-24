@@ -2,6 +2,7 @@ import {
   LayoutDashboard, TrendingUp, Users, FileCheck, CreditCard, Plane, CheckCircle, Shield,
   BarChart3, AlertTriangle, Mail, Store, HardHat, Building2, FileText, Briefcase, UserCog,
   MessageSquare, ShieldAlert, IndianRupee,
+  ClipboardCheck, Wallet, BarChartBig,
 } from "lucide-react";
 import type { NavGroup } from "@/components/layout/DashboardSidebar";
 
@@ -25,6 +26,15 @@ export const adminNavGroups: NavGroup[] = [
       { path: "/admin/partners", icon: Store, label: "Partners" },
       { path: "/admin/partner-workers", icon: UserCog, label: "E-Mitra Workers" },
       { path: "/admin/partner-rewards", icon: IndianRupee, label: "Partner Rewards" },
+    ],
+  },
+  {
+    label: "eMitra Operations",
+    defaultOpen: true,
+    items: [
+      { path: "/admin/emitra/worker-review", icon: ClipboardCheck, label: "Worker Review" },
+      { path: "/admin/emitra/withdrawals", icon: Wallet, label: "Withdrawals" },
+      { path: "/admin/emitra/analytics", icon: BarChartBig, label: "Analytics & Settings" },
     ],
   },
   {
