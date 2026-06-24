@@ -28,15 +28,13 @@ export default function AdminPartnerRewards() {
     const { data, error } = await (supabase as any)
       .from('partner_reward_config')
       .select('*')
-      .eq('active', true)
-      .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
     if (error) toast.error('Failed to load config');
     if (data) {
       setConfig(data as RewardConfig);
-      setReward(String(data.placement_reward_inr));
-      setFee(String(data.physical_test_fee_inr));
+      setReward(String(data.placement_reward_amount ?? data.placement_reward_inr ?? ''));
+      setFee(String(data.worker_fee_amount ?? data.physical_test_fee_inr ?? ''));
     }
     setLoading(false);
   };
@@ -51,13 +49,13 @@ export default function AdminPartnerRewards() {
     if (config) {
       const { error } = await (supabase as any)
         .from('partner_reward_config')
-        .update({ placement_reward_inr: r, physical_test_fee_inr: f })
+        .update({ placement_reward_amount: r, worker_fee_amount: f })
         .eq('id', config.id);
       if (error) { toast.error(error.message); setSaving(false); return; }
     } else {
       const { error } = await (supabase as any)
         .from('partner_reward_config')
-        .insert({ placement_reward_inr: r, physical_test_fee_inr: f, active: true });
+        .insert({ placement_reward_amount: r, worker_fee_amount: f });
       if (error) { toast.error(error.message); setSaving(false); return; }
     }
     setSaving(false);
