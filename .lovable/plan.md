@@ -1,101 +1,98 @@
-## Goal
+# eMitra Partner Worker Acquisition System
 
-Move all three role portals (Worker, Employer, E-Mitra Partner) to a unified flow: public marketing pages with no sidebar → Google or email sign-in/sign-up → role dashboard → optional profile completion → role-specific actions. Wipe demo jobs/applications. Add E-Mitra reward & 3-stage skill-test scaffolding.
-
----
-
-## 1. Public layout (pre-login)
-
-- Remove the role sidebar from public landing pages: Worker landing (`/worker`-ish landing currently showing "Worker Portal" sidebar), Employer landing ("Hire Workers" page), Partner landing ("Become a SafeWork Partner" page).
-- New public layout: top nav + hero + CTAs only. Two clear CTAs on every role landing: **"Continue with Google"** and **"Sign up with email"** (plus "Sign in" link).
-- Sidebar (role nav) renders only inside `/<role>/dashboard/*` after auth.
-- Keep the existing dark theme + design tokens. No new visual identity.
-
-## 2. Auth flow (all three roles)
-
-- Single auth entry per role, both methods enabled:
-  - Google (via existing `lovable.auth.signInWithOAuth("google")`) — on first sign-in, `handle_new_user` creates `profiles` row, then we call `assign_initial_role(<role>)` from the client based on which landing page they came from.
-  - Email/password — same flow, role passed via `raw_user_meta_data.role`.
-- On success → redirect to `/worker/dashboard`, `/employer/dashboard`, or `/partner/dashboard`.
-- Profile-completion banners (dismissible) inside the dashboard, **not** blocking gates.
-
-## 3. Minimum-to-act gating
-
-| Role | Minimum required before main action |
-|------|-------------------------------------|
-| Worker | full name + mobile + 10th-pass confirmed + state + **primary skill** → can browse & apply |
-| Employer | company name + your name + work email + **company country** → can post a job |
-| Partner | full name + mobile + E-Mitra centre name + state → can submit worker applications (after admin approval) |
-
-Everything else (passport, address, education detail, skills media, banking, documents) is optional but nudged via progress card.
-
-## 4. Worker module
-
-- Profile fields: full name, mobile, address, state, district, DOB, gender, education (10th-pass mandatory), passport (yes/no + number if yes), ECR, languages, expected salary, GCC country/city preference, availability.
-- **Primary skill + secondary skills**, each skill needs at least one photo or video for "verified skill" badge (already partially exists — wire into onboarding step 3).
-- After basic-min fields complete: unlock jobs list and apply button.
-- Pre-selection education banners (10th-pass requirement, "FREE to register/browse/apply", ₹35,400 only after selection + interview) stay on the worker landing page.
-
-## 5. Employer module
-
-- Quick signup → dashboard → "Post a job" available immediately after the 4 min fields.
-- Profile completion (industry, size, address, KYC docs) nudged, not blocking.
-- Employer sees only workers who applied to their jobs (existing rule).
-
-## 6. E-Mitra Partner module
-
-- Quick signup → "Pending admin approval" dashboard state.
-- After admin approval (existing flow): can register workers (organic worker schema, `registration_source = 'PARTNER'`, linked to `partner_profile_id`).
-- New: **3-stage skill-test tracker** per partner-registered worker:
-  1. Partner local test (partner marks pass/fail with notes)
-  2. SafeWork phone interview (admin/ops marks)
-  3. Physical test (admin marks) — gated on ₹35,400 fee marked "received" by admin
-- New: **Placement reward** — ₹1,000 default, configurable in `partner_reward_config` table; credited via existing `partner_incentives` when worker status → `placed`. Update existing trigger to read amount from config table.
-
-## 7. Data wipe (now)
-
-- Delete ALL rows from: `jobs`, `job_skills`, `job_applications`, `application_status_history`, `saved_jobs`, `interviews`, `offers`, `job_formalities`, `shortlisted_workers`, `saved_searches`.
-- **Keep** all auth users, profiles, worker_profiles, employer_profiles, partner_profiles, worker_skills, reference data (skills/states/countries seed).
-- (Removing other non-listed users is **not** done per your answer — only jobs/applications wiped.)
-
-## 8. Out of scope (for this pass)
-
-- Real payment gateway for ₹35,400 / ₹1,000 (admin-marked only).
-- Actual skill-test scoring engine.
-- Mobile (React Native) app changes — web only.
-- Renaming / merging Phase-1 SQLite backend with Supabase (still two stacks; Supabase remains source of truth for this flow).
+Extends the existing Worker module with eMitra partner source tracking, admin review workflow, configurable rewards, and a wallet/withdrawal system. **No duplicate worker tables** — we reuse `worker_profiles`, `worker_documents`, `worker_skills`, `job_applications`, and add lightweight tracking tables.
 
 ---
 
-## Technical details
+## 1. Database changes (single migration)
 
-### DB migrations
-1. Wipe SQL on jobs + application-related tables.
-2. New table `partner_reward_config` (single row, amount numeric, updated_at).
-3. New table `partner_worker_skill_tests` (worker_id, stage enum partner|phone|physical, status, notes, fee_paid bool, created_by, timestamps) + RLS for partner read-own / admin all.
-4. Update `handle_partner_worker_status_change` to read `placed` reward from `partner_reward_config` instead of hardcoded 750.
-5. Add `tenth_pass_confirmed boolean` + `primary_skill text` to `worker_profiles` if missing.
-6. Add `country` to `employer_profiles` already exists — verify.
+### Extend existing tables
+- `partner_profiles`: add `approved_by uuid`, `approved_at timestamptz`, `rejection_reason text`, `approval_notes text` (status column already exists).
+- `worker_profiles`: add `source_type text default 'organic'` (`'organic' | 'emitra'`), `source_partner_id uuid references partner_profiles(id)`, `onboarded_at timestamptz`, `review_status text default 'not_required'` (`'not_required' | 'pending' | 'approved' | 'rejected'`), `reviewed_by uuid`, `reviewed_at timestamptz`, `review_notes text`, `review_rejection_reason text`.
+- When `source_type='emitra'`, default `review_status='pending'` (trigger).
 
-### Frontend
-- New `src/layouts/PublicRoleLayout.tsx` (top nav + footer, no sidebar). Apply to `/worker`, `/employer`, `/partner` landing routes.
-- Existing `EmitraLayout`, worker portal layout, employer layout: only mount inside authenticated routes.
-- Replace landing pages' sidebar with hero + dual-CTA (Google + email).
-- New `src/pages/auth/RoleAuth.tsx` (one component, role param) used by `/worker/auth`, `/employer/auth`, `/partner/auth` — Google button + email form, role inferred from path.
-- Dashboard gating helper `useCanAct(role)` returns booleans for browse/apply/post-job/register-worker; dashboards show progress card with deep-links to remaining fields.
-- Partner dashboard: add "Skill tests" section per worker with 3 cards (partner / phone / physical).
-- Admin: new `/admin/partner-rewards` page to edit `partner_reward_config` and mark fees received.
+### New tables
+- `reward_transactions` — `partner_id`, `worker_id`, `job_id`, `application_id`, `amount`, `status` (`pending_placement | available | withdrawn`), timestamps.
+- `withdrawal_requests` — `partner_id`, `amount`, `bank_account`, `ifsc`, `account_holder`, `upi_id`, `status` (`pending | approved | paid | rejected`), `processed_by`, `processed_at`, `admin_notes`, `rejection_reason`, `paid_at`, `payment_reference`.
+- `partner_reward_config` already exists — reuse its `placement_reward_amount`.
 
-### Files removed/repurposed
-- `src/pages/worker/QuickWorkerSignup.tsx` → folded into new `RoleAuth`.
-- Sidebar nav configs (`phase1WorkerNav.ts`, `emitraNav.ts`, employer nav) gated to authenticated routes only.
+### Triggers
+- On `job_applications.status` change to `'HIRED'`/placement status: if worker has `source_partner_id`, insert `reward_transactions` row with `status='available'` and amount from `partner_reward_config`.
+- On worker_profile insert with `source_type='emitra'`: set `review_status='pending'`.
+
+### RLS / GRANTs
+- Partners can SELECT their own reward_transactions, withdrawal_requests; INSERT withdrawal_requests for themselves.
+- Admins full access via `has_role`.
+- Workers onboarded by a partner: partner can SELECT (extend `worker_profiles` select policy via `source_partner_id = (select id from partner_profiles where user_id=auth.uid())`).
 
 ---
 
-## Open questions (please confirm)
+## 2. Partner-facing pages (`/emitra/*`)
 
-1. Should the worker landing keep the long educational panel (10th-pass / FREE / ₹35,400) or move it behind a "Learn more" expander to keep the hero focused?
-2. For Google sign-up, if the user picks the wrong landing page (e.g. signs in via Worker but already has Employer role), should we (a) reject with a message, (b) auto-redirect to existing role dashboard, or (c) allow multi-role on same auth user?
-3. The Phase-1 SQLite backend (`backend/`) currently powers `/register`, `/login`, `/home`, `/onboarding`. Confirm we are **deprecating** that path and routing all new worker auth through Supabase — or do you want to keep Phase-1 for organic workers?
+Reuse `EmitraLayout` + `emitraNavGroups`. Add nav items: Onboard Worker, My Workers, Rewards & Earnings, Withdrawals.
 
-Once you confirm (or say "just proceed with sensible defaults"), I'll execute in this order: DB migration → wipe data → public layout + auth pages → dashboard gating → partner skill-test UI → admin reward config.
+- **EmitraOnboardWorkerPage** — wraps existing Worker Registration flow with a context flag `{ source: 'emitra', partnerId }`. On submit, the existing registration writes to `worker_profiles` plus our metadata columns.
+- **EmitraMyWorkersPage** — table of workers where `source_partner_id = my partner id`. Columns: Name, Mobile, Primary Skill, Reg Date, Review Status (with reason if rejected), Placement Status, Reward Status. Filters as specified.
+- **EmitraRewardsPage** — wallet card (Total Earned / Available / Withdrawn / Pending) + reward history table. "Request Withdrawal" button opens dialog.
+- **EmitraWithdrawalsPage** — list of own withdrawal_requests with status badges.
+
+Gate all of the above with an `ApprovedPartnerGate` that checks `partner_profiles.status = 'approved'` and shows a "Pending approval" screen otherwise.
+
+---
+
+## 3. Admin pages (`/admin/emitra/*`)
+
+- **AdminPartnerApprovals** (exists — extend) — Approve / Reject actions; reject requires reason; writes `approved_by/at`, `rejection_reason`, `approval_notes`.
+- **AdminEmitraWorkerReview** — queue of `worker_profiles` where `source_type='emitra' AND review_status='pending'`. Inline drawer shows profile, documents, skills, experience, partner info. Approve / Reject (with mandatory reason).
+- **AdminEmitraAnalytics** — KPI cards for partner/worker/reward metrics from real counts.
+- **AdminEmitraWithdrawals** — Approve / Reject / Mark Paid. On Mark Paid, set linked reward_transactions to `withdrawn`.
+- **AdminEmitraSettings** — edit `partner_reward_config.placement_reward_amount` (default ₹1000).
+- Extend AdminWorkers list with filter "Source partner".
+
+---
+
+## 4. Partner registration form
+
+Update `PartnerOnboarding` / `EmitraRegisterPage` to collect exactly the requested fields (Full Name, Center Name, Mobile, Email, Address, State, District, ID Proof, eMitra Cert, Bank, UPI). Most already exist; align labels and required flags. After submit, set status=`pending` and show "Pending Approval" screen.
+
+---
+
+## 5. Reuse, don't duplicate
+
+- Worker Registration flow: `src/modules/worker-registration/*` is reused as-is. We pass an `onboardingContext` prop with `{ source, partnerId }`. After the final step's insert, we patch the new `worker_profiles` row with source metadata (or do it server-side via a trigger reading from a session GUC — simpler: pass through to the insert).
+- Documents/Skills/Verification: unchanged.
+- Job applications & placement: unchanged. The placement trigger generates the reward.
+
+---
+
+## Files
+
+```text
+supabase/migrations/<ts>_emitra_acquisition_system.sql   (new)
+src/modules/emitra/
+  components/ApprovedPartnerGate.tsx                     (new)
+  pages/EmitraOnboardWorkerPage.tsx                      (new)
+  pages/EmitraMyWorkersPage.tsx                          (new)
+  pages/EmitraRewardsPage.tsx                            (new)
+  pages/EmitraWithdrawalsPage.tsx                        (new)
+  config/emitraNav.ts                                    (edit — add items)
+  services/emitraService.ts                              (edit — reward & withdrawal queries)
+src/pages/admin/
+  AdminEmitraWorkerReview.tsx                            (new)
+  AdminEmitraAnalytics.tsx                               (new)
+  AdminEmitraWithdrawals.tsx                             (new)
+  AdminEmitraSettings.tsx                                (new)
+  PartnerApprovals.tsx                                   (edit — approve/reject UX)
+src/config/adminNav.ts                                   (edit — add admin emitra section)
+src/App.tsx                                              (edit — register routes)
+```
+
+---
+
+## Out of scope (kept simple)
+
+- No payment gateway integration for "Mark Paid" — admin records payment reference manually.
+- No partner KYC re-verification — uses existing partner_profiles fields.
+- Email/SMS notifications for approve/reject reuse existing `notifications` table inserts.
+
+Confirm to proceed and I'll build it end-to-end.
