@@ -50,7 +50,7 @@ export type Database = {
       application_status_history: {
         Row: {
           application_id: string
-          changed_by: string
+          changed_by: string | null
           created_at: string | null
           id: string
           notes: string | null
@@ -58,7 +58,7 @@ export type Database = {
         }
         Insert: {
           application_id: string
-          changed_by: string
+          changed_by?: string | null
           created_at?: string | null
           id?: string
           notes?: string | null
@@ -66,7 +66,7 @@ export type Database = {
         }
         Update: {
           application_id?: string
-          changed_by?: string
+          changed_by?: string | null
           created_at?: string | null
           id?: string
           notes?: string | null
