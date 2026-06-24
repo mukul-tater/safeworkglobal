@@ -10,6 +10,7 @@ import ECRStatusCard from "@/components/worker/ECRStatusCard";
 import ProfileProgressCard from "@/components/worker/ProfileProgressCard";
 import JobJourneyProgressCard from "@/components/worker/JobJourneyProgressCard";
 import ApplicationProgressCard from "@/components/worker/ApplicationProgressCard";
+import WorkerJourneyTimeline, { deriveWorkerJourney } from "@/components/worker/WorkerJourneyTimeline";
 import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
 import { DashboardSkeleton } from "@/components/ui/page-skeleton";
 import { Link } from "react-router-dom";
@@ -164,6 +165,26 @@ export default function WorkerDashboard() {
       <div className="mb-6">
         <DocumentVerificationCard documents={documents} />
       </div>
+
+      <Card className="mb-6 p-4 md:p-5">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-bold leading-tight">Your migration journey</h2>
+            <p className="text-xs text-muted-foreground">
+              7 stages from registration to placement abroad
+            </p>
+          </div>
+        </div>
+        <WorkerJourneyTimeline
+          stages={deriveWorkerJourney({
+            profile: workerProfile,
+            documents,
+            skills,
+            applications,
+            createdAt: (workerProfile?.created_at as string) ?? null,
+          })}
+        />
+      </Card>
 
       <div className="mb-6">
         <ApplicationProgressCard userId={profile?.id || ""} />
