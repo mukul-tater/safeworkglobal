@@ -6,3 +6,7 @@ export { default as EmitraRegisterWorkerPage } from './pages/EmitraRegisterWorke
 export { default as EmitraWorkerDetailPage } from './pages/EmitraWorkerDetailPage';
 export { default as EmitraNotificationsPage } from './pages/EmitraNotificationsPage';
 export { default as EmitraCompliancePage } from './pages/EmitraCompliancePage';
+export { default as EmitraOnboardWorkerPage } from './pages/EmitraOnboardWorkerPage';
+export { default as EmitraMyWorkersPage } from './pages/EmitraMyWorkersPage';
+export { default as EmitraRewardsPage } from './pages/EmitraRewardsPage';
+export { default as EmitraWithdrawalsPage } from './pages/EmitraWithdrawalsPage';

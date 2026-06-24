@@ -57,7 +57,14 @@ import {
   EmitraWorkerDetailPage,
   EmitraNotificationsPage,
   EmitraCompliancePage,
+  EmitraOnboardWorkerPage,
+  EmitraMyWorkersPage,
+  EmitraRewardsPage,
+  EmitraWithdrawalsPage,
 } from "./modules/emitra";
+import AdminEmitraWorkerReview from "./pages/admin/AdminEmitraWorkerReview";
+import AdminEmitraWithdrawals from "./pages/admin/AdminEmitraWithdrawals";
+import AdminEmitraAnalytics from "./pages/admin/AdminEmitraAnalytics";
 import {
   WorkerAuthProvider,
   WorkerLanguageProvider,
@@ -128,6 +135,38 @@ function AppShell() {
             element={
               <ProtectedRoute allowedRoles={["partner"]}>
                 <EmitraWorkersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/emitra/onboard-worker"
+            element={
+              <ProtectedRoute allowedRoles={["partner"]}>
+                <EmitraOnboardWorkerPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/emitra/my-workers"
+            element={
+              <ProtectedRoute allowedRoles={["partner"]}>
+                <EmitraMyWorkersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/emitra/rewards"
+            element={
+              <ProtectedRoute allowedRoles={["partner"]}>
+                <EmitraRewardsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/emitra/withdrawals"
+            element={
+              <ProtectedRoute allowedRoles={["partner"]}>
+                <EmitraWithdrawalsPage />
               </ProtectedRoute>
             }
           />
@@ -205,6 +244,9 @@ function AppShell() {
           <Route path="/admin/disputes" element={<AdminRoute><DisputeResolution /></AdminRoute>} />
           <Route path="/admin/contact-submissions" element={<AdminRoute><ContactSubmissions /></AdminRoute>} />
           <Route path="/admin/partner-rewards" element={<AdminRoute><AdminPartnerRewards /></AdminRoute>} />
+          <Route path="/admin/emitra/worker-review" element={<AdminRoute><AdminEmitraWorkerReview /></AdminRoute>} />
+          <Route path="/admin/emitra/withdrawals" element={<AdminRoute><AdminEmitraWithdrawals /></AdminRoute>} />
+          <Route path="/admin/emitra/analytics" element={<AdminRoute><AdminEmitraAnalytics /></AdminRoute>} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
           <Route path="*" element={<NotFound />} />
