@@ -2705,6 +2705,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_whitelisted_admin_email: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       list_public_workers: {
         Args: { p_limit?: number }
         Returns: {
