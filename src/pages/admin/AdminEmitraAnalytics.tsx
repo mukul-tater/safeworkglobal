@@ -54,7 +54,8 @@ export default function AdminEmitraAnalytics() {
     setSavingCfg(true);
     try {
       const { error } = await (supabase as any).from('partner_reward_config')
-        .upsert({ id: true, placement_reward_amount: Number(reward), updated_at: new Date().toISOString() });
+        .update({ placement_reward_amount: Number(reward), updated_at: new Date().toISOString() })
+        .eq('id', true);
       if (error) throw error;
       toast.success('Reward updated');
     } catch (e: any) { toast.error(e?.message || 'Failed'); }
