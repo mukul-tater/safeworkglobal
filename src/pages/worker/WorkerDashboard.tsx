@@ -181,7 +181,7 @@ export default function WorkerDashboard() {
             documents,
             skills,
             applications,
-            createdAt: profile?.created_at ?? workerProfile?.created_at ?? null,
+            createdAt: (workerProfile?.created_at as string) ?? null,
           })}
         />
       </Card>
