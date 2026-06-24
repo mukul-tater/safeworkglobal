@@ -2742,6 +2742,21 @@ export type Database = {
           years_of_experience: number
         }[]
       }
+      partner_list_my_workers: {
+        Args: never
+        Returns: {
+          created_at: string
+          current_city: string
+          current_location: string
+          primary_work_type: string
+          review_notes: string
+          review_rejection_reason: string
+          review_status: string
+          source_partner_id: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
     }

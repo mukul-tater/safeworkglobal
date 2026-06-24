@@ -45,11 +45,12 @@ function Inner() {
     if (!partnerId) return;
     (async () => {
       setLoading(true);
-      const { data: workers } = await (supabase as any).from('worker_profiles')
-        .select('user_id, primary_work_type, current_location, review_status, review_rejection_reason, review_notes, created_at')
-        .eq('source_partner_id', partnerId)
-        .order('created_at', { ascending: false });
-      const list: WorkerRow[] = workers || [];
+      const { data: workers } = await (supabase as any).rpc('partner_list_my_workers');
+      const list: WorkerRow[] = (workers || [])
+        .slice()
+        .sort((a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
       if (list.length) {
         const ids = list.map(w => w.user_id);
         const { data: profiles } = await (supabase as any).from('profiles')
