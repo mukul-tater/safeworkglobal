@@ -30,6 +30,17 @@ import SsvnCheckin from "./modules/partner/pages/ssvn/SsvnCheckin";
 import PartnerWallet from "./modules/partner/pages/shared/PartnerWallet";
 import PartnerReports from "./modules/partner/pages/shared/PartnerReports";
 import PartnerSupport from "./modules/partner/pages/shared/PartnerSupport";
+import PartnerInvoices from "./modules/partner/pages/shared/PartnerInvoices";
+import PartnerPayouts from "./modules/partner/pages/shared/PartnerPayouts";
+import PartnerTickets from "./modules/partner/pages/shared/PartnerTickets";
+import SrnDashboard from "./modules/partner/pages/srn/SrnDashboard";
+import SrnWorkers from "./modules/partner/pages/srn/SrnWorkers";
+import SrnStageManager from "./modules/partner/pages/srn/SrnStageManager";
+import SenGlobalDashboard from "./modules/partner/pages/senGlobal/SenGlobalDashboard";
+import SenGlobalLeads from "./modules/partner/pages/senGlobal/SenGlobalLeads";
+import SenGlobalRevenue from "./modules/partner/pages/senGlobal/SenGlobalRevenue";
+import AdminPartnerPayouts from "./pages/admin/AdminPartnerPayouts";
+import AdminPartnerTickets from "./pages/admin/AdminPartnerTickets";
 import AdminPartnersV2 from "./pages/admin/AdminPartnersV2";
 import BenefitsForEmployers from "./pages/BenefitsForEmployers";
 import Dashboard from "./pages/Dashboard";
@@ -243,6 +254,9 @@ function AppShell() {
           <Route path="/partner/wallet" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerWallet /></ProtectedRoute>} />
           <Route path="/partner/reports" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerReports /></ProtectedRoute>} />
           <Route path="/partner/support" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerSupport /></ProtectedRoute>} />
+          <Route path="/partner/invoices" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerInvoices /></ProtectedRoute>} />
+          <Route path="/partner/payouts" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerPayouts /></ProtectedRoute>} />
+          <Route path="/partner/tickets" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerTickets /></ProtectedRoute>} />
 
           {/* SSVN — Skill Verification Network */}
           <Route path="/partner/ssvn/dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnDashboard /></ProtectedRoute>} />
@@ -250,6 +264,19 @@ function AppShell() {
           <Route path="/partner/ssvn/today" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Today's Schedule" filter="today" /></ProtectedRoute>} />
           <Route path="/partner/ssvn/history" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Assessment History" filter="history" /></ProtectedRoute>} />
           <Route path="/partner/ssvn/checkin" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnCheckin /></ProtectedRoute>} />
+
+          {/* SRN — Recruitment Network */}
+          <Route path="/partner/srn/dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><SrnDashboard /></ProtectedRoute>} />
+          <Route path="/partner/srn/workers" element={<ProtectedRoute allowedRoles={["partner"]}><SrnWorkers /></ProtectedRoute>} />
+          <Route path="/partner/srn/medical" element={<ProtectedRoute allowedRoles={["partner"]}><SrnStageManager stage="medical" title="Medical" /></ProtectedRoute>} />
+          <Route path="/partner/srn/visa" element={<ProtectedRoute allowedRoles={["partner"]}><SrnStageManager stage="visa" title="Visa" /></ProtectedRoute>} />
+          <Route path="/partner/srn/travel" element={<ProtectedRoute allowedRoles={["partner"]}><SrnStageManager stage="travel" title="Travel" /></ProtectedRoute>} />
+          <Route path="/partner/srn/deployment" element={<ProtectedRoute allowedRoles={["partner"]}><SrnStageManager stage="deployment" title="Deployment" /></ProtectedRoute>} />
+
+          {/* SEN Global — Employer Network */}
+          <Route path="/partner/sen-global/dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><SenGlobalDashboard /></ProtectedRoute>} />
+          <Route path="/partner/sen-global/leads" element={<ProtectedRoute allowedRoles={["partner"]}><SenGlobalLeads /></ProtectedRoute>} />
+          <Route path="/partner/sen-global/revenue" element={<ProtectedRoute allowedRoles={["partner"]}><SenGlobalRevenue /></ProtectedRoute>} />
 
           {/* Legacy partner dashboard (kept for backwards compat) */}
           <Route path="/partner/legacy-dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerDashboard /></ProtectedRoute>} />
@@ -281,6 +308,8 @@ function AppShell() {
           <Route path="/admin/disputes" element={<AdminRoute><DisputeResolution /></AdminRoute>} />
           <Route path="/admin/contact-submissions" element={<AdminRoute><ContactSubmissions /></AdminRoute>} />
           <Route path="/admin/partner-rewards" element={<AdminRoute><AdminPartnerRewards /></AdminRoute>} />
+          <Route path="/admin/partner-payouts" element={<AdminRoute><AdminPartnerPayouts /></AdminRoute>} />
+          <Route path="/admin/partner-tickets" element={<AdminRoute><AdminPartnerTickets /></AdminRoute>} />
           <Route path="/admin/emitra/worker-review" element={<AdminRoute><AdminEmitraWorkerReview /></AdminRoute>} />
           <Route path="/admin/emitra/withdrawals" element={<AdminRoute><AdminEmitraWithdrawals /></AdminRoute>} />
           <Route path="/admin/emitra/analytics" element={<AdminRoute><AdminEmitraAnalytics /></AdminRoute>} />

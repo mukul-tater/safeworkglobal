@@ -17,6 +17,9 @@ import {
   DollarSign,
   LifeBuoy,
   Settings,
+  Receipt,
+  Banknote,
+  Ticket,
 } from "lucide-react";
 
 export type PartnerTypeCode = "SEN" | "SSVN" | "SRN" | "SEN_GLOBAL" | string;
@@ -62,6 +65,9 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
       { label: "Assessment History", to: "/partner/ssvn/history", icon: FileBarChart },
       { label: "Reports", to: "/partner/reports", icon: FileBarChart },
       { label: "Wallet", to: "/partner/wallet", icon: Wallet },
+      { label: "Invoices", to: "/partner/invoices", icon: Receipt },
+      { label: "Payouts", to: "/partner/payouts", icon: Banknote },
+      { label: "Tickets", to: "/partner/tickets", icon: Ticket },
       { label: "Support", to: "/partner/support", icon: LifeBuoy },
     ],
   },
@@ -76,6 +82,9 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
       { label: "Travel", to: "/partner/srn/travel", icon: Plane },
       { label: "Deployment", to: "/partner/srn/deployment", icon: Briefcase },
       { label: "Wallet", to: "/partner/wallet", icon: Wallet },
+      { label: "Invoices", to: "/partner/invoices", icon: Receipt },
+      { label: "Payouts", to: "/partner/payouts", icon: Banknote },
+      { label: "Tickets", to: "/partner/tickets", icon: Ticket },
     ],
   },
   SEN_GLOBAL: {
@@ -84,10 +93,11 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     navItems: [
       { label: "Dashboard", to: "/partner/sen-global/dashboard", icon: LayoutDashboard },
       { label: "Employer Leads", to: "/partner/sen-global/leads", icon: Building2 },
-      { label: "Employers", to: "/partner/sen-global/employers", icon: Building2 },
-      { label: "Jobs", to: "/partner/sen-global/jobs", icon: Briefcase },
       { label: "Revenue", to: "/partner/sen-global/revenue", icon: DollarSign },
       { label: "Wallet", to: "/partner/wallet", icon: Wallet },
+      { label: "Invoices", to: "/partner/invoices", icon: Receipt },
+      { label: "Payouts", to: "/partner/payouts", icon: Banknote },
+      { label: "Tickets", to: "/partner/tickets", icon: Ticket },
     ],
   },
 };
