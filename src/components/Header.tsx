@@ -167,7 +167,7 @@ const Header = () => {
                       </div>
                     </button>
                     <button
-                      onClick={() => navigate('/emitra/register')}
+                      onClick={() => navigate('/partner/register')}
                       className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors mt-1"
                     >
                       <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
@@ -175,7 +175,7 @@ const Header = () => {
                       </div>
                       <div>
                         <div className="font-semibold text-sm">Partner</div>
-                        <div className="text-xs text-muted-foreground">Sign up as a Partner</div>
+                        <div className="text-xs text-muted-foreground">E-Mitra, SSVN, SRN or SEN Global</div>
                       </div>
                     </button>
                     <div className="border-t border-border my-2" />
@@ -195,7 +195,7 @@ const Header = () => {
                       onClick={() => navigate('/emitra/login')}
                       className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
                     >
-                      Partner account? E-Mitra sign in
+                      Partner account? Sign in
                     </button>
                   </PopoverContent>
                 </Popover>
@@ -316,7 +316,7 @@ const Header = () => {
                       variant="outline"
                       size="lg"
                       className="w-full justify-start gap-3"
-                      onClick={() => { navigate('/emitra/register'); closeMobileMenu(); }}
+                      onClick={() => { navigate('/partner/register'); closeMobileMenu(); }}
                     >
                       <Handshake className="h-4 w-4" />
                       Partner
