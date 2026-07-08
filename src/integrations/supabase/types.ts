@@ -82,6 +82,96 @@ export type Database = {
           },
         ]
       }
+      assessments: {
+        Row: {
+          assessor_name: string | null
+          created_at: string
+          created_by: string | null
+          employer_id: string | null
+          end_time: string | null
+          equipment: Json
+          id: string
+          job_id: string | null
+          location: string | null
+          media: Json
+          overall_score: number | null
+          partner_id: string | null
+          recommendation: string | null
+          remarks: string | null
+          scheduled_at: string | null
+          scores: Json
+          start_time: string | null
+          status: Database["public"]["Enums"]["assessment_status"]
+          trade_id: string | null
+          trade_level: string | null
+          updated_at: string
+          worker_id: string
+        }
+        Insert: {
+          assessor_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          employer_id?: string | null
+          end_time?: string | null
+          equipment?: Json
+          id?: string
+          job_id?: string | null
+          location?: string | null
+          media?: Json
+          overall_score?: number | null
+          partner_id?: string | null
+          recommendation?: string | null
+          remarks?: string | null
+          scheduled_at?: string | null
+          scores?: Json
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["assessment_status"]
+          trade_id?: string | null
+          trade_level?: string | null
+          updated_at?: string
+          worker_id: string
+        }
+        Update: {
+          assessor_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          employer_id?: string | null
+          end_time?: string | null
+          equipment?: Json
+          id?: string
+          job_id?: string | null
+          location?: string | null
+          media?: Json
+          overall_score?: number | null
+          partner_id?: string | null
+          recommendation?: string | null
+          remarks?: string | null
+          scheduled_at?: string | null
+          scores?: Json
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["assessment_status"]
+          trade_id?: string | null
+          trade_level?: string | null
+          updated_at?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_trade_id_fkey"
+            columns: ["trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       background_verifications: {
         Row: {
           completed_at: string | null
@@ -1112,6 +1202,94 @@ export type Database = {
           },
         ]
       }
+      partner_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          assignment_type: string
+          completed_at: string | null
+          id: string
+          metadata: Json
+          partner_id: string
+          status: string
+          subject_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_type: string
+          completed_at?: string | null
+          id?: string
+          metadata?: Json
+          partner_id: string
+          status?: string
+          subject_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_type?: string
+          completed_at?: string | null
+          id?: string
+          metadata?: Json
+          partner_id?: string
+          status?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_assignments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          file_url: string
+          id: string
+          notes: string | null
+          partner_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          file_url: string
+          id?: string
+          notes?: string | null
+          partner_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          file_url?: string
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_documents_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_incentives: {
         Row: {
           amount: number
@@ -1153,6 +1331,76 @@ export type Database = {
             columns: ["worker_id"]
             isOneToOne: false
             referencedRelation: "partner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          partner_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          partner_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          partner_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_notifications_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_permissions: {
+        Row: {
+          id: string
+          partner_id: string
+          permissions: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          permissions?: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          permissions?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_permissions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
         ]
@@ -1370,6 +1618,71 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_profiles_ext: {
+        Row: {
+          address: string | null
+          bank: Json
+          company_name: string
+          created_at: string
+          email: string | null
+          gst: string | null
+          id: string
+          metadata: Json
+          mobile: string | null
+          owner_name: string | null
+          pan: string | null
+          partner_id: string
+          pincode: string | null
+          updated_at: string
+          upi: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank?: Json
+          company_name: string
+          created_at?: string
+          email?: string | null
+          gst?: string | null
+          id?: string
+          metadata?: Json
+          mobile?: string | null
+          owner_name?: string | null
+          pan?: string | null
+          partner_id: string
+          pincode?: string | null
+          updated_at?: string
+          upi?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank?: Json
+          company_name?: string
+          created_at?: string
+          email?: string | null
+          gst?: string | null
+          id?: string
+          metadata?: Json
+          mobile?: string | null
+          owner_name?: string | null
+          pan?: string | null
+          partner_id?: string
+          pincode?: string | null
+          updated_at?: string
+          upi?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_profiles_ext_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_reward_config: {
         Row: {
           id: boolean
@@ -1393,6 +1706,121 @@ export type Database = {
           worker_fee_amount?: number
         }
         Relationships: []
+      }
+      partner_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json
+          partner_id: string
+          reference_id: string | null
+          reference_type: string | null
+          status: string
+          txn_type: Database["public"]["Enums"]["partner_txn_type"]
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          partner_id: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          txn_type: Database["public"]["Enums"]["partner_txn_type"]
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          partner_id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          txn_type?: Database["public"]["Enums"]["partner_txn_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_transactions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_types: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          default_permissions: Json
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          default_permissions?: Json
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          default_permissions?: Json
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      partner_wallets: {
+        Row: {
+          available_balance: number
+          currency: string
+          id: string
+          partner_id: string
+          pending_balance: number
+          updated_at: string
+        }
+        Insert: {
+          available_balance?: number
+          currency?: string
+          id?: string
+          partner_id: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          available_balance?: number
+          currency?: string
+          id?: string
+          partner_id?: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_wallets_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partner_worker_drafts: {
         Row: {
@@ -1627,6 +2055,71 @@ export type Database = {
             columns: ["partner_profile_id"]
             isOneToOne: false
             referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          city: string | null
+          created_at: string
+          district: string | null
+          id: string
+          metadata: Json
+          partner_code: string | null
+          partner_type_id: string
+          rating: number | null
+          rejection_reason: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["partner_org_status"]
+          updated_at: string
+          user_id: string
+          verification_status: Database["public"]["Enums"]["partner_verification_status"]
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          city?: string | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          metadata?: Json
+          partner_code?: string | null
+          partner_type_id: string
+          rating?: number | null
+          rejection_reason?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_org_status"]
+          updated_at?: string
+          user_id: string
+          verification_status?: Database["public"]["Enums"]["partner_verification_status"]
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          city?: string | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          metadata?: Json
+          partner_code?: string | null
+          partner_type_id?: string
+          rating?: number | null
+          rejection_reason?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_org_status"]
+          updated_at?: string
+          user_id?: string
+          verification_status?: Database["public"]["Enums"]["partner_verification_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_partner_type_id_fkey"
+            columns: ["partner_type_id"]
+            isOneToOne: false
+            referencedRelation: "partner_types"
             referencedColumns: ["id"]
           },
         ]
@@ -1936,6 +2429,33 @@ export type Database = {
           rating?: number | null
           updated_at?: string | null
           worker_id?: string
+        }
+        Relationships: []
+      }
+      trades: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
         }
         Relationships: []
       }
@@ -2662,6 +3182,14 @@ export type Database = {
         Args: { p_payment_reference?: string; p_withdrawal_id: string }
         Returns: undefined
       }
+      admin_set_partner_status: {
+        Args: {
+          p_partner_id: string
+          p_reason?: string
+          p_status: Database["public"]["Enums"]["partner_org_status"]
+        }
+        Returns: undefined
+      }
       admin_set_user_role: {
         Args: {
           p_role: Database["public"]["Enums"]["app_role"]
@@ -2676,6 +3204,25 @@ export type Database = {
       compute_partner_tier: {
         Args: { p_placements: number }
         Returns: Database["public"]["Enums"]["partner_tier"]
+      }
+      current_partner: {
+        Args: never
+        Returns: {
+          city: string
+          company_name: string
+          district: string
+          id: string
+          partner_code: string
+          partner_type_code: string
+          partner_type_id: string
+          partner_type_name: string
+          rating: number
+          state: string
+          status: Database["public"]["Enums"]["partner_org_status"]
+          verification_status: Database["public"]["Enums"]["partner_verification_status"]
+          wallet_available: number
+          wallet_pending: number
+        }[]
       }
       ensure_whitelisted_admin: { Args: never; Returns: boolean }
       generate_partner_code: { Args: never; Returns: string }
@@ -2762,11 +3309,21 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "employer" | "worker" | "agent" | "partner"
+      assessment_status:
+        | "scheduled"
+        | "checked_in"
+        | "running"
+        | "completed"
+        | "employer_review"
+        | "approved"
+        | "rejected"
+        | "retest"
       migration_readiness_category:
         | "placement_ready"
         | "needs_preparation"
         | "not_ready"
       partner_incentive_type: "verified" | "interview_qualified" | "placement"
+      partner_org_status: "pending" | "approved" | "rejected" | "suspended"
       partner_skill_test_stage: "partner" | "phone" | "physical"
       partner_skill_test_status: "pending" | "passed" | "failed"
       partner_status:
@@ -2777,6 +3334,12 @@ export type Database = {
         | "suspended"
         | "rejected"
       partner_tier: "bronze" | "silver" | "gold" | "platinum"
+      partner_txn_type: "credit" | "debit" | "withdrawal" | "fee" | "adjustment"
+      partner_verification_status:
+        | "unverified"
+        | "in_review"
+        | "verified"
+        | "rejected"
       partner_worker_status:
         | "registered"
         | "verified"
@@ -2913,12 +3476,23 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "employer", "worker", "agent", "partner"],
+      assessment_status: [
+        "scheduled",
+        "checked_in",
+        "running",
+        "completed",
+        "employer_review",
+        "approved",
+        "rejected",
+        "retest",
+      ],
       migration_readiness_category: [
         "placement_ready",
         "needs_preparation",
         "not_ready",
       ],
       partner_incentive_type: ["verified", "interview_qualified", "placement"],
+      partner_org_status: ["pending", "approved", "rejected", "suspended"],
       partner_skill_test_stage: ["partner", "phone", "physical"],
       partner_skill_test_status: ["pending", "passed", "failed"],
       partner_status: [
@@ -2930,6 +3504,13 @@ export const Constants = {
         "rejected",
       ],
       partner_tier: ["bronze", "silver", "gold", "platinum"],
+      partner_txn_type: ["credit", "debit", "withdrawal", "fee", "adjustment"],
+      partner_verification_status: [
+        "unverified",
+        "in_review",
+        "verified",
+        "rejected",
+      ],
       partner_worker_status: [
         "registered",
         "verified",
