@@ -21,6 +21,16 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import PartnerOnboarding from "./pages/partner/PartnerOnboarding";
+import PartnerRegister from "./modules/partner/pages/PartnerRegister";
+import PendingApproval from "./modules/partner/pages/PendingApproval";
+import PartnerDashboardRouter from "./modules/partner/pages/PartnerDashboardRouter";
+import SsvnDashboard from "./modules/partner/pages/ssvn/SsvnDashboard";
+import SsvnAssessments from "./modules/partner/pages/ssvn/SsvnAssessments";
+import SsvnCheckin from "./modules/partner/pages/ssvn/SsvnCheckin";
+import PartnerWallet from "./modules/partner/pages/shared/PartnerWallet";
+import PartnerReports from "./modules/partner/pages/shared/PartnerReports";
+import PartnerSupport from "./modules/partner/pages/shared/PartnerSupport";
+import AdminPartnersV2 from "./pages/admin/AdminPartnersV2";
 import BenefitsForEmployers from "./pages/BenefitsForEmployers";
 import Dashboard from "./pages/Dashboard";
 import { legacyEmployerRoutes } from "./routes/legacyEmployerRoutes";
@@ -214,10 +224,35 @@ function AppShell() {
             path="/partner/dashboard"
             element={
               <ProtectedRoute allowedRoles={["partner"]}>
-                <PartnerDashboard />
+                <PartnerDashboardRouter />
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/partner/register"
+            element={<PartnerRegister />}
+          />
+          <Route
+            path="/partner/pending"
+            element={
+              <ProtectedRoute allowedRoles={["partner"]}>
+                <PendingApproval />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/partner/wallet" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerWallet /></ProtectedRoute>} />
+          <Route path="/partner/reports" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerReports /></ProtectedRoute>} />
+          <Route path="/partner/support" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerSupport /></ProtectedRoute>} />
+
+          {/* SSVN — Skill Verification Network */}
+          <Route path="/partner/ssvn/dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnDashboard /></ProtectedRoute>} />
+          <Route path="/partner/ssvn/calendar" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Assessment Calendar" filter="calendar" /></ProtectedRoute>} />
+          <Route path="/partner/ssvn/today" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Today's Schedule" filter="today" /></ProtectedRoute>} />
+          <Route path="/partner/ssvn/history" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Assessment History" filter="history" /></ProtectedRoute>} />
+          <Route path="/partner/ssvn/checkin" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnCheckin /></ProtectedRoute>} />
+
+          {/* Legacy partner dashboard (kept for backwards compat) */}
+          <Route path="/partner/legacy-dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerDashboard /></ProtectedRoute>} />
 
           {/* Admin portal */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -231,6 +266,8 @@ function AppShell() {
           <Route path="/admin/applications" element={<AdminRoute><AdminApplications /></AdminRoute>} />
           <Route path="/admin/partner-workers" element={<AdminRoute><AdminPartnerWorkers /></AdminRoute>} />
           <Route path="/admin/partners" element={<AdminRoute><PartnerApprovals /></AdminRoute>} />
+          <Route path="/admin/partners-v2" element={<AdminRoute><AdminPartnersV2 /></AdminRoute>} />
+          <Route path="/admin/partner-ecosystem" element={<AdminRoute><AdminPartnersV2 /></AdminRoute>} />
           <Route path="/admin/jobs" element={<AdminRoute><JobVerification /></AdminRoute>} />
           <Route path="/admin/content-moderation" element={<AdminRoute><AdminContentModeration /></AdminRoute>} />
           <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
