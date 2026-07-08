@@ -331,7 +331,7 @@ const Header = () => {
                       onClick={() => { navigate('/emitra/login'); closeMobileMenu(); }}
                       className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
                     >
-                      Partner account? E-Mitra sign in
+                      Partner account? Sign in
                     </button>
                   </div>
                 )}
