@@ -2,7 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatSalaryINR } from '@/lib/utils';
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
-import { Briefcase, FileText, Lock, MessageSquare, TrendingUp } from "lucide-react";
+import { Briefcase, FileText, Lock, MessageSquare, TrendingUp, ShieldCheck, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DocumentVerificationCard from "@/components/worker/DocumentVerificationCard";
@@ -127,6 +127,26 @@ export default function WorkerDashboard() {
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold mb-1">Welcome back, {profile?.full_name || 'Worker'}!</h1>
         <p className="text-muted-foreground text-sm">Here's an overview of your activity</p>
+        {(() => {
+          const kyc = (workerProfile as any)?.kyc_status || 'not_started';
+          const map: Record<string, { label: string; cls: string; Icon: any }> = {
+            not_started: { label: 'Identity: Not Started', cls: 'bg-warning/10 text-warning border-warning/30', Icon: ShieldAlert },
+            submitted: { label: 'Identity: Submitted', cls: 'bg-primary/10 text-primary border-primary/30', Icon: ShieldCheck },
+            verified: { label: 'Identity: Verified', cls: 'bg-success/10 text-success border-success/30', Icon: ShieldCheck },
+            rejected: { label: 'Identity: Rejected — Resubmit', cls: 'bg-destructive/10 text-destructive border-destructive/30', Icon: ShieldAlert },
+          };
+          const s = map[kyc] || map.not_started;
+          return (
+            <Link
+              to="/worker/onboarding"
+              className={`inline-flex items-center gap-1.5 mt-2 text-xs font-medium px-2.5 py-1 rounded-full border ${s.cls}`}
+            >
+              <s.Icon className="h-3.5 w-3.5" />
+              {s.label}
+              {kyc === 'not_started' && <span className="underline ml-1">Complete KYC →</span>}
+            </Link>
+          );
+        })()}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
