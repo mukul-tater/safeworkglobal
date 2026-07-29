@@ -17,7 +17,7 @@ import { Loader2, Phone, Mail, ShieldCheck, CheckCircle2, ArrowLeft, HardHat } f
 import { NATIONALITIES } from '@/lib/constants';
 import { lovable } from '@/integrations/lovable/index';
 import { isValidIndianMobile } from '@/lib/validations/common';
-import { useFirebasePhoneOtp } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
+import { useFirebasePhoneOtp, WORKER_OTP_RECAPTCHA_BTN_ID } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 
@@ -247,9 +247,6 @@ export default function QuickWorkerSignup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-info/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Visible reCAPTCHA for Firebase Phone Auth (required before SMS send) */}
-        <div id="worker-recaptcha" className="flex justify-center mb-3 min-h-[78px]" />
-
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -390,7 +387,12 @@ export default function QuickWorkerSignup() {
                   </p>
                 </div>
 
-                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
+                <Button
+                  id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                  type="submit"
+                  className="w-full h-11 font-semibold"
+                  disabled={loading}
+                >
                   {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   {method === 'mobile' ? 'Send SMS code' : 'Create account'}
                 </Button>

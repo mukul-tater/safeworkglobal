@@ -20,11 +20,10 @@ function mapFirebaseAuthError(err: unknown): string {
       return 'Too many attempts. Wait a few minutes and try again.';
     case 'auth/invalid-app-credential':
     case 'auth/captcha-check-failed':
-      // Firebase no longer accepts hostname "localhost" for Phone Auth — use 127.0.0.1
       if (host === 'localhost') {
-        return 'Firebase Phone Auth does not work on "localhost". Open http://127.0.0.1:5174/worker/quick-signup and add 127.0.0.1 under Firebase → Authentication → Authorized domains.';
+        return 'Firebase Phone Auth does not work on "localhost". Use your live site (safeworkglobal.com) or http://127.0.0.1 with 127.0.0.1 added to Authorized domains.';
       }
-      return 'reCAPTCHA failed. Add 127.0.0.1 in Firebase Authorized domains, allow India in SMS region policy, hard-refresh, and try again. For local QA you can also add a test phone number in Firebase Console.';
+      return 'Verification failed. Refresh the page and try again. If it keeps failing, confirm India is allowed under Firebase SMS region policy.';
     case 'auth/code-expired':
       return 'OTP expired. Tap Send OTP again.';
     case 'auth/invalid-verification-code':
@@ -35,6 +34,9 @@ function mapFirebaseAuthError(err: unknown): string {
       return message;
   }
 }
+
+/** Invisible reCAPTCHA bound to the Send SMS button (no floating widget). */
+export const WORKER_OTP_RECAPTCHA_BTN_ID = 'worker-send-sms-btn';
 
 export function useFirebasePhoneOtp() {
   const confirmationRef = useRef<ConfirmationResult | null>(null);
@@ -48,46 +50,44 @@ export function useFirebasePhoneOtp() {
     }
     recaptchaRef.current = null;
     confirmationRef.current = null;
-    const el = document.getElementById('worker-recaptcha');
-    if (el) el.innerHTML = '';
   }, []);
 
-  const ensureRecaptcha = useCallback(
-    async (containerId: string) => {
-      const container = document.getElementById(containerId);
-      if (!container) {
-        throw new Error('reCAPTCHA container not found');
-      }
-      container.innerHTML = '';
+  const ensureRecaptcha = useCallback(async () => {
+    if (recaptchaRef.current) {
+      return recaptchaRef.current;
+    }
 
-      const auth = getFirebaseAuth();
-      // Visible widget is more reliable than invisible on local / first-time setup
-      const verifier = new RecaptchaVerifier(auth, containerId, {
-        size: 'normal',
-        callback: () => {
-          /* solved */
-        },
-        'expired-callback': () => {
-          resetRecaptcha();
-        },
-      });
+    const button = document.getElementById(WORKER_OTP_RECAPTCHA_BTN_ID);
+    if (!button) {
+      throw new Error('Send SMS button not ready. Refresh and try again.');
+    }
 
-      await verifier.render();
-      recaptchaRef.current = verifier;
-      return verifier;
-    },
-    [resetRecaptcha]
-  );
+    const auth = getFirebaseAuth();
+    const verifier = new RecaptchaVerifier(auth, WORKER_OTP_RECAPTCHA_BTN_ID, {
+      size: 'invisible',
+      callback: () => {
+        /* token ready — signInWithPhoneNumber continues */
+      },
+      'expired-callback': () => {
+        resetRecaptcha();
+      },
+    });
+
+    await verifier.render();
+    recaptchaRef.current = verifier;
+    return verifier;
+  }, [resetRecaptcha]);
 
   const sendOtp = useCallback(
-    async (mobileNumber: string, recaptchaContainerId = 'worker-recaptcha') => {
+    async (mobileNumber: string) => {
       if (!isFirebaseConfigured()) {
         throw new Error('Firebase is not configured');
       }
 
+      // Always recreate so a failed attempt does not leave a dead verifier
       resetRecaptcha();
       const auth = getFirebaseAuth();
-      const verifier = await ensureRecaptcha(recaptchaContainerId);
+      const verifier = await ensureRecaptcha();
       const phone = mobileNumber.startsWith('+') ? mobileNumber : `+91${mobileNumber}`;
 
       try {
