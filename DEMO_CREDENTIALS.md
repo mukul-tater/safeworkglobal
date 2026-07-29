@@ -16,6 +16,11 @@ Alternatively, in development mode, you'll see a floating "Seed Demo Data" butto
 - **Role**: Administrator
 - **Access**: Full system access, user management, reports
 
+> **If login says “Invalid login credentials”:** the Auth user was never created (seed not run).  
+> Fix (pick one):
+> 1. Open `/admin/register` → create with the email above + password `Admin@2024!`, then sign in; **or**
+> 2. Run `scripts/ensure-demo-admin.sql` in Supabase SQL Editor, then sign in at `/admin/login`.
+
 ### Employer Accounts
 
 #### Primary Employer

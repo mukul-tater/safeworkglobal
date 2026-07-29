@@ -45,7 +45,14 @@ export default function AdminLoginPage() {
 
     const result = await login(email.trim(), password);
     if (!result.success) {
-      setError(result.error || 'Login failed');
+      const raw = result.error || 'Login failed';
+      const looksMissing =
+        /invalid login credentials|invalid_credentials|email not confirmed/i.test(raw);
+      setError(
+        looksMissing
+          ? `${raw} If this is the first admin login, create the account at /admin/register (whitelisted emails only), or run scripts/ensure-demo-admin.sql in Supabase.`
+          : raw,
+      );
       setLoading(false);
       return;
     }
