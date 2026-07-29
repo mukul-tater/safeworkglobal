@@ -13,7 +13,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, ChevronRight, ChevronLeft, CheckCircle2, MapPin, Briefcase, Settings2, Upload } from 'lucide-react';
+import { Loader2, ChevronRight, ChevronLeft, CheckCircle2, MapPin, Briefcase, Settings2, Upload, ShieldCheck } from 'lucide-react';
 import {
   JOB_CATEGORIES, POPULAR_SKILLS, SKILL_LEVELS, EXPERIENCE_RANGES,
   PROJECT_TYPES, AVAILABILITY_CHOICES, SHIFT_PREFERENCES,
@@ -32,6 +32,7 @@ const STEPS = [
   { id: 1, title: 'Basic Details', icon: MapPin },
   { id: 2, title: 'Work Profile', icon: Briefcase },
   { id: 3, title: 'Availability', icon: Settings2 },
+  { id: 4, title: 'Identity (KYC)', icon: ShieldCheck },
 ];
 
 export default function WorkerOnboarding() {
@@ -63,6 +64,14 @@ export default function WorkerOnboarding() {
   const [wageAmount, setWageAmount] = useState('');
   const [preferredShift, setPreferredShift] = useState('');
   const [workPreference, setWorkPreference] = useState('');
+
+  // Step 4 — Identity (soft KYC)
+  const [panNumber, setPanNumber] = useState('');
+  const [aadhaarLast4, setAadhaarLast4] = useState('');
+  const [kycConsent, setKycConsent] = useState(false);
+  const [panFile, setPanFile] = useState<File | null>(null);
+  const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
+  const [existingKycStatus, setExistingKycStatus] = useState<string>('not_started');
 
   const autoSaveData = useMemo(
     () => ({
@@ -144,6 +153,9 @@ export default function WorkerOnboarding() {
       }
 
       const wp = data as Record<string, unknown>;
+      setPanNumber((wp.pan_number as string) || '');
+      setAadhaarLast4((wp.aadhaar_last4 as string) || '');
+      setExistingKycStatus((wp.kyc_status as string) || 'not_started');
       const next = {
         fullName: profile?.full_name || fullName,
         mobile: profile?.phone || mobile,
@@ -214,6 +226,14 @@ export default function WorkerOnboarding() {
   const canProceedStep1 = fullName.trim() && mobile.trim() && currentCity.trim() && country;
   const canProceedStep2 = primaryWorkType && experienceRange && skillLevel;
 
+  const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
+  const canSubmitKyc =
+    PAN_REGEX.test(panNumber.trim().toUpperCase()) &&
+    /^\d{4}$/.test(aadhaarLast4) &&
+    kycConsent &&
+    (panFile !== null || existingKycStatus !== 'not_started') &&
+    (aadhaarFile !== null || existingKycStatus !== 'not_started');
+
   const handleNext = () => {
     if (step === 1) {
       const result = validateSchema(workerOnboardingStep1Schema, {
@@ -246,9 +266,38 @@ export default function WorkerOnboarding() {
 
   const handleSave = async () => {
     if (!user) return;
+    if (!canSubmitKyc) {
+      toast.error('Complete PAN, Aadhaar last 4, consent, and uploads');
+      return;
+    }
     setSaving(true);
 
     try {
+      // Upload KYC files first
+      const uploadDoc = async (file: File, docType: string, name: string) => {
+        const ext = file.name.split('.').pop();
+        const path = `${user.id}/kyc/${docType}-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('worker-documents')
+          .upload(path, file, { cacheControl: '3600', upsert: false });
+        if (upErr) throw upErr;
+        const { data: signed, error: urlErr } = await supabase.storage
+          .from('worker-documents')
+          .createSignedUrl(path, 31536000);
+        if (urlErr) throw urlErr;
+        const { error: dbErr } = await supabase.from('worker_documents').insert({
+          worker_id: user.id,
+          document_name: name,
+          document_type: docType,
+          file_url: signed.signedUrl,
+          file_size: file.size,
+        } as any);
+        if (dbErr) throw dbErr;
+      };
+
+      if (panFile) await uploadDoc(panFile, 'pan', 'PAN Card');
+      if (aadhaarFile) await uploadDoc(aadhaarFile, 'aadhaar', 'Aadhaar Card');
+
       // Update profiles
       const { error: profileErr } = await supabase
         .from('profiles')
@@ -276,6 +325,11 @@ export default function WorkerOnboarding() {
           preferred_shift: preferredShift || null,
           work_preference: workPreference || null,
           onboarding_completed: true,
+          pan_number: panNumber.trim().toUpperCase(),
+          aadhaar_last4: aadhaarLast4,
+          kyc_status: 'submitted',
+          kyc_consent_at: new Date().toISOString(),
+          kyc_submitted_at: new Date().toISOString(),
         } as any, { onConflict: 'user_id' });
 
       if (wpErr) throw wpErr;
@@ -536,6 +590,77 @@ export default function WorkerOnboarding() {
                 </div>
               </>
             )}
+
+            {/* STEP 4 — Identity (KYC) */}
+            {step === 4 && (
+              <>
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg flex items-start gap-2">
+                  <ShieldCheck className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    Soft KYC is required before applying to jobs. Your data is encrypted and only shared with employers
+                    after you accept an offer.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>PAN Number *</Label>
+                  <Input
+                    value={panNumber}
+                    onChange={(e) => setPanNumber(e.target.value.toUpperCase().slice(0, 10))}
+                    placeholder="ABCDE1234F"
+                    maxLength={10}
+                  />
+                  <p className="text-xs text-muted-foreground">Format: 5 letters, 4 digits, 1 letter</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Aadhaar — Last 4 Digits *</Label>
+                  <Input
+                    value={aadhaarLast4}
+                    onChange={(e) => setAadhaarLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    placeholder="1234"
+                    inputMode="numeric"
+                    maxLength={4}
+                  />
+                  <p className="text-xs text-muted-foreground">We never store your full Aadhaar number</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Upload PAN Card Photo *</Label>
+                    <Input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setPanFile(e.target.files?.[0] || null)}
+                    />
+                    {panFile && <p className="text-xs text-success">✓ {panFile.name}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Upload Aadhaar Card Photo *</Label>
+                    <Input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={(e) => setAadhaarFile(e.target.files?.[0] || null)}
+                    />
+                    {aadhaarFile && <p className="text-xs text-success">✓ {aadhaarFile.name}</p>}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 py-2">
+                  <input
+                    type="checkbox"
+                    id="kyc-consent"
+                    checked={kycConsent}
+                    onChange={(e) => setKycConsent(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <Label htmlFor="kyc-consent" className="text-xs font-normal cursor-pointer">
+                    I consent to SafeWork Global verifying my identity documents for job placement purposes.
+                    I confirm the information provided is accurate.
+                  </Label>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -555,9 +680,9 @@ export default function WorkerOnboarding() {
               Next <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving || !canSubmitKyc}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Complete Setup
+              Submit KYC & Complete
             </Button>
           )}
         </div>
