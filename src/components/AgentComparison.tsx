@@ -3,10 +3,8 @@ import { Check, X } from "lucide-react";
 const rows = [
   { aspect: "Fees charged", agent: "10–30% of salary (often hidden)", safework: "Transparent pricing — no hidden agent cuts" },
   { aspect: "Who pays", agent: "Workers — upfront loans & debt", safework: "No agent fees — standard govt. charges only" },
-  { aspect: "Payment security", agent: "None — verbal promises only", safework: "Salary held in protected account" },
   { aspect: "Job verification", agent: "Low — many fake listings", safework: "Every employer verified first" },
   { aspect: "Contracts", agent: "Verbal, no transparency", safework: "Digital contracts you can read" },
-  { aspect: "Wage theft risk", agent: "Common in informal hiring", safework: "Salary released only after work" },
 ];
 
 export default function AgentComparison() {
