@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import EmitraLayout from '../components/EmitraLayout';
@@ -26,6 +26,7 @@ import {
   emitraBankSchema, emitraDocumentsSchema, emitraDeclarationsSchema,
 } from '../validations/emitra';
 import { getPartnerProfile, savePartnerApplication } from '../services/emitraService';
+import { getLspSession } from '@/modules/lsp/services/lspSession';
 
 const STEPS = [
   { id: 1, title: 'Personal Info', icon: User },
@@ -40,7 +41,11 @@ type FormData = Record<string, any>;
 
 export default function EmitraRegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signup, user } = useAuth();
+  const lspSession = getLspSession();
+  const sourceLspCode = searchParams.get('source_lsp') || lspSession?.code || null;
+  const [sourceLspId, setSourceLspId] = useState<string | null>(lspSession?.lspId ?? null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(!!user);
   const [saving, setSaving] = useState(false);
@@ -62,6 +67,16 @@ export default function EmitraRegisterPage() {
   });
 
   const update = (patch: Partial<FormData>) => setData(d => ({ ...d, ...patch }));
+
+  useEffect(() => {
+    if (!sourceLspCode || sourceLspId) return;
+    (async () => {
+      const { data: id } = await (supabase as any).rpc('resolve_active_lsp_id', {
+        p_code: sourceLspCode,
+      });
+      if (id) setSourceLspId(id);
+    })();
+  }, [sourceLspCode, sourceLspId]);
 
   useEffect(() => {
     if (!user) {
@@ -212,6 +227,9 @@ export default function EmitraRegisterPage() {
     no_unauthorized_fees: data.no_unauthorized_fees,
     mobile_verified: mobileVerified,
     current_step: step,
+    ...(sourceLspId ? { source_lsp_id: sourceLspId } : {}),
+    ...overrides,
+  });
     ...overrides,
   });
 
@@ -319,7 +337,11 @@ export default function EmitraRegisterPage() {
     <EmitraLayout
       maxWidth="3xl"
       title="Become a SafeWork Partner"
-      subtitle="Apply as an E-Mitra or cyber cafe partner. Complete all steps to submit your application for review."
+      subtitle={
+        sourceLspCode
+          ? `Apply as an E-Mitra partner via LSP ${sourceLspCode}. Complete all steps to submit for review.`
+          : 'Apply as an E-Mitra or cyber cafe partner. Complete all steps to submit your application for review.'
+      }
     >
       <Card className="mb-5 border-border/60 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-border bg-muted/30">

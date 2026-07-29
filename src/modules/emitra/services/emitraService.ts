@@ -12,6 +12,7 @@ import type {
   PartnerWorker,
   WorkerStatusHistory,
 } from '../types/emitra.types';
+import { getLspSession } from '@/modules/lsp/services/lspSession';
 
 export async function getPartnerProfile(userId: string): Promise<PartnerProfile | null> {
   const { data } = await supabase
@@ -208,6 +209,12 @@ export async function createPartnerWorker(
   const score = calculateMigrationScore(migrationAnswers);
   const category = getMigrationCategory(score);
 
+  // Attribute to Rajasthan LSP when operator entered via trusted launch
+  let sourceLspId: string | null = getLspSession()?.lspId ?? null;
+  if (!sourceLspId && typeof payload.source_lsp_id === 'string') {
+    sourceLspId = payload.source_lsp_id;
+  }
+
   const { data, error } = await supabase
     .from('partner_workers')
     .insert({
@@ -234,6 +241,7 @@ export async function createPartnerWorker(
       photo_url: payload.photo_url || null,
       video_url: payload.video_url || null,
       status: 'registered',
+      ...(sourceLspId ? { source_lsp_id: sourceLspId } : {}),
     })
     .select()
     .single();

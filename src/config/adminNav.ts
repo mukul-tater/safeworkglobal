@@ -2,7 +2,7 @@ import {
   LayoutDashboard, TrendingUp, Users, FileCheck, CreditCard, Plane, CheckCircle, Shield,
   BarChart3, AlertTriangle, Mail, Store, HardHat, Building2, FileText, Briefcase, UserCog,
   MessageSquare, ShieldAlert, IndianRupee,
-  ClipboardCheck, Wallet, BarChartBig,
+  ClipboardCheck, Wallet, BarChartBig, Network, BookOpen,
 } from "lucide-react";
 import type { NavGroup } from "@/components/layout/DashboardSidebar";
 
@@ -26,6 +26,8 @@ export const adminNavGroups: NavGroup[] = [
       { path: "/admin/partners", icon: Store, label: "Partners" },
       { path: "/admin/partner-workers", icon: UserCog, label: "E-Mitra Workers" },
       { path: "/admin/partner-rewards", icon: IndianRupee, label: "Partner Rewards" },
+      { path: "/admin/lsps", icon: Network, label: "Rajasthan LSPs" },
+      { path: "/admin/lsp-docs", icon: BookOpen, label: "LSP Developer Docs" },
     ],
   },
   {

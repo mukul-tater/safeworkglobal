@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import EmitraLayout from '../components/EmitraLayout';
@@ -13,13 +13,22 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { isPartnerOperational, getPartnerProfile } from '../services/emitraService';
+import { hasValidLspSession } from '@/modules/lsp/services/lspSession';
 
 type Method = 'mobile' | 'email';
 type Step = 'credentials' | 'otp';
 
 export default function EmitraLoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, isAuthenticated, role } = useAuth();
+  const nextPath = searchParams.get('next') || '';
+
+  const afterLoginPath = () => {
+    if (nextPath.startsWith('/') && !nextPath.startsWith('//')) return nextPath;
+    if (hasValidLspSession()) return '/lsp/verify';
+    return '/emitra/dashboard';
+  };
   const [method, setMethod] = useState<Method>('mobile');
   const [step, setStep] = useState<Step>('credentials');
   const [loading, setLoading] = useState(false);
@@ -31,9 +40,9 @@ export default function EmitraLoginPage() {
 
   useEffect(() => {
     if (isAuthenticated && role === 'partner') {
-      navigate('/emitra/dashboard', { replace: true });
+      navigate(afterLoginPath(), { replace: true });
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, role, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const checkPartnerApproved = async (userId: string): Promise<boolean> => {
     const profile = await getPartnerProfile(userId);
@@ -120,7 +129,7 @@ export default function EmitraLoginPage() {
     }
 
     toast.success('Welcome back!');
-    navigate('/emitra/dashboard', { replace: true });
+    navigate(afterLoginPath(), { replace: true });
     setLoading(false);
   };
 
@@ -165,7 +174,7 @@ export default function EmitraLoginPage() {
     }
 
     toast.success('Welcome back!');
-    navigate('/emitra/dashboard', { replace: true });
+    navigate(afterLoginPath(), { replace: true });
     setLoading(false);
   };
 

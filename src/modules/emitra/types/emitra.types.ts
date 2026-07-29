@@ -60,6 +60,8 @@ export interface PartnerProfile {
   rejection_reason: string | null;
   accepted_terms: boolean | null;
   current_step?: number | null;
+  source_lsp_id?: string | null;
+  lsp_verified_at?: string | null;
 }
 
 export interface PartnerWorker {
@@ -85,6 +87,7 @@ export interface PartnerWorker {
   photo_url: string | null;
   video_url: string | null;
   status: PartnerWorkerStatus;
+  source_lsp_id?: string | null;
   created_at: string;
   updated_at: string;
 }

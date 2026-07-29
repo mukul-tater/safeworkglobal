@@ -86,6 +86,11 @@ import {
 import AdminEmitraWorkerReview from "./pages/admin/AdminEmitraWorkerReview";
 import AdminEmitraWithdrawals from "./pages/admin/AdminEmitraWithdrawals";
 import AdminEmitraAnalytics from "./pages/admin/AdminEmitraAnalytics";
+import AdminLsps from "./pages/admin/AdminLsps";
+import AdminLspDeveloperDocs from "./pages/admin/AdminLspDeveloperDocs";
+import LspEntryPage from "./modules/lsp/pages/LspEntryPage";
+import LspVerifyPage from "./modules/lsp/pages/LspVerifyPage";
+import LspDeniedPage from "./modules/lsp/pages/LspDeniedPage";
 import {
   WorkerAuthProvider,
   WorkerLanguageProvider,
@@ -139,6 +144,11 @@ function AppShell() {
 
           {/* Legacy Supabase worker portal */}
           {legacyWorkerRoutes}
+
+          {/* LSP (Rajasthan) trusted entry → E-Mitra */}
+          <Route path="/lsp/entry" element={<LspEntryPage />} />
+          <Route path="/lsp/verify" element={<LspVerifyPage />} />
+          <Route path="/lsp/denied" element={<LspDeniedPage />} />
 
           {/* E-Mitra partner */}
           <Route path="/emitra/register" element={<EmitraRegisterPage />} />
@@ -313,6 +323,8 @@ function AppShell() {
           <Route path="/admin/emitra/worker-review" element={<AdminRoute><AdminEmitraWorkerReview /></AdminRoute>} />
           <Route path="/admin/emitra/withdrawals" element={<AdminRoute><AdminEmitraWithdrawals /></AdminRoute>} />
           <Route path="/admin/emitra/analytics" element={<AdminRoute><AdminEmitraAnalytics /></AdminRoute>} />
+          <Route path="/admin/lsps" element={<AdminRoute><AdminLsps /></AdminRoute>} />
+          <Route path="/admin/lsp-docs" element={<AdminRoute><AdminLspDeveloperDocs /></AdminRoute>} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
           <Route path="*" element={<NotFound />} />
