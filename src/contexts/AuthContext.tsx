@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { redirectToPublicHome } from '@/lib/signOut';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
@@ -77,6 +77,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [hasResolvedRole, setHasResolvedRole] = useState(false);
+  /** Prevents tab-focus / token events from re-fetching and remounting the whole app. */
+  const loadedUserIdRef = useRef<string | null>(null);
+  const loadGenerationRef = useRef(0);
 
   const fetchUserRole = async (userId: string) => {
     const { data, error } = await supabase
@@ -143,36 +146,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loadUserData = async (currentUser: User) => {
-    setProfileLoading(true);
-    setHasResolvedRole(false);
+  const loadUserData = async (currentUser: User, opts?: { force?: boolean }) => {
+    if (!opts?.force && loadedUserIdRef.current === currentUser.id) {
+      return;
+    }
+
+    const generation = ++loadGenerationRef.current;
+    const isInitialForUser = loadedUserIdRef.current !== currentUser.id;
+    if (isInitialForUser) {
+      setProfileLoading(true);
+      setHasResolvedRole(false);
+    }
+
     try {
       await Promise.all([
         fetchOrCreateProfile(currentUser),
         fetchUserRole(currentUser.id),
       ]);
+      if (generation === loadGenerationRef.current) {
+        loadedUserIdRef.current = currentUser.id;
+      }
     } finally {
-      setProfileLoading(false);
+      if (generation === loadGenerationRef.current) {
+        setProfileLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
+      (event, nextSession) => {
+        setSession(nextSession);
 
-        // Token refresh on tab focus must not reload profile/role or remount protected routes.
+        // Tab focus / silent refresh — keep current UI mounted.
         if (event === 'TOKEN_REFRESHED') {
+          if (nextSession?.user) setUser(nextSession.user);
           setLoading(false);
           return;
         }
 
-        setUser(session?.user ?? null);
+        const nextUser = nextSession?.user ?? null;
+        setUser(nextUser);
 
-        if (session?.user) {
-          // Defer DB calls to avoid deadlock with the auth state callback.
-          setTimeout(() => loadUserData(session.user), 0);
+        if (nextUser) {
+          const sameUser = loadedUserIdRef.current === nextUser.id;
+          // Same signed-in user (e.g. INITIAL_SESSION after getSession) — do not remount.
+          if (sameUser && event !== 'USER_UPDATED') {
+            setLoading(false);
+            return;
+          }
+          setTimeout(() => {
+            void loadUserData(nextUser, { force: event === 'USER_UPDATED' });
+          }, 0);
         } else {
+          loadedUserIdRef.current = null;
           setRole(null);
           setProfile(null);
           setHasResolvedRole(false);
@@ -182,12 +209,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session: existing } }) => {
+      setSession(existing);
+      setUser(existing?.user ?? null);
 
-      if (session?.user) {
-        setTimeout(() => loadUserData(session.user), 0);
+      if (existing?.user) {
+        setTimeout(() => {
+          void loadUserData(existing.user);
+        }, 0);
       }
 
       setLoading(false);
@@ -242,6 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    loadedUserIdRef.current = null;
     setUser(null);
     setSession(null);
     setProfile(null);

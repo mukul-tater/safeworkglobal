@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, FileText, User, Briefcase, FileCheck, Globe } from "lucide-react";
+import { Loader2, FileText, User, Briefcase, FileCheck, Globe, BadgeCheck } from "lucide-react";
 import AvatarUpload from "@/components/AvatarUpload";
 import WorkerSkillMedia from "@/components/worker/WorkerSkillMedia";
 import ChangePasswordCard from "@/components/ChangePasswordCard";
@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { ReactNode } from "react";
+import { isWorkerMobileAuthEmail } from "@/lib/workerAuthEmail";
+import { Badge } from "@/components/ui/badge";
 
 const NATIONALITIES = [
   'India', 'Bangladesh', 'Pakistan', 'Nepal', 'Sri Lanka', 'Philippines',
@@ -47,13 +49,18 @@ const AVAILABILITY_OPTIONS = [
 ];
 
 export default function WorkerProfile() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, isEmailVerified } = useAuth();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [nationality, setNationality] = useState<string>("");
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [resumeName, setResumeName] = useState<string | null>(null);
   const [availability, setAvailability] = useState<string>("");
+  const [contactEmail, setContactEmail] = useState('');
+  const [emailSaving, setEmailSaving] = useState(false);
+
+  const needsContactEmail = isWorkerMobileAuthEmail(user?.email);
+  const displayEmail = needsContactEmail ? null : (user?.email || null);
 
   const { register, handleSubmit, formState: { errors }, reset, setValue, watch, control } = useForm<WorkerProfileFormData>({
     resolver: zodResolver(workerProfileSchema),
@@ -236,7 +243,9 @@ export default function WorkerProfile() {
               <h1 className="text-xl sm:text-2xl font-bold font-heading tracking-tight">
                 {profile.full_name || 'My Profile'}
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">{user.email}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {displayEmail || (profile.phone ? `+91 ${profile.phone}` : 'Add your email below')}
+              </p>
               <p className="text-xs text-muted-foreground mt-2 max-w-md leading-relaxed">
                 A complete profile with verified skills helps employers trust your application.
               </p>
@@ -267,14 +276,97 @@ export default function WorkerProfile() {
 
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={user.email || ''}
-                disabled
-                className="mt-1.5 h-11 bg-muted"
-              />
-              <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
+              {needsContactEmail ? (
+                <div className="mt-1.5 space-y-2">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    className="h-11"
+                    autoComplete="email"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={emailSaving || !/^\S+@\S+\.\S+$/.test(contactEmail.trim())}
+                    onClick={async () => {
+                      const next = contactEmail.trim().toLowerCase();
+                      if (!/^\S+@\S+\.\S+$/.test(next)) {
+                        toast.error('Enter a valid email');
+                        return;
+                      }
+                      setEmailSaving(true);
+                      try {
+                        const { error } = await supabase.auth.updateUser({ email: next });
+                        if (error) throw error;
+                        await supabase.from('profiles').update({ email: next }).eq('id', user!.id);
+                        toast.success('Verification link sent — check your inbox to confirm this email');
+                        await refreshProfile();
+                      } catch (err: unknown) {
+                        toast.error(err instanceof Error ? err.message : 'Failed to update email');
+                      } finally {
+                        setEmailSaving(false);
+                      }
+                    }}
+                  >
+                    {emailSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    Add & verify email
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Signup used mobile verification. Add a real email here to recover your account and get updates.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <Input
+                      id="email"
+                      type="email"
+                      value={user?.email || ''}
+                      disabled
+                      className="h-11 bg-muted"
+                    />
+                    {isEmailVerified ? (
+                      <Badge variant="outline" className="shrink-0 gap-1 text-success border-success/30">
+                        <BadgeCheck className="h-3.5 w-3.5" /> Verified
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="shrink-0 text-amber-600 border-amber-500/30">
+                        Unverified
+                      </Badge>
+                    )}
+                  </div>
+                  {!isEmailVerified && (
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto p-0 mt-1 text-xs"
+                      disabled={emailSaving}
+                      onClick={async () => {
+                        if (!user?.email) return;
+                        setEmailSaving(true);
+                        try {
+                          const { error } = await supabase.auth.resend({
+                            type: 'signup',
+                            email: user.email,
+                          });
+                          if (error) throw error;
+                          toast.success('Verification email resent');
+                        } catch (err: unknown) {
+                          toast.error(err instanceof Error ? err.message : 'Could not resend verification');
+                        } finally {
+                          setEmailSaving(false);
+                        }
+                      }}
+                    >
+                      Resend verification email
+                    </Button>
+                  )}
+                </>
+              )}
             </div>
 
             <div>

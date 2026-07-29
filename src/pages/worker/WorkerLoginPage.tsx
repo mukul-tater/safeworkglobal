@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, HardHat, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Loader2, HardHat, Lock, Mail, Phone } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
+import { isValidIndianMobile } from '@/lib/validations/common';
+import { workerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
+
+type LoginMethod = 'mobile' | 'email';
 
 export default function WorkerLoginPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated, role } = useAuth();
+  const [method, setMethod] = useState<LoginMethod>('mobile');
   const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -30,8 +37,26 @@ export default function WorkerLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    let authEmail = email.trim().toLowerCase();
+    if (method === 'mobile') {
+      if (!isValidIndianMobile(mobile)) {
+        setError('Enter a valid 10-digit Indian mobile number');
+        return;
+      }
+      authEmail = workerAuthEmailFromMobile(mobile);
+    } else if (!/^\S+@\S+\.\S+$/.test(authEmail)) {
+      setError('Please enter a valid email');
+      return;
+    }
+
+    if (!password) {
+      setError('Password is required');
+      return;
+    }
+
     setLoading(true);
-    const result = await login(email.trim(), password);
+    const result = await login(authEmail, password);
     if (!result.success) {
       setError(result.error || 'Login failed');
       setLoading(false);
@@ -128,26 +153,64 @@ export default function WorkerLoginPage() {
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
+                <span className="bg-card px-2 text-muted-foreground">or continue with</span>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="worker-email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    id="worker-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-11 pl-10"
-                  />
+            <Tabs
+              value={method}
+              onValueChange={(v) => {
+                setMethod(v as LoginMethod);
+                setError('');
+              }}
+              className="mb-4"
+            >
+              <TabsList className="grid grid-cols-2 w-full">
+                <TabsTrigger value="mobile" className="gap-1.5">
+                  <Phone className="h-3.5 w-3.5" /> Mobile
+                </TabsTrigger>
+                <TabsTrigger value="email" className="gap-1.5">
+                  <Mail className="h-3.5 w-3.5" /> Email
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {method === 'mobile' ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="worker-mobile">Mobile Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="worker-mobile"
+                      type="tel"
+                      placeholder="10-digit mobile number"
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      required
+                      className="h-11 pl-10"
+                      autoComplete="tel"
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="worker-email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="worker-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-11 pl-10"
+                      autoComplete="email"
+                    />
+                  </div>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="worker-password">Password</Label>
                 <div className="relative">
@@ -161,6 +224,7 @@ export default function WorkerLoginPage() {
                     required
                     minLength={6}
                     className="h-11 pl-10 pr-10"
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"

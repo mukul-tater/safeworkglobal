@@ -11,7 +11,8 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children, allowedRoles, loginPath = '/auth' }: ProtectedRouteProps) {
   const { isAuthenticated, role, loading, profileLoading, needsRoleSelection } = useAuth();
 
-  if (loading || profileLoading) {
+  // Initial auth only. Do not unmount the app on later profile refreshes (tab focus).
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -24,6 +25,18 @@ export default function ProtectedRoute({ children, allowedRoles, loginPath = '/a
 
   if (!isAuthenticated) {
     return <Navigate to={loginPath} replace />;
+  }
+
+  // First load after sign-in: wait for role without flashing empty shells.
+  if (profileLoading && !role) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   // Authenticated but no role yet (e.g. fresh Google sign-in) — send to
