@@ -6,18 +6,18 @@ import { useAuth } from '@/contexts/AuthContext';
 /** Legacy /worker/trust URL — send Supabase workers to the Lovable worker dashboard. */
 export default function WorkerGoogleLandingRedirect() {
   const navigate = useNavigate();
-  const { isAuthenticated, role, loading, profileLoading } = useAuth();
+  const { isAuthenticated, role, loading, profileLoading, isMobileVerified } = useAuth();
 
   useEffect(() => {
     if (loading || profileLoading) return;
 
     if (isAuthenticated && role === 'worker') {
-      navigate('/worker/dashboard', { replace: true });
+      navigate(isMobileVerified ? '/worker/dashboard' : '/worker/bind-mobile', { replace: true });
       return;
     }
 
     navigate('/worker/login', { replace: true });
-  }, [isAuthenticated, role, loading, profileLoading, navigate]);
+  }, [isAuthenticated, role, loading, profileLoading, isMobileVerified, navigate]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">

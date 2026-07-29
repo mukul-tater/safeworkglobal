@@ -35,7 +35,7 @@ type Step = 'form' | 'otp';
  */
 export default function QuickWorkerSignup() {
   const navigate = useNavigate();
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role, isMobileVerified, profileLoading } = useAuth();
   const firebaseOtp = useFirebasePhoneOtp();
 
   const [step, setStep] = useState<Step>('form');
@@ -69,10 +69,11 @@ export default function QuickWorkerSignup() {
   };
 
   useEffect(() => {
+    if (profileLoading) return;
     if (isAuthenticated && role === 'worker') {
-      navigate('/worker/dashboard', { replace: true });
+      navigate(isMobileVerified ? '/worker/dashboard' : '/worker/bind-mobile', { replace: true });
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, role, isMobileVerified, profileLoading, navigate]);
 
   useEffect(() => {
     if (step !== 'otp') return;

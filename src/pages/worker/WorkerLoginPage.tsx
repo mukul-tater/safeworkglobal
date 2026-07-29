@@ -18,7 +18,7 @@ type LoginMethod = 'mobile' | 'email';
 
 export default function WorkerLoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, role } = useAuth();
+  const { login, isAuthenticated, role, isMobileVerified, profileLoading } = useAuth();
   const [method, setMethod] = useState<LoginMethod>('mobile');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
@@ -29,10 +29,11 @@ export default function WorkerLoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (profileLoading) return;
     if (isAuthenticated && role === 'worker') {
-      navigate('/worker/dashboard', { replace: true });
+      navigate(isMobileVerified ? '/worker/dashboard' : '/worker/bind-mobile', { replace: true });
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, role, isMobileVerified, profileLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -27,6 +27,7 @@ import ApplicationSuccess from '@/pages/worker/ApplicationSuccess';
 import WorkerGoogleLandingRedirect from '@/modules/worker-registration/pages/WorkerGoogleLandingRedirect';
 import QuickWorkerSignup from '@/pages/worker/QuickWorkerSignup';
 import WorkerLoginPage from '@/pages/worker/WorkerLoginPage';
+import WorkerBindMobilePage from '@/pages/worker/WorkerBindMobilePage';
 
 /** Must return <Route> directly — wrapper components break React Router v6 matching. */
 function workerRoute(path: string, page: ReactNode) {
@@ -35,7 +36,11 @@ function workerRoute(path: string, page: ReactNode) {
       key={path}
       path={path}
       element={
-        <ProtectedRoute allowedRoles={['worker']} loginPath="/worker/login">
+        <ProtectedRoute
+          allowedRoles={['worker']}
+          loginPath="/worker/login"
+          requireMobileVerified
+        >
           {page}
         </ProtectedRoute>
       }
@@ -48,6 +53,14 @@ export const legacyWorkerRoutes = (
   <>
     <Route path="/worker/quick-signup" element={<QuickWorkerSignup />} />
     <Route path="/worker/login" element={<WorkerLoginPage />} />
+    <Route
+      path="/worker/bind-mobile"
+      element={
+        <ProtectedRoute allowedRoles={['worker']} loginPath="/worker/login">
+          <WorkerBindMobilePage />
+        </ProtectedRoute>
+      }
+    />
     <Route path="/worker/trust" element={<WorkerGoogleLandingRedirect />} />
     <Route path="/worker/discover" element={<Navigate to="/jobs" replace />} />
     {workerRoute('/worker/application-success/:applicationId', <ApplicationSuccess />)}

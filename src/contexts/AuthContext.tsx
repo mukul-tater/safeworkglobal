@@ -11,6 +11,7 @@ interface Profile {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  mobile_verified?: boolean | null;
 }
 
 interface AuthContextType {
@@ -20,6 +21,8 @@ interface AuthContextType {
   role: AppRole | null;
   isAuthenticated: boolean;
   isEmailVerified: boolean;
+  /** Worker mobile OTP completed once (signup or post-Google bind). */
+  isMobileVerified: boolean;
   loading: boolean;
   /** True while we're still resolving the user's profile/role after auth resolves. */
   profileLoading: boolean;
@@ -142,6 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         full_name: derived.full_name,
         phone: derived.phone,
         avatar_url: derived.avatar_url,
+        mobile_verified: false,
       });
     }
   };
@@ -319,6 +323,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isEmailVerified = !!user?.email_confirmed_at;
+  const isMobileVerified = !!profile?.mobile_verified;
   const needsRoleSelection = !!user && hasResolvedRole && !role;
 
   return (
@@ -330,6 +335,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role,
         isAuthenticated: !!session,
         isEmailVerified,
+        isMobileVerified,
         loading,
         profileLoading,
         needsRoleSelection,
@@ -357,6 +363,7 @@ const noopAuth: AuthContextType = {
   role: null,
   isAuthenticated: false,
   isEmailVerified: false,
+  isMobileVerified: false,
   loading: true,
   profileLoading: false,
   needsRoleSelection: false,

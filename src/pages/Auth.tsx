@@ -30,7 +30,17 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const roleHint = (searchParams.get('role') as AppRole | null) || null;
   const modeHint = searchParams.get('mode'); // "signup" forces signup view
-  const { login, signup, isAuthenticated, role, needsRoleSelection, profileLoading, assignRole, profile } = useAuth();
+  const {
+    login,
+    signup,
+    isAuthenticated,
+    role,
+    needsRoleSelection,
+    profileLoading,
+    assignRole,
+    profile,
+    isMobileVerified,
+  } = useAuth();
   const [view, setView] = useState<AuthView>(
     modeHint === 'signup' ? 'role-select' : 'login'
   );
@@ -113,10 +123,10 @@ export default function Auth() {
 
   // Redirect once both auth + role are ready.
   useEffect(() => {
-    if (!isAuthenticated || !role || assigningRole) return;
+    if (!isAuthenticated || !role || assigningRole || profileLoading) return;
 
     if (role === 'worker') {
-      navigate('/worker/dashboard', { replace: true });
+      navigate(isMobileVerified ? '/worker/dashboard' : '/worker/bind-mobile', { replace: true });
       return;
     }
 
@@ -133,7 +143,7 @@ export default function Auth() {
       return;
     }
     navigate('/dashboard', { replace: true });
-  }, [isAuthenticated, role, navigate, assigningRole]);
+  }, [isAuthenticated, role, navigate, assigningRole, profileLoading, isMobileVerified]);
 
   // Step 1 — open the role chooser modal. We do NOT trigger OAuth yet.
   const openGoogleRoleChooser = (context: 'login' | 'signup') => {
@@ -290,7 +300,8 @@ export default function Auth() {
       }
       toast.success(`Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!`);
       if (selectedRole === 'worker') {
-        navigate('/worker/dashboard', { replace: true });
+        // Fresh Google workers still need one-time mobile OTP.
+        navigate(isMobileVerified ? '/worker/dashboard' : '/worker/bind-mobile', { replace: true });
       } else if (selectedRole === 'employer') {
         // Apply any pending company/full-name captured from the
         // QuickEmployerSignup form before the Google OAuth redirect.

@@ -6,10 +6,17 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: AppRole[];
   loginPath?: string;
+  /** Workers must complete one-time mobile OTP before portal access (Google bind). */
+  requireMobileVerified?: boolean;
 }
 
-export default function ProtectedRoute({ children, allowedRoles, loginPath = '/auth' }: ProtectedRouteProps) {
-  const { isAuthenticated, role, loading, profileLoading, needsRoleSelection } = useAuth();
+export default function ProtectedRoute({
+  children,
+  allowedRoles,
+  loginPath = '/auth',
+  requireMobileVerified = false,
+}: ProtectedRouteProps) {
+  const { isAuthenticated, role, loading, profileLoading, needsRoleSelection, isMobileVerified } = useAuth();
 
   // Initial auth only. Do not unmount the app on later profile refreshes (tab focus).
   if (loading) {
@@ -50,6 +57,16 @@ export default function ProtectedRoute({ children, allowedRoles, loginPath = '/a
   // landing on Employer pages and vice versa.
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     return <AccessDenied />;
+  }
+
+  // Google (and any) workers without mobile_verified must bind + OTP once.
+  if (
+    requireMobileVerified &&
+    role === 'worker' &&
+    !profileLoading &&
+    !isMobileVerified
+  ) {
+    return <Navigate to="/worker/bind-mobile" replace />;
   }
 
   return <>{children}</>;
