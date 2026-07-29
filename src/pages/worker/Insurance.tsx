@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { Card } from "@/components/ui/card";
 import { Shield, Send, Construction } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +6,7 @@ import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 
 export default function Insurance() {
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
       <PortalBreadcrumb />
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Insurance & Remittance</h1>
@@ -41,6 +40,6 @@ export default function Insurance() {
           </p>
         </Card>
       </div>
-    </DashboardLayout>
+    </WorkerPortalLayout>
   );
 }

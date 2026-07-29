@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { useEffect, useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths } from "date-fns";
 import { Calendar, ChevronLeft, ChevronRight, Video, MapPin, Clock } from "lucide-react";
@@ -111,7 +110,7 @@ export default function WorkerCalendar() {
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
           <PortalBreadcrumb />
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
@@ -297,6 +296,6 @@ export default function WorkerCalendar() {
             </Card>
           </div>
           </div>
-        </DashboardLayout>
+        </WorkerPortalLayout>
   );
 }

@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -176,7 +175,7 @@ export default function WorkerDocuments() {
   };
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
           <PortalBreadcrumb />
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl md:text-3xl font-bold">My Documents</h1>
@@ -326,6 +325,6 @@ export default function WorkerDocuments() {
               ))}
             </div>
           )}
-        </DashboardLayout>
+        </WorkerPortalLayout>
   );
 }

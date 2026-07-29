@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -102,15 +101,15 @@ export default function WorkerApplications() {
 
   if (loading) {
     return (
-      <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+      <WorkerPortalLayout>
             <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">My Applications</h1>
             <ApplicationListSkeleton count={4} />
-          </DashboardLayout>
+          </WorkerPortalLayout>
     );
   }
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
           <PortalBreadcrumb />
           <h1 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8">My Applications</h1>
 
@@ -181,6 +180,6 @@ export default function WorkerApplications() {
               ))}
             </div>
           )}
-        </DashboardLayout>
+        </WorkerPortalLayout>
   );
 }

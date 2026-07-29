@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ContractVersionHistory from "@/components/ContractVersionHistory";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,7 +39,7 @@ export default function ContractHistory() {
   });
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
             <PortalBreadcrumb />
             <Card>
             <CardHeader>
@@ -81,6 +80,6 @@ export default function ContractHistory() {
               )}
             </CardContent>
           </Card>
-        </DashboardLayout>
+        </WorkerPortalLayout>
   );
 }

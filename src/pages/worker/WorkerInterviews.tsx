@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -252,14 +251,14 @@ export default function WorkerInterviews() {
 
   if (loading) {
     return (
-      <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+      <WorkerPortalLayout>
             <LoadingSpinner />
-          </DashboardLayout>
+          </WorkerPortalLayout>
     );
   }
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
           <PortalBreadcrumb />
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold">My Interviews</h1>
@@ -329,6 +328,6 @@ export default function WorkerInterviews() {
               )}
             </TabsContent>
           </Tabs>
-        </DashboardLayout>
+        </WorkerPortalLayout>
   );
 }

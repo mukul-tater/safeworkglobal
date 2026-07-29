@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
 import WorkerJobsGate from '@/modules/worker-registration/components/WorkerJobsGate';
+import { useWorkerJobAccess } from '@/modules/worker-registration/hooks/useWorkerJobAccess';
 import SEOHead from '@/components/SEOHead';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +59,7 @@ export default function JobDetail() {
   const navigate = useNavigate();
   const { user, isAuthenticated, role } = useAuth();
   const isLoggedIn = isAuthenticated;
+  const { canApplyToJobs, onboardingPath, isWorker } = useWorkerJobAccess();
   const { toast } = useToast();
   
   const [job, setJob] = useState<JobData | null>(null);
@@ -159,6 +161,15 @@ export default function JobDetail() {
     }
     if (role === 'employer') {
       toast({ title: 'Not Allowed', description: 'Employers cannot apply for jobs.', variant: 'destructive' });
+      return;
+    }
+    if (isWorker && !canApplyToJobs) {
+      toast({
+        title: 'Complete your profile first',
+        description: 'You can browse jobs anytime. Finish your profile to apply or show interest.',
+        variant: 'destructive',
+      });
+      navigate(onboardingPath);
       return;
     }
     void handleApply();
@@ -517,28 +528,37 @@ export default function JobDetail() {
                       </AlertDescription>
                     </Alert>
                   ) : (
-                    <Button 
-                      size="lg" 
-                      onClick={handleApplyClick}
-                      disabled={hasApplied || applying || job.status !== 'ACTIVE'}
-                      className="w-full"
-                    >
-                      {applying ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Applying...
-                        </>
-                      ) : hasApplied ? (
-                        <>
-                          <CheckCircle2 className="mr-2 h-5 w-5" />
-                          Already Applied
-                        </>
-                      ) : !isLoggedIn ? (
-                        'Sign Up to Apply'
-                      ) : (
-                        'Apply Now'
+                    <>
+                      <Button 
+                        size="lg" 
+                        onClick={handleApplyClick}
+                        disabled={hasApplied || applying || job.status !== 'ACTIVE'}
+                        className="w-full"
+                      >
+                        {applying ? (
+                          <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Applying...
+                          </>
+                        ) : hasApplied ? (
+                          <>
+                            <CheckCircle2 className="mr-2 h-5 w-5" />
+                            Already Applied
+                          </>
+                        ) : !isLoggedIn ? (
+                          'Sign Up to Apply'
+                        ) : isWorker && !canApplyToJobs ? (
+                          'Complete profile to apply'
+                        ) : (
+                          'Apply Now'
+                        )}
+                      </Button>
+                      {isLoggedIn && isWorker && !canApplyToJobs && !hasApplied && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          You can browse jobs now. Finish your profile to apply.
+                        </p>
                       )}
-                    </Button>
+                    </>
                   )}
                   
                   {hasApplied && (

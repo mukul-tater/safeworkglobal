@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,14 +155,14 @@ export default function ApplicationTracking() {
 
   if (loading) {
     return (
-      <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+      <WorkerPortalLayout>
             <p>Loading applications...</p>
-          </DashboardLayout>
+          </WorkerPortalLayout>
     );
   }
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
           <PortalBreadcrumb />
           <div className="mb-6">
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Application Tracking</h1>
@@ -381,6 +380,6 @@ export default function ApplicationTracking() {
               )}
             </TabsContent>
           </Tabs>
-        </DashboardLayout>
+        </WorkerPortalLayout>
   );
 }

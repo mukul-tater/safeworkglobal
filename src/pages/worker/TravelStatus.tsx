@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plane, MapPin, Calendar, FileCheck, AlertCircle, Loader2 } from "lucide-react";
@@ -89,7 +88,7 @@ export default function TravelStatus() {
   const formatDate = (d: string | null) => d ? format(new Date(d), 'MMM dd, yyyy') : '—';
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
       <PortalBreadcrumb />
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Travel & Visa Status</h1>
@@ -175,6 +174,6 @@ export default function TravelStatus() {
           ))}
         </div>
       )}
-    </DashboardLayout>
+    </WorkerPortalLayout>
   );
 }

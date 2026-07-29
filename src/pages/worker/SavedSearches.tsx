@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,14 +101,14 @@ export default function SavedSearches() {
 
   if (loading) {
     return (
-      <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+      <WorkerPortalLayout>
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </DashboardLayout>
+          </WorkerPortalLayout>
     );
   }
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
           <PortalBreadcrumb />
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Saved Searches</h1>
@@ -221,6 +220,6 @@ export default function SavedSearches() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </DashboardLayout>
+      </WorkerPortalLayout>
   );
 }

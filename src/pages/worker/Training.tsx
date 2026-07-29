@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -175,7 +174,7 @@ export default function Training() {
   ).length;
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
           <PortalBreadcrumb />
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Training & Pre-Departure Orientation</h1>
@@ -339,6 +338,6 @@ export default function Training() {
               )}
             </div>
           )}
-        </DashboardLayout>
+        </WorkerPortalLayout>
   );
 }

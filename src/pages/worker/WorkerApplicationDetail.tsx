@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { useParams, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -164,15 +163,15 @@ export default function WorkerApplicationDetail() {
 
   if (loading) {
     return (
-      <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+      <WorkerPortalLayout>
             <div className="text-center">Loading application details...</div>
-          </DashboardLayout>
+          </WorkerPortalLayout>
     );
   }
 
   if (!application || !job) {
     return (
-      <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+      <WorkerPortalLayout>
             <Card className="p-12 text-center">
               <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-xl font-semibold mb-2">Application Not Found</h3>
@@ -183,12 +182,12 @@ export default function WorkerApplicationDetail() {
                 <Link to="/worker/applications">Back to Applications</Link>
               </Button>
             </Card>
-          </DashboardLayout>
+          </WorkerPortalLayout>
     );
   }
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
           <PortalBreadcrumb />
           <Button variant="ghost" asChild className="mb-6">
             <Link to="/worker/applications">
@@ -358,6 +357,6 @@ export default function WorkerApplicationDetail() {
               )}
             </div>
           </div>
-        </DashboardLayout>
+        </WorkerPortalLayout>
   );
 }

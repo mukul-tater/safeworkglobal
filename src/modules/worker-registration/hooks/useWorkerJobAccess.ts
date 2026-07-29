@@ -7,14 +7,17 @@ import { workerApi } from '../services/workerApi';
 interface WorkerJobAccess {
   loading: boolean;
   isWorker: boolean;
+  /** Workers can always browse jobs. */
   canBrowseJobs: boolean;
+  /** Apply / show interest requires a completed profile. */
+  canApplyToJobs: boolean;
   onboardingPath: string;
 }
 
 export function useWorkerJobAccess(): WorkerJobAccess {
   const { isAuthenticated, role, user, profileLoading } = useAuth();
   const { worker, token, isAuthenticated: isPhase1Worker, loading: workerAuthLoading } = useWorkerAuth();
-  const [canBrowseJobs, setCanBrowseJobs] = useState(true);
+  const [canApplyToJobs, setCanApplyToJobs] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const isLegacyWorker = isAuthenticated && role === 'worker';
@@ -25,7 +28,7 @@ export function useWorkerJobAccess(): WorkerJobAccess {
     if (profileLoading || workerAuthLoading) return;
 
     if (!isWorker) {
-      setCanBrowseJobs(true);
+      setCanApplyToJobs(false);
       setLoading(false);
       return;
     }
@@ -36,28 +39,39 @@ export function useWorkerJobAccess(): WorkerJobAccess {
       try {
         if (isPhase1Worker && worker) {
           if (worker.onboardingCompleted) {
-            if (!cancelled) setCanBrowseJobs(true);
+            if (!cancelled) setCanApplyToJobs(true);
             return;
           }
           if (token) {
             const onboarding = await workerApi.getOnboarding(token);
-            if (!cancelled) setCanBrowseJobs(onboarding.canBrowseJobs);
+            if (!cancelled) setCanApplyToJobs(Boolean(onboarding.canApplyToJobs));
             return;
           }
-          if (!cancelled) setCanBrowseJobs(false);
+          if (!cancelled) setCanApplyToJobs(false);
           return;
         }
 
         if (isLegacyWorker && user) {
-          const { data } = await supabase
-            .from('worker_profiles')
-            .select('onboarding_completed')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          if (!cancelled) setCanBrowseJobs(Boolean(data?.onboarding_completed));
+          const [{ data: profileRow }, { count: docCount }] = await Promise.all([
+            supabase
+              .from('worker_profiles')
+              .select('onboarding_completed')
+              .eq('user_id', user.id)
+              .maybeSingle(),
+            supabase
+              .from('worker_documents')
+              .select('id', { count: 'exact', head: true })
+              .eq('worker_id', user.id),
+          ]);
+
+          const complete =
+            Boolean(profileRow?.onboarding_completed) ||
+            (Boolean(user.user_metadata?.full_name || user.email) && (docCount ?? 0) > 0);
+
+          if (!cancelled) setCanApplyToJobs(complete);
         }
       } catch {
-        if (!cancelled) setCanBrowseJobs(false);
+        if (!cancelled) setCanApplyToJobs(false);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -80,5 +94,11 @@ export function useWorkerJobAccess(): WorkerJobAccess {
     user,
   ]);
 
-  return { loading, isWorker, canBrowseJobs, onboardingPath };
+  return {
+    loading,
+    isWorker,
+    canBrowseJobs: true,
+    canApplyToJobs: isWorker ? canApplyToJobs : false,
+    onboardingPath,
+  };
 }

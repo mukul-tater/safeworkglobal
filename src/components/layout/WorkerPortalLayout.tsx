@@ -1,0 +1,25 @@
+import type { ReactNode } from "react";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { workerProfileMenu } from "@/config/workerNav";
+import { useWorkerNavGroups } from "@/modules/worker-registration/hooks/useWorkerNavGroups";
+
+interface Props {
+  children: ReactNode;
+}
+
+/** Worker portal shell with My Journey sidebar accordion (sample 01). */
+export default function WorkerPortalLayout({ children }: Props) {
+  const { navGroups } = useWorkerNavGroups();
+
+  return (
+    <DashboardLayout
+      navGroups={navGroups}
+      portalLabel="Worker Portal"
+      portalName="Worker Portal"
+      profileMenuItems={workerProfileMenu}
+      portalHomePath="/worker/dashboard"
+    >
+      {children}
+    </DashboardLayout>
+  );
+}

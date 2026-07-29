@@ -1,84 +1,71 @@
 import { useAuth } from "@/contexts/AuthContext";
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { DashboardSkeleton } from "@/components/ui/page-skeleton";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
+import { Link } from "react-router-dom";
+import { Briefcase, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
-import { workerProfileMenu } from "@/config/workerNav";
-import { useWorkerNavGroups } from "@/modules/worker-registration/hooks/useWorkerNavGroups";
-import WorkerJourneyHome from "@/components/worker/WorkerJourneyHome";
+import { useWorkerJobAccess } from "@/modules/worker-registration/hooks/useWorkerJobAccess";
 
+/**
+ * Sample 01 home: jobs-first. Journey lives in the sidebar accordion.
+ */
 export default function WorkerDashboard() {
   const { profile } = useAuth();
-  const { navGroups } = useWorkerNavGroups();
-  const [documents, setDocuments] = useState<unknown[]>([]);
-  const [workerProfile, setWorkerProfile] = useState<{ full_name?: string | null } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!profile?.id) return;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const [docsRes, profileRes] = await Promise.all([
-          supabase.from("worker_documents").select("id").eq("worker_id", profile.id),
-          supabase.from("worker_profiles").select("full_name").eq("user_id", profile.id).maybeSingle(),
-        ]);
-        if (cancelled) return;
-        setDocuments(docsRes.data || []);
-        setWorkerProfile(profileRes.data);
-      } catch (error) {
-        console.error("Error fetching worker data:", error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [profile?.id]);
-
-  if (loading) {
-    return (
-      <DashboardLayout
-        navGroups={navGroups}
-        portalLabel="Worker Portal"
-        portalName="Worker Portal"
-        profileMenuItems={workerProfileMenu}
-      >
-        <DashboardSkeleton />
-      </DashboardLayout>
-    );
-  }
-
-  const hasProfile = !!(workerProfile?.full_name || profile?.full_name);
-  const hasDocuments = documents.length > 0;
+  const { canApplyToJobs, onboardingPath } = useWorkerJobAccess();
+  const firstName = profile?.full_name?.split(" ")[0];
 
   return (
-    <DashboardLayout
-      navGroups={navGroups}
-      portalLabel="Worker Portal"
-      portalName="Worker Portal"
-      profileMenuItems={workerProfileMenu}
-    >
+    <WorkerPortalLayout>
       <PortalBreadcrumb />
 
-      <div className="mb-5">
-        <h1 className="text-2xl md:text-3xl font-bold font-heading tracking-tight">
-          Hi{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Follow these simple steps. Tap a step to see what to do next.
-        </p>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold font-heading tracking-tight">
+            Hi{firstName ? `, ${firstName}` : ""}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Browse jobs anytime. Open <span className="text-foreground font-medium">My Journey</span> in
+            the sidebar to track your steps.
+          </p>
+        </div>
+        <Button asChild className="rounded-xl h-11 shrink-0">
+          <Link to="/jobs">
+            <Briefcase className="h-4 w-4 mr-1.5" />
+            Find Jobs
+            <ArrowRight className="h-4 w-4 ml-1.5" />
+          </Link>
+        </Button>
       </div>
 
-      <WorkerJourneyHome
-        workerName={profile?.full_name || workerProfile?.full_name}
-        hasProfile={hasProfile}
-        hasDocuments={hasDocuments}
-      />
-    </DashboardLayout>
+      {!canApplyToJobs && (
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+            <p className="text-sm text-foreground">
+              You can view jobs now. Complete your profile to apply or show interest.
+            </p>
+            <Button asChild variant="default" size="sm" className="rounded-lg shrink-0">
+              <Link to={onboardingPath}>Complete profile</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="border-border/60">
+        <CardContent className="p-6 sm:p-8 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+            <Briefcase className="h-6 w-6 text-primary" />
+          </div>
+          <h2 className="text-lg font-semibold font-heading mb-1">Ready to explore jobs?</h2>
+          <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+            Search verified overseas openings. Use My Journey in the menu when you want to continue
+            documents, screening, or interview steps.
+          </p>
+          <Button asChild className="rounded-xl">
+            <Link to="/jobs">Go to Job Search</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </WorkerPortalLayout>
   );
 }

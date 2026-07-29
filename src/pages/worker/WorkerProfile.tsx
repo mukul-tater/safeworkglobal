@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -210,14 +209,9 @@ export default function WorkerProfile() {
   };
 
   const layout = (content: ReactNode) => (
-    <DashboardLayout
-      navGroups={workerNavGroups}
-      portalLabel="Worker Portal"
-      portalName="Worker Portal"
-      profileMenuItems={workerProfileMenu}
-    >
+    <WorkerPortalLayout>
       {content}
-    </DashboardLayout>
+    </WorkerPortalLayout>
   );
 
   if (!user || !profile || loading) {

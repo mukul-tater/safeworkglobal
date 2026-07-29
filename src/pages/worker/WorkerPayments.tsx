@@ -1,5 +1,4 @@
-import DashboardLayout from "@/components/layout/DashboardLayout";
-import { workerNavGroups, workerProfileMenu } from "@/config/workerNav";
+import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -113,7 +112,7 @@ export default function WorkerPayments() {
   const totalPayments = payments.filter((p) => p.escrow_status === "RELEASED").length;
 
   return (
-    <DashboardLayout navGroups={workerNavGroups} portalLabel="Worker Portal" portalName="Worker Portal" profileMenuItems={workerProfileMenu}>
+    <WorkerPortalLayout>
             <div className="max-w-7xl mx-auto space-y-6">
               <div>
                 <h1 className="text-3xl font-bold text-foreground">My Payments</h1>
@@ -440,6 +439,6 @@ export default function WorkerPayments() {
           )}
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </WorkerPortalLayout>
   );
 }
