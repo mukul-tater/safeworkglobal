@@ -111,7 +111,7 @@ export default function Training() {
       
       const { data, error } = await supabase
         .from('worker_training_enrollments')
-        .update(updates)
+        .update(updates as never)
         .eq('id', enrollmentId)
         .select()
         .single();
