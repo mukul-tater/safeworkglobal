@@ -230,8 +230,6 @@ export default function EmitraRegisterPage() {
     ...(sourceLspId ? { source_lsp_id: sourceLspId } : {}),
     ...overrides,
   });
-    ...overrides,
-  });
 
   const persistProgress = async (overrides: Record<string, unknown> = {}) => {
     const uid = user?.id || (await ensureAccount());

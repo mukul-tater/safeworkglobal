@@ -1003,6 +1003,141 @@ export type Database = {
           },
         ]
       }
+      lsp_launch_logs: {
+        Row: {
+          created_at: string
+          id: string
+          lsp_code: string | null
+          lsp_id: string | null
+          reason: string | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lsp_code?: string | null
+          lsp_id?: string | null
+          reason?: string | null
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lsp_code?: string | null
+          lsp_id?: string | null
+          reason?: string | null
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lsp_launch_logs_lsp_id_fkey"
+            columns: ["lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lsp_launch_logs_lsp_id_fkey"
+            columns: ["lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lsp_launch_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          lsp_id: string
+          payload: Json
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          lsp_id: string
+          payload?: Json
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          lsp_id?: string
+          payload?: Json
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lsp_launch_tokens_lsp_id_fkey"
+            columns: ["lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lsp_launch_tokens_lsp_id_fkey"
+            columns: ["lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lsp_partners: {
+        Row: {
+          allowed_origins: string[] | null
+          code: string
+          contact_email: string | null
+          contact_mobile: string | null
+          contact_name: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          name: string
+          state: string
+          status: string
+          token_secret: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_origins?: string[] | null
+          code: string
+          contact_email?: string | null
+          contact_mobile?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          name: string
+          state?: string
+          status?: string
+          token_secret: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_origins?: string[] | null
+          code?: string
+          contact_email?: string | null
+          contact_mobile?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          name?: string
+          state?: string
+          status?: string
+          token_secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -1570,6 +1705,7 @@ export type Database = {
           info_request_message: string | null
           leaderboard_rank: number | null
           license_number: string | null
+          lsp_verified_at: string | null
           mobile: string | null
           mobile_verified: boolean | null
           monthly_footfall: number | null
@@ -1590,6 +1726,7 @@ export type Database = {
           reviewed_by: string | null
           services_offered: string[] | null
           shop_photo_url: string | null
+          source_lsp_id: string | null
           state: string | null
           status: Database["public"]["Enums"]["partner_status"]
           submitted_at: string | null
@@ -1640,6 +1777,7 @@ export type Database = {
           info_request_message?: string | null
           leaderboard_rank?: number | null
           license_number?: string | null
+          lsp_verified_at?: string | null
           mobile?: string | null
           mobile_verified?: boolean | null
           monthly_footfall?: number | null
@@ -1660,6 +1798,7 @@ export type Database = {
           reviewed_by?: string | null
           services_offered?: string[] | null
           shop_photo_url?: string | null
+          source_lsp_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["partner_status"]
           submitted_at?: string | null
@@ -1710,6 +1849,7 @@ export type Database = {
           info_request_message?: string | null
           leaderboard_rank?: number | null
           license_number?: string | null
+          lsp_verified_at?: string | null
           mobile?: string | null
           mobile_verified?: boolean | null
           monthly_footfall?: number | null
@@ -1730,6 +1870,7 @@ export type Database = {
           reviewed_by?: string | null
           services_offered?: string[] | null
           shop_photo_url?: string | null
+          source_lsp_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["partner_status"]
           submitted_at?: string | null
@@ -1746,7 +1887,22 @@ export type Database = {
           workers_registered?: number | null
           years_in_operation?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "partner_profiles_source_lsp_id_fkey"
+            columns: ["source_lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_profiles_source_lsp_id_fkey"
+            columns: ["source_lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partner_profiles_ext: {
         Row: {
@@ -2198,6 +2354,7 @@ export type Database = {
           registration_source: string
           skill: string
           skill_level: string | null
+          source_lsp_id: string | null
           state: string | null
           status: Database["public"]["Enums"]["partner_worker_status"]
           updated_at: string
@@ -2228,6 +2385,7 @@ export type Database = {
           registration_source?: string
           skill: string
           skill_level?: string | null
+          source_lsp_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["partner_worker_status"]
           updated_at?: string
@@ -2258,6 +2416,7 @@ export type Database = {
           registration_source?: string
           skill?: string
           skill_level?: string | null
+          source_lsp_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["partner_worker_status"]
           updated_at?: string
@@ -2270,6 +2429,20 @@ export type Database = {
             columns: ["partner_profile_id"]
             isOneToOne: false
             referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_workers_source_lsp_id_fkey"
+            columns: ["source_lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_workers_source_lsp_id_fkey"
+            columns: ["source_lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners_public"
             referencedColumns: ["id"]
           },
         ]
@@ -3632,9 +3805,47 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      lsp_partners_public: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          id: string | null
+          name: string | null
+          state: string | null
+          status: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          state?: string | null
+          status?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          state?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_create_lsp: {
+        Args: {
+          p_code: string
+          p_contact_email?: string
+          p_contact_mobile?: string
+          p_contact_name?: string
+          p_name: string
+          p_state?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
       admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
       admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
       admin_mark_withdrawal_paid: {
@@ -3649,6 +3860,11 @@ export type Database = {
           p_rejection_reason?: string
           p_status: Database["public"]["Enums"]["partner_payout_status"]
         }
+        Returns: undefined
+      }
+      admin_rotate_lsp_secret: { Args: { p_lsp_id: string }; Returns: Json }
+      admin_set_lsp_status: {
+        Args: { p_lsp_id: string; p_status: string }
         Returns: undefined
       }
       admin_set_partner_status: {
@@ -3670,10 +3886,15 @@ export type Database = {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: undefined
       }
+      bind_partner_to_lsp: {
+        Args: { p_emitra_id?: string; p_lsp_id: string }
+        Returns: Json
+      }
       compute_partner_tier: {
         Args: { p_placements: number }
         Returns: Database["public"]["Enums"]["partner_tier"]
       }
+      consume_lsp_launch_token: { Args: { p_token: string }; Returns: Json }
       current_partner: {
         Args: never
         Returns: {
@@ -3733,6 +3954,24 @@ export type Database = {
         Args: { p_email: string }
         Returns: boolean
       }
+      issue_lsp_launch_params: {
+        Args: {
+          p_emitra_id?: string
+          p_lsp_id: string
+          p_mobile?: string
+          p_ttl_seconds?: number
+        }
+        Returns: Json
+      }
+      issue_lsp_one_time_token: {
+        Args: {
+          p_emitra_id?: string
+          p_lsp_id: string
+          p_mobile?: string
+          p_ttl_seconds?: number
+        }
+        Returns: Json
+      }
       list_public_workers: {
         Args: { p_limit?: number }
         Returns: {
@@ -3758,6 +3997,19 @@ export type Database = {
           years_of_experience: number
         }[]
       }
+      lsp_hmac_hex: {
+        Args: { p_message: string; p_secret: string }
+        Returns: string
+      }
+      lsp_log_launch: {
+        Args: {
+          p_lsp_code: string
+          p_lsp_id: string
+          p_reason: string
+          p_success: boolean
+        }
+        Returns: undefined
+      }
       partner_list_my_workers: {
         Args: never
         Returns: {
@@ -3773,8 +4025,20 @@ export type Database = {
           user_id: string
         }[]
       }
+      resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
+      verify_lsp_launch: {
+        Args: {
+          p_emitra_id?: string
+          p_exp: number
+          p_lsp: string
+          p_mobile?: string
+          p_nonce: string
+          p_sig: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "employer" | "worker" | "agent" | "partner"
