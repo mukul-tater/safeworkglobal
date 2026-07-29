@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import { useWorkerJobAccess } from "@/modules/worker-registration/hooks/useWorkerJobAccess";
+import { useWorkerPlacementProgress } from "@/modules/worker-registration/hooks/useWorkerPlacementProgress";
+import WorkerPlacementProgress from "@/components/worker/WorkerPlacementProgress";
 
 /**
- * Sample 01 home: jobs-first. Journey lives in the sidebar accordion.
+ * Worker home: Sample B placement progress + jobs-first actions.
  */
 export default function WorkerDashboard() {
   const { profile } = useAuth();
   const { canApplyToJobs, onboardingPath } = useWorkerJobAccess();
+  const { statuses, loading: progressLoading } = useWorkerPlacementProgress();
   const firstName = profile?.full_name?.split(" ")[0];
 
   return (
@@ -25,8 +28,7 @@ export default function WorkerDashboard() {
             Hi{firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Browse jobs anytime. Open <span className="text-foreground font-medium">My Journey</span> in
-            the sidebar to track your steps.
+            Track your path from registration to deployment, and browse jobs anytime.
           </p>
         </div>
         <Button asChild className="rounded-xl h-11 shrink-0">
@@ -37,6 +39,12 @@ export default function WorkerDashboard() {
           </Link>
         </Button>
       </div>
+
+      {progressLoading ? (
+        <div className="mb-6 h-40 rounded-2xl border border-border/60 bg-muted/30 animate-pulse" />
+      ) : (
+        <WorkerPlacementProgress statuses={statuses} className="mb-6" />
+      )}
 
       {!canApplyToJobs && (
         <Card className="mb-6 border-primary/20 bg-primary/5">
@@ -58,8 +66,7 @@ export default function WorkerDashboard() {
           </div>
           <h2 className="text-lg font-semibold font-heading mb-1">Ready to explore jobs?</h2>
           <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-            Search verified overseas openings. Use My Journey in the menu when you want to continue
-            documents, screening, or interview steps.
+            Search verified overseas openings while you move through your placement journey.
           </p>
           <Button asChild className="rounded-xl">
             <Link to="/jobs">Go to Job Search</Link>

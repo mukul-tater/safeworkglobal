@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu, LucideIcon, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,8 @@ export interface NavItem {
   path: string;
   icon: LucideIcon;
   label: string;
+  /** Unique id so shared paths don't all highlight as active. */
+  id?: string;
   /** Optional status line under label (e.g. journey steps). */
   statusLabel?: string;
   statusTone?: "completed" | "in_progress" | "waiting";
@@ -30,19 +32,91 @@ interface DashboardSidebarProps {
   portalHomePath?: string;
 }
 
+function itemIsActive(item: NavItem, pathname: string, search: string): boolean {
+  const pathMatches =
+    pathname === item.path || pathname.startsWith(`${item.path}/`);
+  if (!pathMatches) return false;
+
+  const journey = new URLSearchParams(search).get("journey");
+
+  // Journey steps use ?journey=<id> so Profile vs Final Selection (same path) stay unique.
+  if (item.id) return journey === item.id;
+
+  // Plain nav (Home, Jobs, …): inactive while a journey deep-link owns the URL.
+  if (journey) return false;
+
+  return true;
+}
+
+function NavLinkRow({
+  item,
+  isActive,
+  onNavigate,
+}: {
+  item: NavItem;
+  isActive: boolean;
+  onNavigate: () => void;
+}) {
+  const Icon = item.icon;
+  const to = item.id
+    ? `${item.path}${item.path.includes("?") ? "&" : "?"}journey=${encodeURIComponent(item.id)}`
+    : item.path;
+
+  return (
+    <Link
+      to={to}
+      onClick={onNavigate}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
+        isActive
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "hover:bg-muted text-muted-foreground hover:text-foreground",
+      )}
+    >
+      <Icon className={cn("h-4 w-4 shrink-0", !isActive && "opacity-70")} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate">{item.label}</span>
+        {item.statusLabel && (
+          <span
+            className={cn(
+              "block text-[10px] mt-0.5",
+              isActive
+                ? "text-primary-foreground/80"
+                : item.statusTone === "completed"
+                  ? "text-success"
+                  : item.statusTone === "in_progress"
+                    ? "text-primary"
+                    : "text-muted-foreground",
+            )}
+          >
+            {item.statusLabel}
+          </span>
+        )}
+      </span>
+    </Link>
+  );
+}
+
 function NavGroupSection({ group, onNavigate }: { group: NavGroup; onNavigate: () => void }) {
   const location = useLocation();
-  const hasActive = group.items.some(
-    (item) => location.pathname === item.path || location.pathname.startsWith(`${item.path}/`),
+  const hasActive = group.items.some((item) =>
+    itemIsActive(item, location.pathname, location.search),
   );
-  const [open, setOpen] = useState(group.defaultOpen ?? hasActive ?? true);
+  const [open, setOpen] = useState(() => group.defaultOpen ?? hasActive);
+
+  // Keep section open when an item inside becomes active (e.g. after navigation).
+  // Do not auto-close — only the header toggle closes it.
+  useEffect(() => {
+    if (hasActive) setOpen(true);
+  }, [hasActive]);
+
   const isJourney = Boolean(group.badge);
 
   return (
     <div className="mb-1">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((v) => !v)}
         className={cn(
           "w-full flex items-center justify-between gap-2 px-3 py-2 transition-colors",
           isJourney
@@ -62,71 +136,54 @@ function NavGroupSection({ group, onNavigate }: { group: NavGroup; onNavigate: (
       </button>
       {open && (
         <nav className={cn("space-y-0.5", isJourney ? "ml-1 mt-0.5 mb-2" : "ml-1")}>
-          {group.items.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path + item.label}
-                to={item.path}
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "hover:bg-muted text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <Icon className={cn("h-4 w-4 shrink-0", !isActive && "opacity-70")} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate">{item.label}</span>
-                  {item.statusLabel && (
-                    <span
-                      className={cn(
-                        "block text-[10px] mt-0.5",
-                        isActive
-                          ? "text-primary-foreground/80"
-                          : item.statusTone === "completed"
-                            ? "text-success"
-                            : item.statusTone === "in_progress"
-                              ? "text-primary"
-                              : "text-muted-foreground",
-                      )}
-                    >
-                      {item.statusLabel}
-                    </span>
-                  )}
-                </span>
-              </Link>
-            );
-          })}
+          {group.items.map((item) => (
+            <NavLinkRow
+              key={item.id ?? `${item.path}:${item.label}`}
+              item={item}
+              isActive={itemIsActive(item, location.pathname, location.search)}
+              onNavigate={onNavigate}
+            />
+          ))}
         </nav>
       )}
     </div>
   );
 }
 
-export default function DashboardSidebar({ navItems, navGroups, portalLabel, portalHomePath = "/" }: DashboardSidebarProps) {
+function SidebarBody({
+  navItems,
+  navGroups,
+  portalLabel,
+  portalHomePath,
+  onNavigate,
+}: {
+  navItems?: NavItem[];
+  navGroups?: NavGroup[];
+  portalLabel: string;
+  portalHomePath: string;
+  onNavigate: () => void;
+}) {
   const location = useLocation();
-  const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
 
-  const handleNavigate = () => setOpen(false);
-
-  const SidebarContent = () => (
+  return (
     <div className="flex flex-col h-full">
-      <Link to={portalHomePath} className="flex items-center gap-2.5 mb-5 hover:opacity-80 transition-opacity shrink-0">
+      <Link
+        to={portalHomePath}
+        className="flex items-center gap-2.5 mb-5 hover:opacity-80 transition-opacity shrink-0"
+      >
         <img src="/safework-global-logo.png" alt="SafeWorkGlobal" className="h-7 w-7" />
         <span className="text-lg font-bold text-foreground font-heading">SafeWorkGlobal</span>
       </Link>
       <div className="px-3 mb-3">
-        <span className="text-xs uppercase tracking-wider text-muted-foreground/70 font-semibold">{portalLabel}</span>
+        <span className="text-xs uppercase tracking-wider text-muted-foreground/70 font-semibold">
+          {portalLabel}
+        </span>
       </div>
       <ScrollArea className="flex-1 -mx-1 px-1">
         {navGroups ? (
           <div className="pb-4">
             {navGroups.map((group) => (
-              <NavGroupSection key={group.label} group={group} onNavigate={handleNavigate} />
+              <NavGroupSection key={group.label} group={group} onNavigate={onNavigate} />
             ))}
           </div>
         ) : navItems ? (
@@ -138,12 +195,12 @@ export default function DashboardSidebar({ navItems, navGroups, portalLabel, por
                 <Link
                   key={item.path}
                   to={item.path}
-                  onClick={handleNavigate}
+                  onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-sm"
-                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                      : "hover:bg-muted text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <Icon className={cn("h-4 w-4 shrink-0", !isActive && "opacity-70")} />
@@ -156,10 +213,32 @@ export default function DashboardSidebar({ navItems, navGroups, portalLabel, por
       </ScrollArea>
     </div>
   );
+}
+
+export default function DashboardSidebar({
+  navItems,
+  navGroups,
+  portalLabel,
+  portalHomePath = "/",
+}: DashboardSidebarProps) {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  const handleNavigate = () => setSheetOpen(false);
+
+  const body = (
+    <SidebarBody
+      navItems={navItems}
+      navGroups={navGroups}
+      portalLabel={portalLabel}
+      portalHomePath={portalHomePath}
+      onNavigate={handleNavigate}
+    />
+  );
 
   if (isMobile) {
     return (
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetTrigger asChild>
           <button
             className="fixed top-3 left-3 z-50 p-2.5 bg-card border border-border rounded-xl shadow-lg md:hidden hover:bg-muted transition-colors"
@@ -169,7 +248,7 @@ export default function DashboardSidebar({ navItems, navGroups, portalLabel, por
           </button>
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-4 pt-6">
-          <SidebarContent />
+          {body}
         </SheetContent>
       </Sheet>
     );
@@ -177,7 +256,7 @@ export default function DashboardSidebar({ navItems, navGroups, portalLabel, por
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-card border-r min-h-screen p-4 lg:p-5 shrink-0">
-      <SidebarContent />
+      {body}
     </aside>
   );
 }

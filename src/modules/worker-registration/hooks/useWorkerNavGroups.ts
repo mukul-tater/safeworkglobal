@@ -30,10 +30,12 @@ const JOURNEY_META: {
 }[] = [
   { id: "profile", path: "/worker/profile", icon: User, label: "Profile" },
   { id: "documents", path: "/worker/documents", icon: FileText, label: "Documents" },
-  { id: "screening", path: "/worker/dashboard", icon: ClipboardList, label: "Shortlisting" },
+  // Unique destinations — do not reuse /worker/dashboard or /worker/profile
+  // (that caused Home + multiple journey rows to all look selected).
+  { id: "screening", path: "/worker/verification", icon: ClipboardList, label: "Shortlisting" },
   { id: "interview", path: "/worker/interviews", icon: Video, label: "Online Interview" },
-  { id: "trade_test", path: "/worker/dashboard", icon: Wrench, label: "Trade Test" },
-  { id: "verified", path: "/worker/profile", icon: Handshake, label: "Final Selection" },
+  { id: "trade_test", path: "/worker/training", icon: Wrench, label: "Trade Test" },
+  { id: "verified", path: "/worker/offers", icon: Handshake, label: "Final Selection" },
 ];
 
 function statusLabel(status: JourneyStatus): string {
@@ -95,6 +97,7 @@ export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean 
     const completed = JOURNEY_META.filter((s) => statuses[s.id] === "completed").length;
 
     const journeyItems: JourneyNavItem[] = JOURNEY_META.map((step) => ({
+      id: step.id,
       path: step.path,
       icon: step.icon,
       label: step.label,
@@ -105,7 +108,8 @@ export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean 
     const journeyGroup: NavGroup = {
       label: "My Journey",
       badge: `${completed}/${JOURNEY_META.length}`,
-      defaultOpen: false,
+      // Stay expanded by default so status is visible; user can still collapse.
+      defaultOpen: true,
       items: journeyItems,
     };
 
