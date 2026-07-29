@@ -16,19 +16,22 @@ import { toast } from 'sonner';
 import { Loader2, Phone, Mail, ShieldCheck, CheckCircle2, ArrowLeft, HardHat } from 'lucide-react';
 import { NATIONALITIES } from '@/lib/constants';
 import { lovable } from '@/integrations/lovable/index';
-import { isValidIndianMobile, normalizeIndianMobile } from '@/lib/validations/common';
+import { isValidIndianMobile } from '@/lib/validations/common';
+import { useFirebasePhoneOtp } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
+import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 
 type Method = 'mobile' | 'email';
 type Step = 'form' | 'otp';
 
 /**
- * Simplified worker signup — Name + Mobile (or Email) + Country.
- * Mock OTP: any 6-digit code works (demo mode).
- * Creates auth account using a synthetic email when mobile-only.
+ * Worker signup — Name + Mobile (Firebase SMS OTP) or Email + Country.
+ * Google OAuth unchanged. Mobile path requires real Firebase Phone Auth.
  */
 export default function QuickWorkerSignup() {
   const navigate = useNavigate();
   const { isAuthenticated, role } = useAuth();
+  const firebaseOtp = useFirebasePhoneOtp();
 
   const [method, setMethod] = useState<Method>('mobile');
   const [step, setStep] = useState<Step>('form');
@@ -73,26 +76,127 @@ export default function QuickWorkerSignup() {
     if (!country) return 'Please select your country';
     if (method === 'mobile') {
       if (!isValidIndianMobile(mobile)) return 'Enter a valid 10-digit Indian mobile number';
+      if (!isFirebaseConfigured()) {
+        return 'Phone SMS verification is not configured. Use Continue with Google, or ask the admin to add Firebase Phone Auth keys.';
+      }
     } else {
       if (!/^\S+@\S+\.\S+$/.test(email)) return 'Please enter a valid email';
     }
     return null;
   };
 
-  const handleRequestOtp = (e: React.FormEvent) => {
+  const createWorkerAccount = async (opts: { mobileVerified: boolean }) => {
+    const digits = mobile.replace(/\D/g, '');
+    const authEmail =
+      method === 'email' ? email.trim() : `m${digits}@workers.safeworkglobal.app`;
+
+    const password = `SWG-${digits || email}-${Date.now().toString(36)}`;
+
+    if (method === 'email') {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', authEmail)
+        .maybeSingle();
+      if (existing) {
+        throw new Error('An account with this email already exists. Please sign in.');
+      }
+    }
+
+    const { error: signupErr } = await supabase.auth.signUp({
+      email: authEmail,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/worker/trust`,
+        data: {
+          full_name: name.trim(),
+          phone: method === 'mobile' ? mobile.trim() : '',
+          role: 'worker',
+        },
+      },
+    });
+
+    if (signupErr) {
+      if (/already registered|already exists/i.test(signupErr.message)) {
+        throw new Error('This email is already registered. Please sign in instead.');
+      }
+      throw new Error(signupErr.message);
+    }
+
+    await supabase.auth.signInWithPassword({ email: authEmail, password });
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { data: roleRow } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (roleRow && roleRow.role !== 'worker') {
+        await supabase.auth.signOut();
+        throw new Error(
+          `This account is already registered as a ${roleRow.role}. Please log in with the correct role.`
+        );
+      }
+      await supabase
+        .from('worker_profiles')
+        .upsert({ user_id: user.id, country, nationality: country } as any, {
+          onConflict: 'user_id',
+        });
+      const profilePatch: {
+        full_name: string;
+        mobile_verified: boolean;
+        phone?: string;
+      } = {
+        full_name: name.trim(),
+        mobile_verified: opts.mobileVerified,
+      };
+      if (method === 'mobile') {
+        profilePatch.phone = mobile.trim();
+      }
+      await supabase.from('profiles').update(profilePatch).eq('id', user.id);
+    }
+  };
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     const v = validate();
-    if (v) { setError(v); return; }
+    if (v) {
+      setError(v);
+      return;
+    }
 
-    // Mock OTP: simulate sending
-    toast.success(
-      method === 'mobile'
-        ? `Verification code sent to ${mobile}`
-        : `Verification code sent to ${email}`,
-      { description: 'Demo mode: enter any 6 digits to continue' }
-    );
-    setStep('otp');
+    // Email path: no phone OTP — create account directly (Supabase may email-confirm).
+    if (method === 'email') {
+      setLoading(true);
+      try {
+        await createWorkerAccount({ mobileVerified: false });
+        toast.success('Welcome to SafeWorkGlobal! 🎉');
+        navigate('/worker/trust', { replace: true });
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const digits = mobile.replace(/\D/g, '');
+      await firebaseOtp.sendOtp(digits);
+      toast.success(`Verification code sent to +91 ${digits}`);
+      setStep('otp');
+      setOtp('');
+    } catch (err: unknown) {
+      firebaseOtp.resetRecaptcha();
+      setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyAndCreate = async (e: React.FormEvent) => {
@@ -105,82 +209,36 @@ export default function QuickWorkerSignup() {
 
     setLoading(true);
     try {
-      // Synthesize an email if mobile-only (Supabase auth requires email)
-      const digits = mobile.replace(/\D/g, '');
-      const authEmail = method === 'email'
-        ? email.trim()
-        : `m${digits}@workers.safeworkglobal.app`;
+      await firebaseOtp.verifyOtp(otp);
 
-      // Auto-generate password (user signs in via this device session)
-      const password = `SWG-${digits || email}-${Date.now().toString(36)}`;
-
-      // Pre-check: prevent reusing a worker email for employer (and vice versa)
-      if (method === 'email') {
-        const { data: existing } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', authEmail)
-          .maybeSingle();
-        if (existing) {
-          setError('An account with this email already exists. Please sign in.');
-          setLoading(false);
-          return;
-        }
+      // Phone was verified via Firebase; clear Firebase session so Supabase remains auth source.
+      try {
+        await firebaseSignOut(getFirebaseAuth());
+      } catch {
+        /* ignore */
       }
 
-      const { error: signupErr } = await supabase.auth.signUp({
-        email: authEmail,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/worker/trust`,
-          data: {
-            full_name: name.trim(),
-            phone: method === 'mobile' ? mobile.trim() : '',
-            role: 'worker',
-          },
-        },
-      });
-
-      if (signupErr) {
-        if (/already registered|already exists/i.test(signupErr.message)) {
-          setError("This email is already registered. Please sign in instead.");
-        } else {
-          setError(signupErr.message);
-        }
-        setLoading(false);
-        return;
-      }
-
-      // Try immediate sign-in (works when email auto-confirm is on)
-      await supabase.auth.signInWithPassword({ email: authEmail, password });
-
-      // Verify role matches (defends against an existing employer account being reused).
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: roleRow } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        if (roleRow && roleRow.role !== 'worker') {
-          await supabase.auth.signOut();
-          setError(
-            `This account is already registered as a ${roleRow.role}. Please log in with the correct role.`
-          );
-          setLoading(false);
-          return;
-        }
-        await supabase.from('worker_profiles')
-          .upsert({ user_id: user.id, country, nationality: country } as any, { onConflict: 'user_id' });
-        await supabase.from('profiles')
-          .update({ mobile_verified: method === 'mobile' })
-          .eq('id', user.id);
-      }
-
+      await createWorkerAccount({ mobileVerified: true });
       toast.success('Welcome to SafeWorkGlobal! 🎉');
       navigate('/worker/trust', { replace: true });
-    } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError('');
+    setOtp('');
+    setLoading(true);
+    try {
+      const digits = mobile.replace(/\D/g, '');
+      await firebaseOtp.sendOtp(digits);
+      toast.success(`New code sent to +91 ${digits}`);
+    } catch (err: unknown) {
+      firebaseOtp.resetRecaptcha();
+      setError(err instanceof Error ? err.message : 'Failed to resend OTP');
     } finally {
       setLoading(false);
     }
@@ -189,6 +247,9 @@ export default function QuickWorkerSignup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-info/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Invisible reCAPTCHA host for Firebase Phone Auth */}
+        <div id="worker-recaptcha" />
+
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -204,7 +265,6 @@ export default function QuickWorkerSignup() {
           <p className="text-sm text-muted-foreground mt-1">Takes under 2 minutes • No agent fees</p>
         </div>
 
-        {/* Role indicator — makes it explicit which role you're signing up as */}
         <div className="mb-4 flex items-center justify-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
           <HardHat className="h-3.5 w-3.5" />
           Signing up as a Worker
@@ -228,12 +288,16 @@ export default function QuickWorkerSignup() {
                   disabled={loading}
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                   Continue with Google
+                  Continue with Google
                 </Button>
 
                 <div className="relative my-1">
-                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
-                  <div className="relative flex justify-center text-xs"><span className="bg-card px-2 text-muted-foreground">OR</span></div>
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-card px-2 text-muted-foreground">OR</span>
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -248,7 +312,13 @@ export default function QuickWorkerSignup() {
                   />
                 </div>
 
-                <Tabs value={method} onValueChange={(v) => { setMethod(v as Method); setError(''); }}>
+                <Tabs
+                  value={method}
+                  onValueChange={(v) => {
+                    setMethod(v as Method);
+                    setError('');
+                  }}
+                >
                   <TabsList className="grid grid-cols-2 w-full">
                     <TabsTrigger value="mobile" className="gap-1.5">
                       <Phone className="h-3.5 w-3.5" /> Mobile
@@ -265,15 +335,20 @@ export default function QuickWorkerSignup() {
                     <Input
                       id="mobile"
                       type="tel"
-                      placeholder="+91 98765 43210"
+                      placeholder="10-digit mobile number"
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
                       required
                       className="h-11"
                     />
                     <p className="text-xs text-muted-foreground">
-                      We'll send a verification code to confirm it's you
+                      We&apos;ll send an SMS verification code to confirm it&apos;s you
                     </p>
+                    {!firebaseOtp.isAvailable && (
+                      <p className="text-xs text-warning">
+                        SMS OTP needs Firebase Phone Auth keys. Until then, use Google signup.
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-1.5">
@@ -297,15 +372,18 @@ export default function QuickWorkerSignup() {
                       <SelectValue placeholder="Select your country" />
                     </SelectTrigger>
                     <SelectContent className="max-h-64">
-                      {NATIONALITIES.filter(c => c !== 'All Nationalities').map(c => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      {NATIONALITIES.filter((c) => c !== 'All Nationalities').map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <Button type="submit" className="w-full h-11 font-semibold">
-                  Continue
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
+                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {method === 'mobile' ? 'Send SMS code' : 'Create account'}
                 </Button>
 
                 <div className="flex items-center gap-2 text-xs text-success bg-success/5 border border-success/20 rounded-lg p-2.5">
@@ -315,7 +393,11 @@ export default function QuickWorkerSignup() {
 
                 <p className="text-xs text-center text-muted-foreground pt-1">
                   Already have an account?{' '}
-                  <button type="button" onClick={() => navigate('/worker/login')} className="text-primary font-medium hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/worker/login')}
+                    className="text-primary font-medium hover:underline"
+                  >
                     Sign in
                   </button>
                 </p>
@@ -325,12 +407,8 @@ export default function QuickWorkerSignup() {
             {step === 'otp' && (
               <form onSubmit={handleVerifyAndCreate} className="space-y-5">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Enter the 6-digit code sent to
-                  </p>
-                  <p className="font-semibold text-foreground mt-0.5">
-                    {method === 'mobile' ? mobile : email}
-                  </p>
+                  <p className="text-sm text-muted-foreground">Enter the 6-digit SMS code sent to</p>
+                  <p className="font-semibold text-foreground mt-0.5">+91 {mobile}</p>
                 </div>
 
                 <div className="flex justify-center">
@@ -347,17 +425,34 @@ export default function QuickWorkerSignup() {
                 </div>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Demo mode: any 6 digits will work
+                  Didn&apos;t get the code?{' '}
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                    className="text-primary font-medium hover:underline disabled:opacity-50"
+                  >
+                    Resend SMS
+                  </button>
                 </p>
 
-                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading || otp.length !== 6}>
+                <Button
+                  type="submit"
+                  className="w-full h-11 font-semibold"
+                  disabled={loading || otp.length !== 6}
+                >
                   {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Verify & create account
                 </Button>
 
                 <button
                   type="button"
-                  onClick={() => { setStep('form'); setOtp(''); setError(''); }}
+                  onClick={() => {
+                    setStep('form');
+                    setOtp('');
+                    setError('');
+                    firebaseOtp.resetRecaptcha();
+                  }}
                   className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   ← Change details

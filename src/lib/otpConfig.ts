@@ -1,4 +1,8 @@
-/** OTP channel for worker registration. Backend SMS is default (Fast2SMS/MSG91). */
+/**
+ * OTP channel for Phase-1 `/register` (Express).
+ * Live `/worker/quick-signup` uses Firebase Phone Auth via `isFirebaseConfigured()` —
+ * see QuickWorkerSignup — not this helper.
+ */
 export type OtpChannel = 'backend' | 'firebase';
 
 export function getOtpChannel(): OtpChannel {
