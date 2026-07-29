@@ -3306,6 +3306,7 @@ export type Database = {
       }
       worker_profiles: {
         Row: {
+          aadhaar_last4: string | null
           availability: string | null
           bio: string | null
           country: string | null
@@ -3323,11 +3324,15 @@ export type Database = {
           has_passport: boolean | null
           has_visa: boolean | null
           id: string
+          kyc_consent_at: string | null
+          kyc_status: string
+          kyc_submitted_at: string | null
           languages: string[] | null
           nationality: string | null
           onboarded_at: string | null
           onboarding_completed: boolean | null
           open_to_relocation: boolean | null
+          pan_number: string | null
           passport_number: string | null
           preferred_shift: string | null
           preferred_work_city: string | null
@@ -3349,6 +3354,7 @@ export type Database = {
           years_of_experience: number | null
         }
         Insert: {
+          aadhaar_last4?: string | null
           availability?: string | null
           bio?: string | null
           country?: string | null
@@ -3366,11 +3372,15 @@ export type Database = {
           has_passport?: boolean | null
           has_visa?: boolean | null
           id?: string
+          kyc_consent_at?: string | null
+          kyc_status?: string
+          kyc_submitted_at?: string | null
           languages?: string[] | null
           nationality?: string | null
           onboarded_at?: string | null
           onboarding_completed?: boolean | null
           open_to_relocation?: boolean | null
+          pan_number?: string | null
           passport_number?: string | null
           preferred_shift?: string | null
           preferred_work_city?: string | null
@@ -3392,6 +3402,7 @@ export type Database = {
           years_of_experience?: number | null
         }
         Update: {
+          aadhaar_last4?: string | null
           availability?: string | null
           bio?: string | null
           country?: string | null
@@ -3409,11 +3420,15 @@ export type Database = {
           has_passport?: boolean | null
           has_visa?: boolean | null
           id?: string
+          kyc_consent_at?: string | null
+          kyc_status?: string
+          kyc_submitted_at?: string | null
           languages?: string[] | null
           nationality?: string | null
           onboarded_at?: string | null
           onboarding_completed?: boolean | null
           open_to_relocation?: boolean | null
+          pan_number?: string | null
           passport_number?: string | null
           preferred_shift?: string | null
           preferred_work_city?: string | null
