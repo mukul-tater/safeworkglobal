@@ -17,7 +17,7 @@ export default function LspEntryPage() {
       const result = await processLspEntrySearchParams(searchParams);
       if (cancelled) return;
 
-      if (!result.ok) {
+      if (result.ok === false) {
         const reason = result.reason || 'missing_params';
         navigate(`/lsp/denied?reason=${encodeURIComponent(reason)}`, { replace: true });
         return;
