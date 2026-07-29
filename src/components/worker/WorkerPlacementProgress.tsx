@@ -1,71 +1,13 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  PLACEMENT_STEPS,
+  type PlacementStepId,
+  type PlacementStepStatus,
+} from "@/components/worker/placementJourney";
 
-export type PlacementStepStatus = "completed" | "current" | "waiting";
-
-export type PlacementStepId =
-  | "registration"
-  | "documents"
-  | "screening"
-  | "tech_interview"
-  | "trade_test"
-  | "skill_verified"
-  | "employer_matched"
-  | "interview_scheduled"
-  | "selected"
-  | "offer_letter"
-  | "visa"
-  | "ready_to_fly"
-  | "deployed";
-
-export const PLACEMENT_STEPS: {
-  id: PlacementStepId;
-  shortLabel: string;
-  fullLabel: string;
-}[] = [
-  { id: "registration", shortLabel: "Registration", fullLabel: "Registration Completed" },
-  { id: "documents", shortLabel: "Documents", fullLabel: "Documents Verified" },
-  { id: "screening", shortLabel: "Screening", fullLabel: "Basic Screening Passed" },
-  { id: "tech_interview", shortLabel: "Tech Interview", fullLabel: "Technical Interview Completed" },
-  { id: "trade_test", shortLabel: "Trade Test", fullLabel: "Trade Test Passed" },
-  { id: "skill_verified", shortLabel: "Skill Verified", fullLabel: "Skill Verified" },
-  { id: "employer_matched", shortLabel: "Employer Match", fullLabel: "Employer Matched" },
-  { id: "interview_scheduled", shortLabel: "Interview", fullLabel: "Interview Scheduled" },
-  { id: "selected", shortLabel: "Selected", fullLabel: "Selected" },
-  { id: "offer_letter", shortLabel: "Offer Letter", fullLabel: "Offer Letter Issued" },
-  { id: "visa", shortLabel: "Visa", fullLabel: "Visa Under Process" },
-  { id: "ready_to_fly", shortLabel: "Ready to Fly", fullLabel: "Ready to Fly" },
-  { id: "deployed", shortLabel: "Deployed", fullLabel: "Successfully Deployed" },
-];
-
-/** Map flags into a linear completed → current → waiting pipeline. */
-export function derivePlacementStatuses(
-  done: Partial<Record<PlacementStepId, boolean>>,
-): Record<PlacementStepId, PlacementStepStatus> {
-  const result = {} as Record<PlacementStepId, PlacementStepStatus>;
-  let locked = false;
-
-  for (const step of PLACEMENT_STEPS) {
-    if (!locked && done[step.id]) {
-      result[step.id] = "completed";
-      continue;
-    }
-    if (!locked) {
-      result[step.id] = "current";
-      locked = true;
-    } else {
-      result[step.id] = "waiting";
-    }
-  }
-
-  if (!locked) {
-    for (const step of PLACEMENT_STEPS) {
-      result[step.id] = "completed";
-    }
-  }
-
-  return result;
-}
+export type { PlacementStepId, PlacementStepStatus };
+export { PLACEMENT_STEPS, derivePlacementStatuses } from "@/components/worker/placementJourney";
 
 interface Props {
   statuses: Record<PlacementStepId, PlacementStepStatus>;
@@ -74,6 +16,7 @@ interface Props {
 
 /**
  * Sample B: two-row numbered dots with “x of 13 complete”.
+ * Steps match My Journey in the sidebar (same PLACEMENT_STEPS source).
  */
 export default function WorkerPlacementProgress({ statuses, className }: Props) {
   const completed = PLACEMENT_STEPS.filter((s) => statuses[s.id] === "completed").length;

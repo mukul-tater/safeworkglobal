@@ -5,9 +5,9 @@ import {
   derivePlacementStatuses,
   type PlacementStepId,
   type PlacementStepStatus,
-} from "@/components/worker/WorkerPlacementProgress";
+} from "@/components/worker/placementJourney";
 
-interface PlacementFlags {
+export interface PlacementFlags {
   registration: boolean;
   documents: boolean;
   screening: boolean;
@@ -40,9 +40,7 @@ const EMPTY_FLAGS: PlacementFlags = {
 };
 
 /**
- * Derives the 13-step home progress from profile, docs, applications,
- * interviews, offers, and formalities. Steps without pipeline data yet
- * stay waiting after the first incomplete gate.
+ * Shared 13-step placement progress for home tracker + My Journey sidebar.
  */
 export function useWorkerPlacementProgress(): {
   loading: boolean;
@@ -146,8 +144,6 @@ export function useWorkerPlacementProgress(): {
 
         const hasDocs = (docsRes.count ?? 0) > 0;
 
-        // Early pipeline steps (screening → skill) are not fully wired yet;
-        // mark documents as the live gate, then unlock later stages from hiring data.
         setFlags({
           registration: registered,
           documents: hasDocs,
