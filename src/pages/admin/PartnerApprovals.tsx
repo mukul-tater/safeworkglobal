@@ -101,7 +101,7 @@ export default function PartnerApprovals() {
         patch.info_request_message = reason;
       }
 
-      const { error } = await supabase.from("partner_profiles").update(patch).eq("id", partner.id);
+      const { error } = await supabase.from("partner_profiles").update(patch as never).eq("id", partner.id);
       if (error) throw error;
 
       await supabase.from("admin_actions").insert({
