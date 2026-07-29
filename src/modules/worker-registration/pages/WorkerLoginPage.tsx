@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Loader2, Lock, Mail, Phone } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import RegistrationLayout from '../components/RegistrationLayout';
 import FormField from '../components/FormField';
 import GoogleAuthButton, { AuthDivider } from '../components/GoogleAuthButton';
@@ -11,7 +11,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWorkerAuth } from '../context/WorkerAuthContext';
 import { workerLoginSchema, type WorkerLoginFormValues } from '../validation/registrationSchema';
 
@@ -25,15 +24,11 @@ export default function WorkerLoginPage() {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<WorkerLoginFormValues>({
     resolver: zodResolver(workerLoginSchema),
-    defaultValues: { loginMethod: 'mobile', mobileNumber: '', email: '', password: '' },
+    defaultValues: { email: '', password: '' },
   });
-
-  const loginMethod = watch('loginMethod');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -45,10 +40,8 @@ export default function WorkerLoginPage() {
     setError('');
     setSubmitting(true);
     const result = await login({
+      email: values.email.trim(),
       password: values.password,
-      ...(values.loginMethod === 'email'
-        ? { email: values.email?.trim() }
-        : { mobileNumber: values.mobileNumber }),
     });
     setSubmitting(false);
 
@@ -67,7 +60,7 @@ export default function WorkerLoginPage() {
       centered
       maxWidth="md"
       title="Worker Login"
-      subtitle="Sign in with Google, email, or mobile number to access jobs and track your application."
+      subtitle="Sign in with Google or email to access jobs and track your application."
       footer={
         <p className="pt-6 border-t border-border">
           New worker?{' '}
@@ -89,52 +82,19 @@ export default function WorkerLoginPage() {
           <GoogleAuthButton label="Sign in with Google" />
           <AuthDivider />
 
-          <Tabs
-            value={loginMethod}
-            onValueChange={(v) => setValue('loginMethod', v as 'mobile' | 'email')}
-            className="mb-5"
-          >
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="mobile" className="gap-1.5">
-                <Phone className="h-3.5 w-3.5" /> Mobile
-              </TabsTrigger>
-              <TabsTrigger value="email" className="gap-1.5">
-                <Mail className="h-3.5 w-3.5" /> Email
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-            {loginMethod === 'mobile' ? (
-              <FormField label="Mobile Number" error={errors.mobileNumber?.message} required>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="10-digit mobile number"
-                    className="h-11 pl-10"
-                    {...register('mobileNumber', {
-                      onChange: (e) => {
-                        e.target.value = e.target.value.replace(/\D/g, '');
-                      },
-                    })}
-                  />
-                </div>
-              </FormField>
-            ) : (
-              <FormField label="Email Address" error={errors.email?.message} required>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <Input
-                    type="email"
-                    placeholder="you@example.com"
-                    className="h-11 pl-10"
-                    {...register('email')}
-                  />
-                </div>
-              </FormField>
-            )}
+            <FormField label="Email Address" error={errors.email?.message} required>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  className="h-11 pl-10"
+                  autoComplete="email"
+                  {...register('email')}
+                />
+              </div>
+            </FormField>
 
             <FormField label="Password" error={errors.password?.message} required>
               <div className="relative">
@@ -143,6 +103,7 @@ export default function WorkerLoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Your password"
                   className="h-11 pl-10 pr-10"
+                  autoComplete="current-password"
                   {...register('password')}
                 />
                 <button

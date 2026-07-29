@@ -151,7 +151,7 @@ function WorkerStartActionPanel() {
               </div>
               <h2 className="text-xl font-semibold font-heading">Already registered?</h2>
               <p className="mt-1 text-sm text-muted-foreground leading-relaxed flex-1">
-                Sign in with mobile, email, or Google.
+                Sign in with email or Google.
               </p>
               <Button variant="outline" size="lg" className="mt-5 w-full h-12 text-base font-medium" asChild>
                 <Link to="/login">Sign in</Link>

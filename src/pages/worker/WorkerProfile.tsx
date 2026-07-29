@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, FileText, Trash2, User, Briefcase, FileCheck, Globe } from "lucide-react";
+import { Loader2, FileText, User, Briefcase, FileCheck, Globe } from "lucide-react";
 import AvatarUpload from "@/components/AvatarUpload";
 import WorkerSkillMedia from "@/components/worker/WorkerSkillMedia";
 import ChangePasswordCard from "@/components/ChangePasswordCard";
@@ -53,7 +53,6 @@ export default function WorkerProfile() {
   const [nationality, setNationality] = useState<string>("");
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [resumeName, setResumeName] = useState<string | null>(null);
-  const [uploadingResume, setUploadingResume] = useState(false);
   const [availability, setAvailability] = useState<string>("");
 
   const { register, handleSubmit, formState: { errors }, reset, setValue, watch, control } = useForm<WorkerProfileFormData>({
@@ -337,13 +336,13 @@ export default function WorkerProfile() {
 
         <ProfileSection
           title="Resume / CV"
-          description="Attach your resume when applying for jobs."
+          description="Resume upload is not available for workers. Use skill photos and videos instead."
           icon={FileText}
         >
           {resumeUrl ? (
-            <div className="flex items-center justify-between gap-3 p-4 bg-muted/40 rounded-lg border border-border/60">
+            <div className="flex items-center justify-between gap-3 p-4 bg-muted/40 rounded-lg border border-border/60 opacity-80">
               <div className="flex items-center gap-3 min-w-0">
-                <FileText className="h-5 w-5 text-primary shrink-0" />
+                <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div className="min-w-0">
                   <p className="font-medium text-sm truncate">{resumeName || 'Resume'}</p>
                   <a
@@ -356,82 +355,20 @@ export default function WorkerProfile() {
                   </a>
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    await supabase
-                      .from('worker_documents')
-                      .delete()
-                      .eq('worker_id', user.id)
-                      .eq('document_type', 'resume');
-                    setResumeUrl(null);
-                    setResumeName(null);
-                    toast.success('Resume removed');
-                  } catch {
-                    toast.error('Failed to remove resume');
-                  }
-                }}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
             </div>
           ) : null}
           <div className={resumeUrl ? 'mt-4' : ''}>
             <Input
               type="file"
               accept=".pdf,.doc,.docx"
-              disabled={uploadingResume}
-              className="cursor-pointer h-11"
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file || !user) return;
-                setUploadingResume(true);
-                try {
-                  const ext = file.name.split('.').pop();
-                  const path = `${user.id}/${Date.now()}-resume.${ext}`;
-                  const { error: upErr } = await supabase.storage
-                    .from('worker-documents')
-                    .upload(path, file);
-                  if (upErr) throw upErr;
-                  const { data: urlData } = supabase.storage
-                    .from('worker-documents')
-                    .getPublicUrl(path);
-
-                  await supabase
-                    .from('worker_documents')
-                    .delete()
-                    .eq('worker_id', user.id)
-                    .eq('document_type', 'resume');
-
-                  await supabase.from('worker_documents').insert({
-                    worker_id: user.id,
-                    document_type: 'resume',
-                    document_name: file.name,
-                    file_url: urlData.publicUrl,
-                    file_size: file.size,
-                  });
-
-                  setResumeUrl(urlData.publicUrl);
-                  setResumeName(file.name);
-                  toast.success('Resume uploaded successfully!');
-                } catch (err: unknown) {
-                  const message = err instanceof Error ? err.message : 'Failed to upload resume';
-                  toast.error(message);
-                } finally {
-                  setUploadingResume(false);
-                }
-              }}
+              disabled
+              className="h-11 cursor-not-allowed opacity-60"
+              aria-disabled="true"
+              title="Resume / CV upload is disabled"
             />
-            {uploadingResume && (
-              <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Uploading...
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">PDF, DOC, or DOCX (max 10MB)</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Upload is disabled. Add work photos or videos under Skills instead.
+            </p>
           </div>
         </ProfileSection>
 

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Camera, Loader2, Plus, Trash2, Video, Wrench } from 'lucide-react';
+import { ImagePlus, Loader2, Plus, Trash2, Video, Wrench } from 'lucide-react';
 import ProfileSection from '@/components/profile/ProfileSection';
 import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
 
@@ -279,11 +279,11 @@ export default function WorkerSkillMedia({ workerId }: WorkerSkillMediaProps) {
           </Button>
         </div>
 
+        {/* No capture= — lets workers pick from gallery (camera still available in the system picker). */}
         <input
           ref={photoInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -295,7 +295,6 @@ export default function WorkerSkillMedia({ workerId }: WorkerSkillMediaProps) {
           ref={videoInputRef}
           type="file"
           accept="video/*"
-          capture="environment"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -371,7 +370,7 @@ export default function WorkerSkillMedia({ workerId }: WorkerSkillMediaProps) {
                       photoInputRef.current?.click();
                     }}
                   >
-                    <Camera className="h-3.5 w-3.5 mr-1.5" />
+                    <ImagePlus className="h-3.5 w-3.5 mr-1.5" />
                     Photo
                   </Button>
                   <Button

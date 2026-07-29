@@ -198,7 +198,7 @@ export default function WorkerDocuments() {
                       id="documentName"
                       value={documentName}
                       onChange={(e) => setDocumentName(e.target.value)}
-                      placeholder="e.g., Resume 2024"
+                      placeholder="e.g., Passport front"
                     />
                   </div>
                   <div>
@@ -208,7 +208,6 @@ export default function WorkerDocuments() {
                         <SelectValue placeholder="Select document type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Resume">Resume/CV</SelectItem>
                         <SelectItem value="Certification">Certification</SelectItem>
                         <SelectItem value="Aadhar">Aadhar Card</SelectItem>
                         <SelectItem value="Passport">Passport</SelectItem>
@@ -218,7 +217,7 @@ export default function WorkerDocuments() {
                         <SelectItem value="Identity Card">Identity Card</SelectItem>
                         <SelectItem value="Work Permit">Work Permit / LMIA</SelectItem>
                         <SelectItem value="Educational Certificate">Educational Qualification Proof</SelectItem>
-                        <SelectItem value="Experience Certificate">Experience Certificate / Resume</SelectItem>
+                        <SelectItem value="Experience Certificate">Experience Certificate</SelectItem>
                         <SelectItem value="Professional License">Professional License</SelectItem>
                         <SelectItem value="Job Offer Letter">Job Offer Letter / Employment Contract</SelectItem>
                         <SelectItem value="Employer Sponsorship">Employer Sponsorship Documents</SelectItem>

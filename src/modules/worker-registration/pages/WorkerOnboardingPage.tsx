@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  Camera, CheckCircle2, ChevronLeft, ChevronRight, Globe, Loader2, MapPin,
+  CheckCircle2, ChevronLeft, ChevronRight, Globe, ImagePlus, Loader2, MapPin,
   Briefcase, Video, Trash2, User,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -710,13 +710,14 @@ export default function WorkerOnboardingPage() {
                 </Button>
               </div>
 
-              <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+              {/* No capture= — gallery selection enabled; camera remains in the system picker. */}
+              <input ref={photoInputRef} type="file" accept="image/*" className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) void handleMediaUpload(file, 'photo');
                   e.target.value = '';
                 }} />
-              <input ref={videoInputRef} type="file" accept="video/*" capture="environment" className="hidden"
+              <input ref={videoInputRef} type="file" accept="video/*" className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) void handleMediaUpload(file, 'video');
@@ -773,7 +774,7 @@ export default function WorkerOnboardingPage() {
                     <div className="flex flex-wrap gap-2">
                       <Button type="button" variant="outline" size="sm" disabled={uploading}
                         onClick={() => { setActiveProofId(proof.id); photoInputRef.current?.click(); }}>
-                        <Camera className="h-4 w-4 mr-1" /> Add Photo
+                        <ImagePlus className="h-4 w-4 mr-1" /> Add Photo
                       </Button>
                       <Button type="button" variant="outline" size="sm" disabled={uploading}
                         onClick={() => { setActiveProofId(proof.id); videoInputRef.current?.click(); }}>
