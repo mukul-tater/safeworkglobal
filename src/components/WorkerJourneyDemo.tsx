@@ -13,6 +13,8 @@ import {
   MapPin,
   ArrowRight,
   Building2,
+  CreditCard,
+  Plane,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,13 +87,28 @@ const STEPS: JourneyStep[] = [
       "UAE / GCC readiness",
     ],
     branch: {
-      pass: "Trade test required → book nearest center",
+      pass: "Trade test required → pay fee, then book nearest center",
       fail: "No trade test → direct employer interview",
     },
   },
   {
-    id: "trade-test",
+    id: "payment",
     number: 5,
+    title: "Trade Test Payment",
+    shortTitle: "Payment",
+    description:
+      "Pay the trade test fee securely to unlock booking at a SafeWork verified center.",
+    icon: CreditCard,
+    bullets: [
+      "Secure online payment",
+      "Trade test fee confirmation",
+      "Receipt for your records",
+      "Unlocks physical trade test booking",
+    ],
+  },
+  {
+    id: "trade-test",
+    number: 6,
     title: "Physical Trade Test",
     shortTitle: "Physical Trade Test",
     description: "Practical assessment at your nearest SafeWork verified trade test center.",
@@ -102,6 +119,21 @@ const STEPS: JourneyStep[] = [
       "Quality & productivity",
       "Time-based evaluation",
       "Digital skill scorecard",
+    ],
+  },
+  {
+    id: "travel",
+    number: 7,
+    title: "Travel — Visa & Flight",
+    shortTitle: "Travel",
+    description:
+      "After skill verification, we support your visa process and flight arrangements for deployment.",
+    icon: Plane,
+    bullets: [
+      "Visa documentation & filing support",
+      "Medical & compliance checks as required",
+      "Flight booking coordination",
+      "Pre-departure guidance",
     ],
   },
 ];
@@ -310,9 +342,13 @@ function StepDetail({
 }
 
 export default function WorkerJourneyDemo() {
-  const [activeId, setActiveId] = useState(STEPS[0].id);
-  const activeStep = STEPS.find((s) => s.id === activeId) ?? STEPS[0];
-  const activeIndex = STEPS.findIndex((s) => s.id === activeId);
+  const [activeId, setActiveId] = useState<string | null>(STEPS[0].id);
+  const activeStep = activeId ? STEPS.find((s) => s.id === activeId) ?? null : null;
+  const activeIndex = activeId ? STEPS.findIndex((s) => s.id === activeId) : -1;
+
+  const toggleStep = (stepId: string) => {
+    setActiveId((current) => (current === stepId ? null : stepId));
+  };
 
   return (
     <section className="py-14 sm:py-20 lg:py-28 relative overflow-hidden" id="worker-journey">
@@ -325,10 +361,10 @@ export default function WorkerJourneyDemo() {
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-heading mb-4 tracking-tight">
             From registration to{" "}
-            <span className="text-gradient">physical trade test</span>
+            <span className="text-gradient">travel-ready deployment</span>
           </h2>
           <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">
-            A quick demo of how a new worker gets screened and skill-tested on SafeWork Global.
+            A quick demo of how a new worker gets screened, skill-tested, and prepared for visa &amp; flight.
           </p>
         </div>
 
@@ -337,7 +373,7 @@ export default function WorkerJourneyDemo() {
           <ol className="space-y-0">
             {STEPS.map((step, index) => {
               const isActive = step.id === activeId;
-              const isDone = index < activeIndex;
+              const isDone = activeIndex >= 0 && index < activeIndex;
               return (
                 <li key={step.id} className="relative flex gap-3">
                   {index < STEPS.length - 1 && (
@@ -359,7 +395,8 @@ export default function WorkerJourneyDemo() {
                   >
                     <button
                       type="button"
-                      onClick={() => setActiveId(step.id)}
+                      onClick={() => toggleStep(step.id)}
+                      aria-expanded={isActive}
                       className="flex flex-1 items-start gap-3 text-left min-w-0"
                     >
                       <span
@@ -390,6 +427,16 @@ export default function WorkerJourneyDemo() {
                             Nearest verified center
                           </span>
                         )}
+                        {step.id === "payment" && (
+                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                            Unlock trade test booking
+                          </span>
+                        )}
+                        {step.id === "travel" && (
+                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                            Visa &amp; flight
+                          </span>
+                        )}
                       </span>
                     </button>
                     {step.id === "trade-test" && (
@@ -404,7 +451,15 @@ export default function WorkerJourneyDemo() {
           </ol>
 
           <div className="lg:sticky lg:top-24">
-            <StepDetail step={activeStep} />
+            {activeStep ? (
+              <StepDetail step={activeStep} />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Select a step to see details — click again to close.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -412,7 +467,7 @@ export default function WorkerJourneyDemo() {
         <div className="lg:hidden space-y-3">
           {STEPS.map((step, index) => {
             const isActive = step.id === activeId;
-            const isDone = index < activeIndex;
+            const isDone = activeIndex >= 0 && index < activeIndex;
             const Icon = step.icon;
 
             return (
@@ -428,7 +483,8 @@ export default function WorkerJourneyDemo() {
                 <div className="flex items-center gap-2 p-3.5">
                   <button
                     type="button"
-                    onClick={() => setActiveId(step.id)}
+                    onClick={() => toggleStep(step.id)}
+                    aria-expanded={isActive}
                     className="flex flex-1 items-center gap-3 text-left min-h-11 min-w-0"
                   >
                     <span
@@ -453,6 +509,16 @@ export default function WorkerJourneyDemo() {
                       {step.id === "trade-test" && (
                         <span className="block text-xs text-muted-foreground mt-0.5">
                           At your nearest trade test center
+                        </span>
+                      )}
+                      {step.id === "payment" && (
+                        <span className="block text-xs text-muted-foreground mt-0.5">
+                          Pay fee to unlock booking
+                        </span>
+                      )}
+                      {step.id === "travel" && (
+                        <span className="block text-xs text-muted-foreground mt-0.5">
+                          Visa &amp; flight arrangements
                         </span>
                       )}
                     </span>
