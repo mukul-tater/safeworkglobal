@@ -171,6 +171,24 @@ export default function JobDetail() {
     try {
       if (!user) return;
 
+      // Soft KYC gate — worker must have submitted or verified KYC
+      const { data: wp } = await supabase
+        .from('worker_profiles')
+        .select('kyc_status')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const kycStatus = (wp as any)?.kyc_status ?? 'not_started';
+      if (kycStatus !== 'submitted' && kycStatus !== 'verified') {
+        toast({
+          title: 'Identity verification required',
+          description: 'Please complete Step 4 (Identity/KYC) in onboarding before applying.',
+          variant: 'destructive',
+        });
+        setApplying(false);
+        navigate('/worker/onboarding');
+        return;
+      }
+
       const inserted = await withRetry(
         async () => {
           const { data, error } = await supabase
