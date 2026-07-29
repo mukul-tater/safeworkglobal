@@ -97,7 +97,15 @@ import {
 } from "./modules/worker-registration";
 import { useIsActiveModuleRoute } from "./modules/worker-registration/hooks/useIsWorkerRegistrationRoute";
 
-const qc = new QueryClient();
+const qc = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Avoid refetch flashes when switching tabs or resuming mobile Chrome.
+      refetchOnWindowFocus: false,
+      staleTime: 60_000,
+    },
+  },
+});
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   return (

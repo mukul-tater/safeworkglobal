@@ -1,5 +1,7 @@
 // Service worker disabled. This file self-unregisters and clears all caches
 // to ensure no stale content is served to clients that previously installed it.
+// Do NOT call clients.navigate() — that forced a full reload on every activate
+// (tab switch / mobile resume), which feels like the site keeps refreshing.
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -12,10 +14,6 @@ self.addEventListener('activate', (event) => {
     } catch (e) {}
     try {
       await self.registration.unregister();
-    } catch (e) {}
-    try {
-      const clientsList = await self.clients.matchAll({ type: 'window' });
-      clientsList.forEach((client) => client.navigate(client.url));
     } catch (e) {}
   })());
 });

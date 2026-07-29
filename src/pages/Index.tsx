@@ -19,8 +19,11 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const { loading, profileLoading, role, isAuthenticated } = useAuth();
-  const authResolving = loading || (isAuthenticated && profileLoading);
-  const isEmployer = role === "employer";
+  // Wait for role only on cold start. If role is already known, never blank
+  // the page when profileLoading flickers (tab focus / token refresh).
+  const waitingForRole = isAuthenticated && !role && (loading || profileLoading);
+  const isEmployer = !waitingForRole && role === "employer";
+  const showDefaultHome = !waitingForRole && role !== "employer";
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
@@ -28,7 +31,7 @@ const Index = () => {
 
       <HeroSection />
 
-      {!authResolving && isEmployer ? (
+      {isEmployer ? (
         <>
           <HomePlatformStats />
           <ScrollReveal>
@@ -38,7 +41,7 @@ const Index = () => {
             <EmployerHomeSections />
           </ScrollReveal>
         </>
-      ) : !authResolving ? (
+      ) : showDefaultHome ? (
         <>
           <HomePlatformStats />
 

@@ -180,35 +180,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, nextSession) => {
-        setSession(nextSession);
-
-        // Tab focus / silent refresh — keep current UI mounted.
+        // Silent token refresh — update tokens only, keep UI mounted.
         if (event === 'TOKEN_REFRESHED') {
+          if (nextSession) setSession(nextSession);
           if (nextSession?.user) setUser(nextSession.user);
           setLoading(false);
           return;
         }
 
-        const nextUser = nextSession?.user ?? null;
-        setUser(nextUser);
-
-        if (nextUser) {
-          const sameUser = loadedUserIdRef.current === nextUser.id;
-          // Same signed-in user (e.g. INITIAL_SESSION after getSession) — do not remount.
-          if (sameUser && event !== 'USER_UPDATED') {
-            setLoading(false);
-            return;
-          }
-          setTimeout(() => {
-            void loadUserData(nextUser, { force: event === 'USER_UPDATED' });
-          }, 0);
-        } else {
+        // Real logout only. Do not treat transient null sessions (tab resume /
+        // storage races) as sign-out — that blanks the homepage and remounts
+        // protected routes.
+        if (event === 'SIGNED_OUT') {
           loadedUserIdRef.current = null;
+          setSession(null);
+          setUser(null);
           setRole(null);
           setProfile(null);
           setHasResolvedRole(false);
+          setLoading(false);
+          return;
         }
 
+        if (!nextSession?.user) {
+          setLoading(false);
+          return;
+        }
+
+        setSession(nextSession);
+        setUser(nextSession.user);
+
+        const sameUser = loadedUserIdRef.current === nextSession.user.id;
+        // Same user after tab focus / INITIAL_SESSION / SIGNED_IN recovery.
+        if (sameUser && event !== 'USER_UPDATED') {
+          setLoading(false);
+          return;
+        }
+
+        setTimeout(() => {
+          void loadUserData(nextSession.user, { force: event === 'USER_UPDATED' });
+        }, 0);
         setLoading(false);
       }
     );

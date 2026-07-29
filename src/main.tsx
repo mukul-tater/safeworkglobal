@@ -3,7 +3,7 @@ import App from "./App.tsx";
 import "./index.css";
 
 // Aggressively unregister any existing service workers and clear caches
-// to prevent stale builds from being served.
+// to prevent stale builds / forced reloads from old SW activate handlers.
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     registrations.forEach((registration) => registration.unregister());
