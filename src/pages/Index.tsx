@@ -3,6 +3,7 @@ import HeroSection from "@/components/HeroSection";
 import HomePlatformStats from "@/components/HomePlatformStats";
 import WhySafeWork from "@/components/WhySafeWork";
 import AgentComparison from "@/components/AgentComparison";
+import WorkerJourneyDemo from "@/components/WorkerJourneyDemo";
 import SalaryProtectionSection from "@/components/SalaryProtectionSection";
 import GlobalDestinations from "@/components/GlobalDestinations";
 import HomeJobCategories from "@/components/HomeJobCategories";
@@ -47,6 +48,10 @@ const Index = () => {
 
           <ScrollReveal>
             <AgentComparison />
+          </ScrollReveal>
+
+          <ScrollReveal>
+            <WorkerJourneyDemo />
           </ScrollReveal>
 
           <ScrollReveal>
