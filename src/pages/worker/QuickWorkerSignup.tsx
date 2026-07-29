@@ -17,7 +17,11 @@ import { Loader2, Phone, Mail, ShieldCheck, CheckCircle2, ArrowLeft, HardHat } f
 import { NATIONALITIES } from '@/lib/constants';
 import { lovable } from '@/integrations/lovable/index';
 import { isValidIndianMobile } from '@/lib/validations/common';
-import { useFirebasePhoneOtp, WORKER_OTP_RECAPTCHA_BTN_ID } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
+import {
+  useFirebasePhoneOtp,
+  WORKER_OTP_RECAPTCHA_HOST_ID,
+  dismissRecaptchaWidgets,
+} from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 
@@ -69,6 +73,14 @@ export default function QuickWorkerSignup() {
       navigate('/worker/dashboard', { replace: true });
     }
   }, [isAuthenticated, role, navigate]);
+
+  // OTP step must not show leftover reCAPTCHA challenge UI
+  useEffect(() => {
+    if (step !== 'otp') return;
+    firebaseOtp.clearVerifierOnly();
+    dismissRecaptchaWidgets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when entering OTP step
+  }, [step]);
 
   const validate = (): string | null => {
     if (!name.trim()) return 'Please enter your name';
@@ -247,6 +259,13 @@ export default function QuickWorkerSignup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-info/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Off-screen host for invisible Firebase reCAPTCHA — never shown in layout */}
+        <div
+          id={WORKER_OTP_RECAPTCHA_HOST_ID}
+          className="pointer-events-none fixed left-[-9999px] top-0 h-0 w-0 overflow-hidden opacity-0"
+          aria-hidden="true"
+        />
+
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -387,12 +406,7 @@ export default function QuickWorkerSignup() {
                   </p>
                 </div>
 
-                <Button
-                  id={WORKER_OTP_RECAPTCHA_BTN_ID}
-                  type="submit"
-                  className="w-full h-11 font-semibold"
-                  disabled={loading}
-                >
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                   {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   {method === 'mobile' ? 'Send SMS code' : 'Create account'}
                 </Button>

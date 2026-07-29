@@ -35,48 +35,76 @@ function mapFirebaseAuthError(err: unknown): string {
   }
 }
 
-/** Invisible reCAPTCHA bound to the Send SMS button (no floating widget). */
-export const WORKER_OTP_RECAPTCHA_BTN_ID = 'worker-send-sms-btn';
+/** Off-screen host for invisible Firebase reCAPTCHA (never shown in the form). */
+export const WORKER_OTP_RECAPTCHA_HOST_ID = 'worker-recaptcha-host';
+
+/** Remove leftover challenge widgets so they don't float over the OTP step. */
+export function dismissRecaptchaWidgets() {
+  if (typeof document === 'undefined') return;
+
+  // Challenge / checkbox iframes (keep the small privacy badge)
+  document.querySelectorAll('iframe[src*="recaptcha"]').forEach((iframe) => {
+    const el = iframe as HTMLIFrameElement;
+    const title = (el.title || '').toLowerCase();
+    const isBadge = title.includes('badge') || el.offsetHeight < 80;
+    if (isBadge) return;
+    const wrap = el.closest('div');
+    if (wrap && wrap.id !== WORKER_OTP_RECAPTCHA_HOST_ID) {
+      wrap.remove();
+    } else {
+      el.remove();
+    }
+  });
+
+  document.querySelectorAll('.g-recaptcha').forEach((node) => {
+    if (node.id === WORKER_OTP_RECAPTCHA_HOST_ID) return;
+    node.remove();
+  });
+}
 
 export function useFirebasePhoneOtp() {
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
 
-  const resetRecaptcha = useCallback(() => {
+  const clearVerifierOnly = useCallback(() => {
     try {
       recaptchaRef.current?.clear();
     } catch {
-      /* ignore stale verifier */
+      /* ignore */
     }
     recaptchaRef.current = null;
-    confirmationRef.current = null;
+    const host = document.getElementById(WORKER_OTP_RECAPTCHA_HOST_ID);
+    if (host) host.innerHTML = '';
+    dismissRecaptchaWidgets();
   }, []);
 
-  const ensureRecaptcha = useCallback(async () => {
-    if (recaptchaRef.current) {
-      return recaptchaRef.current;
-    }
+  const resetRecaptcha = useCallback(() => {
+    clearVerifierOnly();
+    confirmationRef.current = null;
+  }, [clearVerifierOnly]);
 
-    const button = document.getElementById(WORKER_OTP_RECAPTCHA_BTN_ID);
-    if (!button) {
-      throw new Error('Send SMS button not ready. Refresh and try again.');
+  const ensureRecaptcha = useCallback(async () => {
+    const container = document.getElementById(WORKER_OTP_RECAPTCHA_HOST_ID);
+    if (!container) {
+      throw new Error('reCAPTCHA host missing. Refresh and try again.');
     }
+    container.innerHTML = '';
 
     const auth = getFirebaseAuth();
-    const verifier = new RecaptchaVerifier(auth, WORKER_OTP_RECAPTCHA_BTN_ID, {
+    const verifier = new RecaptchaVerifier(auth, WORKER_OTP_RECAPTCHA_HOST_ID, {
       size: 'invisible',
       callback: () => {
-        /* token ready — signInWithPhoneNumber continues */
+        /* solved */
       },
       'expired-callback': () => {
-        resetRecaptcha();
+        clearVerifierOnly();
       },
     });
 
     await verifier.render();
     recaptchaRef.current = verifier;
     return verifier;
-  }, [resetRecaptcha]);
+  }, [clearVerifierOnly]);
 
   const sendOtp = useCallback(
     async (mobileNumber: string) => {
@@ -84,20 +112,21 @@ export function useFirebasePhoneOtp() {
         throw new Error('Firebase is not configured');
       }
 
-      // Always recreate so a failed attempt does not leave a dead verifier
-      resetRecaptcha();
+      clearVerifierOnly();
       const auth = getFirebaseAuth();
       const verifier = await ensureRecaptcha();
       const phone = mobileNumber.startsWith('+') ? mobileNumber : `+91${mobileNumber}`;
 
       try {
         confirmationRef.current = await signInWithPhoneNumber(auth, phone, verifier);
+        // Keep confirmation; tear down widget UI so OTP step stays clean
+        clearVerifierOnly();
       } catch (err) {
         resetRecaptcha();
         throw new Error(mapFirebaseAuthError(err));
       }
     },
-    [ensureRecaptcha, resetRecaptcha]
+    [clearVerifierOnly, ensureRecaptcha, resetRecaptcha]
   );
 
   const verifyOtp = useCallback(
@@ -123,5 +152,7 @@ export function useFirebasePhoneOtp() {
     sendOtp,
     verifyOtp,
     resetRecaptcha,
+    clearVerifierOnly,
+    dismissRecaptchaWidgets,
   };
 }
