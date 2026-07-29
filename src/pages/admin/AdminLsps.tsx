@@ -141,7 +141,7 @@ export default function AdminLsps() {
         </div>
         <Button asChild variant="outline" size="sm">
           <Link to="/admin/lsp-docs">
-            <BookOpen className="h-4 w-4 mr-1" /> Developer docs
+            <BookOpen className="h-4 w-4 mr-1" /> Developer guide
           </Link>
         </Button>
       </div>

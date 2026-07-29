@@ -27,7 +27,7 @@ export const adminNavGroups: NavGroup[] = [
       { path: "/admin/partner-workers", icon: UserCog, label: "E-Mitra Workers" },
       { path: "/admin/partner-rewards", icon: IndianRupee, label: "Partner Rewards" },
       { path: "/admin/lsps", icon: Network, label: "Rajasthan LSPs" },
-      { path: "/admin/lsp-docs", icon: BookOpen, label: "LSP Developer Docs" },
+      { path: "/admin/lsp-docs", icon: BookOpen, label: "LSP Developer Guide" },
     ],
   },
   {

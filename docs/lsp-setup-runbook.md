@@ -1,6 +1,9 @@
 # LSP setup runbook — migrations & go-live
 
-Companion to the **admin-only** page `/admin/lsp-docs` (section 2). Use this from the repo when deploying LSP changes.
+**Audience:** SafeWork internal (founders / ops).  
+**Not for LSPs** — give partners `/admin/lsp-docs` sections 1–12 (Integration Kit).
+
+Companion to product kit at `/admin/lsp-docs`. Use this from the repo when deploying LSP changes.
 
 ## 1. Order of operations
 

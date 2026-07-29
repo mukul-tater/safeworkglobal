@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
-  BookOpen, Copy, CheckCircle2, ExternalLink, Shield, Network, ListOrdered, Code2,
+  BookOpen, Copy, CheckCircle2, ExternalLink, Shield, Network, Code2,
+  Building2, UserCog, Workflow,
 } from 'lucide-react';
 
 const ORIGIN = typeof window !== 'undefined' ? window.location.origin : 'https://safeworkglobal.com';
@@ -16,7 +17,7 @@ function CopyBlock({ title, code }: { title: string; code: string }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">{title}</p>
+        <p className="text-sm font-medium text-foreground">{title}</p>
         <Button
           type="button"
           size="sm"
@@ -47,59 +48,71 @@ function Section({
 }) {
   return (
     <section id={id} className="scroll-mt-24 space-y-3">
-      <h2 className="text-xl font-semibold border-b pb-2">{title}</h2>
+      <h2 className="text-xl font-semibold tracking-tight border-b pb-2">{title}</h2>
       <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">{children}</div>
     </section>
   );
 }
 
+function Sub({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2 pt-1">
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+}
+
 const TOC = [
-  { id: 'overview', label: '1. Overview' },
-  { id: 'deploy', label: '2. Deploy & migrations' },
-  { id: 'roles', label: '3. Roles & flow' },
-  { id: 'requirements', label: '4. Requirements from LSP' },
-  { id: 'onboarding', label: '5. SafeWork onboarding checklist' },
-  { id: 'integration', label: '6. Technical integration' },
-  { id: 'hmac', label: '7. HMAC launch URL' },
-  { id: 'onetime', label: '8. One-time token URL' },
-  { id: 'samples', label: '9. Code samples' },
-  { id: 'ux', label: '10. Icon & UX requirements' },
-  { id: 'security', label: '11. Security' },
-  { id: 'uat', label: '12. UAT / pilot acceptance' },
-  { id: 'support', label: '13. Ops & support' },
-  { id: 'troubleshoot', label: '14. Troubleshooting' },
+  { id: 'intro', label: 'Introduction' },
+  { id: 'audiences', label: 'Who should read this' },
+  { id: 'concepts', label: 'Core concepts' },
+  { id: 'architecture', label: 'Architecture' },
+  { id: 'admin-needs', label: 'What we need from an LSP' },
+  { id: 'credentials', label: 'Credentials & console' },
+  { id: 'integration', label: 'Integration guide' },
+  { id: 'launch-api', label: 'Launch URL contract' },
+  { id: 'samples', label: 'Code samples' },
+  { id: 'bridge', label: 'Building the bridge (devs)' },
+  { id: 'test', label: 'Test & go-live' },
+  { id: 'errors', label: 'Error reference' },
 ];
 
 export default function AdminLspDeveloperDocs() {
-  const [active, setActive] = useState('overview');
+  const [active, setActive] = useState('intro');
 
   const hmacNode = useMemo(
     () => `const crypto = require('crypto');
 
-// Issued once by SafeWork admin (Rotate secret / Create LSP). Never put in frontend JS.
-const LSP_CODE = 'RJ-CSC-01';
-const TOKEN_SECRET = process.env.SAFEWORK_LSP_SECRET;
+const LSP_CODE = process.env.SAFEWORK_LSP_CODE;       // e.g. RJ-CSC-01
+const TOKEN_SECRET = process.env.SAFEWORK_LSP_SECRET; // from SafeWork admin
+const ORIGIN = '${ORIGIN}';
 
-function buildLaunchUrl({ emitraId = '', mobile = '', ttlSeconds = 900 } = {}) {
-  const exp = Math.floor(Date.now() / 1000) + Math.min(ttlSeconds, 900);
+/**
+ * Call this on every SafeWork icon click (operator already authenticated on LSP portal).
+ */
+function buildSafeWorkLaunchUrl({ emitraId = '', mobile = '' } = {}) {
+  const exp = Math.floor(Date.now() / 1000) + 900; // max 15 minutes
   const nonce = crypto.randomBytes(16).toString('hex');
-  const payload = [LSP_CODE, exp, nonce, emitraId || '', mobile || ''].join('|');
-  const sig = crypto.createHmac('sha256', TOKEN_SECRET).update(payload, 'utf8').digest('hex');
+  const payload = [LSP_CODE, String(exp), nonce, emitraId || '', mobile || ''].join('|');
+  const sig = crypto
+    .createHmac('sha256', TOKEN_SECRET)
+    .update(payload, 'utf8')
+    .digest('hex');
 
-  const q = new URLSearchParams({
-    lsp: LSP_CODE,
-    exp: String(exp),
-    nonce,
-    sig,
-  });
+  const q = new URLSearchParams({ lsp: LSP_CODE, exp: String(exp), nonce, sig });
   if (emitraId) q.set('emitra_id', emitraId);
   if (mobile) q.set('mobile', mobile);
-
-  return \`${ORIGIN}/lsp/entry?\${q.toString()}\`;
+  return \`\${ORIGIN}/lsp/entry?\${q.toString()}\`;
 }
 
-// Use when operator clicks the SafeWork icon:
-// res.redirect(buildLaunchUrl({ emitraId, mobile }));
+// Express example:
+// app.get('/api/safework/launch', requireOperatorAuth, (req, res) => {
+//   res.redirect(302, buildSafeWorkLaunchUrl({
+//     emitraId: req.operator.emitraId,
+//     mobile: req.operator.mobile,
+//   }));
+// });
 `,
     [],
   );
@@ -108,12 +121,12 @@ function buildLaunchUrl({ emitraId = '', mobile = '', ttlSeconds = 900 } = {}) {
     () => `import hmac, hashlib, os, secrets, time
 from urllib.parse import urlencode
 
-LSP_CODE = "RJ-CSC-01"
-TOKEN_SECRET = os.environ["SAFEWORK_LSP_SECRET"]  # server-side only
+LSP_CODE = os.environ["SAFEWORK_LSP_CODE"]
+TOKEN_SECRET = os.environ["SAFEWORK_LSP_SECRET"]
 ORIGIN = "${ORIGIN}"
 
-def build_launch_url(emitra_id: str = "", mobile: str = "", ttl_seconds: int = 900) -> str:
-    exp = int(time.time()) + min(ttl_seconds, 900)
+def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
+    exp = int(time.time()) + 900
     nonce = secrets.token_hex(16)
     payload = f"{LSP_CODE}|{exp}|{nonce}|{emitra_id or ''}|{mobile or ''}"
     sig = hmac.new(TOKEN_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
@@ -128,14 +141,11 @@ def build_launch_url(emitra_id: str = "", mobile: str = "", ttl_seconds: int = 9
   );
 
   const htmlIcon = useMemo(
-    () => `<!-- LSP portal: SafeWork app tile. Always open a *fresh* signed URL from your backend. -->
-<a href="/api/safework/launch" target="_blank" rel="noopener noreferrer"
-   style="display:inline-flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none">
-  <img src="${ORIGIN}/favicon.ico" alt="SafeWork Global" width="64" height="64" />
+    () => `<!-- LSP portal UI: tile always hits YOUR backend, never a static signed SafeWork URL -->
+<a href="/api/safework/launch" target="_blank" rel="noopener noreferrer">
+  <img src="${ORIGIN}/favicon.ico" width="64" height="64" alt="SafeWork Global" />
   <span>SafeWork Global</span>
 </a>
-
-<!-- Backend /api/safework/launch should 302 to the HMAC or one-time URL (never hardcode sig). -->
 `,
     [],
   );
@@ -147,48 +157,79 @@ def build_launch_url(emitra_id: str = "", mobile: str = "", ttl_seconds: int = 9
       portalName="Admin Panel"
       profileMenuItems={adminProfileMenu}
     >
-      <div className="max-w-5xl space-y-6 pb-16">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <BookOpen className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl md:text-3xl font-bold">LSP Integration — Developer Guide</h1>
-            </div>
-            <p className="text-sm text-muted-foreground max-w-2xl">
-              Internal admin-only documentation for partnering with Rajasthan LSPs. Use this when onboarding
-              a new LSP company that will show the SafeWork icon on their platform.
-            </p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              <Badge variant="secondary">Admin only</Badge>
-              <Badge variant="outline">v1 · HMAC + one-time token</Badge>
-              <Badge variant="outline">E-Mitra operators</Badge>
-            </div>
-          </div>
+      <div className="max-w-5xl space-y-8 pb-16">
+        {/* Hero — Razorpay-style product docs feel */}
+        <header className="space-y-4 border-b pb-6">
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/admin/lsps">
-                <Network className="h-4 w-4 mr-1" /> Manage LSPs
-              </Link>
-            </Button>
-            <Button asChild size="sm">
-              <a href="#deploy">
-                <ListOrdered className="h-4 w-4 mr-1" /> Deploy steps
-              </a>
-            </Button>
-            <Button asChild variant="secondary" size="sm">
-              <a href="#integration">
-                <Code2 className="h-4 w-4 mr-1" /> Integration
-              </a>
-            </Button>
+            <Badge>Private docs</Badge>
+            <Badge variant="outline">Admin · LSP · Developer</Badge>
+            <Badge variant="secondary">v1</Badge>
           </div>
-        </div>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div className="space-y-2 max-w-2xl">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-7 w-7 text-primary" />
+                <h1 className="text-3xl font-bold tracking-tight">SafeWork LSP Developer Guide</h1>
+              </div>
+              <p className="text-muted-foreground text-base leading-relaxed">
+                Platform documentation for integrating Rajasthan LSP portals with SafeWork Global —
+                the same role a Razorpay / Stripe developer guide plays for payments. Use it to
+                onboard an LSP, understand what we need from them, and build the technical bridge.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 shrink-0">
+              <Button asChild>
+                <a href="#integration">
+                  <Code2 className="h-4 w-4 mr-1" /> Start integrating
+                </a>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/admin/lsps">
+                  <Network className="h-4 w-4 mr-1" /> LSP console
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <Card>
+          <CardContent className="p-4 md:p-5 grid sm:grid-cols-3 gap-4">
+            <div className="flex gap-3">
+              <UserCog className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">SafeWork admin</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Know what to collect from an LSP and how to issue credentials.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Building2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">LSP provider</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  See our structure and implement the signed launch from your portal.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Workflow className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">New developer</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Build / maintain the bridge between SafeWork and each new LSP.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="border-border/60">
           <CardContent className="p-4 md:p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
               On this page
             </p>
-            <nav className="grid sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+            <nav className="grid sm:grid-cols-2 lg:grid-cols-3 gap-1">
               {TOC.map((item) => (
                 <a
                   key={item.id}
@@ -205,302 +246,307 @@ def build_launch_url(emitra_id: str = "", mobile: str = "", ttl_seconds: int = 9
           </CardContent>
         </Card>
 
-        <Section id="overview" title="1. Overview">
+        <Section id="intro" title="Introduction">
           <p className="text-foreground">
-            An <strong>LSP (Local Service Provider / aggregator)</strong> is a Rajasthan company whose portal
-            lists apps for e-Mitra / CSC operators. SafeWork appears as an icon on their platform. When an
-            operator clicks it, they are sent into SafeWork with a <strong>trusted launch</strong>, then
-            complete normal partner login + identity verification.
+            An <strong>LSP (Local Service Provider)</strong> is a Rajasthan company whose software portal
+            already reaches e-Mitra / CSC operators. SafeWork appears on that portal as an app icon.
+            When an operator clicks it, they enter SafeWork through a <strong>trusted launch</strong>,
+            then use the normal E-Mitra partner experience (login, verify, register workers).
           </p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>LSP does <strong>not</strong> replace E-Mitra registration — they are the distribution channel.</li>
-            <li>SafeWork remains the system of record for partners, workers, and placements.</li>
-            <li>Every launch is attributed to that LSP (`source_lsp_id`) for reporting and commercials.</li>
-          </ul>
-        </Section>
-
-        <Section id="deploy" title="2. Deploy & run migrations (do this first)">
-          <p className="text-foreground font-medium">
-            Frontend routes alone are not enough. Without the SQL migration, admin LSP pages and{' '}
-            <code>/lsp/entry</code> RPCs will fail.
-          </p>
-
-          <p className="text-foreground font-medium pt-1">A. What changed in the repo</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>
-              Migration:{' '}
-              <code className="text-foreground">supabase/migrations/20260729100000_lsp_partners.sql</code>
-            </li>
-            <li>
-              App routes: <code className="text-foreground">/lsp/entry</code>,{' '}
-              <code className="text-foreground">/lsp/verify</code>,{' '}
-              <code className="text-foreground">/lsp/denied</code>,{' '}
-              <code className="text-foreground">/admin/lsps</code>,{' '}
-              <code className="text-foreground">/admin/lsp-docs</code>
-            </li>
-            <li>
-              Module: <code className="text-foreground">src/modules/lsp/*</code> + E-Mitra login/register attribution
-            </li>
-            <li>
-              Spec: <code className="text-foreground">docs/lsp-rajasthan-entry.md</code>, runbook{' '}
-              <code className="text-foreground">docs/lsp-setup-runbook.md</code>
-            </li>
-          </ul>
-
-          <p className="text-foreground font-medium pt-2">B. Apply the database migration (required)</p>
           <p>
-            Project ID: <code className="text-foreground">etpiadoqryvtlpmiuxia</code>. Prefer the Dashboard SQL
-            editor if you are on Lovable Cloud / do not have CLI linked.
-          </p>
-          <ol className="list-decimal pl-5 space-y-2 text-foreground">
-            <li>
-              Open{' '}
-              <a
-                className="text-primary underline"
-                href="https://supabase.com/dashboard/project/etpiadoqryvtlpmiuxia/sql/new"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Supabase → SQL Editor
-              </a>
-              .
-            </li>
-            <li>
-              Paste the full contents of{' '}
-              <code>supabase/migrations/20260729100000_lsp_partners.sql</code> and click <strong>Run</strong>.
-            </li>
-            <li>Confirm success (no errors). Re-running is mostly safe (`IF NOT EXISTS` / `ON CONFLICT`).</li>
-          </ol>
-
-          <CopyBlock
-            title="Optional — Supabase CLI (if project is linked)"
-            code={`# From repo root
-npx supabase login
-npx supabase link --project-ref etpiadoqryvtlpmiuxia
-npx supabase db push
-
-# Or apply one file:
-# npx supabase db execute -f supabase/migrations/20260729100000_lsp_partners.sql`}
-          />
-
-          <CopyBlock
-            title="Verify migration in SQL Editor"
-            code={`-- Tables
-select code, name, status from public.lsp_partners order by code;
-
--- RPCs exist
-select proname from pg_proc
-where proname in (
-  'verify_lsp_launch',
-  'consume_lsp_launch_token',
-  'issue_lsp_launch_params',
-  'issue_lsp_one_time_token',
-  'admin_create_lsp',
-  'admin_rotate_lsp_secret',
-  'admin_set_lsp_status',
-  'bind_partner_to_lsp',
-  'resolve_active_lsp_id'
-)
-order by 1;
-
--- New columns
-select column_name from information_schema.columns
-where table_schema = 'public'
-  and table_name in ('partner_profiles', 'partner_workers')
-  and column_name in ('source_lsp_id', 'lsp_verified_at');`}
-          />
-
-          <p className="text-foreground font-medium pt-2">C. Deploy the frontend</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>
-              <strong>Local:</strong> <code className="text-foreground">npm i && npm run dev</code> — open{' '}
-              <code className="text-foreground">/admin/login</code> then{' '}
-              <code className="text-foreground">/admin/lsps</code>.
-            </li>
-            <li>
-              <strong>Production / Lovable:</strong> commit &amp; push this branch (or publish from Lovable). No new{' '}
-              <code className="text-foreground">VITE_*</code> env vars are required for LSP — secrets live in Postgres,
-              not in <code>.env</code>.
-            </li>
-            <li>
-              Existing <code className="text-foreground">VITE_SUPABASE_URL</code> / publishable key must point at the
-              same project where you ran the migration.
-            </li>
-          </ul>
-
-          <p className="text-foreground font-medium pt-2">D. First smoke test after migrate</p>
-          <ol className="list-decimal pl-5 space-y-1 text-foreground">
-            <li>Admin login → <Link className="text-primary underline" to="/admin/lsps">Rajasthan LSPs</Link>.</li>
-            <li>You should see seed rows <code>RJ-CSC-01</code> and <code>RJ-EMITRA-01</code> (or create a new LSP).</li>
-            <li>Click <strong>One-time URL</strong> → open the copied link in a private window.</li>
-            <li>Expect redirect to partner login, then <code>/lsp/verify</code> after login.</li>
-            <li>If admin page is empty / RPC errors → migration not applied or wrong Supabase project.</li>
-          </ol>
-
-          <p className="text-foreground font-medium pt-2">E. What you give the LSP after migrate</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li><code className="text-foreground">lsp</code> code (e.g. <code>RJ-CSC-01</code>)</li>
-            <li><code className="text-foreground">TOKEN_SECRET</code> (from Create / Rotate — shown once)</li>
-            <li>Entry base URL: <code className="text-foreground">{ORIGIN}/lsp/entry</code></li>
-            <li>Sections 7–9 of this guide (HMAC / samples) — or export as PDF for their engineers</li>
-          </ul>
-
-          <p className="text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-md p-3">
-            Seeded LSP secrets are random and <strong>not</strong> printed anywhere. Use{' '}
-            <strong>Rotate secret</strong> on <Link className="underline" to="/admin/lsps">/admin/lsps</Link> before
-            sharing credentials with a real Rajasthan LSP, then store the new secret securely.
+            This guide is <strong className="text-foreground">private</strong> (admin-authenticated). It is
+            not a public marketing page. Share relevant sections with LSP engineering under NDA / partnership.
           </p>
         </Section>
 
-        <Section id="roles" title="3. Roles & end-to-end flow">
-          <div className="rounded-lg border bg-muted/40 p-4 font-mono text-xs text-foreground whitespace-pre overflow-x-auto">
-{`LSP portal (Rajasthan)
-   └─ SafeWork icon click
-        └─ Backend builds signed URL (HMAC or one-time token)
-             └─ GET ${ORIGIN}/lsp/entry?...
-                  ├─ Validate signature / token (Supabase RPC)
-                  ├─ Store LSP session (cookie + sessionStorage, 24h)
-                  └─ Redirect → /emitra/login?next=/lsp/verify
-                       └─ Partner login (existing)
-                            └─ /lsp/verify (E-Mitra ID + OTP)
-                                 ├─ Approved → /emitra/dashboard
-                                 ├─ New → /emitra/register?source_lsp=CODE
-                                 └─ Pending/rejected → blocked`}
+        <Section id="audiences" title="Who should read this">
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-muted/60 text-foreground">
+                <tr>
+                  <th className="p-3 font-medium">Reader</th>
+                  <th className="p-3 font-medium">Goal</th>
+                  <th className="p-3 font-medium">Focus sections</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                <tr>
+                  <td className="p-3 text-foreground font-medium">SafeWork admin</td>
+                  <td className="p-3">Partner with an LSP; know requirements; issue codes/secrets</td>
+                  <td className="p-3">Concepts · What we need · Credentials · Test</td>
+                </tr>
+                <tr>
+                  <td className="p-3 text-foreground font-medium">LSP provider</td>
+                  <td className="p-3">Understand SafeWork structure; ship icon + launch API</td>
+                  <td className="p-3">Architecture · Integration · Launch URL · Samples</td>
+                </tr>
+                <tr>
+                  <td className="p-3 text-foreground font-medium">SafeWork developer</td>
+                  <td className="p-3">Wire a new LSP into our platform end-to-end</td>
+                  <td className="p-3">Architecture · Bridge · Credentials · Errors</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <ul className="list-disc pl-5 space-y-1">
-            <li><strong>LSP company</strong> — hosts the icon; signs launches; commercial partner.</li>
-            <li><strong>E-Mitra / CSC operator</strong> — logs into SafeWork; registers workers.</li>
-            <li><strong>SafeWork admin</strong> — creates LSP in <Link className="text-primary underline" to="/admin/lsps">Rajasthan LSPs</Link>, issues secrets, suspends if needed.</li>
+        </Section>
+
+        <Section id="concepts" title="Core concepts">
+          <ul className="list-disc pl-5 space-y-2">
+            <li>
+              <strong className="text-foreground">LSP</strong> — distribution channel (their portal + operators).
+              Does not replace SafeWork worker/partner data.
+            </li>
+            <li>
+              <strong className="text-foreground">E-Mitra partner</strong> — operator who registers workers inside
+              SafeWork after launch + login + verify.
+            </li>
+            <li>
+              <strong className="text-foreground">Trusted launch</strong> — short-lived HMAC (or one-time token)
+              proving the click came from an approved LSP.
+            </li>
+            <li>
+              <strong className="text-foreground">Attribution</strong> — <code>source_lsp_id</code> on partner /
+              worker records for reporting and commercials.
+            </li>
           </ul>
         </Section>
 
-        <Section id="requirements" title="4. Requirements from the LSP (collect before go-live)">
-          <p className="text-foreground font-medium">Commercial & legal</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Registered company name, GST (if any), authorized signatory, state (Rajasthan).</li>
-            <li>Primary ops contact: name, mobile, email (for incidents & URL issues).</li>
-            <li>Contract / MoU: exclusivity, fee model, data processing roles, SLA.</li>
-            <li>Districts / blocks they cover (for reporting).</li>
-          </ul>
-          <p className="text-foreground font-medium pt-2">Technical capability</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li><strong>Server-side URL generation</strong> — they must call HMAC signing or request one-time tokens from their backend. Static unsigned `?lsp=CODE` links are not accepted in production.</li>
-            <li>Ability to store <code className="text-foreground">TOKEN_SECRET</code> in env / secrets manager (never in mobile app or browser JS).</li>
-            <li>HTTPS portal; confirm production + staging hostnames.</li>
-            <li>Who clicks the icon: <strong>e-Mitra operator only</strong> (v1). Confirm they will not send citizens/workers to this entry.</li>
-            <li>Optional but preferred: can they pass operator <code className="text-foreground">emitra_id</code> and <code className="text-foreground">mobile</code> when launching?</li>
-            <li>Icon placement: which screen, desktop vs kiosk, deep-link vs new tab.</li>
-          </ul>
-          <p className="text-foreground font-medium pt-2">Deliverables LSP must provide to SafeWork</p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Staging + production portal URLs.</li>
-            <li>Screenshot of SafeWork icon placement.</li>
-            <li>2–3 pilot operator accounts (mobile + E-Mitra ID) already approved or ready to apply.</li>
-            <li>Escalation contact for failed launches within SLA (e.g. 4 business hours).</li>
-          </ul>
+        <Section id="architecture" title="Architecture">
+          <p className="text-foreground font-medium">High-level flow</p>
+          <div className="rounded-lg border bg-muted/40 p-4 font-mono text-[11px] md:text-xs text-foreground whitespace-pre overflow-x-auto leading-relaxed">
+{`┌─────────────────────┐         signed URL          ┌──────────────────────────┐
+│  LSP portal         │  ─────────────────────────► │  SafeWork Global         │
+│  (Rajasthan)        │     /lsp/entry?lsp&sig…     │                          │
+│  • SafeWork icon    │                             │  1. Validate launch      │
+│  • Operator session │                             │  2. Partner login        │
+│  • Launch API       │                             │  3. /lsp/verify          │
+└─────────────────────┘                             │  4. E-Mitra dashboard    │
+                                                    │  5. Attribute to LSP     │
+                                                    └──────────────────────────┘`}
+          </div>
+          <Sub title="SafeWork surfaces involved">
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                <code className="text-foreground">/lsp/entry</code> — public entry; validates launch
+              </li>
+              <li>
+                <code className="text-foreground">/emitra/login</code> — existing partner auth (
+                <code>?next=/lsp/verify</code>)
+              </li>
+              <li>
+                <code className="text-foreground">/lsp/verify</code> — E-Mitra ID + OTP; binds LSP
+              </li>
+              <li>
+                <code className="text-foreground">/emitra/*</code> — partner product (workers, rewards, …)
+              </li>
+              <li>
+                <code className="text-foreground">/admin/lsps</code> — issue / suspend LSPs (SafeWork only)
+              </li>
+            </ul>
+          </Sub>
         </Section>
 
-        <Section id="onboarding" title="5. SafeWork internal onboarding checklist">
+        <Section id="admin-needs" title="What we need from an LSP (SafeWork admin checklist)">
+          <p>
+            Before creating credentials, confirm the partnership can deliver a real integration — not only a
+            logo on a slide.
+          </p>
+          <Sub title="Commercial / ops">
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Legal company name, authorized signatory, state (Rajasthan)</li>
+              <li>Primary technical + ops contacts (name, mobile, email)</li>
+              <li>Districts / coverage for reporting</li>
+              <li>MoU terms: fee model, data roles, exclusivity if any</li>
+            </ul>
+          </Sub>
+          <Sub title="Technical capability">
+            <ul className="list-disc pl-5 space-y-1">
+              <li>HTTPS portal with a place for a SafeWork app icon</li>
+              <li>
+                Ability to run a <strong className="text-foreground">server-side</strong> launch endpoint
+                (HMAC signing or consume one-time tokens)
+              </li>
+              <li>Secret storage (env / vault) — not client JS</li>
+              <li>
+                Audience = <strong className="text-foreground">e-Mitra operators only</strong> (v1)
+              </li>
+              <li>Optional: can pass operator <code>emitra_id</code> + <code>mobile</code> on launch</li>
+            </ul>
+          </Sub>
+          <Sub title="Go-live deliverables from LSP">
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Staging + production portal URLs</li>
+              <li>Screenshot of icon placement</li>
+              <li>2–3 pilot operators (mobile + E-Mitra ID)</li>
+              <li>Escalation contact for launch failures during pilot</li>
+            </ul>
+          </Sub>
+        </Section>
+
+        <Section id="credentials" title="Credentials & console">
+          <p>
+            SafeWork admin creates the LSP in{' '}
+            <Link className="text-primary underline" to="/admin/lsps">
+              Rajasthan LSPs
+            </Link>
+            . Share over a secure channel only:
+          </p>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-muted/60 text-foreground">
+                <tr>
+                  <th className="p-3">Item</th>
+                  <th className="p-3">Example</th>
+                  <th className="p-3">Notes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                <tr>
+                  <td className="p-3 font-mono text-foreground">LSP_CODE</td>
+                  <td className="p-3 font-mono">RJ-CSC-01</td>
+                  <td className="p-3">Public in URLs; identifies the LSP</td>
+                </tr>
+                <tr>
+                  <td className="p-3 font-mono text-foreground">TOKEN_SECRET</td>
+                  <td className="p-3">hex string</td>
+                  <td className="p-3">Shown once; rotate if leaked</td>
+                </tr>
+                <tr>
+                  <td className="p-3 font-mono text-foreground">Entry base</td>
+                  <td className="p-3 font-mono text-xs">{ORIGIN}/lsp/entry</td>
+                  <td className="p-3">All launches hit this path</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Console also generates test <strong className="text-foreground">HMAC</strong> and{' '}
+            <strong className="text-foreground">one-time</strong> URLs for UAT without LSP code yet.
+          </p>
+        </Section>
+
+        <Section id="integration" title="Integration guide (LSP provider)">
+          <p className="text-foreground font-medium">Minimum viable integration</p>
           <ol className="list-decimal pl-5 space-y-2 text-foreground">
-            <li>Confirm MoU + contacts (section 3).</li>
-            <li>Admin → <Link className="text-primary underline" to="/admin/lsps">Rajasthan LSPs</Link> → Create LSP → copy <strong>token secret once</strong> → send securely to LSP (password manager / encrypted channel).</li>
-            <li>Set status <Badge className="mx-1" variant="default">active</Badge>.</li>
-            <li>Generate a test <strong>HMAC URL</strong> or <strong>One-time URL</strong> from the same admin page; verify entry → login → verify → dashboard.</li>
-            <li>Share this Developer Guide link (admin-only) with SafeWork engineers; share a redacted “LSP Partner Kit” (sections 5–9 + secret) with the LSP tech team.</li>
-            <li>Pilot 1–2 weeks; then enable commercial reporting by <code>source_lsp_id</code>.</li>
+            <li>Add a “SafeWork Global” icon on the operator home / apps grid.</li>
+            <li>
+              Icon → <code>GET /api/safework/launch</code> (or equivalent) on <em>your</em> backend, behind
+              operator auth.
+            </li>
+            <li>Backend builds a fresh HMAC launch URL (see Launch URL contract).</li>
+            <li>
+              Respond <code>302</code> to that URL (prefer <code>target="_blank"</code> from the UI).
+            </li>
+            <li>
+              Operator completes SafeWork login + verify; then uses E-Mitra features as usual.
+            </li>
           </ol>
-        </Section>
-
-        <Section id="integration" title="6. Technical integration (what LSP builds)">
           <p>
-            Minimum integration is one backend endpoint that redirects the authenticated operator to SafeWork:
-          </p>
-          <ul className="list-disc pl-5 space-y-1">
-            <li><code className="text-foreground">GET /api/safework/launch</code> (or equivalent) on the LSP portal.</li>
-            <li>Endpoint must be authenticated as the operator on the LSP side.</li>
-            <li>Response: <code className="text-foreground">302</code> to SafeWork <code className="text-foreground">/lsp/entry</code> with either HMAC params or a one-time <code className="text-foreground">token</code>.</li>
-            <li>Icon / tile simply links to that LSP endpoint — not directly to a hardcoded SafeWork URL with a fixed signature.</li>
-          </ul>
-          <p className="text-foreground pt-1">
-            SafeWork entry URL base: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">{ORIGIN}/lsp/entry</code>
+            Do not embed a pre-signed SafeWork URL in static HTML — signatures expire within 15 minutes.
           </p>
         </Section>
 
-        <Section id="hmac" title="7. Option A — HMAC launch URL (recommended)">
+        <Section id="launch-api" title="Launch URL contract">
+          <Sub title="Option A — HMAC (production)">
+            <p>
+              Target: <code className="text-foreground">{ORIGIN}/lsp/entry</code>
+            </p>
+            <p className="text-foreground">
+              Signing payload (UTF-8), five fields joined by <code>|</code>:
+            </p>
+            <pre className="text-xs bg-muted p-3 rounded-md text-foreground overflow-x-auto">
+{`LSP_CODE|exp|nonce|emitra_id|mobile`}
+            </pre>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                <code>exp</code> — Unix seconds; must be in the future and ≤ now + 900
+              </li>
+              <li>
+                <code>nonce</code> — unique per click
+              </li>
+              <li>
+                <code>emitra_id</code> / <code>mobile</code> — optional; empty string in payload if unused;
+                if set, also pass as query params
+              </li>
+              <li>
+                <code>sig</code> — hex <code>HMAC-SHA256(payload, TOKEN_SECRET)</code>
+              </li>
+            </ul>
+            <pre className="text-xs bg-muted p-3 rounded-md text-foreground overflow-x-auto break-all">
+{`${ORIGIN}/lsp/entry?lsp=RJ-CSC-01&exp=…&nonce=…&sig=…&emitra_id=…&mobile=…`}
+            </pre>
+          </Sub>
+          <Sub title="Option B — One-time token (pilot)">
+            <pre className="text-xs bg-muted p-3 rounded-md text-foreground overflow-x-auto">
+{`${ORIGIN}/lsp/entry?lsp=LSP_CODE&token=<single_use_token>`}
+            </pre>
+            <p>Single use · ~15 min TTL. Prefer HMAC before scale.</p>
+          </Sub>
+        </Section>
+
+        <Section id="samples" title="Code samples">
+          <CopyBlock title="Node.js — launch URL builder" code={hmacNode} />
+          <CopyBlock title="Python — launch URL builder" code={hmacPython} />
+          <CopyBlock title="HTML — icon tile" code={htmlIcon} />
+        </Section>
+
+        <Section id="bridge" title="Building the bridge (SafeWork developers)">
           <p>
-            Payload string (UTF-8), five fields joined by <code className="text-foreground">|</code>:
+            When onboarding a <strong className="text-foreground">new</strong> LSP, your job is to connect their
+            portal to our entry path — not to rewrite E-Mitra.
           </p>
-          <pre className="text-xs bg-muted p-3 rounded-md text-foreground overflow-x-auto">{`lsp_code|exp|nonce|emitra_id|mobile`}</pre>
-          <ul className="list-disc pl-5 space-y-1">
-            <li><code className="text-foreground">lsp_code</code> — exact code from admin (e.g. <code>RJ-CSC-01</code>), uppercase.</li>
-            <li><code className="text-foreground">exp</code> — Unix seconds; must be in the future and ≤ now + 900 (15 min).</li>
-            <li><code className="text-foreground">nonce</code> — random hex string (unique per launch).</li>
-            <li><code className="text-foreground">emitra_id</code> / <code className="text-foreground">mobile</code> — optional; use empty string in payload if omitted; if present, also add matching query params.</li>
-            <li><code className="text-foreground">sig</code> — hex HMAC-SHA256 of the payload using <code>TOKEN_SECRET</code>.</li>
-          </ul>
-          <p>Query example:</p>
-          <pre className="text-xs bg-muted p-3 rounded-md text-foreground overflow-x-auto break-all">
-{`${ORIGIN}/lsp/entry?lsp=RJ-CSC-01&exp=1730000000&nonce=abc…&sig=def…&emitra_id=EM123&mobile=98XXXXXXXX`}
-          </pre>
-          <p className="flex items-start gap-2 text-foreground">
-            <Shield className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-            Validation runs server-side in Supabase RPC <code>verify_lsp_launch</code>. Secrets never ship to the browser.
+          <Sub title="Standard bridge checklist">
+            <ol className="list-decimal pl-5 space-y-1 text-foreground">
+              <li>Confirm admin checklist (What we need from an LSP).</li>
+              <li>
+                Create LSP in <Link className="text-primary underline" to="/admin/lsps">/admin/lsps</Link> →
+                copy secret once → deliver credentials + this guide.
+              </li>
+              <li>Help LSP implement launch API using samples above.</li>
+              <li>UAT with one-time or HMAC URL → login → verify → dashboard.</li>
+              <li>
+                Confirm <code>source_lsp_id</code> on partner after verify and on new{' '}
+                <code>partner_workers</code>.
+              </li>
+              <li>Mark LSP active; monitor denied reasons during pilot.</li>
+            </ol>
+          </Sub>
+          <Sub title="Code map in this repo">
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                <code>src/modules/lsp/</code> — entry, session, verify, deny
+              </li>
+              <li>
+                <code>src/pages/admin/AdminLsps.tsx</code> — credentials console
+              </li>
+              <li>
+                <code>EmitraLoginPage</code> — <code>?next=/lsp/verify</code>
+              </li>
+              <li>
+                RPCs: <code>verify_lsp_launch</code>, <code>consume_lsp_launch_token</code>,{' '}
+                <code>bind_partner_to_lsp</code>, …
+              </li>
+              <li>
+                Schema: migration <code>20260729100000_lsp_partners.sql</code>
+              </li>
+            </ul>
+          </Sub>
+          <p className="text-xs">
+            Platform deploy / SQL apply steps are internal ops only — see repo{' '}
+            <code>docs/lsp-setup-runbook.md</code>. Do not put that in LSP-facing emails.
           </p>
         </Section>
 
-        <Section id="onetime" title="8. Option B — One-time token URL">
-          <p>
-            Use when the LSP cannot implement HMAC. SafeWork admin generates a token from{' '}
-            <Link className="text-primary underline" to="/admin/lsps">Rajasthan LSPs</Link> → <strong>One-time URL</strong>,
-            or LSP can later call a dedicated issue API (roadmap).
-          </p>
-          <pre className="text-xs bg-muted p-3 rounded-md text-foreground overflow-x-auto">
-{`${ORIGIN}/lsp/entry?lsp=RJ-CSC-01&token=<raw_token>`}
-          </pre>
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Token is single-use and expires (default 15 minutes).</li>
-            <li>Reuse → denied (`token_used`). Expired → denied (`expired`).</li>
-            <li>Prefer HMAC for production volume; one-time is fine for pilots and manual tests.</li>
-          </ul>
-        </Section>
-
-        <Section id="samples" title="9. Code samples for LSP engineers">
-          <CopyBlock title="Node.js — HMAC launch URL" code={hmacNode} />
-          <CopyBlock title="Python — HMAC launch URL" code={hmacPython} />
-          <CopyBlock title="HTML — icon tile (links to LSP backend)" code={htmlIcon} />
-        </Section>
-
-        <Section id="ux" title="10. Icon & UX requirements">
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Label: <strong>SafeWork Global</strong> (or bilingual HI/EN if their UI supports it).</li>
-            <li>Open in a new tab/window when possible so the LSP portal session stays intact.</li>
-            <li>Do not cache signed URLs in the browser for more than a few seconds — always mint on click.</li>
-            <li>If launch fails, show SafeWork denied page reason; LSP support should tell operators to retry from the icon (new signature).</li>
-            <li>Brand assets: use SafeWork favicon / logo from production; do not alter colors for the pilot tile.</li>
-          </ul>
-        </Section>
-
-        <Section id="security" title="11. Security rules (non-negotiable)">
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Never embed <code className="text-foreground">TOKEN_SECRET</code> in Android/iOS apps, SPA bundles, or public repos.</li>
-            <li>Rotate secret immediately if leaked (Admin → Rotate secret) and re-issue to LSP.</li>
-            <li>Suspend LSP in admin to kill new launches without deleting history.</li>
-            <li>Launch TTL ≤ 15 minutes; session attribution cookie lasts 24 hours after a successful entry.</li>
-            <li>v1 audience is partners only — do not point citizen/worker journeys at <code>/lsp/entry</code>.</li>
-            <li>OTP on verify may be demo on staging; production must use real SMS before public pilot scale-up.</li>
-          </ul>
-        </Section>
-
-        <Section id="uat" title="12. UAT / pilot acceptance">
+        <Section id="test" title="Test & go-live">
           <div className="space-y-2">
             {[
-              'Active LSP signed URL opens /lsp/entry without 404',
-              'Expired or bad signature lands on /lsp/denied',
+              'Icon visible; opens new tab to launch endpoint',
+              'Each click produces a new signature (no cached URL)',
+              'Valid launch → partner login → /lsp/verify → dashboard',
+              'Bad / expired signature → /lsp/denied with reason',
               'Suspended LSP cannot launch',
-              'Approved partner completes /lsp/verify → /emitra/dashboard',
-              'partner_profiles.source_lsp_id and lsp_verified_at set',
-              'New partner_workers rows carry source_lsp_id while LSP session is active',
-              'New operator can start /emitra/register?source_lsp=CODE from verify screen',
+              'Attribution: partner_profiles.source_lsp_id set after verify',
+              'New workers registered in that session carry source_lsp_id',
             ].map((item) => (
               <div key={item} className="flex items-start gap-2 text-foreground">
                 <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
@@ -510,66 +556,63 @@ where table_schema = 'public'
           </div>
         </Section>
 
-        <Section id="support" title="13. Ops, reporting & support">
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Launch attempts are logged in <code className="text-foreground">lsp_launch_logs</code> (success/fail reason).</li>
-            <li>Commercial reports: filter partners/workers by <code className="text-foreground">source_lsp_id</code>.</li>
-            <li>Denied reasons operators may see: <code>expired</code>, <code>bad_signature</code>, <code>token_used</code>, <code>lsp_not_active</code>, <code>no_session</code>.</li>
-            <li>SafeWork admin contacts: use internal escalation; do not publish personal numbers in LSP kits without approval.</li>
-            <li>Related routes: <code>/admin/lsps</code>, <code>/lsp/entry</code>, <code>/lsp/verify</code>, <code>/lsp/denied</code>, <code>/emitra/login</code>.</li>
-          </ul>
-          <div className="pt-2 flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link to="/admin/lsps">
-                <ListOrdered className="h-4 w-4 mr-1" /> Open LSP admin
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <a href={`${ORIGIN}/lsp/denied?reason=expired`} target="_blank" rel="noreferrer">
-                <ExternalLink className="h-4 w-4 mr-1" /> Preview denied page
-              </a>
-            </Button>
+        <Section id="errors" title="Error reference">
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-muted/60 text-foreground">
+                <tr>
+                  <th className="p-3">Reason</th>
+                  <th className="p-3">Meaning</th>
+                  <th className="p-3">What to do</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                <tr>
+                  <td className="p-3 font-mono text-foreground">expired</td>
+                  <td className="p-3">Launch past exp</td>
+                  <td className="p-3">Mint a new URL on click</td>
+                </tr>
+                <tr>
+                  <td className="p-3 font-mono text-foreground">bad_signature</td>
+                  <td className="p-3">Wrong secret or payload</td>
+                  <td className="p-3">Check CODE|exp|nonce|emitra|mobile order</td>
+                </tr>
+                <tr>
+                  <td className="p-3 font-mono text-foreground">token_used</td>
+                  <td className="p-3">One-time token reused</td>
+                  <td className="p-3">Request a new token</td>
+                </tr>
+                <tr>
+                  <td className="p-3 font-mono text-foreground">lsp_not_active</td>
+                  <td className="p-3">LSP suspended / pending</td>
+                  <td className="p-3">Contact SafeWork admin</td>
+                </tr>
+                <tr>
+                  <td className="p-3 font-mono text-foreground">no_session</td>
+                  <td className="p-3">Verify without launch</td>
+                  <td className="p-3">Start again from LSP icon</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+          <Button asChild variant="outline" size="sm" className="mt-2">
+            <a href={`${ORIGIN}/lsp/denied?reason=expired`} target="_blank" rel="noreferrer">
+              <ExternalLink className="h-4 w-4 mr-1" /> Preview denied page
+            </a>
+          </Button>
         </Section>
 
-        <Section id="troubleshoot" title="14. Troubleshooting">
-          <ul className="list-disc pl-5 space-y-2">
-            <li>
-              <strong className="text-foreground">Admin LSPs page empty / “relation does not exist”</strong> —
-              migration not run on this Supabase project. Apply{' '}
-              <code className="text-foreground">20260729100000_lsp_partners.sql</code> (section 2).
-            </li>
-            <li>
-              <strong className="text-foreground">RPC error / function not found</strong> — same cause; also
-              click <strong>Reload schema</strong> in Supabase API settings if PostgREST is stale, or wait ~30s
-              after <code>NOTIFY pgrst</code>.
-            </li>
-            <li>
-              <strong className="text-foreground">Launch → bad_signature</strong> — payload order wrong, wrong
-              secret, or <code>lsp</code> code case mismatch. Payload must be{' '}
-              <code className="text-foreground">CODE|exp|nonce|emitra_id|mobile</code> with empty strings when optional
-              fields are omitted.
-            </li>
-            <li>
-              <strong className="text-foreground">Launch → expired / exp_too_far</strong> — clock skew or TTL &gt; 15
-              minutes. Keep <code>exp</code> ≤ now + 900.
-            </li>
-            <li>
-              <strong className="text-foreground">Works locally, fails in production</strong> — frontend pointed at
-              a different <code>VITE_SUPABASE_URL</code> than where you migrated.
-            </li>
-            <li>
-              <strong className="text-foreground">bind_partner_to_lsp fails</strong> — partner not{' '}
-              <code>approved</code>/<code>active</code>, or E-Mitra ID mismatch.
-            </li>
-          </ul>
-        </Section>
-
-        <Card className="bg-muted/40 border-dashed">
-          <CardContent className="p-4 text-xs text-muted-foreground">
-            This page is available only to authenticated admins (<code>/admin/lsp-docs</code>).
-            It is not linked from the public site. Last aligned with migration{' '}
-            <code>20260729100000_lsp_partners.sql</code>.
+        <Card className="bg-muted/30 border-dashed">
+          <CardContent className="p-4 text-xs text-muted-foreground space-y-1">
+            <p>
+              <Shield className="h-3.5 w-3.5 inline mr-1" />
+              Access: authenticated SafeWork <strong>admins</strong> only (
+              <code>/admin/lsp-docs</code>). Not linked from the public site.
+            </p>
+            <p>
+              Share this guide’s content with LSP engineers as needed; never share admin login or live{' '}
+              <code>TOKEN_SECRET</code> inside chat screenshots.
+            </p>
           </CardContent>
         </Card>
       </div>
