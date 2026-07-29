@@ -43,6 +43,6 @@ export async function adminUpdateJob(
   jobId: string,
   jobData: Record<string, unknown>
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase.from("jobs").update(jobData).eq("id", jobId);
+  const { error } = await supabase.from("jobs").update(jobData as never).eq("id", jobId);
   return { error: error ? formatError(error, "Failed to update job") : null };
 }
