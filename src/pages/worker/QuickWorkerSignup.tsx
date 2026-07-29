@@ -41,7 +41,7 @@ export default function QuickWorkerSignup() {
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
-  const [country, setCountry] = useState('');
+  const [country, setCountry] = useState('India');
   const [otp, setOtp] = useState('');
 
   const handleGoogle = async () => {
@@ -247,8 +247,8 @@ export default function QuickWorkerSignup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-info/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Invisible reCAPTCHA host for Firebase Phone Auth */}
-        <div id="worker-recaptcha" />
+        {/* Visible reCAPTCHA for Firebase Phone Auth (required before SMS send) */}
+        <div id="worker-recaptcha" className="flex justify-center mb-3 min-h-[78px]" />
 
         <button
           onClick={() => navigate('/')}
@@ -367,18 +367,27 @@ export default function QuickWorkerSignup() {
 
                 <div className="space-y-1.5">
                   <Label>Country</Label>
-                  <Select value={country} onValueChange={setCountry}>
+                  <Select
+                    value={country}
+                    onValueChange={(v) => {
+                      if (v === 'India') setCountry(v);
+                    }}
+                  >
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Select your country" />
                     </SelectTrigger>
                     <SelectContent className="max-h-64">
                       {NATIONALITIES.filter((c) => c !== 'All Nationalities').map((c) => (
-                        <SelectItem key={c} value={c}>
+                        <SelectItem key={c} value={c} disabled={c !== 'India'}>
                           {c}
+                          {c !== 'India' ? ' (coming soon)' : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Worker signup is India-only for now (+91 SMS OTP).
+                  </p>
                 </div>
 
                 <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
