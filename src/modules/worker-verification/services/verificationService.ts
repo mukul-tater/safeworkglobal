@@ -1,6 +1,7 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import type { SkillQuizItem, VerificationStage, WorkerVerification } from '../types';
 import { INTERVIEW_TRADE_TEST_THRESHOLD, WORKER_TERMS_VERSION } from '../constants';
+import { loadQuizItemsFromJson } from '../quiz-data';
 
 const supabase: any = supabaseTyped;
 
@@ -103,34 +104,8 @@ export async function saveEssentials(
 }
 
 export async function loadQuizItems(skill: string): Promise<SkillQuizItem[]> {
-  let data: SkillQuizItem[] | null = null;
-  let error: { message: string } | null = null;
-
-  const primary = await supabase
-    .from('worker_skill_quiz_items')
-    .select('id, skill_code, question, question_hi, youtube_url, image_url, expected_answer, sort_order')
-    .eq('active', true)
-    .in('skill_code', [skill, 'Other'])
-    .order('sort_order', { ascending: true });
-
-  if (primary.error) {
-    // question_hi column may not exist until migration is applied
-    const fallback = await supabase
-      .from('worker_skill_quiz_items')
-      .select('id, skill_code, question, youtube_url, image_url, expected_answer, sort_order')
-      .eq('active', true)
-      .in('skill_code', [skill, 'Other'])
-      .order('sort_order', { ascending: true });
-    data = (fallback.data || []).map((row: any) => ({ ...row, question_hi: null }));
-    error = fallback.error;
-  } else {
-    data = primary.data as SkillQuizItem[];
-  }
-
-  if (error) throw new Error(error.message);
-  const items = (data || []) as SkillQuizItem[];
-  const forSkill = items.filter((i) => i.skill_code === skill);
-  return forSkill.length >= 3 ? forSkill : items.filter((i) => i.skill_code === 'Other');
+  // Questions ship in per-skill JSON under quiz-data/ (e.g. welder.questions.json).
+  return loadQuizItemsFromJson(skill);
 }
 
 export async function submitQuiz(
@@ -138,20 +113,8 @@ export async function submitQuiz(
   answers: { quiz_item_id: string; answer: boolean; expected: boolean }[],
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
-  const payload = answers.map((a) => ({
-    user_id: userId,
-    quiz_item_id: a.quiz_item_id,
-    answer: a.answer,
-    is_correct: a.answer === a.expected,
-  }));
-
-  const { error: upsertErr } = await supabase
-    .from('worker_skill_quiz_responses')
-    .upsert(payload, { onConflict: 'user_id,quiz_item_id' });
-  if (upsertErr) throw new Error(upsertErr.message);
-
-  const correct = payload.filter((p) => p.is_correct).length;
-  const score = payload.length ? Math.round((correct / payload.length) * 1000) / 10 : 0;
+  const correct = answers.filter((a) => a.answer === a.expected).length;
+  const score = answers.length ? Math.round((correct / answers.length) * 1000) / 10 : 0;
 
   const { data, error } = await supabase
     .from('worker_verification')

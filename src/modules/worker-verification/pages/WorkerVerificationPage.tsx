@@ -675,9 +675,6 @@ export default function WorkerVerificationPage() {
                   {currentQuiz.question_hi}
                 </p>
               ) : null}
-              <p className="text-xs text-muted-foreground">
-                Do you know / can you do this type of work? · क्या आप यह काम जानते / कर सकते हैं?
-              </p>
 
               <RadioGroup
                 value={
@@ -691,10 +688,10 @@ export default function WorkerVerificationPage() {
                 className="flex gap-6"
               >
                 <label className="flex items-center gap-2 text-sm font-medium">
-                  <RadioGroupItem value="yes" /> Yes, I know this · हाँ, मैं जानता/जानती हूँ
+                  <RadioGroupItem value="yes" /> Yes
                 </label>
                 <label className="flex items-center gap-2 text-sm font-medium">
-                  <RadioGroupItem value="no" /> No / not yet · नहीं / अभी नहीं
+                  <RadioGroupItem value="no" /> No
                 </label>
               </RadioGroup>
               <Button onClick={() => void onQuizContinue()} disabled={saving}>

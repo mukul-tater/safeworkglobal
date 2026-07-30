@@ -1,0 +1,41 @@
+{
+  "skill": "Mason",
+  "questions": [
+    {
+      "id": "mason-1",
+      "question": "Have you laid bricks / blocks with mortar like this?",
+      "question_hi": "क्या आपने इस तरह मोर्टार से ईंट / ब्लॉक बिछाए हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=D094nZf6ikk",
+      "image_url": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 1
+    },
+    {
+      "id": "mason-2",
+      "question": "Do you know the common hand tools used for bricklaying?",
+      "question_hi": "क्या आप ईंट लगाने के सामान्य हाथ के औजार जानते हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=NAfAEbU7dNE",
+      "image_url": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 2
+    },
+    {
+      "id": "mason-3",
+      "question": "Is it OK to build a wall without checking level and plumb?",
+      "question_hi": "क्या लेवल और प्लंब जाँचे बिना दीवार बनाना ठीक है?",
+      "youtube_url": "https://www.youtube.com/watch?v=HFGLfhP6AVk",
+      "image_url": "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": false,
+      "sort_order": 3
+    },
+    {
+      "id": "mason-4",
+      "question": "Have you mixed cement / mortar for masonry work on site?",
+      "question_hi": "क्या आपने साइट पर चिनाई के लिए सीमेंट / मोर्टार मिलाया है?",
+      "youtube_url": "https://www.youtube.com/watch?v=D094nZf6ikk",
+      "image_url": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 4
+    }
+  ]
+}

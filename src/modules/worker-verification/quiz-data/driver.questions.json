@@ -1,0 +1,41 @@
+{
+  "skill": "Driver",
+  "questions": [
+    {
+      "id": "driver-1",
+      "question": "Have you driven heavy vehicles / trucks as shown in this type of work?",
+      "question_hi": "क्या आपने इस तरह के काम में दिखाए गए भारी वाहन / ट्रक चलाए हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=4HZbW-BN_gc",
+      "image_url": "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 1
+    },
+    {
+      "id": "driver-2",
+      "question": "Should you always inspect brakes, lights and tyres before a long trip?",
+      "question_hi": "क्या लंबी यात्रा से पहले ब्रेक, लाइट और टायर हमेशा जाँचने चाहिए?",
+      "youtube_url": "https://www.youtube.com/watch?v=N4vhohgoMAQ",
+      "image_url": "https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 2
+    },
+    {
+      "id": "driver-3",
+      "question": "Is it OK to drive when you feel drowsy if the road looks empty?",
+      "question_hi": "अगर सड़क खाली लगे तो क्या नींद आने पर भी गाड़ी चलाना ठीक है?",
+      "youtube_url": "https://www.youtube.com/watch?v=4HZbW-BN_gc",
+      "image_url": "https://images.unsplash.com/photo-1464219789935-c2d9d9aba644?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": false,
+      "sort_order": 3
+    },
+    {
+      "id": "driver-4",
+      "question": "Do you have a valid licence suitable for the vehicle class you drive?",
+      "question_hi": "क्या आपके पास जिस वर्ग का वाहन चलाते हैं उसके लिए वैध लाइसेंस है?",
+      "youtube_url": "https://www.youtube.com/watch?v=N4vhohgoMAQ",
+      "image_url": "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 4
+    }
+  ]
+}

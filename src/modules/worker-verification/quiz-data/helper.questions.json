@@ -1,0 +1,41 @@
+{
+  "skill": "Helper",
+  "questions": [
+    {
+      "id": "helper-1",
+      "question": "Have you worked as a site helper supporting skilled trades?",
+      "question_hi": "क्या आपने कुशल कारीगरों के साथ साइट हेल्पर के रूप में काम किया है?",
+      "youtube_url": "https://www.youtube.com/watch?v=o2kiA5ItiJw",
+      "image_url": "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 1
+    },
+    {
+      "id": "helper-2",
+      "question": "Should you wear a helmet / PPE on an active construction site?",
+      "question_hi": "क्या सक्रिय निर्माण साइट पर हेलमेट / PPE पहनना चाहिए?",
+      "youtube_url": "https://www.youtube.com/watch?v=74d6heVzQCo",
+      "image_url": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 2
+    },
+    {
+      "id": "helper-3",
+      "question": "Is it OK to stand under a suspended load while materials are lifted?",
+      "question_hi": "सामग्री उठाते समय क्या लटकते भार के नीचे खड़ा रहना ठीक है?",
+      "youtube_url": "https://www.youtube.com/watch?v=ODmL-oOhV9o",
+      "image_url": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": false,
+      "sort_order": 3
+    },
+    {
+      "id": "helper-4",
+      "question": "Are you ready to follow supervisor instructions and site safety rules?",
+      "question_hi": "क्या आप सुपरवाइजर के निर्देश और साइट सुरक्षा नियम मानने को तैयार हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=o2kiA5ItiJw",
+      "image_url": "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 4
+    }
+  ]
+}

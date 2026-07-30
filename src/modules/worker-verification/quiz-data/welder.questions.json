@@ -1,0 +1,41 @@
+{
+  "skill": "Welder",
+  "questions": [
+    {
+      "id": "welder-1",
+      "question": "Have you used an arc / stick (MMA/SMAW) welding machine before?",
+      "question_hi": "क्या आपने पहले आर्क / स्टिक (MMA/SMAW) वेल्डिंग मशीन इस्तेमाल की है?",
+      "youtube_url": "https://www.youtube.com/watch?v=Px1LQhc4nEc",
+      "image_url": "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 1
+    },
+    {
+      "id": "welder-2",
+      "question": "Must you wear a welding helmet and gloves while striking an arc?",
+      "question_hi": "क्या आर्क लगाते समय वेल्डिंग हेलमेट और दस्ताने पहनना जरूरी है?",
+      "youtube_url": "https://www.youtube.com/watch?v=0ZH0NHaettE",
+      "image_url": "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 2
+    },
+    {
+      "id": "welder-3",
+      "question": "Is it safe to weld without checking cables / connections first?",
+      "question_hi": "क्या केबल / कनेक्शन जाँचे बिना वेल्डिंग करना सुरक्षित है?",
+      "youtube_url": "https://www.youtube.com/watch?v=q8xaOsbM1FQ",
+      "image_url": "https://images.unsplash.com/photo-1590247813693-5541d1c609fd?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": false,
+      "sort_order": 3
+    },
+    {
+      "id": "welder-4",
+      "question": "Can you strike an arc and lay a basic bead like in this demo?",
+      "question_hi": "क्या आप इस डेमो की तरह आर्क लगाकर बुनियादी बीड बना सकते हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=KHDDtFgF2YU",
+      "image_url": "https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 4
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "skill": "Other",
+  "questions": [
+    {
+      "id": "other-1",
+      "question": "Are you ready to relocate abroad for verified skilled work if selected?",
+      "question_hi": "चयन होने पर क्या आप सत्यापित कुशल काम के लिए विदेश जाने को तैयार हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=o2kiA5ItiJw",
+      "image_url": "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 1
+    },
+    {
+      "id": "other-2",
+      "question": "Do you understand SafeWork does not allow unauthorized agent fees?",
+      "question_hi": "क्या आप समझते हैं कि SafeWork अनधिकृत एजेंट फीस की अनुमति नहीं देता?",
+      "youtube_url": "https://www.youtube.com/watch?v=74d6heVzQCo",
+      "image_url": "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 2
+    },
+    {
+      "id": "other-3",
+      "question": "Will you share only truthful work experience and documents on your profile?",
+      "question_hi": "क्या आप प्रोफ़ाइल पर केवल सच्चा अनुभव और दस्तावेज़ साझा करेंगे?",
+      "youtube_url": "https://www.youtube.com/watch?v=ODmL-oOhV9o",
+      "image_url": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 3
+    },
+    {
+      "id": "other-4",
+      "question": "Are you medically fit and willing to complete skill checks for GCC placement?",
+      "question_hi": "क्या आप मेडिकली फिट हैं और GCC प्लेसमेंट के लिए स्किल चेक पूरा करने को तैयार हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=o2kiA5ItiJw",
+      "image_url": "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 4
+    }
+  ]
+}

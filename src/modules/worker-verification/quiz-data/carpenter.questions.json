@@ -1,0 +1,41 @@
+{
+  "skill": "Carpenter",
+  "questions": [
+    {
+      "id": "carpenter-1",
+      "question": "Have you done basic carpentry / woodwork like measuring and cutting timber?",
+      "question_hi": "क्या आपने लकड़ी नापने और काटने जैसा बुनियादी बढ़ईगीरी काम किया है?",
+      "youtube_url": "https://www.youtube.com/watch?v=MNQcunoK4y8",
+      "image_url": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 1
+    },
+    {
+      "id": "carpenter-2",
+      "question": "Do you recognise common woodworking hand / power tools?",
+      "question_hi": "क्या आप लकड़ी के काम के आम हाथ / पावर टूल्स पहचानते हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=jDhFfTc2bvU",
+      "image_url": "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 2
+    },
+    {
+      "id": "carpenter-3",
+      "question": "Is it safe to use a circular saw without eye and hand protection?",
+      "question_hi": "क्या आँख और हाथ की सुरक्षा के बिना सर्कुलर आरा चलाना सुरक्षित है?",
+      "youtube_url": "https://www.youtube.com/watch?v=MNQcunoK4y8",
+      "image_url": "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": false,
+      "sort_order": 3
+    },
+    {
+      "id": "carpenter-4",
+      "question": "Can you make a reliable corner / joint as shown in carpentry demos?",
+      "question_hi": "क्या आप बढ़ईगीरी डेमो में दिखाए गए भरोसेमंद कोने / जोड़ बना सकते हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=uJh0jd6wxhY",
+      "image_url": "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 4
+    }
+  ]
+}

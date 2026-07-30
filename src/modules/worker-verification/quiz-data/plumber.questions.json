@@ -1,0 +1,41 @@
+{
+  "skill": "Plumber",
+  "questions": [
+    {
+      "id": "plumber-1",
+      "question": "Have you installed PVC / CPVC pipe fittings like this?",
+      "question_hi": "क्या आपने इस तरह PVC / CPVC पाइप फिटिंग लगाई है?",
+      "youtube_url": "https://www.youtube.com/watch?v=49x3n08ZcvI",
+      "image_url": "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 1
+    },
+    {
+      "id": "plumber-2",
+      "question": "Should you shut off the water supply before changing a faucet or valve?",
+      "question_hi": "क्या नल या वाल्व बदलने से पहले पानी की सप्लाई बंद करनी चाहिए?",
+      "youtube_url": "https://www.youtube.com/watch?v=x4eKmNxF6l8",
+      "image_url": "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 2
+    },
+    {
+      "id": "plumber-3",
+      "question": "Is it fine to leave a pipe joint leaking if the pressure feels low?",
+      "question_hi": "अगर दबाव कम लगे तो क्या पाइप जोड़ों से रिसाव छोड़ देना ठीक है?",
+      "youtube_url": "https://www.youtube.com/watch?v=49x3n08ZcvI",
+      "image_url": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": false,
+      "sort_order": 3
+    },
+    {
+      "id": "plumber-4",
+      "question": "Do you know how to cut and join PVC pipe for drainage / supply lines?",
+      "question_hi": "क्या आप ड्रेनेज / सप्लाई लाइन के लिए PVC पाइप काटना और जोड़ना जानते हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=49x3n08ZcvI",
+      "image_url": "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 4
+    }
+  ]
+}

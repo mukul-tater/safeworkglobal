@@ -1,0 +1,41 @@
+{
+  "skill": "Electrician",
+  "questions": [
+    {
+      "id": "electrician-1",
+      "question": "Have you worked with single-phase domestic wiring?",
+      "question_hi": "क्या आपने सिंगल-फेज घरेलू वायरिंग का काम किया है?",
+      "youtube_url": "https://www.youtube.com/watch?v=whAvCfrlhZ4",
+      "image_url": "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 1
+    },
+    {
+      "id": "electrician-2",
+      "question": "Should you isolate power before opening a junction box?",
+      "question_hi": "क्या जंक्शन बॉक्स खोलने से पहले बिजली बंद करनी चाहिए?",
+      "youtube_url": "https://www.youtube.com/watch?v=ejx286HDsNI",
+      "image_url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 2
+    },
+    {
+      "id": "electrician-3",
+      "question": "Is it OK to use damaged insulation tape on live wires permanently?",
+      "question_hi": "क्या जीवित तारों पर खराब इंसुलेशन टेप को स्थायी रूप से इस्तेमाल करना ठीक है?",
+      "youtube_url": "https://www.youtube.com/watch?v=DBTtPDGyufs",
+      "image_url": "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": false,
+      "sort_order": 3
+    },
+    {
+      "id": "electrician-4",
+      "question": "Do you know how to use a digital multimeter for voltage checks?",
+      "question_hi": "क्या आप वोल्टेज चेक के लिए डिजिटल मल्टीमीटर इस्तेमाल करना जानते हैं?",
+      "youtube_url": "https://www.youtube.com/watch?v=6idXlgNYkpk",
+      "image_url": "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=900&q=80",
+      "expected_answer": true,
+      "sort_order": 4
+    }
+  ]
+}
