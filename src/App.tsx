@@ -22,6 +22,7 @@ import TermsOfService from "./pages/TermsOfService";
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import PartnerOnboarding from "./pages/partner/PartnerOnboarding";
 import PartnerRegister from "./modules/partner/pages/PartnerRegister";
+import PartnerRegisterLegacy from "./modules/partner/pages/PartnerRegisterLegacy";
 import PendingApproval from "./modules/partner/pages/PendingApproval";
 import PartnerDashboardRouter from "./modules/partner/pages/PartnerDashboardRouter";
 import SsvnDashboard from "./modules/partner/pages/ssvn/SsvnDashboard";
@@ -262,6 +263,10 @@ function AppShell() {
           <Route
             path="/partner/register"
             element={<PartnerRegister />}
+          />
+          <Route
+            path="/partner/register-legacy"
+            element={<PartnerRegisterLegacy />}
           />
           <Route
             path="/partner/pending"

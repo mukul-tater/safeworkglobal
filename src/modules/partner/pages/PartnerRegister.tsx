@@ -1,246 +1,174 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast } from "sonner";
-import { indianStates } from "@/lib/validations/partner";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowRight, Handshake, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  DEFAULT_PARTNER_SIGNUP_CODE,
+  PARTNER_SIGNUP_OPTIONS,
+  getPartnerSignupOption,
+  type PartnerSignupOption,
+} from "@/modules/partner/config/partnerSignupOptions";
 
-interface PartnerType {
-  id: string;
-  code: string;
-  name: string;
-  description: string | null;
-}
-
+/**
+ * Partner signup hub — choose a partner type.
+ * E-Mitra is live (redirects to /emitra/register after confirm).
+ * Other types are listed as coming soon for future expansion.
+ */
 export default function PartnerRegister() {
-  const { user, isAuthenticated, assignRole } = useAuth();
   const navigate = useNavigate();
-  const [types, setTypes] = useState<PartnerType[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    partner_type_id: "",
-    company_name: "",
-    owner_name: "",
-    mobile: "",
-    email: "",
-    state: "",
-    district: "",
-    city: "",
-    address: "",
-    pincode: "",
-    pan: "",
-    gst: "",
-    account_holder: "",
-    account_number: "",
-    ifsc: "",
-    upi: "",
-  });
+  const [selectedCode, setSelectedCode] = useState(DEFAULT_PARTNER_SIGNUP_CODE);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  useEffect(() => {
-    (supabase as any)
-      .from("partner_types")
-      .select("id, code, name, description")
-      .eq("active", true)
-      .order("sort_order")
-      .then(({ data }: any) => setTypes(data ?? []));
-  }, []);
+  const selected = useMemo(
+    () => getPartnerSignupOption(selectedCode) ?? PARTNER_SIGNUP_OPTIONS[0],
+    [selectedCode],
+  );
 
-  useEffect(() => {
-    if (user?.email && !form.email) setForm((f) => ({ ...f, email: user.email ?? "" }));
-  }, [user]); // eslint-disable-line
+  const requestContinue = (option: PartnerSignupOption) => {
+    setSelectedCode(option.code);
+    if (option.status !== "live" || !option.registerPath) return;
+    setConfirmOpen(true);
+  };
 
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
-
-  const submit = async () => {
-    if (!isAuthenticated || !user) {
-      toast.error("Please sign in first");
-      navigate("/auth?redirect=/partner/register");
-      return;
-    }
-    if (!form.partner_type_id || !form.company_name || !form.mobile) {
-      toast.error("Fill required fields");
-      return;
-    }
-    setSaving(true);
-    try {
-      // Ensure the user has partner role
-      await assignRole("partner").catch(() => {});
-
-      const { data: partner, error } = await (supabase as any)
-        .from("partners")
-        .insert({
-          user_id: user.id,
-          partner_type_id: form.partner_type_id,
-          status: "pending",
-          state: form.state || null,
-          district: form.district || null,
-          city: form.city || null,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-
-      const { error: pe } = await (supabase as any)
-        .from("partner_profiles_ext")
-        .insert({
-          partner_id: partner.id,
-          company_name: form.company_name,
-          owner_name: form.owner_name || null,
-          mobile: form.mobile,
-          email: form.email || null,
-          address: form.address || null,
-          pincode: form.pincode || null,
-          pan: form.pan || null,
-          gst: form.gst || null,
-          bank: {
-            holder: form.account_holder || null,
-            account: form.account_number || null,
-            ifsc: form.ifsc || null,
-          },
-          upi: form.upi || null,
-        });
-      if (pe) throw pe;
-
-      await (supabase as any).from("partner_wallets").insert({ partner_id: partner.id });
-
-      toast.success("Registration submitted — awaiting admin approval");
-      navigate("/partner/pending", { replace: true });
-    } catch (e: any) {
-      toast.error(e.message ?? "Registration failed");
-    } finally {
-      setSaving(false);
-    }
+  const goToOnboarding = () => {
+    const path = selected?.registerPath;
+    setConfirmOpen(false);
+    if (path) navigate(path);
   };
 
   return (
     <div className="min-h-screen bg-muted/30 py-10 px-4">
       <div className="max-w-3xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Partner Registration</h1>
-          <p className="text-muted-foreground">Join the SafeWork Global partner network</p>
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold mb-3">
+            <Handshake className="h-3.5 w-3.5" />
+            Partner network
+          </div>
+          <h1 className="text-3xl font-bold font-heading tracking-tight">Become a SafeWork Partner</h1>
+          <p className="text-muted-foreground mt-1 max-w-xl">
+            Choose your partner type to continue. More partner programmes will open here as they go live.
+          </p>
         </div>
-        <Card className="p-6 space-y-6">
-          <section>
-            <h2 className="font-semibold mb-3">Partner Type</h2>
-            <Select value={form.partner_type_id} onValueChange={(v) => set("partner_type_id", v)}>
-              <SelectTrigger><SelectValue placeholder="Select partner type" /></SelectTrigger>
-              <SelectContent>
-                {types.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    <div>
-                      <div className="font-medium">{t.name}</div>
-                      {t.description && (
-                        <div className="text-xs text-muted-foreground">{t.description}</div>
-                      )}
+
+        <Card className="p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-semibold">Partner type</h2>
+            <Badge variant="secondary" className="font-normal">
+              {PARTNER_SIGNUP_OPTIONS.filter((o) => o.status === "live").length} live
+            </Badge>
+          </div>
+
+          <div className="grid gap-3">
+            {PARTNER_SIGNUP_OPTIONS.map((option) => {
+              const Icon = option.icon;
+              const isSelected = selectedCode === option.code;
+              const isLive = option.status === "live";
+
+              return (
+                <button
+                  key={option.code}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCode(option.code);
+                    if (isLive) requestContinue(option);
+                  }}
+                  className={cn(
+                    "w-full text-left rounded-xl border p-4 transition-all",
+                    isSelected
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/25"
+                      : "border-border hover:bg-muted/50",
+                    !isLive && "opacity-75",
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={cn("p-2.5 rounded-lg shrink-0", option.accentClass)}>
+                      <Icon className="h-5 w-5" />
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </section>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-sm sm:text-base">{option.name}</span>
+                        {isLive ? (
+                          <Badge className="h-5 text-[10px]">Available</Badge>
+                        ) : (
+                          <Badge variant="outline" className="h-5 text-[10px]">
+                            Coming soon
+                          </Badge>
+                        )}
+                        {option.code === DEFAULT_PARTNER_SIGNUP_CODE && (
+                          <Badge variant="secondary" className="h-5 text-[10px]">
+                            Default
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                        {option.shortDescription}
+                      </p>
+                    </div>
+                    {isSelected && isLive && (
+                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
-          <section className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>Company / Center Name *</Label>
-              <Input value={form.company_name} onChange={(e) => set("company_name", e.target.value)} />
-            </div>
-            <div>
-              <Label>Owner Name</Label>
-              <Input value={form.owner_name} onChange={(e) => set("owner_name", e.target.value)} />
-            </div>
-            <div>
-              <Label>Mobile *</Label>
-              <Input value={form.mobile} onChange={(e) => set("mobile", e.target.value)} />
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
-            </div>
-          </section>
-
-          <section className="grid md:grid-cols-3 gap-4">
-            <div>
-              <Label>State</Label>
-              <Select value={form.state} onValueChange={(v) => set("state", v)}>
-                <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                <SelectContent>
-                  {indianStates.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>District</Label>
-              <Input value={form.district} onChange={(e) => set("district", e.target.value)} />
-            </div>
-            <div>
-              <Label>City</Label>
-              <Input value={form.city} onChange={(e) => set("city", e.target.value)} />
-            </div>
-            <div className="md:col-span-2">
-              <Label>Address</Label>
-              <Textarea value={form.address} onChange={(e) => set("address", e.target.value)} />
-            </div>
-            <div>
-              <Label>Pincode</Label>
-              <Input value={form.pincode} onChange={(e) => set("pincode", e.target.value)} />
-            </div>
-          </section>
-
-          <section className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>PAN</Label>
-              <Input value={form.pan} onChange={(e) => set("pan", e.target.value.toUpperCase())} />
-            </div>
-            <div>
-              <Label>GST (optional)</Label>
-              <Input value={form.gst} onChange={(e) => set("gst", e.target.value.toUpperCase())} />
-            </div>
-          </section>
-
-          <section>
-            <h2 className="font-semibold mb-3">Bank / Payout</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label>Account Holder</Label>
-                <Input value={form.account_holder} onChange={(e) => set("account_holder", e.target.value)} />
-              </div>
-              <div>
-                <Label>Account Number</Label>
-                <Input value={form.account_number} onChange={(e) => set("account_number", e.target.value)} />
-              </div>
-              <div>
-                <Label>IFSC</Label>
-                <Input value={form.ifsc} onChange={(e) => set("ifsc", e.target.value.toUpperCase())} />
-              </div>
-              <div>
-                <Label>UPI ID</Label>
-                <Input value={form.upi} onChange={(e) => set("upi", e.target.value)} />
-              </div>
-            </div>
-          </section>
-
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => navigate("/")}>Cancel</Button>
-            <Button onClick={submit} disabled={saving}>
-              {saving ? "Submitting..." : "Submit Registration"}
+          <div className="flex flex-col sm:flex-row justify-between gap-3 pt-2 border-t">
+            <Button variant="outline" onClick={() => navigate("/")}>
+              Cancel
+            </Button>
+            <Button
+              disabled={selected.status !== "live"}
+              onClick={() => selected && requestContinue(selected)}
+              className="gap-1.5"
+            >
+              Continue as {selected.name}
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
+
+          <p className="text-xs text-muted-foreground text-center">
+            Already a partner?{" "}
+            <Link to="/emitra/login" className="text-primary hover:underline font-medium">
+              Sign in
+            </Link>
+          </p>
         </Card>
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Handshake className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="text-center">
+              Continue as {selected?.name ?? "Partner"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              You will be redirected to the dedicated {selected?.name ?? "partner"} onboarding form
+              to complete your application.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-center gap-2">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={goToOnboarding}>Continue to Onboarding</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
