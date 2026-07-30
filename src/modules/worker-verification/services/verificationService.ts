@@ -1,6 +1,6 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
-import type { SkillQuizItem, VerificationStage, WorkerVerification } from './types';
-import { INTERVIEW_TRADE_TEST_THRESHOLD, WORKER_TERMS_VERSION } from './constants';
+import type { SkillQuizItem, VerificationStage, WorkerVerification } from '../types';
+import { INTERVIEW_TRADE_TEST_THRESHOLD, WORKER_TERMS_VERSION } from '../constants';
 
 const supabase: any = supabaseTyped;
 
