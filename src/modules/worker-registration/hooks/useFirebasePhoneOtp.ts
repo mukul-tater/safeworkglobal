@@ -13,7 +13,7 @@ function mapFirebaseAuthError(err: unknown): string {
 
   switch (code) {
     case 'auth/operation-not-allowed':
-      return 'Phone sign-in is not enabled, or SMS region (India) is blocked. Check Firebase Authentication → Phone + SMS region policy.';
+      return 'Phone sign-in is disabled, or India (+91) is blocked. In Firebase Console → Authentication → Sign-in method, enable Phone. Then Settings → SMS region policy → allow India.';
     case 'auth/invalid-phone-number':
       return 'Invalid mobile number. Use a valid 10-digit Indian number.';
     case 'auth/too-many-requests':
@@ -21,9 +21,11 @@ function mapFirebaseAuthError(err: unknown): string {
     case 'auth/invalid-app-credential':
     case 'auth/captcha-check-failed':
       if (host === 'localhost') {
-        return 'Firebase Phone Auth does not work on "localhost". Use your live site (safeworkglobal.com) or http://127.0.0.1 with 127.0.0.1 added to Authorized domains.';
+        return 'Firebase Phone Auth does not work on "localhost". Use http://127.0.0.1 (add 127.0.0.1 under Authorized domains) or your live / Lovable preview URL.';
       }
-      return 'Verification failed. Refresh the page and try again. If it keeps failing, confirm India is allowed under Firebase SMS region policy.';
+      return `SMS verification blocked for this site (${host || 'unknown host'}). Add this exact domain under Firebase Console → Authentication → Settings → Authorized domains. Also confirm Settings → SMS region policy allows India (+91).`;
+    case 'auth/unauthorized-domain':
+      return `Domain "${host}" is not authorized. Add it in Firebase Console → Authentication → Settings → Authorized domains.`;
     case 'auth/code-expired':
       return 'OTP expired. Tap Send OTP again.';
     case 'auth/invalid-verification-code':
@@ -31,7 +33,7 @@ function mapFirebaseAuthError(err: unknown): string {
     case 'auth/missing-verification-code':
       return 'Enter the 6-digit OTP.';
     default:
-      return message;
+      return code ? `${message} (${code})` : message;
   }
 }
 
