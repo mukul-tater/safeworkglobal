@@ -27,6 +27,7 @@ import {
   VERIFICATION_STAGE_LABELS,
   navStepForStage,
   navStepIndex,
+  youtubeEmbedUrl,
   type VerificationStage,
 } from '@/modules/worker-verification/constants';
 import type { SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
@@ -45,6 +46,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 const STORAGE_BUCKET = 'worker-videos';
+
+function notifyVerificationUpdated() {
+  window.dispatchEvent(new Event('swg-verification-updated'));
+}
 
 /**
  * Full worker verification wizard:
@@ -153,6 +158,7 @@ export default function WorkerVerificationPage() {
         primary_skill: primarySkill,
       });
       setRow(next);
+      notifyVerificationUpdated();
       const items = await loadQuizItems(primarySkill);
       setQuizItems(items);
       setQuizIndex(0);
@@ -189,7 +195,8 @@ export default function WorkerVerificationPage() {
       }));
       const next = await submitQuiz(user.id, answers);
       setRow(next);
-      toast.success(`Skill check complete — score ${next.quiz_score}%`);
+      notifyVerificationUpdated();
+      toast.success(`Test 1 complete — score ${next.quiz_score}%. Next: upload your skill proof.`);
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Quiz submit failed');
@@ -247,7 +254,8 @@ export default function WorkerVerificationPage() {
     try {
       const next = await completeMediaStep(user.id);
       setRow(next);
-      toast.success('Test 1 complete — video interview is next');
+      notifyVerificationUpdated();
+      toast.success('Skill proof saved — Test 2 (video interview) is next');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not continue');
     } finally {
@@ -410,23 +418,63 @@ export default function WorkerVerificationPage() {
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Test 1 — Skill quiz (Yes / No)</span>
+                <span>Test 1 — Do you know this type of work?</span>
                 <span>{quizIndex + 1} / {quizItems.length}</span>
               </div>
-              <h2 className="text-lg font-semibold font-heading leading-snug">{currentQuiz.question}</h2>
-              {currentQuiz.youtube_url && (
-                <a
-                  href={currentQuiz.youtube_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  <Video className="h-4 w-4" /> Watch related short (optional)
-                </a>
-              )}
+              <p className="text-sm text-muted-foreground">
+                Watch / view the example for{' '}
+                <span className="font-medium text-foreground">{row.primary_skill || 'your skill'}</span>
+                , then answer Yes or No. You upload your own photos and videos in the next step.
+              </p>
+
+              {(() => {
+                const embed = youtubeEmbedUrl(currentQuiz.youtube_url);
+                if (embed) {
+                  return (
+                    <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted">
+                      <iframe
+                        title="Skill example video"
+                        src={embed}
+                        className="h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  );
+                }
+                if (currentQuiz.youtube_url) {
+                  return (
+                    <a
+                      href={currentQuiz.youtube_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                    >
+                      <Video className="h-4 w-4" /> Open example video
+                    </a>
+                  );
+                }
+                return null;
+              })()}
+
               {currentQuiz.image_url && (
-                <img src={currentQuiz.image_url} alt="" className="rounded-lg max-h-48 object-cover" />
+                <img
+                  src={currentQuiz.image_url}
+                  alt="Skill example"
+                  className="rounded-xl max-h-64 w-full object-cover border border-border"
+                />
               )}
+
+              {!currentQuiz.youtube_url && !currentQuiz.image_url && (
+                <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
+                  No example media for this question — answer from your experience as{' '}
+                  <span className="font-medium text-foreground">{row.primary_skill}</span>.
+                </div>
+              )}
+
+              <h2 className="text-lg font-semibold font-heading leading-snug">{currentQuiz.question}</h2>
+              <p className="text-xs text-muted-foreground -mt-2">Do you know / can you do this type of work?</p>
+
               <RadioGroup
                 value={
                   quizAnswers[currentQuiz.id] === undefined
@@ -439,15 +487,15 @@ export default function WorkerVerificationPage() {
                 className="flex gap-6"
               >
                 <label className="flex items-center gap-2 text-sm font-medium">
-                  <RadioGroupItem value="yes" /> Yes
+                  <RadioGroupItem value="yes" /> Yes, I know this
                 </label>
                 <label className="flex items-center gap-2 text-sm font-medium">
-                  <RadioGroupItem value="no" /> No
+                  <RadioGroupItem value="no" /> No / not yet
                 </label>
               </RadioGroup>
               <Button onClick={() => void onQuizContinue()} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                {quizIndex < quizItems.length - 1 ? 'Next question' : 'Continue to skill media'}
+                {quizIndex < quizItems.length - 1 ? 'Next example' : 'Finish Test 1'}
               </Button>
             </CardContent>
           </Card>
@@ -457,10 +505,11 @@ export default function WorkerVerificationPage() {
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div>
-                <h2 className="font-semibold">Test 1 — Skill media</h2>
+                <h2 className="font-semibold">Skill proof upload</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Same test as the quiz — upload at least one photo and one short video of your work as{' '}
-                  <span className="font-medium text-foreground">{row.primary_skill}</span>.
+                  Profile completion after Test 1 — upload at least one photo and one short video of your work as{' '}
+                  <span className="font-medium text-foreground">{row.primary_skill}</span>
+                  {' '}before Test 2 (video interview).
                 </p>
               </div>
               <div className="grid sm:grid-cols-2 gap-3">
@@ -497,7 +546,7 @@ export default function WorkerVerificationPage() {
               </div>
               <Button onClick={() => void onCompleteMedia()} disabled={saving || uploading}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                Submit & continue
+                Save & continue to Test 2
               </Button>
             </CardContent>
           </Card>
@@ -522,6 +571,7 @@ export default function WorkerVerificationPage() {
                   try {
                     const next = await recordInterviewScore(user.id, Number(demoScore) || 0, 'Demo score');
                     setRow(next);
+      notifyVerificationUpdated();
                     toast.success(
                       next.trade_test_required
                         ? 'Below threshold — physical trade test required after payment'
@@ -554,6 +604,7 @@ export default function WorkerVerificationPage() {
                 try {
                   const next = await markPaymentPaid(user.id, ASSESSMENT_FEE_INR);
                   setRow(next);
+      notifyVerificationUpdated();
                   toast.success('Payment recorded');
                 } catch (e) {
                   toast.error(e instanceof Error ? e.message : 'Payment failed');
@@ -585,6 +636,7 @@ export default function WorkerVerificationPage() {
                 try {
                   const next = await markTestsPassed(user.id);
                   setRow(next);
+      notifyVerificationUpdated();
                   toast.success('Test 3 complete — continue to bond');
                 } catch (e) {
                   toast.error(e instanceof Error ? e.message : 'Failed');
@@ -644,6 +696,7 @@ export default function WorkerVerificationPage() {
                   try {
                     const next = await submitBond(user.id, bondMethod);
                     setRow(next);
+      notifyVerificationUpdated();
                     toast.success('Bond submitted — you are GCC ready');
                     navigate('/jobs');
                   } catch (e) {

@@ -4,6 +4,7 @@ import {
   CreditCard,
   FileSignature,
   Flag,
+  ImagePlus,
   UserRound,
   Video,
   Wrench,
@@ -24,6 +25,7 @@ export type GccStepStatus = "completed" | "current" | "waiting";
 const STEP_ICONS: Record<GccNavStepId, LucideIcon> = {
   essentials: UserRound,
   test1: ClipboardList,
+  skill_proof: ImagePlus,
   test2: Video,
   payment: CreditCard,
   test3: Wrench,
@@ -73,7 +75,8 @@ export function useWorkerGccJourneyProgress() {
     }
 
     let cancelled = false;
-    (async () => {
+
+    const load = async () => {
       try {
         const { data } = await (supabase as any)
           .from("worker_verification")
@@ -88,10 +91,20 @@ export function useWorkerGccJourneyProgress() {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
+    };
+
+    void load();
+
+    const onUpdated = () => {
+      void load();
+    };
+    window.addEventListener("swg-verification-updated", onUpdated);
+    window.addEventListener("focus", onUpdated);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("swg-verification-updated", onUpdated);
+      window.removeEventListener("focus", onUpdated);
     };
   }, [user?.id, profile?.id]);
 

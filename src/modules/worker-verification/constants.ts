@@ -74,8 +74,8 @@ export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
 /** Short labels used inside the wizard UI (DB stages). */
 export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   essentials: 'Essentials',
-  quiz: 'Test 1 — Skill quiz',
-  media: 'Test 1 — Skill media',
+  quiz: 'Test 1 — Know this work?',
+  media: 'Skill proof upload',
   awaiting_interview: 'Test 2 — Video interview',
   awaiting_payment: 'Payment',
   tests: 'Test 3 — Physical trade test',
@@ -83,10 +83,15 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   gcc_ready: 'GCC ready',
 };
 
-/** Sidebar / home tracker step ids (quiz+media share Test 1). */
+/**
+ * Sidebar / home tracker.
+ * Test 1 = reference media + yes/no knowledge.
+ * Skill proof upload sits after Test 1 and before Test 2 (profile completion phase).
+ */
 export type GccNavStepId =
   | 'essentials'
   | 'test1'
+  | 'skill_proof'
   | 'test2'
   | 'payment'
   | 'test3'
@@ -103,9 +108,15 @@ export const GCC_JOURNEY_NAV_STEPS: {
   { id: 'essentials', label: 'Essentials', shortLabel: 'Essentials', stages: ['essentials'] },
   {
     id: 'test1',
-    label: 'Test 1 — Skill quiz & media',
+    label: 'Test 1 — Know this work?',
     shortLabel: 'Test 1',
-    stages: ['quiz', 'media'],
+    stages: ['quiz'],
+  },
+  {
+    id: 'skill_proof',
+    label: 'Skill proof upload',
+    shortLabel: 'Skill proof',
+    stages: ['media'],
   },
   {
     id: 'test2',
@@ -136,4 +147,25 @@ export function navStepIndex(id: GccNavStepId): number {
 export function navStepForStage(stage: VerificationStage): GccNavStepId {
   const found = GCC_JOURNEY_NAV_STEPS.find((s) => s.stages.includes(stage));
   return found?.id ?? 'essentials';
+}
+
+/** Convert YouTube watch/shorts links to embeddable URL. */
+export function youtubeEmbedUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtu.be')) {
+      const id = u.pathname.replace(/^\//, '').split('/')[0];
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (u.pathname.includes('/shorts/')) {
+      const id = u.pathname.split('/shorts/')[1]?.split('/')[0];
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    const v = u.searchParams.get('v');
+    if (v) return `https://www.youtube.com/embed/${v}`;
+  } catch {
+    /* ignore */
+  }
+  return null;
 }
