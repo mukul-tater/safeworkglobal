@@ -34,12 +34,13 @@ export type PartnerApplicationPayload = Partial<
 function mapPartnerProfileError(error: { code?: string; message?: string }): Error {
   const message = error.message || 'Failed to save partner application';
 
+  // Fixes: PGRST204 missing E-Mitra onboarding columns
   if (
     error.code === 'PGRST204'
     || /could not find the '.*' column/i.test(message)
   ) {
     return new Error(
-      'Partner database is missing E-Mitra columns. Run supabase migration 20260607180000_partner_profiles_emitra_columns.sql in the Supabase SQL editor, then retry.',
+      'Partner database is missing E-Mitra columns. Run supabase migrations 20260607180000_partner_profiles_emitra_columns.sql and 20260730100000_emitra_onboarding_v2.sql in the Supabase SQL editor, then retry.',
     );
   }
 
@@ -95,13 +96,33 @@ export async function getDashboardStats(partnerProfileId: string): Promise<Dashb
     .eq('id', partnerProfileId)
     .single();
 
+  const earnings = Number(profile?.total_incentives_earned || 0);
+  const verified = list.filter((w: { status: string }) => w.status !== 'registered').length;
+  const interviewed = list.filter((w: { status: string }) =>
+    ['interviewed', 'selected', 'placed'].includes(w.status),
+  ).length;
+  const selected = list.filter((w: { status: string }) =>
+    ['selected', 'placed'].includes(w.status),
+  ).length;
+  const placed = list.filter((w: { status: string }) => w.status === 'placed').length;
+
   return {
     totalRegistered: list.length,
-    verified: list.filter(w => w.status !== 'registered').length,
-    interviewed: list.filter(w => ['interviewed', 'selected', 'placed'].includes(w.status)).length,
-    selected: list.filter(w => ['selected', 'placed'].includes(w.status)).length,
-    placed: list.filter(w => w.status === 'placed').length,
-    incentivesEarned: Number(profile?.total_incentives_earned || 0),
+    documentsPending: list.filter((w: { status: string }) => w.status === 'registered').length,
+    interviewsScheduled: list.filter((w: { status: string }) => w.status === 'interview_scheduled')
+      .length,
+    // Trade-test booking not fully modeled yet — show 0 until pipeline status exists
+    tradeTestsBooked: list.filter((w: { status: string }) =>
+      ['trade_test', 'trade_test_booked'].includes(w.status),
+    ).length,
+    workersSelected: selected,
+    workersDeployed: placed,
+    earnings,
+    verified,
+    interviewed,
+    selected,
+    placed,
+    incentivesEarned: earnings,
   };
 }
 

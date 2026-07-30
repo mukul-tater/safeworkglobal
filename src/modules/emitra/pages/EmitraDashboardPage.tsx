@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
-  Users, ClipboardCheck, Briefcase, CheckCircle2, IndianRupee, UserPlus,
-  Clock, ShieldAlert, ArrowRight, Trophy, Store,
+  Users, FileWarning, CalendarCheck, Wrench, CheckCircle2, Plane,
+  IndianRupee, UserPlus, Clock, ShieldAlert, ArrowRight, Trophy, Store,
 } from 'lucide-react';
 import { emitraNavGroups, emitraProfileMenu } from '../config/emitraNav';
 import ComplianceGate from '../components/ComplianceGate';
@@ -25,7 +25,20 @@ export default function EmitraDashboardPage() {
   const { profile, user } = useAuth();
   const navigate = useNavigate();
   const [row, setRow] = useState<PartnerProfile | null>(null);
-  const [stats, setStats] = useState({ totalRegistered: 0, verified: 0, interviewed: 0, selected: 0, placed: 0, incentivesEarned: 0 });
+  const [stats, setStats] = useState({
+    totalRegistered: 0,
+    documentsPending: 0,
+    interviewsScheduled: 0,
+    tradeTestsBooked: 0,
+    workersSelected: 0,
+    workersDeployed: 0,
+    earnings: 0,
+    verified: 0,
+    interviewed: 0,
+    selected: 0,
+    placed: 0,
+    incentivesEarned: 0,
+  });
   const [activities, setActivities] = useState<PartnerActivity[]>([]);
   const [incentives, setIncentives] = useState<PartnerIncentive[]>([]);
   const [rank, setRank] = useState<number | null>(null);
@@ -76,12 +89,13 @@ export default function EmitraDashboardPage() {
   }
 
   const statCards = [
-    { label: 'Workers Registered', value: stats.totalRegistered, icon: Users, color: 'text-primary bg-primary/10' },
-    { label: 'Workers Verified', value: stats.verified, icon: ClipboardCheck, color: 'text-emerald-600 bg-emerald-50' },
-    { label: 'Workers Interviewed', value: stats.interviewed, icon: Briefcase, color: 'text-violet-600 bg-violet-50' },
-    { label: 'Workers Selected', value: stats.selected, icon: CheckCircle2, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Workers Placed', value: stats.placed, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50' },
-    { label: 'Incentives Earned', value: `₹${stats.incentivesEarned}`, icon: IndianRupee, color: 'text-amber-600 bg-amber-50' },
+    { label: 'Total Workers Registered', value: stats.totalRegistered, icon: Users, color: 'text-primary bg-primary/10' },
+    { label: 'Documents Pending', value: stats.documentsPending, icon: FileWarning, color: 'text-amber-600 bg-amber-50' },
+    { label: 'Interviews Scheduled', value: stats.interviewsScheduled, icon: CalendarCheck, color: 'text-violet-600 bg-violet-50' },
+    { label: 'Trade Tests Booked', value: stats.tradeTestsBooked, icon: Wrench, color: 'text-blue-600 bg-blue-50' },
+    { label: 'Workers Selected', value: stats.workersSelected, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50' },
+    { label: 'Workers Deployed', value: stats.workersDeployed, icon: Plane, color: 'text-sky-600 bg-sky-50' },
+    { label: 'Earnings', value: `₹${stats.earnings}`, icon: IndianRupee, color: 'text-amber-700 bg-amber-50' },
   ];
 
   return (
@@ -127,14 +141,14 @@ export default function EmitraDashboardPage() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mb-6">
-        {statCards.map(s => (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+        {statCards.map((s) => (
           <Card key={s.label}>
             <CardContent className="p-4 flex items-center gap-3">
               <div className={`p-2.5 rounded-xl ${s.color}`}><s.icon className="h-5 w-5" /></div>
               <div>
                 <p className="text-xl md:text-2xl font-bold">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
+                <p className="text-xs text-muted-foreground leading-snug">{s.label}</p>
               </div>
             </CardContent>
           </Card>
@@ -149,7 +163,7 @@ export default function EmitraDashboardPage() {
               <p className="text-sm text-muted-foreground text-center py-6">No activity yet</p>
             ) : (
               <div className="space-y-3">
-                {activities.slice(0, 6).map(a => (
+                {activities.slice(0, 6).map((a) => (
                   <div key={a.id} className="flex justify-between gap-2 text-sm border-b pb-2 last:border-0">
                     <div>
                       <p className="font-medium">{a.title}</p>
@@ -193,9 +207,9 @@ export default function EmitraDashboardPage() {
             <div className="flex justify-between"><span className="text-muted-foreground">Interview qualified</span><span>₹{INCENTIVE_AMOUNTS.interview_qualified}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Successful placement</span><span>₹{INCENTIVE_AMOUNTS.placement}</span></div>
             <div className="flex justify-between border-t pt-2 font-semibold">
-              <span>Total Earned</span><span>₹{stats.incentivesEarned}</span>
+              <span>Total Earned</span><span>₹{stats.earnings}</span>
             </div>
-            {incentives.slice(0, 3).map(inc => (
+            {incentives.slice(0, 3).map((inc) => (
               <div key={inc.id} className="text-xs text-muted-foreground flex justify-between">
                 <span>{inc.description}</span><span>+₹{inc.amount}</span>
               </div>

@@ -32,18 +32,36 @@ export interface PartnerProfile {
   has_scanner: boolean | null;
   has_printer: boolean | null;
   has_internet: boolean | null;
+  has_webcam?: boolean | null;
   worker_categories: string[] | null;
   years_in_operation: number | null;
   account_holder: string | null;
   account_number: string | null;
   ifsc: string | null;
   upi_id: string | null;
+  bank_name?: string | null;
   emitra_certificate_url: string | null;
   pan_card_url: string | null;
   address_proof_url: string | null;
   shop_photo_url: string | null;
   owner_photo_url: string | null;
   pan_number: string | null;
+  aadhaar_number?: string | null;
+  gst_number?: string | null;
+  csc_id?: string | null;
+  shop_name?: string | null;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  village?: string | null;
+  panchayat?: string | null;
+  city_town?: string | null;
+  cancelled_cheque_url?: string | null;
+  aadhaar_url?: string | null;
+  inside_shop_photo_url?: string | null;
+  training_declaration?: boolean | null;
+  agree_mea_guidelines?: boolean | null;
+  agree_platform_only?: boolean | null;
+  agree_confidentiality?: boolean | null;
   status: string;
   partner_code: string | null;
   tier: PartnerTier | null;
@@ -122,6 +140,13 @@ export interface WorkerStatusHistory {
 
 export interface DashboardStats {
   totalRegistered: number;
+  documentsPending: number;
+  interviewsScheduled: number;
+  tradeTestsBooked: number;
+  workersSelected: number;
+  workersDeployed: number;
+  earnings: number;
+  /** @deprecated use documentsPending / interviewsScheduled */
   verified: number;
   interviewed: number;
   selected: number;

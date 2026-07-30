@@ -39,6 +39,11 @@ const STEPS = [
 
 type FormData = Record<string, any>;
 
+/**
+ * Legacy E-Mitra partner registration (v1).
+ * Unlinked from primary UX — kept at /emitra/register-legacy.
+ * New flow: EmitraOnboardingPage at /emitra/register.
+ */
 export default function EmitraRegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

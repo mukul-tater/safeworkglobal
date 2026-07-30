@@ -71,6 +71,7 @@ import AdminContentModeration from "./pages/admin/AdminContentModeration";
 import AdminMessages from "./pages/admin/AdminMessages";
 import {
   EmitraRegisterPage,
+  EmitraOnboardingPage,
   EmitraLoginPage,
   EmitraDashboardPage,
   EmitraWorkersPage,
@@ -158,8 +159,9 @@ function AppShell() {
           <Route path="/lsp/verify" element={<LspVerifyPage />} />
           <Route path="/lsp/denied" element={<LspDeniedPage />} />
 
-          {/* E-Mitra partner */}
-          <Route path="/emitra/register" element={<EmitraRegisterPage />} />
+          {/* E-Mitra partner — v2 onboarding at /emitra/register; legacy kept unlinked */}
+          <Route path="/emitra/register" element={<EmitraOnboardingPage />} />
+          <Route path="/emitra/register-legacy" element={<EmitraRegisterPage />} />
           <Route path="/emitra/login" element={<EmitraLoginPage />} />
           <Route
             path="/emitra/dashboard"
