@@ -287,3 +287,51 @@ export function stageIndex(stage: VerificationStage): number {
   ];
   return Math.max(0, order.indexOf(stage));
 }
+
+/**
+ * Dev / preview only — wipe journey progress so QA can re-test from essentials.
+ * Never call this from production UI (gated in the page).
+ */
+export async function resetVerificationJourney(userId: string): Promise<WorkerVerification> {
+  await supabase.from('worker_skill_quiz_responses').delete().eq('user_id', userId);
+  await supabase.from('worker_verification_interviews').delete().eq('user_id', userId);
+  await supabase.from('worker_assessment_payments').delete().eq('user_id', userId);
+  await supabase.from('worker_bonds').delete().eq('user_id', userId);
+
+  const row = await getOrCreateVerification(userId);
+  const { data, error } = await supabase
+    .from('worker_verification')
+    .update({
+      stage: 'essentials',
+      terms_accepted_at: null,
+      terms_version: null,
+      email: null,
+      city: null,
+      state: null,
+      education_level: null,
+      primary_skill: null,
+      essentials_completed_at: null,
+      quiz_score: null,
+      quiz_completed_at: null,
+      media_submitted_at: null,
+      interview_score: null,
+      interview_notes: null,
+      interview_rated_at: null,
+      trade_test_required: true,
+      payment_status: 'pending',
+      payment_amount: null,
+      paid_at: null,
+      medical_status: 'pending',
+      trade_test_status: 'pending',
+      bond_status: 'pending',
+      gcc_ready_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', row.id)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as WorkerVerification;
+}
+

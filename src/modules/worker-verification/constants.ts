@@ -169,3 +169,21 @@ export function youtubeEmbedUrl(url: string | null | undefined): string | null {
   }
   return null;
 }
+
+/**
+ * Journey reset control — local / Lovable preview only.
+ * Never on safeworkglobal.com production hosts.
+ */
+export function isJourneyResetEnabled(): boolean {
+  if (import.meta.env.VITE_ENABLE_JOURNEY_RESET === 'false') return false;
+  if (import.meta.env.VITE_ENABLE_JOURNEY_RESET === 'true') return true;
+  if (import.meta.env.DEV) return true;
+  if (typeof window === 'undefined') return false;
+  const host = window.location.hostname.toLowerCase();
+  if (host === 'safeworkglobal.com' || host.endsWith('.safeworkglobal.com')) return false;
+  return (
+    host.includes('lovable') ||
+    host === 'localhost' ||
+    host === '127.0.0.1'
+  );
+}

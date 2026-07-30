@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
-  Calendar, CreditCard, Stethoscope, FileSignature, Flag,
+  Calendar, CreditCard, Stethoscope, FileSignature, Flag, RotateCcw,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -25,6 +25,7 @@ import {
   GCC_JOURNEY_NAV_STEPS,
   INTERVIEW_TRADE_TEST_THRESHOLD,
   VERIFICATION_STAGE_LABELS,
+  isJourneyResetEnabled,
   navStepForStage,
   navStepIndex,
   youtubeEmbedUrl,
@@ -38,6 +39,7 @@ import {
   markPaymentPaid,
   markTestsPassed,
   recordInterviewScore,
+  resetVerificationJourney,
   saveEssentials,
   submitBond,
   submitQuiz,
@@ -82,6 +84,8 @@ export default function WorkerVerificationPage() {
 
   const [demoScore, setDemoScore] = useState('75');
   const [bondMethod, setBondMethod] = useState<'estamp' | 'emitra' | 'physical_upload'>('estamp');
+  const [resetting, setResetting] = useState(false);
+  const showDevReset = isJourneyResetEnabled();
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -263,6 +267,37 @@ export default function WorkerVerificationPage() {
     }
   };
 
+  const onDevResetJourney = async () => {
+    if (!user?.id || !showDevReset) return;
+    if (!window.confirm('DEV ONLY: Reset GCC journey to Essentials and clear quiz/payment/bond progress?')) {
+      return;
+    }
+    setResetting(true);
+    try {
+      const next = await resetVerificationJourney(user.id);
+      setRow(next);
+      setEmail('');
+      setCity('');
+      setState('');
+      setEducation('');
+      setPrimarySkill('');
+      setQuizItems([]);
+      setQuizAnswers({});
+      setQuizIndex(0);
+      setPhotoCount(0);
+      setVideoCount(0);
+      setSkillId(null);
+      setDemoScore('75');
+      notifyVerificationUpdated();
+      toast.success('Journey reset to Essentials (dev)');
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Reset failed');
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (loading) {
     return (
       <WorkerPortalLayout>
@@ -305,6 +340,18 @@ export default function WorkerVerificationPage() {
             <Button asChild className="rounded-xl">
               <Link to="/jobs">Go to Job Search</Link>
             </Button>
+            {showDevReset && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-dashed border-amber-500/50 text-amber-700"
+                disabled={resetting}
+                onClick={() => void onDevResetJourney()}
+              >
+                {resetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                Dev: reset journey
+              </Button>
+            )}
           </CardContent>
         </Card>
       </WorkerPortalLayout>
@@ -314,6 +361,25 @@ export default function WorkerVerificationPage() {
   return (
     <WorkerPortalLayout>
       <div className="max-w-2xl mx-auto space-y-5">
+        {showDevReset && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
+            <p className="text-[11px] text-amber-800 dark:text-amber-200">
+              Dev / preview only — not shown on safeworkglobal.com
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 shrink-0 border-amber-500/40 text-amber-800"
+              disabled={resetting}
+              onClick={() => void onDevResetJourney()}
+            >
+              {resetting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <RotateCcw className="h-3.5 w-3.5 mr-1.5" />}
+              Reset journey
+            </Button>
+          </div>
+        )}
+
         <div>
           <p className="text-xs text-muted-foreground mb-1">
             Step {navStepIndex(navId) + 1} of {GCC_JOURNEY_NAV_STEPS.length} — {VERIFICATION_STAGE_LABELS[stage]}
