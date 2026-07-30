@@ -101,17 +101,22 @@ export function useWorkerGccJourneyProgress() {
 
   const navItems = useMemo(
     () =>
-      GCC_JOURNEY_NAV_STEPS.map((step) => ({
-        id: step.id,
-        path: "/worker/journey",
-        icon: STEP_ICONS[step.id],
-        label: step.label,
-        statusLabel: statusLabel(statuses[step.id]),
-        statusTone:
+      GCC_JOURNEY_NAV_STEPS.map((step) => {
+        const tone =
           statuses[step.id] === "current"
             ? ("in_progress" as const)
-            : statuses[step.id],
-      })),
+            : statuses[step.id];
+        return {
+          id: step.id,
+          path: "/worker/journey",
+          icon: STEP_ICONS[step.id],
+          label: step.label,
+          statusLabel: statusLabel(statuses[step.id]),
+          statusTone: tone,
+          // Locked stepper: cannot jump ahead to waiting steps.
+          disabled: statuses[step.id] === "waiting",
+        };
+      }),
     [statuses],
   );
 

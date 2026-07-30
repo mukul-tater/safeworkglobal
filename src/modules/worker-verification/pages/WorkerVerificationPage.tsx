@@ -315,22 +315,25 @@ export default function WorkerVerificationPage() {
             Profile ~{Math.min(40, 15 + navStepIndex(navId) * 5)}% so far — documents can wait until later.
           </p>
           <Progress value={progress} className="h-2 mt-3" />
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {GCC_JOURNEY_NAV_STEPS.map((s) => (
-              <Badge
-                key={s.id}
-                variant={
-                  s.id === navId
-                    ? 'default'
-                    : navStepIndex(s.id) < navStepIndex(navId)
-                      ? 'secondary'
-                      : 'outline'
-                }
-                className="text-[10px]"
-              >
-                {s.shortLabel}
-              </Badge>
-            ))}
+          <div className="flex flex-wrap gap-1.5 mt-3" aria-label="Journey progress">
+            {GCC_JOURNEY_NAV_STEPS.map((s) => {
+              const done = navStepIndex(s.id) < navStepIndex(navId);
+              const current = s.id === navId;
+              const locked = navStepIndex(s.id) > navStepIndex(navId);
+              return (
+                <Badge
+                  key={s.id}
+                  variant={current ? 'default' : done ? 'secondary' : 'outline'}
+                  className={cn(
+                    'text-[10px]',
+                    locked && 'opacity-40 cursor-not-allowed',
+                  )}
+                  title={locked ? 'Complete the previous step first' : s.label}
+                >
+                  {s.shortLabel}
+                </Badge>
+              );
+            })}
           </div>
         </div>
 

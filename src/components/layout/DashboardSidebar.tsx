@@ -15,6 +15,8 @@ export interface NavItem {
   /** Optional status line under label (e.g. journey steps). */
   statusLabel?: string;
   statusTone?: "completed" | "in_progress" | "waiting";
+  /** Locked stepper step — not clickable (future / not unlocked). */
+  disabled?: boolean;
 }
 
 export interface NavGroup {
@@ -39,8 +41,12 @@ function itemIsActive(item: NavItem, pathname: string, search: string): boolean 
 
   const journey = new URLSearchParams(search).get("journey");
 
-  // Journey steps use ?journey=<id> so Profile vs Final Selection (same path) stay unique.
-  if (item.id) return journey === item.id;
+  // Journey steps use ?journey=<id> so shared paths stay unique.
+  if (item.id) {
+    if (journey) return journey === item.id;
+    // On /worker/journey with no query: highlight the current unlocked step only.
+    return item.statusTone === "in_progress";
+  }
 
   // Plain nav (Home, Jobs, …): inactive while a journey deep-link owns the URL.
   if (journey) return false;
@@ -62,17 +68,8 @@ function NavLinkRow({
     ? `${item.path}${item.path.includes("?") ? "&" : "?"}journey=${encodeURIComponent(item.id)}`
     : item.path;
 
-  return (
-    <Link
-      to={to}
-      onClick={onNavigate}
-      className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
-        isActive
-          ? "bg-primary text-primary-foreground shadow-sm"
-          : "hover:bg-muted text-muted-foreground hover:text-foreground",
-      )}
-    >
+  const content = (
+    <>
       <Icon className={cn("h-4 w-4 shrink-0", !isActive && "opacity-70")} />
       <span className="min-w-0 flex-1">
         <span className="block truncate">{item.label}</span>
@@ -93,6 +90,33 @@ function NavLinkRow({
           </span>
         )}
       </span>
+    </>
+  );
+
+  if (item.disabled) {
+    return (
+      <div
+        aria-disabled="true"
+        title="Complete the previous step first"
+        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/50 cursor-not-allowed select-none"
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={to}
+      onClick={onNavigate}
+      className={cn(
+        "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
+        isActive
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "hover:bg-muted text-muted-foreground hover:text-foreground",
+      )}
+    >
+      {content}
     </Link>
   );
 }
