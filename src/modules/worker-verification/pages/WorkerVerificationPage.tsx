@@ -49,6 +49,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 const STORAGE_BUCKET = 'worker-videos';
+const PHOTO_TARGET_MIN = 8;
+const PHOTO_TARGET_MAX = 10;
+const VIDEO_TARGET_MIN = 4;
+const VIDEO_TARGET_MAX = 5;
 
 function notifyVerificationUpdated() {
   window.dispatchEvent(new Event('swg-verification-updated'));
@@ -80,6 +84,7 @@ export default function WorkerVerificationPage() {
   const [videoCount, setVideoCount] = useState(0);
   const [skillId, setSkillId] = useState<string | null>(null);
   const [uploadingKind, setUploadingKind] = useState<'photo' | 'video' | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
@@ -338,42 +343,62 @@ export default function WorkerVerificationPage() {
     }
   };
 
-  const uploadMedia = async (file: File | null, type: 'photo' | 'video') => {
-    if (!file || !user?.id || !skillId) {
+  const uploadMediaFiles = async (files: FileList | File[] | null, type: 'photo' | 'video') => {
+    const list = files ? Array.from(files) : [];
+    if (!list.length) return;
+    if (!user?.id || !skillId) {
       toast.error('Primary skill not ready — go back to essentials');
       return;
     }
-    if (type === 'video' && file.size > 50 * 1024 * 1024) {
-      toast.error('Video must be under 50MB');
-      return;
+
+    const maxSize = type === 'video' ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    const valid: File[] = [];
+    for (const file of list) {
+      if (file.size > maxSize) {
+        toast.error(
+          `${file.name} is too large (${type === 'video' ? 'max 50MB' : 'max 10MB'}) — skipped`,
+        );
+        continue;
+      }
+      valid.push(file);
     }
-    if (type === 'photo' && file.size > 10 * 1024 * 1024) {
-      toast.error('Photo must be under 10MB');
-      return;
-    }
+    if (!valid.length) return;
+
     setUploadingKind(type);
+    setUploadProgress({ current: 0, total: valid.length });
+    let ok = 0;
     try {
-      const ext = file.name.split('.').pop() || (type === 'photo' ? 'jpg' : 'mp4');
-      const folder = type === 'photo' ? 'photos' : 'videos';
-      const filePath = `${user.id}/skills/${skillId}/${folder}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(filePath, file, { upsert: false });
-      if (uploadError) throw uploadError;
-      const { error: insertError } = await supabase.from('worker_skill_media').insert({
-        skill_id: skillId,
-        worker_id: user.id,
-        media_type: type,
-        file_path: filePath,
-      });
-      if (insertError) throw insertError;
-      if (type === 'photo') setPhotoCount((c) => c + 1);
-      else setVideoCount((c) => c + 1);
-      toast.success(type === 'photo' ? 'Photo uploaded' : 'Video uploaded');
+      for (let i = 0; i < valid.length; i++) {
+        const file = valid[i];
+        setUploadProgress({ current: i + 1, total: valid.length });
+        const ext = file.name.split('.').pop() || (type === 'photo' ? 'jpg' : 'mp4');
+        const folder = type === 'photo' ? 'photos' : 'videos';
+        const filePath = `${user.id}/skills/${skillId}/${folder}/${Date.now()}-${i}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .upload(filePath, file, { upsert: false });
+        if (uploadError) throw uploadError;
+        const { error: insertError } = await supabase.from('worker_skill_media').insert({
+          skill_id: skillId,
+          worker_id: user.id,
+          media_type: type,
+          file_path: filePath,
+        });
+        if (insertError) throw insertError;
+        ok += 1;
+        if (type === 'photo') setPhotoCount((c) => c + 1);
+        else setVideoCount((c) => c + 1);
+      }
+      toast.success(
+        type === 'photo'
+          ? `${ok} photo${ok === 1 ? '' : 's'} uploaded`
+          : `${ok} video${ok === 1 ? '' : 's'} uploaded`,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Upload failed');
     } finally {
       setUploadingKind(null);
+      setUploadProgress(null);
       if (type === 'photo' && photoRef.current) photoRef.current.value = '';
       if (type === 'video' && videoRef.current) videoRef.current.value = '';
     }
@@ -384,6 +409,12 @@ export default function WorkerVerificationPage() {
     if (photoCount < 1 || videoCount < 1) {
       toast.error('Upload at least 1 photo and 1 video of your primary skill');
       return;
+    }
+    if (photoCount < PHOTO_TARGET_MIN || videoCount < VIDEO_TARGET_MIN) {
+      const proceed = window.confirm(
+        `Hint: 8–10 photos and 4–5 videos work best (आप अभी ${photoCount} photos, ${videoCount} videos).\nContinue anyway?`,
+      );
+      if (!proceed) return;
     }
     setSaving(true);
     try {
@@ -708,9 +739,16 @@ export default function WorkerVerificationPage() {
               <div>
                 <h2 className="font-semibold">Skill proof upload</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Profile completion after Test 1 — upload at least one photo and one short video of your work as{' '}
+                  Profile completion after Test 1 — upload photos and short videos of your work as{' '}
                   <span className="font-medium text-foreground">{row.primary_skill}</span>
                   {' '}before Test 2 (video interview).
+                </p>
+                <p className="text-sm text-foreground mt-2 leading-snug" lang="hi">
+                  अपने काम करते हुए <span className="font-medium">8 से 10 photos</span> और{' '}
+                  <span className="font-medium">4–5 videos</span> डालिए, जिनमें आप साफ दिखें — काम करते हुए।
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Tip: select multiple files at once. You should be clearly visible while working.
                 </p>
               </div>
 
@@ -722,7 +760,11 @@ export default function WorkerVerificationPage() {
                 >
                   <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
                   <span>
-                    Uploading {uploadingKind === 'photo' ? 'photo' : 'video'}… Please wait.
+                    Uploading {uploadingKind === 'photo' ? 'photos' : 'videos'}
+                    {uploadProgress
+                      ? ` ${uploadProgress.current} of ${uploadProgress.total}`
+                      : ''}
+                    … Please wait.
                   </span>
                 </div>
               )}
@@ -736,14 +778,20 @@ export default function WorkerVerificationPage() {
                   )}
                 >
                   <ImagePlus className="h-7 w-7 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm font-medium mb-1">Photos ({photoCount})</p>
+                  <p className="text-sm font-medium mb-0.5">
+                    Photos ({photoCount}/{PHOTO_TARGET_MAX})
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    Target {PHOTO_TARGET_MIN}–{PHOTO_TARGET_MAX}
+                  </p>
                   <input
                     ref={photoRef}
                     type="file"
                     accept="image/*"
+                    multiple
                     className="hidden"
                     disabled={!!uploadingKind}
-                    onChange={(e) => void uploadMedia(e.target.files?.[0] || null, 'photo')}
+                    onChange={(e) => void uploadMediaFiles(e.target.files, 'photo')}
                   />
                   <Button
                     type="button"
@@ -757,7 +805,7 @@ export default function WorkerVerificationPage() {
                     ) : (
                       <Upload className="h-3.5 w-3.5 mr-1" />
                     )}
-                    {uploadingKind === 'photo' ? 'Uploading…' : 'Upload photo'}
+                    {uploadingKind === 'photo' ? 'Uploading…' : 'Select photos'}
                   </Button>
                 </div>
                 <div
@@ -768,14 +816,20 @@ export default function WorkerVerificationPage() {
                   )}
                 >
                   <Video className="h-7 w-7 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm font-medium mb-1">Videos ({videoCount})</p>
+                  <p className="text-sm font-medium mb-0.5">
+                    Videos ({videoCount}/{VIDEO_TARGET_MAX})
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    Target {VIDEO_TARGET_MIN}–{VIDEO_TARGET_MAX}
+                  </p>
                   <input
                     ref={videoRef}
                     type="file"
                     accept="video/*"
+                    multiple
                     className="hidden"
                     disabled={!!uploadingKind}
-                    onChange={(e) => void uploadMedia(e.target.files?.[0] || null, 'video')}
+                    onChange={(e) => void uploadMediaFiles(e.target.files, 'video')}
                   />
                   <Button
                     type="button"
@@ -789,7 +843,7 @@ export default function WorkerVerificationPage() {
                     ) : (
                       <Upload className="h-3.5 w-3.5 mr-1" />
                     )}
-                    {uploadingKind === 'video' ? 'Uploading…' : 'Upload video'}
+                    {uploadingKind === 'video' ? 'Uploading…' : 'Select videos'}
                   </Button>
                 </div>
               </div>
