@@ -9,7 +9,8 @@ const corsHeaders = {
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const TOKEN_TTL_MS = 15 * 60 * 1000;
-const MOCK_MODE = Deno.env.get('OTP_ALLOW_MOCK') !== 'false';
+// Mock/demo OTP bypass is OFF unless explicitly opted in for local development.
+const MOCK_MODE = Deno.env.get('OTP_ALLOW_MOCK') === 'true';
 
 type ApiSuccess<T> = { success: true; data: T; message?: string };
 type ApiError = { success: false; message: string; errors?: Record<string, string[]> };
@@ -23,6 +24,10 @@ function json(body: ApiSuccess<unknown> | ApiError, status = 200) {
 
 function phoneRegex(mobile: string) {
   return /^[6-9]\d{9}$/.test(mobile);
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@,()]{1,64}@[^\s@,()]{1,190}\.[A-Za-z]{2,}$/.test(value);
 }
 
 function generateCode() {
@@ -102,7 +107,7 @@ serve(async (req) => {
         return json({ success: false, message: 'Validation failed', errors: { otp: ['OTP expired'] } }, 400);
       }
 
-      const valid = MOCK_MODE || otp === record.otp_code;
+      const valid = otp === record.otp_code;
       if (!valid) {
         return json({ success: false, message: 'Validation failed', errors: { otp: ['Invalid OTP'] } }, 400);
       }
@@ -137,6 +142,11 @@ serve(async (req) => {
         return json({ success: false, message: 'Validation failed', errors: { mobileNumber: ['Verification required'] } }, 400);
       }
 
+      const normalizedEmail = String(email ?? '').trim().toLowerCase();
+      if (!isValidEmail(normalizedEmail)) {
+        return json({ success: false, message: 'Validation failed', errors: { email: ['Valid email is required'] } }, 400);
+      }
+
       const { data: tokenRow } = await supabase
         .from('worker_portal_tokens')
         .select('*')
@@ -152,12 +162,18 @@ serve(async (req) => {
         return json({ success: false, message: 'Validation failed', errors: { confirmPassword: ['Passwords do not match'] } }, 400);
       }
 
-      const { count } = await supabase
-        .from('worker_portal_users')
-        .select('*', { count: 'exact', head: true })
-        .or(`mobile_number.eq.${mobile},email.eq.${String(email).toLowerCase()}`);
+      const [{ count: mobileCount }, { count: emailCount }] = await Promise.all([
+        supabase
+          .from('worker_portal_users')
+          .select('*', { count: 'exact', head: true })
+          .eq('mobile_number', mobile),
+        supabase
+          .from('worker_portal_users')
+          .select('*', { count: 'exact', head: true })
+          .eq('email', normalizedEmail),
+      ]);
 
-      if (count && count > 0) {
+      if ((mobileCount ?? 0) > 0 || (emailCount ?? 0) > 0) {
         return json({ success: false, message: 'Conflict', errors: { mobileNumber: ['Already registered'] } }, 409);
       }
 
@@ -166,7 +182,7 @@ serve(async (req) => {
         .select('*', { count: 'exact', head: true });
 
       const workerCode = `WRK-${String((userCount ?? 0) + 1).padStart(6, '0')}`;
-      const fullName = String(email).split('@')[0]?.replace(/[._-]+/g, ' ') || `Worker ${mobile.slice(-4)}`;
+      const fullName = normalizedEmail.split('@')[0]?.replace(/[._-]+/g, ' ') || `Worker ${mobile.slice(-4)}`;
       const passwordHash = bcrypt.hashSync(String(password));
 
       const { data: user, error } = await supabase
@@ -174,7 +190,7 @@ serve(async (req) => {
         .insert({
           worker_code: workerCode,
           full_name: fullName,
-          email: String(email).toLowerCase().trim(),
+          email: normalizedEmail,
           mobile_number: mobile,
           password_hash: passwordHash,
           mobile_verified: true,
@@ -221,12 +237,28 @@ serve(async (req) => {
     }
 
     if (route === 'google-auth' || body.action === 'google-auth') {
-      const email = String(body.email ?? '').trim().toLowerCase();
-      const fullName = String(body.fullName ?? '').trim();
-
-      if (!email || !email.includes('@')) {
-        return json({ success: false, message: 'Validation failed', errors: { email: ['Valid email is required'] } }, 400);
+      // Never trust a client-supplied email: derive it from a server-verified Supabase Auth JWT.
+      const authHeader = req.headers.get('Authorization') ?? '';
+      if (!authHeader.startsWith('Bearer ')) {
+        return json({ success: false, message: 'Unauthorized' }, 401);
       }
+
+      const authClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      );
+      const { data: authData, error: authError } = await authClient.auth.getUser(
+        authHeader.slice(7),
+      );
+      const verifiedEmail = authData?.user?.email?.trim().toLowerCase() ?? '';
+
+      if (authError || !verifiedEmail || !isValidEmail(verifiedEmail)) {
+        return json({ success: false, message: 'Unauthorized' }, 401);
+      }
+
+      const email = verifiedEmail;
+      const metadata = (authData?.user?.user_metadata ?? {}) as Record<string, unknown>;
+      const fullName = String(metadata.full_name ?? metadata.name ?? '').trim();
 
       const { data: user } = await supabase
         .from('worker_portal_users')
