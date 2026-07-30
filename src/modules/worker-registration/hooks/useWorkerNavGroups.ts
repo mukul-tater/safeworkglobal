@@ -10,7 +10,8 @@ import {
 import { useWorkerPlacementProgress } from "@/modules/worker-registration/hooks/useWorkerPlacementProgress";
 
 /**
- * Worker nav with My Journey = same 13 placement steps as the home tracker.
+ * Worker nav: one GCC Journey group (verification wizard + placement steps).
+ * Do not show a separate "GCC Journey" under Menu — that duplicated My Journey.
  */
 export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean } {
   const { statuses, loading } = useWorkerPlacementProgress();
@@ -18,17 +19,24 @@ export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean 
   const navGroups = useMemo(() => {
     const completed = PLACEMENT_STEPS.filter((s) => statuses[s.id] === "completed").length;
 
-    const journeyItems: NavItem[] = PLACEMENT_STEPS.map((step) => ({
-      id: step.id,
-      path: step.path,
-      icon: step.icon,
-      label: step.shortLabel,
-      statusLabel: placementStatusLabel(statuses[step.id]),
-      statusTone: placementStatusTone(statuses[step.id]),
-    }));
+    const journeyItems: NavItem[] = [
+      {
+        path: "/worker/journey",
+        icon: Flag,
+        label: "Verification",
+      },
+      ...PLACEMENT_STEPS.map((step) => ({
+        id: step.id,
+        path: step.path,
+        icon: step.icon,
+        label: step.shortLabel,
+        statusLabel: placementStatusLabel(statuses[step.id]),
+        statusTone: placementStatusTone(statuses[step.id]),
+      })),
+    ];
 
     const journeyGroup: NavGroup = {
-      label: "My Journey",
+      label: "GCC Journey",
       badge: `${completed}/${PLACEMENT_STEPS.length}`,
       defaultOpen: true,
       items: journeyItems,
@@ -43,12 +51,9 @@ export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean 
           ...overview,
           label: "Menu",
           defaultOpen: true,
-          items: [
-            ...overview.items
-              .filter((i) => i.path === "/worker/dashboard")
-              .map((i) => ({ ...i, label: "Home" })),
-            { path: "/worker/journey", icon: Flag, label: "GCC Journey" },
-          ],
+          items: overview.items
+            .filter((i) => i.path === "/worker/dashboard")
+            .map((i) => ({ ...i, label: "Home" })),
         }
       : null;
 

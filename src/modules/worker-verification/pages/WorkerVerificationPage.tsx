@@ -53,6 +53,7 @@ export default function WorkerVerificationPage() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [row, setRow] = useState<WorkerVerification | null>(null);
 
@@ -79,6 +80,7 @@ export default function WorkerVerificationPage() {
   const load = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const v = await getOrCreateVerification(user.id);
       setRow(v);
@@ -111,7 +113,10 @@ export default function WorkerVerificationPage() {
         }
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to load verification');
+      const msg = e instanceof Error ? e.message : 'Failed to load verification';
+      setLoadError(msg);
+      setRow(null);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -248,10 +253,29 @@ export default function WorkerVerificationPage() {
     }
   };
 
-  if (loading || !row) {
+  if (loading) {
     return (
       <WorkerPortalLayout>
         <div className="py-16 text-center text-muted-foreground">Loading your journey…</div>
+      </WorkerPortalLayout>
+    );
+  }
+
+  if (loadError || !row) {
+    return (
+      <WorkerPortalLayout>
+        <Card className="max-w-lg mx-auto">
+          <CardContent className="p-8 text-center space-y-4">
+            <h1 className="text-xl font-bold font-heading">Could not load GCC journey</h1>
+            <p className="text-sm text-muted-foreground">
+              {loadError ||
+                'Verification data is missing. If this keeps happening, run the worker_verification migration in Supabase.'}
+            </p>
+            <Button type="button" className="rounded-xl" onClick={() => void load()}>
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
       </WorkerPortalLayout>
     );
   }

@@ -7,7 +7,7 @@ interface Props {
   children: ReactNode;
 }
 
-/** Worker portal shell with My Journey sidebar accordion (sample 01). */
+/** Worker portal shell with GCC Journey sidebar accordion. */
 export default function WorkerPortalLayout({ children }: Props) {
   const { navGroups } = useWorkerNavGroups();
 
