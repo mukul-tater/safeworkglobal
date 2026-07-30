@@ -94,14 +94,14 @@ const STEPS: JourneyStep[] = [
   {
     id: "payment",
     number: 5,
-    title: "Trade Test Payment",
+    title: "Payment",
     shortTitle: "Payment",
     description:
-      "Pay the trade test fee securely to unlock booking at a SafeWork verified center.",
+      "Pay the fee securely to unlock booking at a SafeWork verified center.",
     icon: CreditCard,
     bullets: [
       "Secure online payment",
-      "Trade test fee confirmation",
+      "Fee confirmation receipt",
       "Receipt for your records",
       "Unlocks physical trade test booking",
     ],

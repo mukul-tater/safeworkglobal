@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
-  Calendar, CreditCard, Stethoscope, FileSignature, Flag, RotateCcw, ShieldCheck,
+  Calendar, CreditCard, Stethoscope, FileSignature, Flag, RotateCcw, ShieldCheck, Wrench,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -23,11 +23,12 @@ import {
   ASSESSMENT_FEE_INR,
   EDUCATION_LEVELS,
   GCC_JOURNEY_NAV_STEPS,
-  INTERVIEW_TRADE_TEST_THRESHOLD,
   VERIFICATION_STAGE_LABELS,
   isJourneyResetEnabled,
   navStepForStage,
   navStepIndex,
+  normalizeVerificationStage,
+  skillRequiresTradeTest,
   youtubeEmbedUrl,
   type VerificationStage,
 } from '@/modules/worker-verification/constants';
@@ -38,17 +39,23 @@ import {
   getOrCreateVerification,
   loadQuizItems,
   markPaymentPaid,
-  markTestsPassed,
   recordInterviewScore,
   resetVerificationJourney,
   saveEssentials,
   submitBond,
+  submitMedicalResult,
   submitQuiz,
+  submitTradeTestResult,
 } from '@/modules/worker-verification/services/verificationService';
+import {
+  isRazorpayConfigured,
+  openRazorpayCheckout,
+} from '@/modules/worker-verification/lib/razorpayCheckout';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 const STORAGE_BUCKET = 'worker-videos';
+const DOCS_BUCKET = 'worker-documents';
 const PHOTO_TARGET_MIN = 8;
 const PHOTO_TARGET_MAX = 10;
 const VIDEO_TARGET_MIN = 4;
@@ -95,19 +102,27 @@ export default function WorkerVerificationPage() {
 
   const [panNumber, setPanNumber] = useState('');
   const [aadhaarLast4, setAadhaarLast4] = useState('');
+  const [passportNumber, setPassportNumber] = useState('');
   const [panFile, setPanFile] = useState<File | null>(null);
   const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
+  const [passportFile, setPassportFile] = useState<File | null>(null);
   const [kycConsent, setKycConsent] = useState(false);
   const [forceIdentity, setForceIdentity] = useState(false);
   const [kycDone, setKycDone] = useState(false);
-  const [kycUploading, setKycUploading] = useState(false);
+  const [tradeResultFile, setTradeResultFile] = useState<File | null>(null);
+  const [medicalResultFile, setMedicalResultFile] = useState<File | null>(null);
+  const [paying, setPaying] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
     setLoadError(null);
     try {
-      const v = await getOrCreateVerification(user.id);
+      const vRaw = await getOrCreateVerification(user.id);
+      const v: WorkerVerification = {
+        ...vRaw,
+        stage: normalizeVerificationStage(vRaw.stage, vRaw.trade_test_required),
+      };
       setRow(v);
       setEmail(v.email || profile?.email || '');
       setCity(v.city || '');
@@ -117,7 +132,7 @@ export default function WorkerVerificationPage() {
 
       const { data: wp } = await supabase
         .from('worker_profiles')
-        .select('kyc_status, pan_number, aadhaar_last4')
+        .select('kyc_status, pan_number, aadhaar_last4, passport_number')
         .eq('user_id', user.id)
         .maybeSingle();
       const kycStatus = String((wp as any)?.kyc_status || 'not_started');
@@ -125,6 +140,7 @@ export default function WorkerVerificationPage() {
       setKycDone(kycOk);
       if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
       if ((wp as any)?.aadhaar_last4) setAadhaarLast4(String((wp as any).aadhaar_last4));
+      if ((wp as any)?.passport_number) setPassportNumber(String((wp as any).passport_number));
 
       // Mandatory for apply: if KYC missing and worker already passed skill proof, show Identity.
       const pastMedia =
@@ -169,11 +185,14 @@ export default function WorkerVerificationPage() {
     void load();
   }, [load]);
 
-  const rawStage: VerificationStage = row?.stage || 'essentials';
+  const rawStage: VerificationStage = row
+    ? normalizeVerificationStage(row.stage, row.trade_test_required)
+    : 'essentials';
   // If KYC is done but stage stuck on identity (constraint lag), treat as interview.
   const effectiveRaw: VerificationStage =
     kycDone && rawStage === 'identity' ? 'awaiting_interview' : rawStage;
   const stage: VerificationStage = forceIdentity ? 'identity' : effectiveRaw;
+  const tradeNeeded = row?.trade_test_required ?? skillRequiresTradeTest(row?.primary_skill);
   const navId = navStepForStage(stage);
   const progress = ((navStepIndex(navId) + 1) / GCC_JOURNEY_NAV_STEPS.length) * 100;
 
@@ -182,6 +201,7 @@ export default function WorkerVerificationPage() {
   const onSubmitIdentity = async () => {
     if (!user?.id) return;
     const pan = panNumber.trim().toUpperCase();
+    const passport = passportNumber.trim().toUpperCase();
     if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
       toast.error('Enter a valid PAN (e.g. ABCDE1234F)');
       return;
@@ -190,8 +210,12 @@ export default function WorkerVerificationPage() {
       toast.error('Enter last 4 digits of Aadhaar');
       return;
     }
-    if (!panFile || !aadhaarFile) {
-      toast.error('Upload PAN and Aadhaar photos');
+    if (!/^[A-Z0-9]{6,9}$/.test(passport)) {
+      toast.error('Enter a valid passport number');
+      return;
+    }
+    if (!panFile || !aadhaarFile || !passportFile) {
+      toast.error('Upload PAN, Aadhaar, and Passport photos');
       return;
     }
     if (!kycConsent) {
@@ -228,10 +252,11 @@ export default function WorkerVerificationPage() {
         if (urlErr || !signed?.signedUrl) {
           throw new Error(urlErr?.message || 'Could not create document URL');
         }
-        // Prefer pan/aadhaar; fall back to id_proof if DB CHECK not yet updated.
-        const tryTypes = docType === 'pan' || docType === 'aadhaar'
-          ? [docType, 'id_proof']
-          : [docType];
+        // Prefer typed doc; fall back to id_proof if DB CHECK not yet updated.
+        const tryTypes =
+          docType === 'pan' || docType === 'aadhaar' || docType === 'passport'
+            ? [docType, 'id_proof']
+            : [docType];
         let lastErr: Error | null = null;
         for (const type of tryTypes) {
           const { error: dbErr } = await supabase.from('worker_documents').insert({
@@ -253,15 +278,18 @@ export default function WorkerVerificationPage() {
 
       await uploadDoc(panFile, 'pan', 'PAN Card');
       await uploadDoc(aadhaarFile, 'aadhaar', 'Aadhaar Card');
+      await uploadDoc(passportFile, 'passport', 'Passport');
 
       const next = await completeIdentityKyc(user.id, {
         panNumber: pan,
         aadhaarLast4,
+        passportNumber: passport,
       });
       setRow(next);
       setForceIdentity(false);
       setPanFile(null);
       setAadhaarFile(null);
+      setPassportFile(null);
       notifyVerificationUpdated();
       toast.success(
         next.stage === 'awaiting_interview'
@@ -865,7 +893,7 @@ export default function WorkerVerificationPage() {
                 <div>
                   <h2 className="font-semibold">Identity (KYC)</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Required before applying to jobs. Soft KYC — we only store PAN and Aadhaar last 4 digits plus document photos.
+                    Required before applying to jobs. Enter PAN, Aadhaar (last 4), and Passport numbers, and upload a photo of each.
                   </p>
                 </div>
               </div>
@@ -880,29 +908,43 @@ export default function WorkerVerificationPage() {
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <Label>PAN Number *</Label>
-                <Input
-                  value={panNumber}
-                  onChange={(e) => setPanNumber(e.target.value.toUpperCase().slice(0, 10))}
-                  placeholder="ABCDE1234F"
-                  maxLength={10}
-                  disabled={saving}
-                />
+              <div className="grid sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label>PAN Number *</Label>
+                  <Input
+                    value={panNumber}
+                    onChange={(e) => setPanNumber(e.target.value.toUpperCase().slice(0, 10))}
+                    placeholder="ABCDE1234F"
+                    maxLength={10}
+                    disabled={saving}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Aadhaar — Last 4 Digits *</Label>
+                  <Input
+                    value={aadhaarLast4}
+                    onChange={(e) => setAadhaarLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    placeholder="1234"
+                    inputMode="numeric"
+                    maxLength={4}
+                    disabled={saving}
+                  />
+                  <p className="text-[11px] text-muted-foreground">We never store your full Aadhaar</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Passport Number *</Label>
+                  <Input
+                    value={passportNumber}
+                    onChange={(e) =>
+                      setPassportNumber(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9))
+                    }
+                    placeholder="A1234567"
+                    maxLength={9}
+                    disabled={saving}
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Aadhaar — Last 4 Digits *</Label>
-                <Input
-                  value={aadhaarLast4}
-                  onChange={(e) => setAadhaarLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                  placeholder="1234"
-                  inputMode="numeric"
-                  maxLength={4}
-                  disabled={saving}
-                />
-                <p className="text-[11px] text-muted-foreground">We never store your full Aadhaar number</p>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid sm:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label>PAN Card Photo *</Label>
                   <Input
@@ -922,6 +964,16 @@ export default function WorkerVerificationPage() {
                     onChange={(e) => setAadhaarFile(e.target.files?.[0] || null)}
                   />
                   {aadhaarFile && <p className="text-xs text-success">✓ {aadhaarFile.name}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Passport Photo *</Label>
+                  <Input
+                    type="file"
+                    accept="image/*,.pdf"
+                    disabled={saving}
+                    onChange={(e) => setPassportFile(e.target.files?.[0] || null)}
+                  />
+                  {passportFile && <p className="text-xs text-success">✓ {passportFile.name}</p>}
                 </div>
               </div>
               <label className="flex items-start gap-2 text-xs cursor-pointer">
@@ -948,7 +1000,7 @@ export default function WorkerVerificationPage() {
           <WaitingCard
             icon={Calendar}
             title="Test 2 — Video interview"
-            body={`Our team will schedule a video call and ask trade questions. Score ${INTERVIEW_TRADE_TEST_THRESHOLD}+ skips Test 3 (physical trade test).`}
+            body={`Our team will schedule a video call and ask trade questions. Score is recorded for ops. Physical trade test depends on your skill (e.g. Electrician/Welder require Test 3; Driver/Helper skip to medical).`}
           >
             <div className="flex flex-col sm:flex-row gap-2 items-end">
               <div className="space-y-1.5 flex-1">
@@ -966,8 +1018,8 @@ export default function WorkerVerificationPage() {
       notifyVerificationUpdated();
                     toast.success(
                       next.trade_test_required
-                        ? 'Below threshold — physical trade test required after payment'
-                        : 'Above threshold — physical trade test not required',
+                        ? `Trade test required for ${next.primary_skill || 'your skill'} after payment`
+                        : `No trade test for ${next.primary_skill || 'your skill'} — medical after payment`,
                     );
                   } catch (e) {
                     toast.error(e instanceof Error ? e.message : 'Failed');
@@ -985,61 +1037,241 @@ export default function WorkerVerificationPage() {
         {stage === 'awaiting_payment' && (
           <WaitingCard
             icon={CreditCard}
-            title="Assessment payment"
-            body={`Pay ₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')} to continue${row.trade_test_required ? ' to Test 3 (physical trade test)' : ' to medical clearance and bond'}.`}
+            title="Payment"
+            body={`Pay ₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')} to continue${
+              tradeNeeded
+                ? ' to Test 3 (physical trade test), then medical.'
+                : ' to medical clearance (no physical trade test for your skill).'
+            }`}
           >
-            <Button
-              disabled={saving}
-              onClick={async () => {
-                if (!user?.id) return;
-                setSaving(true);
-                try {
-                  const next = await markPaymentPaid(user.id, ASSESSMENT_FEE_INR);
-                  setRow(next);
-      notifyVerificationUpdated();
-                  toast.success('Payment recorded');
-                } catch (e) {
-                  toast.error(e instanceof Error ? e.message : 'Payment failed');
-                } finally {
-                  setSaving(false);
-                }
-              }}
-            >
-              Mark paid (demo) & continue
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                disabled={saving || paying}
+                onClick={async () => {
+                  if (!user?.id) return;
+                  if (!isRazorpayConfigured()) {
+                    toast.error('Add VITE_RAZORPAY_KEY_ID (rzp_test_…) to enable Razorpay');
+                    return;
+                  }
+                  setPaying(true);
+                  try {
+                    const res = await openRazorpayCheckout({
+                      amountInr: ASSESSMENT_FEE_INR,
+                      description: 'SafeWork GCC verification fee',
+                      name: profile?.full_name || undefined,
+                      email: row.email || profile?.email || undefined,
+                      contact: profile?.phone || undefined,
+                    });
+                    const next = await markPaymentPaid(user.id, ASSESSMENT_FEE_INR, {
+                      provider: 'razorpay',
+                      razorpayPaymentId: res.razorpay_payment_id,
+                      razorpayOrderId: res.razorpay_order_id,
+                    });
+                    setRow({
+                      ...next,
+                      stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                    });
+                    notifyVerificationUpdated();
+                    toast.success('Payment successful');
+                  } catch (e) {
+                    const msg = e instanceof Error ? e.message : 'Payment failed';
+                    if (msg !== 'Payment cancelled') toast.error(msg);
+                  } finally {
+                    setPaying(false);
+                  }
+                }}
+              >
+                {paying ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CreditCard className="h-4 w-4 mr-1" />}
+                Pay with Razorpay
+              </Button>
+              {isJourneyResetEnabled() && (
+                <Button
+                  variant="outline"
+                  disabled={saving || paying}
+                  onClick={async () => {
+                    if (!user?.id) return;
+                    setSaving(true);
+                    try {
+                      const next = await markPaymentPaid(user.id, ASSESSMENT_FEE_INR, {
+                        provider: 'manual_demo',
+                      });
+                      setRow({
+                        ...next,
+                        stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                      });
+                      notifyVerificationUpdated();
+                      toast.success('Demo payment recorded');
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : 'Payment failed');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  Mark paid (demo)
+                </Button>
+              )}
+            </div>
+            {!isRazorpayConfigured() && (
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Set <code className="text-xs">VITE_RAZORPAY_KEY_ID=rzp_test_…</code> for Checkout. Demo mark-paid is available on preview hosts.
+              </p>
+            )}
           </WaitingCard>
         )}
 
-        {stage === 'tests' && (
-          <WaitingCard
-            icon={Stethoscope}
-            title="Test 3 — Physical trade test"
-            body={
-              row.trade_test_required
-                ? 'Complete your physical trade test at an approved centre / E-Mitra partner (medical fitness is checked as part of this step).'
-                : 'Physical trade test is not required for your interview score. Confirm medical fitness, then continue to bond.'
-            }
-          >
-            <Button
-              disabled={saving}
-              onClick={async () => {
-                if (!user?.id) return;
-                setSaving(true);
-                try {
-                  const next = await markTestsPassed(user.id);
-                  setRow(next);
-      notifyVerificationUpdated();
-                  toast.success('Test 3 complete — continue to bond');
-                } catch (e) {
-                  toast.error(e instanceof Error ? e.message : 'Failed');
-                } finally {
-                  setSaving(false);
-                }
-              }}
-            >
-              Mark Test 3 passed (demo)
-            </Button>
-          </WaitingCard>
+        {(stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (
+          <Card>
+            <CardContent className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Wrench className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Test 3 — Physical trade test</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Required for <span className="font-medium text-foreground">{row.primary_skill}</span>.
+                    Complete the practical test at an approved centre, then upload your result (image or PDF).
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Trade test result (image or PDF) *</Label>
+                <Input
+                  type="file"
+                  accept="image/*,.pdf,application/pdf"
+                  disabled={saving}
+                  onChange={(e) => setTradeResultFile(e.target.files?.[0] || null)}
+                />
+                {tradeResultFile && (
+                  <p className="text-xs text-success">✓ {tradeResultFile.name}</p>
+                )}
+                {row.trade_test_result_url && !tradeResultFile && (
+                  <p className="text-xs text-muted-foreground">A result was already uploaded.</p>
+                )}
+              </div>
+              <Button
+                disabled={saving || (!tradeResultFile && !row.trade_test_result_url)}
+                onClick={async () => {
+                  if (!user?.id) return;
+                  if (!tradeResultFile && !row.trade_test_result_url) {
+                    toast.error('Upload your trade test result');
+                    return;
+                  }
+                  setSaving(true);
+                  try {
+                    let url = row.trade_test_result_url || '';
+                    if (tradeResultFile) {
+                      const ext = tradeResultFile.name.split('.').pop() || 'pdf';
+                      const path = `${user.id}/trade-test/${Date.now()}.${ext}`;
+                      const { error: upErr } = await supabase.storage
+                        .from(DOCS_BUCKET)
+                        .upload(path, tradeResultFile, { upsert: false });
+                      if (upErr) throw new Error(upErr.message);
+                      const { data: signed, error: urlErr } = await supabase.storage
+                        .from(DOCS_BUCKET)
+                        .createSignedUrl(path, 31536000);
+                      if (urlErr || !signed?.signedUrl) {
+                        throw new Error(urlErr?.message || 'Could not create file URL');
+                      }
+                      url = signed.signedUrl;
+                    }
+                    const next = await submitTradeTestResult(user.id, url);
+                    setRow(next);
+                    setTradeResultFile(null);
+                    notifyVerificationUpdated();
+                    toast.success('Trade test result saved — next: Medical');
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : 'Upload failed');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+                Submit trade test result
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {stage === 'medical' && (
+          <Card>
+            <CardContent className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Stethoscope className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Medical</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Upload your medical fitness report (image or PDF) from an approved centre.
+                    {!tradeNeeded && (
+                      <> Physical trade test is not required for{' '}
+                        <span className="font-medium text-foreground">{row.primary_skill}</span>.
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Medical result (image or PDF) *</Label>
+                <Input
+                  type="file"
+                  accept="image/*,.pdf,application/pdf"
+                  disabled={saving}
+                  onChange={(e) => setMedicalResultFile(e.target.files?.[0] || null)}
+                />
+                {medicalResultFile && (
+                  <p className="text-xs text-success">✓ {medicalResultFile.name}</p>
+                )}
+                {row.medical_result_url && !medicalResultFile && (
+                  <p className="text-xs text-muted-foreground">A medical result was already uploaded.</p>
+                )}
+              </div>
+              <Button
+                disabled={saving || (!medicalResultFile && !row.medical_result_url)}
+                onClick={async () => {
+                  if (!user?.id) return;
+                  if (!medicalResultFile && !row.medical_result_url) {
+                    toast.error('Upload your medical result');
+                    return;
+                  }
+                  setSaving(true);
+                  try {
+                    let url = row.medical_result_url || '';
+                    if (medicalResultFile) {
+                      const ext = medicalResultFile.name.split('.').pop() || 'pdf';
+                      const path = `${user.id}/medical/${Date.now()}.${ext}`;
+                      const { error: upErr } = await supabase.storage
+                        .from(DOCS_BUCKET)
+                        .upload(path, medicalResultFile, { upsert: false });
+                      if (upErr) throw new Error(upErr.message);
+                      const { data: signed, error: urlErr } = await supabase.storage
+                        .from(DOCS_BUCKET)
+                        .createSignedUrl(path, 31536000);
+                      if (urlErr || !signed?.signedUrl) {
+                        throw new Error(urlErr?.message || 'Could not create file URL');
+                      }
+                      url = signed.signedUrl;
+                    }
+                    const next = await submitMedicalResult(user.id, url);
+                    setRow(next);
+                    setMedicalResultFile(null);
+                    notifyVerificationUpdated();
+                    toast.success('Medical result saved — next: Bond');
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : 'Upload failed');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
+                Submit medical result
+              </Button>
+            </CardContent>
+          </Card>
         )}
 
         {stage === 'bond' && (

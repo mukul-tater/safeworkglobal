@@ -96,11 +96,11 @@ const STEPS: StepDef[] = [
   {
     id: "trade_test",
     number: 5,
-    title: "Trade Test",
+    title: "Payment",
     icon: Wrench,
     description: "Pay the fee if needed, then take the practical skill test.",
     bullets: [
-      { label: "Pay trade test fee", icon: FileText },
+      { label: "Payment", icon: FileText },
       { label: "Book nearest centre", icon: Wrench },
       { label: "Practical skill test", icon: Wrench },
     ],

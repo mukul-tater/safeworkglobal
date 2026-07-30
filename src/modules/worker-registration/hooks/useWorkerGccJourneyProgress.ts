@@ -6,6 +6,7 @@ import {
   Flag,
   ImagePlus,
   ShieldCheck,
+  Stethoscope,
   UserRound,
   Video,
   Wrench,
@@ -17,6 +18,7 @@ import {
   GCC_JOURNEY_NAV_STEPS,
   navStepForStage,
   navStepIndex,
+  normalizeVerificationStage,
   type GccNavStepId,
   type VerificationStage,
 } from "@/modules/worker-verification/constants";
@@ -31,11 +33,15 @@ const STEP_ICONS: Record<GccNavStepId, LucideIcon> = {
   test2: Video,
   payment: CreditCard,
   test3: Wrench,
+  medical: Stethoscope,
   bond: FileSignature,
   gcc_ready: Flag,
 };
 
-function deriveNavStatuses(stage: VerificationStage | null): Record<GccNavStepId, GccStepStatus> {
+function deriveNavStatuses(
+  stage: VerificationStage | null,
+  tradeRequired: boolean,
+): Record<GccNavStepId, GccStepStatus> {
   const currentNav = navStepForStage(stage ?? "essentials");
   const curIdx = navStepIndex(currentNav);
   const out = {} as Record<GccNavStepId, GccStepStatus>;
@@ -43,6 +49,8 @@ function deriveNavStatuses(stage: VerificationStage | null): Record<GccNavStepId
   for (const step of GCC_JOURNEY_NAV_STEPS) {
     const i = navStepIndex(step.id);
     if (stage === "gcc_ready" || currentNav === "gcc_ready") {
+      out[step.id] = "completed";
+    } else if (step.id === "test3" && !tradeRequired && curIdx > navStepIndex("payment")) {
       out[step.id] = "completed";
     } else if (i < curIdx) {
       out[step.id] = "completed";
@@ -62,11 +70,12 @@ function statusLabel(s: GccStepStatus): string {
 }
 
 /**
- * GCC Journey: Test 1 = quiz+media, Test 2 = interview, Test 3 = physical trade test.
+ * GCC Journey: Test 1 = quiz, Test 2 = interview, Test 3 = physical trade (skill-based), then Medical.
  */
 export function useWorkerGccJourneyProgress() {
   const { user, profile } = useAuth();
   const [stage, setStage] = useState<VerificationStage | null>(null);
+  const [tradeRequired, setTradeRequired] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -83,7 +92,7 @@ export function useWorkerGccJourneyProgress() {
         const [{ data }, { data: wp }] = await Promise.all([
           (supabase as any)
             .from("worker_verification")
-            .select("stage")
+            .select("stage, trade_test_required, primary_skill")
             .eq("user_id", uid)
             .maybeSingle(),
           supabase
@@ -94,7 +103,16 @@ export function useWorkerGccJourneyProgress() {
         ]);
         if (cancelled) return;
 
-        let nextStage = (data?.stage as VerificationStage) || "essentials";
+        const trade =
+          data?.trade_test_required !== null && data?.trade_test_required !== undefined
+            ? Boolean(data.trade_test_required)
+            : true;
+        setTradeRequired(trade);
+
+        let nextStage = normalizeVerificationStage(
+          (data?.stage as string) || "essentials",
+          trade,
+        );
         const kycStatus = String((wp as any)?.kyc_status || "not_started");
         const kycOk = kycStatus === "submitted" || kycStatus === "verified";
         const pastMedia =
@@ -127,7 +145,10 @@ export function useWorkerGccJourneyProgress() {
     };
   }, [user?.id, profile?.id]);
 
-  const statuses = useMemo(() => deriveNavStatuses(stage), [stage]);
+  const statuses = useMemo(
+    () => deriveNavStatuses(stage, tradeRequired),
+    [stage, tradeRequired],
+  );
   const completed = GCC_JOURNEY_NAV_STEPS.filter((s) => statuses[s.id] === "completed").length;
   const journeyIncomplete = stage !== "gcc_ready";
 
@@ -145,7 +166,7 @@ export function useWorkerGccJourneyProgress() {
           label: step.label,
           statusLabel: statusLabel(statuses[step.id]),
           statusTone: tone,
-          // Locked stepper: cannot jump ahead to waiting steps.
+          // Locked stepper: cannot jump ahead. Done steps stay viewable.
           disabled: statuses[step.id] === "waiting",
         };
       }),
@@ -160,5 +181,6 @@ export function useWorkerGccJourneyProgress() {
     total: GCC_JOURNEY_NAV_STEPS.length,
     journeyIncomplete,
     navItems,
+    tradeRequired,
   };
 }

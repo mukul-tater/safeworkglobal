@@ -12,7 +12,7 @@ interface Props {
 }
 
 /**
- * Home tracker: Essentials → Test 1 → Skill proof → Identity → Test 2 → Payment → Test 3 → Bond → Ready.
+ * Home tracker: Essentials → Test 1 → Skill proof → Identity → Test 2 → Payment → Test 3 → Medical → Bond → Ready.
  */
 export default function WorkerGccJourneyProgress({ statuses, className }: Props) {
   const completed = GCC_JOURNEY_NAV_STEPS.filter((s) => statuses[s.id] === "completed").length;

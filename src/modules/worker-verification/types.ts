@@ -5,6 +5,8 @@ export type VerificationStage =
   | 'identity'
   | 'awaiting_interview'
   | 'awaiting_payment'
+  | 'trade_test'
+  | 'medical'
   | 'tests'
   | 'bond'
   | 'gcc_ready';
@@ -33,6 +35,10 @@ export interface WorkerVerification {
   paid_at: string | null;
   medical_status: string | null;
   trade_test_status: string | null;
+  trade_test_result_url: string | null;
+  medical_result_url: string | null;
+  razorpay_payment_id: string | null;
+  razorpay_order_id: string | null;
   bond_status: string | null;
   gcc_ready_at: string | null;
   created_at: string;

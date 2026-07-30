@@ -44,10 +44,28 @@ export const EDUCATION_LEVELS = [
   'Other',
 ] as const;
 
-/** Video interview score at or above this skips physical trade test. */
+/** Video interview score at or above this historically skipped trade test — skill list is primary now. */
 export const INTERVIEW_TRADE_TEST_THRESHOLD = 70;
 
-/** Assessment fee (INR) shown on payment step. */
+/**
+ * Physical trade test is mandatory for hands-on technical trades.
+ * Driver / Helper / Other skip trade test and go to medical after payment.
+ */
+export const TRADE_TEST_REQUIRED_SKILLS = [
+  'Electrician',
+  'Welder',
+  'Plumber',
+  'Mason',
+  'Carpenter',
+  'HVAC Technician',
+] as const;
+
+export function skillRequiresTradeTest(skill: string | null | undefined): boolean {
+  if (!skill) return true;
+  return (TRADE_TEST_REQUIRED_SKILLS as readonly string[]).includes(skill);
+}
+
+/** Fee (INR) shown on the Payment step. */
 export const ASSESSMENT_FEE_INR = 35400;
 
 export type VerificationStage =
@@ -57,7 +75,9 @@ export type VerificationStage =
   | 'identity'
   | 'awaiting_interview'
   | 'awaiting_payment'
-  | 'tests'
+  | 'trade_test'
+  | 'medical'
+  | 'tests' // legacy — normalized to trade_test / medical in UI
   | 'bond'
   | 'gcc_ready';
 
@@ -68,7 +88,8 @@ export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
   'identity',
   'awaiting_interview',
   'awaiting_payment',
-  'tests',
+  'trade_test',
+  'medical',
   'bond',
   'gcc_ready',
 ];
@@ -81,6 +102,8 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   identity: 'Identity (KYC)',
   awaiting_interview: 'Test 2 — Video interview',
   awaiting_payment: 'Payment',
+  trade_test: 'Test 3 — Physical trade test',
+  medical: 'Medical',
   tests: 'Test 3 — Physical trade test',
   bond: 'Bond',
   gcc_ready: 'GCC ready',
@@ -98,6 +121,7 @@ export type GccNavStepId =
   | 'test2'
   | 'payment'
   | 'test3'
+  | 'medical'
   | 'bond'
   | 'gcc_ready';
 
@@ -143,11 +167,28 @@ export const GCC_JOURNEY_NAV_STEPS: {
     id: 'test3',
     label: 'Test 3 — Physical trade test',
     shortLabel: 'Test 3',
-    stages: ['tests'],
+    stages: ['trade_test', 'tests'],
+  },
+  {
+    id: 'medical',
+    label: 'Medical',
+    shortLabel: 'Medical',
+    stages: ['medical'],
   },
   { id: 'bond', label: 'Bond', shortLabel: 'Bond', stages: ['bond'] },
   { id: 'gcc_ready', label: 'GCC ready', shortLabel: 'GCC ready', stages: ['gcc_ready'] },
 ];
+
+export function normalizeVerificationStage(
+  stage: string | null | undefined,
+  tradeRequired?: boolean | null,
+): VerificationStage {
+  if (!stage) return 'essentials';
+  if (stage === 'tests') {
+    return tradeRequired === false ? 'medical' : 'trade_test';
+  }
+  return stage as VerificationStage;
+}
 
 export function navStepIndex(id: GccNavStepId): number {
   return GCC_JOURNEY_NAV_STEPS.findIndex((s) => s.id === id);

@@ -1,6 +1,10 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import type { SkillQuizItem, VerificationStage, WorkerVerification } from '../types';
-import { INTERVIEW_TRADE_TEST_THRESHOLD, WORKER_TERMS_VERSION } from '../constants';
+import {
+  WORKER_TERMS_VERSION,
+  normalizeVerificationStage,
+  skillRequiresTradeTest,
+} from '../constants';
 import { loadQuizItemsFromJson } from '../quiz-data';
 
 const supabase: any = supabaseTyped;
@@ -13,7 +17,13 @@ export async function getOrCreateVerification(userId: string): Promise<WorkerVer
     .maybeSingle();
 
   if (fetchErr) throw new Error(fetchErr.message);
-  if (existing) return existing as WorkerVerification;
+  if (existing) {
+    const row = existing as WorkerVerification;
+    return {
+      ...row,
+      stage: normalizeVerificationStage(row.stage, row.trade_test_required),
+    };
+  }
 
   const { data: created, error: insertErr } = await supabase
     .from('worker_verification')
@@ -91,6 +101,8 @@ export async function saveEssentials(
       state: input.state,
       education_level: input.education_level,
       primary_skill: input.primary_skill,
+      trade_test_required: skillRequiresTradeTest(input.primary_skill),
+      trade_test_status: skillRequiresTradeTest(input.primary_skill) ? 'pending' : 'not_required',
       essentials_completed_at: new Date().toISOString(),
       stage: 'quiz',
       updated_at: new Date().toISOString(),
@@ -149,7 +161,7 @@ export async function completeMediaStep(userId: string): Promise<WorkerVerificat
 }
 
 /**
- * Soft KYC — PAN + Aadhaar last-4 + document uploads. Required before job apply.
+ * Soft KYC — PAN + Aadhaar last-4 + passport number + document photos.
  * Advances to Test 2 (video interview) when coming from the identity stage;
  * if the worker already finished later stages, keep their stage.
  */
@@ -158,6 +170,7 @@ export async function completeIdentityKyc(
   opts: {
     panNumber: string;
     aadhaarLast4: string;
+    passportNumber: string;
     nextStageIfCurrentIdentity?: boolean;
   },
 ): Promise<WorkerVerification> {
@@ -169,10 +182,13 @@ export async function completeIdentityKyc(
     row.stage !== 'quiz';
 
   const now = new Date().toISOString();
+  const passport = opts.passportNumber.trim().toUpperCase();
   const kycPayload = {
     user_id: userId,
     pan_number: opts.panNumber.trim().toUpperCase(),
     aadhaar_last4: opts.aadhaarLast4,
+    passport_number: passport,
+    has_passport: true,
     kyc_status: 'submitted',
     kyc_consent_at: now,
     kyc_submitted_at: now,
@@ -227,7 +243,8 @@ export async function recordInterviewScore(
   notes?: string,
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
-  const tradeRequired = score < INTERVIEW_TRADE_TEST_THRESHOLD;
+  // Skill list decides trade test; interview score is recorded for ops only.
+  const tradeRequired = skillRequiresTradeTest(row.primary_skill);
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
@@ -243,16 +260,29 @@ export async function recordInterviewScore(
     .select('*')
     .single();
   if (error) throw new Error(error.message);
-  return data as WorkerVerification;
+  const next = data as WorkerVerification;
+  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
 }
 
-export async function markPaymentPaid(userId: string, amount: number): Promise<WorkerVerification> {
+export async function markPaymentPaid(
+  userId: string,
+  amount: number,
+  opts?: {
+    provider?: string;
+    razorpayPaymentId?: string;
+    razorpayOrderId?: string;
+  },
+): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
+  const tradeRequired =
+    row.trade_test_required ?? skillRequiresTradeTest(row.primary_skill);
+  const nextStage: VerificationStage = tradeRequired ? 'trade_test' : 'medical';
+
   await supabase.from('worker_assessment_payments').insert({
     user_id: userId,
     amount,
     status: 'paid',
-    provider: 'manual',
+    provider: opts?.provider || 'manual',
     paid_at: new Date().toISOString(),
   });
 
@@ -262,7 +292,32 @@ export async function markPaymentPaid(userId: string, amount: number): Promise<W
       payment_status: 'paid',
       payment_amount: amount,
       paid_at: new Date().toISOString(),
-      stage: 'tests',
+      trade_test_required: tradeRequired,
+      trade_test_status: tradeRequired ? row.trade_test_status || 'pending' : 'not_required',
+      razorpay_payment_id: opts?.razorpayPaymentId || null,
+      razorpay_order_id: opts?.razorpayOrderId || null,
+      stage: nextStage,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', row.id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  const next = data as WorkerVerification;
+  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
+}
+
+export async function submitTradeTestResult(
+  userId: string,
+  resultUrl: string,
+): Promise<WorkerVerification> {
+  const row = await getOrCreateVerification(userId);
+  const { data, error } = await supabase
+    .from('worker_verification')
+    .update({
+      trade_test_result_url: resultUrl,
+      trade_test_status: 'passed',
+      stage: 'medical',
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id)
@@ -272,14 +327,16 @@ export async function markPaymentPaid(userId: string, amount: number): Promise<W
   return data as WorkerVerification;
 }
 
-export async function markTestsPassed(userId: string): Promise<WorkerVerification> {
+export async function submitMedicalResult(
+  userId: string,
+  resultUrl: string,
+): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
-  const tradeStatus = row.trade_test_required ? 'passed' : 'not_required';
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
+      medical_result_url: resultUrl,
       medical_status: 'passed',
-      trade_test_status: tradeStatus,
       stage: 'bond',
       updated_at: new Date().toISOString(),
     })
@@ -288,6 +345,15 @@ export async function markTestsPassed(userId: string): Promise<WorkerVerificatio
     .single();
   if (error) throw new Error(error.message);
   return data as WorkerVerification;
+}
+
+/** @deprecated Prefer submitTradeTestResult / submitMedicalResult */
+export async function markTestsPassed(userId: string): Promise<WorkerVerification> {
+  const row = await getOrCreateVerification(userId);
+  if (row.trade_test_required !== false && row.stage === 'trade_test') {
+    throw new Error('Upload your physical trade test result to continue');
+  }
+  return submitMedicalResult(userId, row.medical_result_url || 'demo-passed');
 }
 
 export async function submitBond(
@@ -334,11 +400,13 @@ export function stageIndex(stage: VerificationStage): number {
     'identity',
     'awaiting_interview',
     'awaiting_payment',
-    'tests',
+    'trade_test',
+    'medical',
     'bond',
     'gcc_ready',
   ];
-  return Math.max(0, order.indexOf(stage));
+  const normalized = normalizeVerificationStage(stage);
+  return Math.max(0, order.indexOf(normalized));
 }
 
 /**
@@ -376,6 +444,10 @@ export async function resetVerificationJourney(userId: string): Promise<WorkerVe
       paid_at: null,
       medical_status: 'pending',
       trade_test_status: 'pending',
+      trade_test_result_url: null,
+      medical_result_url: null,
+      razorpay_payment_id: null,
+      razorpay_order_id: null,
       bond_status: 'pending',
       gcc_ready_at: null,
       updated_at: new Date().toISOString(),
