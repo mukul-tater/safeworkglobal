@@ -3916,6 +3916,13 @@ export type Database = {
       }
       ensure_whitelisted_admin: { Args: never; Returns: boolean }
       generate_partner_code: { Args: never; Returns: string }
+      get_employer_company_names: {
+        Args: { p_employer_ids: string[] }
+        Returns: {
+          company_name: string
+          user_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
