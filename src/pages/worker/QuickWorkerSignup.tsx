@@ -45,11 +45,13 @@ type Step = 'form' | 'otp';
  */
 export default function QuickWorkerSignup() {
   const navigate = useNavigate();
-  const { isAuthenticated, role, isMobileVerified, profileLoading } = useAuth();
+  const { isAuthenticated, role, isMobileVerified, profileLoading, refreshProfile, markMobileVerified } =
+    useAuth();
   const firebaseOtp = useFirebasePhoneOtp();
 
   const [step, setStep] = useState<Step>('form');
-  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -63,7 +65,7 @@ export default function QuickWorkerSignup() {
   const [otp, setOtp] = useState('');
 
   const handleGoogle = async () => {
-    setLoading(true);
+    setGoogleLoading(true);
     try {
       sessionStorage.setItem('pending_oauth_role', 'worker');
       const result = await lovable.auth.signInWithOAuth('google', {
@@ -72,20 +74,25 @@ export default function QuickWorkerSignup() {
       if (result.error) {
         sessionStorage.removeItem('pending_oauth_role');
         toast.error('Google signup failed');
-        setLoading(false);
+        setGoogleLoading(false);
       }
     } catch {
       sessionStorage.removeItem('pending_oauth_role');
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
+  // If already signed in when opening this page, send them on.
+  // Do NOT redirect while OTP/account creation is in progress — signIn happens
+  // before mobile_verified is written, and bouncing to bind-mobile causes a
+  // second "Verify your mobile" screen right after signup OTP.
   useEffect(() => {
-    if (profileLoading) return;
+    if (profileLoading || formLoading) return;
+    if (step !== 'form') return;
     if (isAuthenticated && role === 'worker') {
       navigate(isMobileVerified ? '/worker/journey' : '/worker/bind-mobile', { replace: true });
     }
-  }, [isAuthenticated, role, isMobileVerified, profileLoading, navigate]);
+  }, [isAuthenticated, role, isMobileVerified, profileLoading, formLoading, step, navigate]);
 
   useEffect(() => {
     if (step !== 'otp') return;
@@ -155,7 +162,7 @@ export default function QuickWorkerSignup() {
         .upsert({ user_id: user.id, country, nationality: country } as any, {
           onConflict: 'user_id',
         });
-      await supabase
+      const { error: profileErr } = await supabase
         .from('profiles')
         .update({
           full_name: name.trim(),
@@ -163,12 +170,18 @@ export default function QuickWorkerSignup() {
           mobile_verified: true,
         })
         .eq('id', user.id);
+      if (profileErr) throw new Error(profileErr.message);
 
       try {
         await acceptTerms(user.id);
       } catch {
         /* migration may not be applied yet */
       }
+
+      // Signup OTP already verified this number — mark session verified now so
+      // ProtectedRoute does not send the worker to bind-mobile again.
+      markMobileVerified(digits);
+      await refreshProfile();
     }
   };
 
@@ -181,7 +194,7 @@ export default function QuickWorkerSignup() {
       return;
     }
 
-    setLoading(true);
+    setFormLoading(true);
     try {
       const digits = mobile.replace(/\D/g, '');
       await firebaseOtp.sendOtp(digits);
@@ -192,7 +205,7 @@ export default function QuickWorkerSignup() {
       firebaseOtp.resetRecaptcha();
       setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.');
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
 
@@ -204,7 +217,7 @@ export default function QuickWorkerSignup() {
       return;
     }
 
-    setLoading(true);
+    setFormLoading(true);
     try {
       await firebaseOtp.verifyOtp(otp);
 
@@ -220,14 +233,14 @@ export default function QuickWorkerSignup() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
 
   const handleResendOtp = async () => {
     setError('');
     setOtp('');
-    setLoading(true);
+    setFormLoading(true);
     try {
       const digits = mobile.replace(/\D/g, '');
       await firebaseOtp.sendOtp(digits);
@@ -236,7 +249,7 @@ export default function QuickWorkerSignup() {
       firebaseOtp.resetRecaptcha();
       setError(err instanceof Error ? err.message : 'Failed to resend OTP');
     } finally {
-      setLoading(false);
+      setFormLoading(false);
     }
   };
 
@@ -284,9 +297,9 @@ export default function QuickWorkerSignup() {
                   variant="outline"
                   className="w-full h-11"
                   onClick={handleGoogle}
-                  disabled={loading}
+                  disabled={googleLoading || formLoading}
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  {googleLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Continue with Google
                 </Button>
 
@@ -434,8 +447,8 @@ export default function QuickWorkerSignup() {
                   </label>
                 </div>
 
-                <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                <Button type="submit" className="w-full h-11 font-semibold" disabled={formLoading || googleLoading}>
+                  {formLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Send SMS code
                 </Button>
 
@@ -482,7 +495,7 @@ export default function QuickWorkerSignup() {
                   <button
                     type="button"
                     onClick={handleResendOtp}
-                    disabled={loading}
+                    disabled={formLoading}
                     className="text-primary font-medium hover:underline disabled:opacity-50"
                   >
                     Resend SMS
@@ -492,9 +505,9 @@ export default function QuickWorkerSignup() {
                 <Button
                   type="submit"
                   className="w-full h-11 font-semibold"
-                  disabled={loading || otp.length !== 6}
+                  disabled={formLoading || otp.length !== 6}
                 >
-                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {formLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Verify & create account
                 </Button>
 

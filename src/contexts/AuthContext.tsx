@@ -39,6 +39,11 @@ interface AuthContextType {
   logout: () => Promise<void>;
   hasRole: (role: AppRole) => boolean;
   refreshProfile: () => Promise<void>;
+  /**
+   * Optimistically mark mobile as verified in-session (after signup/bind OTP).
+   * Prevents a second "Verify your mobile" bounce before profile refresh lands.
+   */
+  markMobileVerified: (phone?: string) => void;
   /** Reload role from user_roles after admin promotion. */
   refreshRole: () => Promise<void>;
   /** Assign a role to the current user (used after OAuth sign-in when role is missing). */
@@ -105,12 +110,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * metadata returned by the auth provider so the app never sees an
    * authenticated user without a profile.
    */
-  const fetchOrCreateProfile = async (currentUser: User) => {
+  const fetchOrCreateProfile = async (
+    currentUser: User,
+    generation?: number
+  ) => {
+    const isStale = () =>
+      generation !== undefined && generation !== loadGenerationRef.current;
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', currentUser.id)
       .maybeSingle();
+
+    if (isStale()) return;
 
     if (data && !error) {
       setProfile(data);
@@ -133,6 +146,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       )
       .select()
       .maybeSingle();
+
+    if (isStale()) return;
 
     if (upserted && !upsertError) {
       setProfile(upserted);
@@ -164,7 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       await Promise.all([
-        fetchOrCreateProfile(currentUser),
+        fetchOrCreateProfile(currentUser, generation),
         fetchUserRole(currentUser.id),
       ]);
       if (generation === loadGenerationRef.current) {
@@ -298,7 +313,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasRole = (checkRole: AppRole) => role === checkRole;
 
   const refreshProfile = async () => {
-    if (user) await fetchOrCreateProfile(user);
+    // Prefer getUser() so callers that just signed in still refresh even if
+    // React context `user` has not caught up yet. Bump generation so an
+    // in-flight post-signIn profile fetch cannot overwrite with stale data
+    // (e.g. mobile_verified still false).
+    const generation = ++loadGenerationRef.current;
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (currentUser) await fetchOrCreateProfile(currentUser, generation);
+  };
+
+  const markMobileVerified = (phone?: string) => {
+    // Invalidate in-flight profile loads so they cannot clobber this.
+    ++loadGenerationRef.current;
+    setProfile((prev) => {
+      if (!prev) {
+        if (!user) return prev;
+        return {
+          id: user.id,
+          email: user.email ?? '',
+          full_name: (user.user_metadata?.full_name as string) ?? null,
+          phone: phone ?? (user.user_metadata?.phone as string) ?? null,
+          avatar_url: null,
+          mobile_verified: true,
+        };
+      }
+      return {
+        ...prev,
+        mobile_verified: true,
+        phone: phone ?? prev.phone,
+      };
+    });
   };
 
   const refreshRole = async () => {
@@ -355,6 +399,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         hasRole,
         refreshProfile,
+        markMobileVerified,
         refreshRole,
         assignRole,
       }}
@@ -383,6 +428,7 @@ const noopAuth: AuthContextType = {
   logout: async () => {},
   hasRole: () => false,
   refreshProfile: async () => {},
+  markMobileVerified: () => {},
   refreshRole: async () => {},
   assignRole: async () => ({ success: false, error: 'Auth not ready' }),
 };

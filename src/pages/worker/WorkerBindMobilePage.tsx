@@ -27,8 +27,18 @@ type Step = 'form' | 'otp';
  */
 export default function WorkerBindMobilePage() {
   const navigate = useNavigate();
-  const { user, role, profile, isAuthenticated, isMobileVerified, loading, profileLoading, refreshProfile, logout } =
-    useAuth();
+  const {
+    user,
+    role,
+    profile,
+    isAuthenticated,
+    isMobileVerified,
+    loading,
+    profileLoading,
+    refreshProfile,
+    markMobileVerified,
+    logout,
+  } = useAuth();
   const firebaseOtp = useFirebasePhoneOtp();
 
   const [step, setStep] = useState<Step>('form');
@@ -48,7 +58,7 @@ export default function WorkerBindMobilePage() {
       return;
     }
     if (isMobileVerified) {
-      navigate('/worker/dashboard', { replace: true });
+      navigate('/worker/journey', { replace: true });
     }
   }, [isAuthenticated, role, isMobileVerified, loading, profileLoading, navigate]);
 
@@ -140,9 +150,10 @@ export default function WorkerBindMobilePage() {
         onConflict: 'user_id',
       });
 
+      markMobileVerified(digits);
       await refreshProfile();
       toast.success('Mobile verified — welcome!');
-      navigate('/worker/dashboard', { replace: true });
+      navigate('/worker/journey', { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Verification failed. Please try again.');
     } finally {
