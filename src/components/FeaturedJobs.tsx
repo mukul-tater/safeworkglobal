@@ -59,10 +59,9 @@ export default function FeaturedJobs() {
         const employerIds = Array.from(new Set((data || []).map((j: { employer_id?: string }) => j.employer_id).filter(Boolean)));
         let companyMap: Record<string, string> = {};
         if (employerIds.length > 0) {
-          const { data: companies } = await supabase
-            .from('employer_company_info' as any)
-            .select('user_id, company_name')
-            .in('user_id', employerIds);
+          const { data: companies } = await supabase.rpc('get_employer_company_names' as any, {
+            p_employer_ids: employerIds,
+          });
           companyMap = Object.fromEntries(((companies as any[]) || []).map((c: { user_id: string; company_name: string }) => [c.user_id, c.company_name]));
         }
         const enriched = (data || []).map((j: { employer_id?: string }) => ({
