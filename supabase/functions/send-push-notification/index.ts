@@ -222,18 +222,36 @@ serve(async (req) => {
 
     const { userId, title, message, url, notificationId } = await req.json();
 
+    // Validate the recipient id is a real UUID before it is used in any filter.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (typeof userId !== "string" || !UUID_RE.test(userId)) {
+      return new Response(JSON.stringify({ error: "Invalid userId" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Caller may only push to themselves unless they are an admin or have an
     // existing employer<->worker relationship with the recipient.
     if (userId !== callerId) {
       const { data: isAdmin } = await authClient.rpc("has_role", { _user_id: callerId, _role: "admin" });
       if (!isAdmin) {
-        const { data: rel } = await authClient
-          .from("job_applications")
-          .select("id")
-          .or(`and(employer_id.eq.${callerId},worker_id.eq.${userId}),and(employer_id.eq.${userId},worker_id.eq.${callerId})`)
-          .limit(1)
-          .maybeSingle();
-        if (!rel) {
+        const [asEmployer, asWorker] = await Promise.all([
+          authClient
+            .from("job_applications")
+            .select("id")
+            .eq("employer_id", callerId)
+            .eq("worker_id", userId)
+            .limit(1)
+            .maybeSingle(),
+          authClient
+            .from("job_applications")
+            .select("id")
+            .eq("employer_id", userId)
+            .eq("worker_id", callerId)
+            .limit(1)
+            .maybeSingle(),
+        ]);
+        if (!asEmployer.data && !asWorker.data) {
           return new Response(JSON.stringify({ error: "Forbidden" }), {
             status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
