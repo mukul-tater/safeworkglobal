@@ -54,6 +54,7 @@ export type VerificationStage =
   | 'essentials'
   | 'quiz'
   | 'media'
+  | 'identity'
   | 'awaiting_interview'
   | 'awaiting_payment'
   | 'tests'
@@ -64,6 +65,7 @@ export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
   'essentials',
   'quiz',
   'media',
+  'identity',
   'awaiting_interview',
   'awaiting_payment',
   'tests',
@@ -76,6 +78,7 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   essentials: 'Essentials',
   quiz: 'Test 1 — Know this work?',
   media: 'Skill proof upload',
+  identity: 'Identity (KYC)',
   awaiting_interview: 'Test 2 — Video interview',
   awaiting_payment: 'Payment',
   tests: 'Test 3 — Physical trade test',
@@ -85,13 +88,13 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
 
 /**
  * Sidebar / home tracker.
- * Test 1 = reference media + yes/no knowledge.
- * Skill proof upload sits after Test 1 and before Test 2 (profile completion phase).
+ * Identity/KYC is required before applying to jobs (after skill proof, before Test 2).
  */
 export type GccNavStepId =
   | 'essentials'
   | 'test1'
   | 'skill_proof'
+  | 'identity'
   | 'test2'
   | 'payment'
   | 'test3'
@@ -117,6 +120,12 @@ export const GCC_JOURNEY_NAV_STEPS: {
     label: 'Skill proof upload',
     shortLabel: 'Skill proof',
     stages: ['media'],
+  },
+  {
+    id: 'identity',
+    label: 'Identity (KYC)',
+    shortLabel: 'Identity',
+    stages: ['identity'],
   },
   {
     id: 'test2',

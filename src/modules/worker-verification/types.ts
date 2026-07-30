@@ -2,6 +2,7 @@ export type VerificationStage =
   | 'essentials'
   | 'quiz'
   | 'media'
+  | 'identity'
   | 'awaiting_interview'
   | 'awaiting_payment'
   | 'tests'

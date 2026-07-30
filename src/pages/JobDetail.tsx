@@ -192,11 +192,11 @@ export default function JobDetail() {
       if (kycStatus !== 'submitted' && kycStatus !== 'verified') {
         toast({
           title: 'Identity verification required',
-          description: 'Please complete Step 4 (Identity/KYC) in onboarding before applying.',
+          description: 'Complete Identity (KYC) in your GCC Journey before applying.',
           variant: 'destructive',
         });
         setApplying(false);
-        navigate('/worker/onboarding');
+        navigate('/worker/journey');
         return;
       }
 

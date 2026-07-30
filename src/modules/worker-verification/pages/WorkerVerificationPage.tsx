@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
-  Calendar, CreditCard, Stethoscope, FileSignature, Flag, RotateCcw,
+  Calendar, CreditCard, Stethoscope, FileSignature, Flag, RotateCcw, ShieldCheck,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -34,6 +34,7 @@ import {
 import type { SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
 import {
   completeMediaStep,
+  completeIdentityKyc,
   getOrCreateVerification,
   loadQuizItems,
   markPaymentPaid,
@@ -87,6 +88,14 @@ export default function WorkerVerificationPage() {
   const [resetting, setResetting] = useState(false);
   const showDevReset = isJourneyResetEnabled();
 
+  const [panNumber, setPanNumber] = useState('');
+  const [aadhaarLast4, setAadhaarLast4] = useState('');
+  const [panFile, setPanFile] = useState<File | null>(null);
+  const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
+  const [kycConsent, setKycConsent] = useState(false);
+  const [forceIdentity, setForceIdentity] = useState(false);
+  const [kycUploading, setKycUploading] = useState(false);
+
   const load = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
@@ -99,6 +108,23 @@ export default function WorkerVerificationPage() {
       setState(v.state || '');
       setEducation(v.education_level || '');
       setPrimarySkill(v.primary_skill || '');
+
+      const { data: wp } = await supabase
+        .from('worker_profiles')
+        .select('kyc_status, pan_number, aadhaar_last4')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const kycStatus = String((wp as any)?.kyc_status || 'not_started');
+      const kycOk = kycStatus === 'submitted' || kycStatus === 'verified';
+      if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
+      if ((wp as any)?.aadhaar_last4) setAadhaarLast4(String((wp as any).aadhaar_last4));
+
+      // Mandatory for apply: if KYC missing and worker already passed skill proof, show Identity.
+      const pastMedia =
+        v.stage !== 'essentials' &&
+        v.stage !== 'quiz' &&
+        v.stage !== 'media';
+      setForceIdentity(!kycOk && pastMedia && v.stage !== 'identity');
 
       if (v.primary_skill && (v.stage === 'quiz' || !v.quiz_completed_at)) {
         const items = await loadQuizItems(v.primary_skill);
@@ -136,12 +162,81 @@ export default function WorkerVerificationPage() {
     void load();
   }, [load]);
 
-  const stage: VerificationStage = row?.stage || 'essentials';
+  const rawStage: VerificationStage = row?.stage || 'essentials';
+  const stage: VerificationStage = forceIdentity ? 'identity' : rawStage;
   const navId = navStepForStage(stage);
   const progress = ((navStepIndex(navId) + 1) / GCC_JOURNEY_NAV_STEPS.length) * 100;
 
   const currentQuiz = quizItems[quizIndex];
 
+  const onSubmitIdentity = async () => {
+    if (!user?.id) return;
+    const pan = panNumber.trim().toUpperCase();
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
+      toast.error('Enter a valid PAN (e.g. ABCDE1234F)');
+      return;
+    }
+    if (!/^\d{4}$/.test(aadhaarLast4)) {
+      toast.error('Enter last 4 digits of Aadhaar');
+      return;
+    }
+    if (!panFile || !aadhaarFile) {
+      toast.error('Upload PAN and Aadhaar photos');
+      return;
+    }
+    if (!kycConsent) {
+      toast.error('Please accept the KYC consent');
+      return;
+    }
+
+    setSaving(true);
+    setKycUploading(true);
+    try {
+      const uploadDoc = async (file: File, docType: string, name: string) => {
+        const ext = file.name.split('.').pop() || 'jpg';
+        const path = `${user.id}/kyc/${docType}-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('worker-documents')
+          .upload(path, file, { cacheControl: '3600', upsert: false });
+        if (upErr) throw upErr;
+        const { data: signed, error: urlErr } = await supabase.storage
+          .from('worker-documents')
+          .createSignedUrl(path, 31536000);
+        if (urlErr) throw urlErr;
+        const { error: dbErr } = await supabase.from('worker_documents').insert({
+          worker_id: user.id,
+          document_name: name,
+          document_type: docType,
+          file_url: signed.signedUrl,
+          file_size: file.size,
+        } as any);
+        if (dbErr) throw dbErr;
+      };
+
+      await uploadDoc(panFile, 'pan', 'PAN Card');
+      await uploadDoc(aadhaarFile, 'aadhaar', 'Aadhaar Card');
+
+      const next = await completeIdentityKyc(user.id, {
+        panNumber: pan,
+        aadhaarLast4,
+      });
+      setRow(next);
+      setForceIdentity(false);
+      setPanFile(null);
+      setAadhaarFile(null);
+      notifyVerificationUpdated();
+      toast.success(
+        next.stage === 'awaiting_interview'
+          ? 'Identity submitted — Test 2 (video interview) is next'
+          : 'Identity submitted — you can apply to jobs',
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'KYC submit failed');
+    } finally {
+      setKycUploading(false);
+      setSaving(false);
+    }
+  };
   const onSaveEssentials = async () => {
     if (!user?.id) return;
     if (!email.trim() || !email.includes('@')) {
@@ -261,7 +356,7 @@ export default function WorkerVerificationPage() {
       const next = await completeMediaStep(user.id);
       setRow(next);
       notifyVerificationUpdated();
-      toast.success('Skill proof saved — Test 2 (video interview) is next');
+      toast.success('Skill proof saved — next: Identity (KYC)');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not continue');
     } finally {
@@ -327,7 +422,7 @@ export default function WorkerVerificationPage() {
     );
   }
 
-  if (stage === 'gcc_ready') {
+  if (rawStage === 'gcc_ready' && !forceIdentity) {
     return (
       <WorkerPortalLayout>
         <Card className="max-w-lg mx-auto">
@@ -662,7 +757,96 @@ export default function WorkerVerificationPage() {
               </div>
               <Button onClick={() => void onCompleteMedia()} disabled={saving || !!uploadingKind}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                Save & continue to Test 2
+                Save & continue to Identity
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {stage === 'identity' && (
+          <Card>
+            <CardContent className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Identity (KYC)</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Required before applying to jobs. Soft KYC — we only store PAN and Aadhaar last 4 digits plus document photos.
+                  </p>
+                </div>
+              </div>
+
+              {kycUploading && (
+                <div
+                  role="status"
+                  className="flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2.5 text-sm"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                  Uploading identity documents… Please wait.
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label>PAN Number *</Label>
+                <Input
+                  value={panNumber}
+                  onChange={(e) => setPanNumber(e.target.value.toUpperCase().slice(0, 10))}
+                  placeholder="ABCDE1234F"
+                  maxLength={10}
+                  disabled={saving}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Aadhaar — Last 4 Digits *</Label>
+                <Input
+                  value={aadhaarLast4}
+                  onChange={(e) => setAadhaarLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder="1234"
+                  inputMode="numeric"
+                  maxLength={4}
+                  disabled={saving}
+                />
+                <p className="text-[11px] text-muted-foreground">We never store your full Aadhaar number</p>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>PAN Card Photo *</Label>
+                  <Input
+                    type="file"
+                    accept="image/*,.pdf"
+                    disabled={saving}
+                    onChange={(e) => setPanFile(e.target.files?.[0] || null)}
+                  />
+                  {panFile && <p className="text-xs text-success">✓ {panFile.name}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Aadhaar Card Photo *</Label>
+                  <Input
+                    type="file"
+                    accept="image/*,.pdf"
+                    disabled={saving}
+                    onChange={(e) => setAadhaarFile(e.target.files?.[0] || null)}
+                  />
+                  {aadhaarFile && <p className="text-xs text-success">✓ {aadhaarFile.name}</p>}
+                </div>
+              </div>
+              <label className="flex items-start gap-2 text-xs cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={kycConsent}
+                  disabled={saving}
+                  onChange={(e) => setKycConsent(e.target.checked)}
+                />
+                <span>
+                  I consent to SafeWork Global verifying my identity documents for job placement. The information is accurate.
+                </span>
+              </label>
+              <Button onClick={() => void onSubmitIdentity()} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                Submit identity & continue
               </Button>
             </CardContent>
           </Card>

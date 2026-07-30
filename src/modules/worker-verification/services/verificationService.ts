@@ -158,7 +158,52 @@ export async function completeMediaStep(userId: string): Promise<WorkerVerificat
     .from('worker_verification')
     .update({
       media_submitted_at: new Date().toISOString(),
-      stage: 'awaiting_interview',
+      stage: 'identity',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', row.id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as WorkerVerification;
+}
+
+/**
+ * Soft KYC — PAN + Aadhaar last-4 + document uploads. Required before job apply.
+ * Advances to Test 2 (video interview) when coming from the identity stage;
+ * if the worker already finished later stages, keep their stage.
+ */
+export async function completeIdentityKyc(
+  userId: string,
+  opts: {
+    panNumber: string;
+    aadhaarLast4: string;
+    nextStageIfCurrentIdentity?: boolean;
+  },
+): Promise<WorkerVerification> {
+  const row = await getOrCreateVerification(userId);
+  const stay =
+    row.stage !== 'identity' &&
+    row.stage !== 'media' &&
+    row.stage !== 'essentials' &&
+    row.stage !== 'quiz';
+
+  const { error: wpErr } = await supabase.from('worker_profiles').upsert(
+    {
+      user_id: userId,
+      pan_number: opts.panNumber.trim().toUpperCase(),
+      aadhaar_last4: opts.aadhaarLast4,
+      kyc_status: 'submitted',
+    } as any,
+    { onConflict: 'user_id' },
+  );
+  if (wpErr) throw new Error(wpErr.message);
+
+  const nextStage = stay ? row.stage : 'awaiting_interview';
+  const { data, error } = await supabase
+    .from('worker_verification')
+    .update({
+      stage: nextStage,
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id)
@@ -279,6 +324,7 @@ export function stageIndex(stage: VerificationStage): number {
     'essentials',
     'quiz',
     'media',
+    'identity',
     'awaiting_interview',
     'awaiting_payment',
     'tests',
