@@ -80,14 +80,31 @@ export function useWorkerGccJourneyProgress() {
 
     const load = async () => {
       try {
-        const { data } = await (supabase as any)
-          .from("worker_verification")
-          .select("stage")
-          .eq("user_id", uid)
-          .maybeSingle();
-        if (!cancelled) {
-          setStage((data?.stage as VerificationStage) || "essentials");
+        const [{ data }, { data: wp }] = await Promise.all([
+          (supabase as any)
+            .from("worker_verification")
+            .select("stage")
+            .eq("user_id", uid)
+            .maybeSingle(),
+          supabase
+            .from("worker_profiles")
+            .select("kyc_status")
+            .eq("user_id", uid)
+            .maybeSingle(),
+        ]);
+        if (cancelled) return;
+
+        let nextStage = (data?.stage as VerificationStage) || "essentials";
+        const kycStatus = String((wp as any)?.kyc_status || "not_started");
+        const kycOk = kycStatus === "submitted" || kycStatus === "verified";
+        const pastMedia =
+          nextStage !== "essentials" &&
+          nextStage !== "quiz" &&
+          nextStage !== "media";
+        if (!kycOk && pastMedia && nextStage !== "identity") {
+          nextStage = "identity";
         }
+        setStage(nextStage);
       } catch {
         if (!cancelled) setStage("essentials");
       } finally {
