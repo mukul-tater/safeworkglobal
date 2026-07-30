@@ -103,12 +103,29 @@ export async function saveEssentials(
 }
 
 export async function loadQuizItems(skill: string): Promise<SkillQuizItem[]> {
-  const { data, error } = await supabase
+  let data: SkillQuizItem[] | null = null;
+  let error: { message: string } | null = null;
+
+  const primary = await supabase
     .from('worker_skill_quiz_items')
-    .select('id, skill_code, question, youtube_url, image_url, expected_answer, sort_order')
+    .select('id, skill_code, question, question_hi, youtube_url, image_url, expected_answer, sort_order')
     .eq('active', true)
     .in('skill_code', [skill, 'Other'])
     .order('sort_order', { ascending: true });
+
+  if (primary.error) {
+    // question_hi column may not exist until migration is applied
+    const fallback = await supabase
+      .from('worker_skill_quiz_items')
+      .select('id, skill_code, question, youtube_url, image_url, expected_answer, sort_order')
+      .eq('active', true)
+      .in('skill_code', [skill, 'Other'])
+      .order('sort_order', { ascending: true });
+    data = (fallback.data || []).map((row: any) => ({ ...row, question_hi: null }));
+    error = fallback.error;
+  } else {
+    data = primary.data as SkillQuizItem[];
+  }
 
   if (error) throw new Error(error.message);
   const items = (data || []) as SkillQuizItem[];
@@ -188,28 +205,55 @@ export async function completeIdentityKyc(
     row.stage !== 'essentials' &&
     row.stage !== 'quiz';
 
-  const { error: wpErr } = await supabase.from('worker_profiles').upsert(
-    {
-      user_id: userId,
-      pan_number: opts.panNumber.trim().toUpperCase(),
-      aadhaar_last4: opts.aadhaarLast4,
-      kyc_status: 'submitted',
-    } as any,
-    { onConflict: 'user_id' },
-  );
-  if (wpErr) throw new Error(wpErr.message);
+  const now = new Date().toISOString();
+  const kycPayload = {
+    user_id: userId,
+    pan_number: opts.panNumber.trim().toUpperCase(),
+    aadhaar_last4: opts.aadhaarLast4,
+    kyc_status: 'submitted',
+    kyc_consent_at: now,
+    kyc_submitted_at: now,
+  };
+
+  // Prefer update when a profile already exists (essentials creates it).
+  const { data: existingWp } = await supabase
+    .from('worker_profiles')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existingWp) {
+    const { error: wpErr } = await supabase
+      .from('worker_profiles')
+      .update(kycPayload)
+      .eq('user_id', userId);
+    if (wpErr) throw new Error(wpErr.message);
+  } else {
+    const { error: wpErr } = await supabase.from('worker_profiles').insert(kycPayload);
+    if (wpErr) throw new Error(wpErr.message);
+  }
 
   const nextStage = stay ? row.stage : 'awaiting_interview';
+  if (nextStage === row.stage) {
+    return { ...row, updated_at: now };
+  }
+
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
       stage: nextStage,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     })
     .eq('id', row.id)
     .select('*')
     .single();
-  if (error) throw new Error(error.message);
+
+  // KYC profile write already succeeded — don't fail the whole submit if stage
+  // advance is blocked (e.g. identity stage constraint not applied yet).
+  if (error) {
+    console.warn('Identity KYC stage advance failed:', error.message);
+    return { ...row, updated_at: now };
+  }
   return data as WorkerVerification;
 }
 

@@ -94,6 +94,7 @@ export default function WorkerVerificationPage() {
   const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
   const [kycConsent, setKycConsent] = useState(false);
   const [forceIdentity, setForceIdentity] = useState(false);
+  const [kycDone, setKycDone] = useState(false);
   const [kycUploading, setKycUploading] = useState(false);
 
   const load = useCallback(async () => {
@@ -116,6 +117,7 @@ export default function WorkerVerificationPage() {
         .maybeSingle();
       const kycStatus = String((wp as any)?.kyc_status || 'not_started');
       const kycOk = kycStatus === 'submitted' || kycStatus === 'verified';
+      setKycDone(kycOk);
       if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
       if ((wp as any)?.aadhaar_last4) setAadhaarLast4(String((wp as any).aadhaar_last4));
 
@@ -163,7 +165,10 @@ export default function WorkerVerificationPage() {
   }, [load]);
 
   const rawStage: VerificationStage = row?.stage || 'essentials';
-  const stage: VerificationStage = forceIdentity ? 'identity' : rawStage;
+  // If KYC is done but stage stuck on identity (constraint lag), treat as interview.
+  const effectiveRaw: VerificationStage =
+    kycDone && rawStage === 'identity' ? 'awaiting_interview' : rawStage;
+  const stage: VerificationStage = forceIdentity ? 'identity' : effectiveRaw;
   const navId = navStepForStage(stage);
   const progress = ((navStepIndex(navId) + 1) / GCC_JOURNEY_NAV_STEPS.length) * 100;
 
@@ -192,25 +197,53 @@ export default function WorkerVerificationPage() {
     setSaving(true);
     setKycUploading(true);
     try {
+      // Ensure worker_profiles exists before document inserts (FK on worker_id).
+      const { data: wpRow } = await supabase
+        .from('worker_profiles')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!wpRow) {
+        const { error: ensureErr } = await supabase
+          .from('worker_profiles')
+          .insert({ user_id: user.id } as any);
+        if (ensureErr) throw new Error(ensureErr.message);
+      }
+
       const uploadDoc = async (file: File, docType: string, name: string) => {
         const ext = file.name.split('.').pop() || 'jpg';
         const path = `${user.id}/kyc/${docType}-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('worker-documents')
           .upload(path, file, { cacheControl: '3600', upsert: false });
-        if (upErr) throw upErr;
+        if (upErr) throw new Error(upErr.message || 'Document upload failed');
         const { data: signed, error: urlErr } = await supabase.storage
           .from('worker-documents')
           .createSignedUrl(path, 31536000);
-        if (urlErr) throw urlErr;
-        const { error: dbErr } = await supabase.from('worker_documents').insert({
-          worker_id: user.id,
-          document_name: name,
-          document_type: docType,
-          file_url: signed.signedUrl,
-          file_size: file.size,
-        } as any);
-        if (dbErr) throw dbErr;
+        if (urlErr || !signed?.signedUrl) {
+          throw new Error(urlErr?.message || 'Could not create document URL');
+        }
+        // Prefer pan/aadhaar; fall back to id_proof if DB CHECK not yet updated.
+        const tryTypes = docType === 'pan' || docType === 'aadhaar'
+          ? [docType, 'id_proof']
+          : [docType];
+        let lastErr: Error | null = null;
+        for (const type of tryTypes) {
+          const { error: dbErr } = await supabase.from('worker_documents').insert({
+            worker_id: user.id,
+            document_name: name,
+            document_type: type,
+            file_url: signed.signedUrl,
+            file_size: file.size,
+            verification_status: 'pending',
+          } as any);
+          if (!dbErr) {
+            lastErr = null;
+            break;
+          }
+          lastErr = new Error(dbErr.message);
+        }
+        if (lastErr) throw lastErr;
       };
 
       await uploadDoc(panFile, 'pan', 'PAN Card');
@@ -230,6 +263,7 @@ export default function WorkerVerificationPage() {
           ? 'Identity submitted — Test 2 (video interview) is next'
           : 'Identity submitted — you can apply to jobs',
       );
+      await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'KYC submit failed');
     } finally {
@@ -636,7 +670,14 @@ export default function WorkerVerificationPage() {
               )}
 
               <h2 className="text-lg font-semibold font-heading leading-snug">{currentQuiz.question}</h2>
-              <p className="text-xs text-muted-foreground -mt-2">Do you know / can you do this type of work?</p>
+              {currentQuiz.question_hi ? (
+                <p className="text-base text-muted-foreground leading-snug -mt-1" lang="hi">
+                  {currentQuiz.question_hi}
+                </p>
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                Do you know / can you do this type of work? · क्या आप यह काम जानते / कर सकते हैं?
+              </p>
 
               <RadioGroup
                 value={
@@ -650,10 +691,10 @@ export default function WorkerVerificationPage() {
                 className="flex gap-6"
               >
                 <label className="flex items-center gap-2 text-sm font-medium">
-                  <RadioGroupItem value="yes" /> Yes, I know this
+                  <RadioGroupItem value="yes" /> Yes, I know this · हाँ, मैं जानता/जानती हूँ
                 </label>
                 <label className="flex items-center gap-2 text-sm font-medium">
-                  <RadioGroupItem value="no" /> No / not yet
+                  <RadioGroupItem value="no" /> No / not yet · नहीं / अभी नहीं
                 </label>
               </RadioGroup>
               <Button onClick={() => void onQuizContinue()} disabled={saving}>

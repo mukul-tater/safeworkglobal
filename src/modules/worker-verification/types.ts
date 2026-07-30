@@ -43,6 +43,7 @@ export interface SkillQuizItem {
   id: string;
   skill_code: string;
   question: string;
+  question_hi: string | null;
   youtube_url: string | null;
   image_url: string | null;
   expected_answer: boolean;
