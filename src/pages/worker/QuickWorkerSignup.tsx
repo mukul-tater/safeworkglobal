@@ -24,8 +24,7 @@ import { lovable } from '@/integrations/lovable/index';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import {
   useFirebasePhoneOtp,
-  WORKER_OTP_RECAPTCHA_HOST_ID,
-  dismissRecaptchaWidgets,
+  WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
@@ -97,7 +96,7 @@ export default function QuickWorkerSignup() {
   useEffect(() => {
     if (step !== 'otp') return;
     firebaseOtp.clearVerifierOnly();
-    dismissRecaptchaWidgets();
+    firebaseOtp.dismissRecaptchaWidgets();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when entering OTP step
   }, [step]);
 
@@ -256,12 +255,6 @@ export default function QuickWorkerSignup() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-info/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div
-          id={WORKER_OTP_RECAPTCHA_HOST_ID}
-          className="pointer-events-none fixed left-[-9999px] top-0 h-0 w-0 overflow-hidden opacity-0"
-          aria-hidden="true"
-        />
-
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -447,7 +440,12 @@ export default function QuickWorkerSignup() {
                   </label>
                 </div>
 
-                <Button type="submit" className="w-full h-11 font-semibold" disabled={formLoading || googleLoading}>
+                <Button
+                  id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                  type="submit"
+                  className="w-full h-11 font-semibold"
+                  disabled={formLoading || googleLoading}
+                >
                   {formLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Send SMS code
                 </Button>
@@ -493,6 +491,7 @@ export default function QuickWorkerSignup() {
                 <p className="text-xs text-center text-muted-foreground">
                   Didn&apos;t get the code?{' '}
                   <button
+                    id={WORKER_OTP_RECAPTCHA_BTN_ID}
                     type="button"
                     onClick={handleResendOtp}
                     disabled={formLoading}

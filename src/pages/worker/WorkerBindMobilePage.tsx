@@ -13,8 +13,7 @@ import { Loader2, Phone, ShieldCheck, HardHat } from 'lucide-react';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import {
   useFirebasePhoneOtp,
-  WORKER_OTP_RECAPTCHA_HOST_ID,
-  dismissRecaptchaWidgets,
+  WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
@@ -71,7 +70,7 @@ export default function WorkerBindMobilePage() {
   useEffect(() => {
     if (step !== 'otp') return;
     firebaseOtp.clearVerifierOnly();
-    dismissRecaptchaWidgets();
+    firebaseOtp.dismissRecaptchaWidgets();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when entering OTP step
   }, [step]);
 
@@ -188,12 +187,6 @@ export default function WorkerBindMobilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-info/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div
-          id={WORKER_OTP_RECAPTCHA_HOST_ID}
-          className="pointer-events-none fixed left-[-9999px] top-0 h-0 w-0 overflow-hidden opacity-0"
-          aria-hidden="true"
-        />
-
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-3">
             <ShieldCheck className="h-7 w-7 text-primary" />
@@ -239,7 +232,12 @@ export default function WorkerBindMobilePage() {
                   </p>
                 </div>
 
-                <Button type="submit" className="w-full h-11 font-semibold" disabled={submitting}>
+                <Button
+                  id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                  type="submit"
+                  className="w-full h-11 font-semibold"
+                  disabled={submitting}
+                >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Send SMS code
                 </Button>
@@ -277,6 +275,7 @@ export default function WorkerBindMobilePage() {
                 <p className="text-xs text-center text-muted-foreground">
                   Didn&apos;t get the code?{' '}
                   <button
+                    id={WORKER_OTP_RECAPTCHA_BTN_ID}
                     type="button"
                     onClick={handleResendOtp}
                     disabled={submitting}
