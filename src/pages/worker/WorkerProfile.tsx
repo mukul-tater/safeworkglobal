@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, FileText, User, Briefcase, FileCheck, Globe, BadgeCheck } from "lucide-react";
+import { Loader2, User, Briefcase, FileCheck, Globe, BadgeCheck } from "lucide-react";
 import AvatarUpload from "@/components/AvatarUpload";
 import WorkerSkillMedia from "@/components/worker/WorkerSkillMedia";
 import ChangePasswordCard from "@/components/ChangePasswordCard";
@@ -52,8 +52,6 @@ export default function WorkerProfile() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [nationality, setNationality] = useState<string>("");
-  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
-  const [resumeName, setResumeName] = useState<string | null>(null);
   const [availability, setAvailability] = useState<string>("");
   const [contactEmail, setContactEmail] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
@@ -146,20 +144,6 @@ export default function WorkerProfile() {
           setValue('preferred_countries', workerProfile.visa_countries?.join(', ') || '');
           
           setValue('certifications', '');
-        }
-
-        // Fetch existing resume from worker_documents
-        const { data: docs } = await supabase
-          .from('worker_documents')
-          .select('file_url, document_name')
-          .eq('worker_id', user.id)
-          .eq('document_type', 'resume')
-          .order('uploaded_at', { ascending: false })
-          .limit(1);
-
-        if (docs && docs.length > 0) {
-          setResumeUrl(docs[0].file_url);
-          setResumeName(docs[0].document_name);
         }
 
         markReady({
@@ -419,44 +403,6 @@ export default function WorkerProfile() {
         <div id="skills">
           <WorkerSkillMedia workerId={user.id} />
         </div>
-
-        <ProfileSection
-          title="Resume / CV"
-          description="Resume upload is not available for workers. Use skill photos and videos instead."
-          icon={FileText}
-        >
-          {resumeUrl ? (
-            <div className="flex items-center justify-between gap-3 p-4 bg-muted/40 rounded-lg border border-border/60 opacity-80">
-              <div className="flex items-center gap-3 min-w-0">
-                <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-medium text-sm truncate">{resumeName || 'Resume'}</p>
-                  <a
-                    href={resumeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary hover:underline"
-                  >
-                    View file
-                  </a>
-                </div>
-              </div>
-            </div>
-          ) : null}
-          <div className={resumeUrl ? 'mt-4' : ''}>
-            <Input
-              type="file"
-              accept=".pdf,.doc,.docx"
-              disabled
-              className="h-11 cursor-not-allowed opacity-60"
-              aria-disabled="true"
-              title="Resume / CV upload is disabled"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Upload is disabled. Add work photos or videos under Skills instead.
-            </p>
-          </div>
-        </ProfileSection>
 
         <ProfileSection title="Experience & Certifications" icon={Briefcase}>
           <div className="grid gap-4 sm:grid-cols-2">

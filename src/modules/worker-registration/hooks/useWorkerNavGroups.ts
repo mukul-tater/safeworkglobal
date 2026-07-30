@@ -1,45 +1,22 @@
 import { useMemo } from "react";
-import { Flag } from "lucide-react";
 import type { NavGroup, NavItem } from "@/components/layout/DashboardSidebar";
 import { workerNavGroups } from "@/config/workerNav";
-import {
-  PLACEMENT_STEPS,
-  placementStatusLabel,
-  placementStatusTone,
-} from "@/components/worker/placementJourney";
-import { useWorkerPlacementProgress } from "@/modules/worker-registration/hooks/useWorkerPlacementProgress";
+import { useWorkerGccJourneyProgress } from "@/modules/worker-registration/hooks/useWorkerGccJourneyProgress";
+import { GCC_JOURNEY_NAV_STEPS } from "@/modules/worker-verification/constants";
 
 /**
- * Worker nav: one GCC Journey group (verification wizard + placement steps).
- * Do not show a separate "GCC Journey" under Menu — that duplicated My Journey.
+ * Worker nav: GCC Journey = verification Tests 1–3 + payment / medical / bond / ready.
+ * Old 13-step placement accordion (resume path) is not shown.
  */
 export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean } {
-  const { statuses, loading } = useWorkerPlacementProgress();
+  const { navItems, completed, loading } = useWorkerGccJourneyProgress();
 
   const navGroups = useMemo(() => {
-    const completed = PLACEMENT_STEPS.filter((s) => statuses[s.id] === "completed").length;
-
-    const journeyItems: NavItem[] = [
-      {
-        path: "/worker/journey",
-        icon: Flag,
-        label: "Verification",
-      },
-      ...PLACEMENT_STEPS.map((step) => ({
-        id: step.id,
-        path: step.path,
-        icon: step.icon,
-        label: step.shortLabel,
-        statusLabel: placementStatusLabel(statuses[step.id]),
-        statusTone: placementStatusTone(statuses[step.id]),
-      })),
-    ];
-
     const journeyGroup: NavGroup = {
       label: "GCC Journey",
-      badge: `${completed}/${PLACEMENT_STEPS.length}`,
+      badge: `${completed}/${GCC_JOURNEY_NAV_STEPS.length}`,
       defaultOpen: true,
-      items: journeyItems,
+      items: navItems,
     };
 
     const overview = workerNavGroups.find((g) => g.label === "Overview");
@@ -63,7 +40,7 @@ export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean 
       ...(jobs ? [{ ...jobs, defaultOpen: true }] : []),
       ...rest,
     ];
-  }, [statuses]);
+  }, [navItems, completed]);
 
   return { navGroups, loading };
 }

@@ -71,13 +71,32 @@ export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
   'gcc_ready',
 ];
 
+/** Short labels used inside the wizard UI. */
 export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   essentials: 'Essentials',
-  quiz: 'Skill check',
-  media: 'Skill proof',
-  awaiting_interview: 'Video interview',
+  quiz: 'Test 1 — Skill quiz',
+  media: 'Test 2 — Skill media',
+  awaiting_interview: 'Test 3 — Video interview',
   awaiting_payment: 'Payment',
   tests: 'Medical / trade test',
   bond: 'Bond',
   gcc_ready: 'GCC ready',
 };
+
+/**
+ * Sidebar / home tracker — Test 1 / 2 / 3 + results path (no resume, no old 13-step placement).
+ */
+export const GCC_JOURNEY_NAV_STEPS: {
+  id: VerificationStage;
+  label: string;
+  shortLabel: string;
+}[] = [
+  { id: 'essentials', label: 'Essentials', shortLabel: 'Essentials' },
+  { id: 'quiz', label: 'Test 1 — Skill quiz', shortLabel: 'Test 1' },
+  { id: 'media', label: 'Test 2 — Skill media', shortLabel: 'Test 2' },
+  { id: 'awaiting_interview', label: 'Test 3 — Video interview', shortLabel: 'Test 3' },
+  { id: 'awaiting_payment', label: 'Payment', shortLabel: 'Payment' },
+  { id: 'tests', label: 'Medical / trade test', shortLabel: 'Medical' },
+  { id: 'bond', label: 'Bond', shortLabel: 'Bond' },
+  { id: 'gcc_ready', label: 'GCC ready', shortLabel: 'GCC ready' },
+];
