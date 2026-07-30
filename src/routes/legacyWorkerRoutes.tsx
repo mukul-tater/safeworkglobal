@@ -28,6 +28,7 @@ import WorkerGoogleLandingRedirect from '@/modules/worker-registration/pages/Wor
 import QuickWorkerSignup from '@/pages/worker/QuickWorkerSignup';
 import WorkerLoginPage from '@/pages/worker/WorkerLoginPage';
 import WorkerBindMobilePage from '@/pages/worker/WorkerBindMobilePage';
+import WorkerVerificationPage from '@/modules/worker-verification/pages/WorkerVerificationPage';
 
 /** Must return <Route> directly — wrapper components break React Router v6 matching. */
 function workerRoute(path: string, page: ReactNode) {
@@ -65,6 +66,7 @@ export const legacyWorkerRoutes = (
     <Route path="/worker/discover" element={<Navigate to="/jobs" replace />} />
     {workerRoute('/worker/application-success/:applicationId', <ApplicationSuccess />)}
     {workerRoute('/worker/onboarding', <WorkerOnboarding />)}
+    {workerRoute('/worker/journey', <WorkerVerificationPage />)}
     {workerRoute('/worker/dashboard', <WorkerDashboard />)}
     {workerRoute('/worker/profile', <WorkerProfile />)}
     {workerRoute('/worker/applications', <WorkerApplications />)}

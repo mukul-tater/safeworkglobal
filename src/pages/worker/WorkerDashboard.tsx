@@ -15,7 +15,7 @@ import WorkerPlacementProgress from "@/components/worker/WorkerPlacementProgress
 export default function WorkerDashboard() {
   const { profile } = useAuth();
   const { canApplyToJobs, onboardingPath } = useWorkerJobAccess();
-  const { statuses, loading: progressLoading } = useWorkerPlacementProgress();
+  const { statuses, loading: progressLoading, journeyIncomplete } = useWorkerPlacementProgress();
   const firstName = profile?.full_name?.split(" ")[0];
 
   return (
@@ -40,6 +40,19 @@ export default function WorkerDashboard() {
         </Button>
       </div>
 
+      {journeyIncomplete && (
+        <Card className="mb-6 border-primary/20 bg-primary/5">
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+            <p className="text-sm text-foreground">
+              Continue your GCC-ready journey — essentials, skill check, interview, and more.
+            </p>
+            <Button asChild variant="default" size="sm" className="rounded-lg shrink-0">
+              <Link to="/worker/journey">Continue journey</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {progressLoading ? (
         <div className="mb-6 h-40 rounded-2xl border border-border/60 bg-muted/30 animate-pulse" />
       ) : (
@@ -47,12 +60,12 @@ export default function WorkerDashboard() {
       )}
 
       {!canApplyToJobs && (
-        <Card className="mb-6 border-primary/20 bg-primary/5">
+        <Card className="mb-6 border-border/60">
           <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
             <p className="text-sm text-foreground">
-              You can view jobs now. Complete your profile to apply or show interest.
+              You can view jobs now. Complete profile documents to apply or show interest.
             </p>
-            <Button asChild variant="default" size="sm" className="rounded-lg shrink-0">
+            <Button asChild variant="outline" size="sm" className="rounded-lg shrink-0">
               <Link to={onboardingPath}>Complete profile</Link>
             </Button>
           </CardContent>

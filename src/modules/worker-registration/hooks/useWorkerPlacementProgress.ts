@@ -7,7 +7,7 @@ import {
   type PlacementStepStatus,
 } from "@/components/worker/placementJourney";
 
-export interface PlacementFlags {
+interface PlacementFlags {
   registration: boolean;
   documents: boolean;
   screening: boolean;
@@ -40,14 +40,16 @@ const EMPTY_FLAGS: PlacementFlags = {
 };
 
 /**
- * Shared 13-step placement progress for home tracker + My Journey sidebar.
+ * Derives 13-step home progress from worker_verification + hiring tables.
  */
 export function useWorkerPlacementProgress(): {
   loading: boolean;
   statuses: Record<PlacementStepId, PlacementStepStatus>;
+  journeyIncomplete: boolean;
 } {
   const { user, profile } = useAuth();
   const [flags, setFlags] = useState<PlacementFlags>(EMPTY_FLAGS);
+  const [journeyIncomplete, setJourneyIncomplete] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,6 +70,7 @@ export function useWorkerPlacementProgress(): {
           interviewsRes,
           offersRes,
           formalitiesRes,
+          verificationRes,
         ] = await Promise.all([
           supabase
             .from("worker_profiles")
@@ -96,6 +99,13 @@ export function useWorkerPlacementProgress(): {
               "visa_status, flight_booking_status, arrival_date, departure_date, overall_status",
             )
             .eq("worker_id", uid),
+          (supabase as any)
+            .from("worker_verification")
+            .select(
+              "stage, essentials_completed_at, quiz_completed_at, media_submitted_at, interview_score, trade_test_required, trade_test_status, medical_status, payment_status, bond_status, gcc_ready_at",
+            )
+            .eq("user_id", uid)
+            .maybeSingle(),
         ]);
 
         if (cancelled) return;
@@ -104,6 +114,7 @@ export function useWorkerPlacementProgress(): {
         const interviews = interviewsRes.data ?? [];
         const offers = offersRes.data ?? [];
         const formalities = formalitiesRes.data ?? [];
+        const v = verificationRes.data;
 
         const selectedStatuses = new Set([
           "selected",
@@ -118,8 +129,8 @@ export function useWorkerPlacementProgress(): {
         const hasInterview = interviews.length > 0;
         const hasOffer = offers.length > 0;
         const visaInProgress = formalities.some((f) => {
-          const v = String(f.visa_status || "").toLowerCase();
-          return Boolean(v) && v !== "not_required" && v !== "none";
+          const vs = String(f.visa_status || "").toLowerCase();
+          return Boolean(vs) && vs !== "not_required" && vs !== "none";
         });
         const readyToFly = formalities.some((f) => {
           const flight = String(f.flight_booking_status || "").toLowerCase();
@@ -140,17 +151,29 @@ export function useWorkerPlacementProgress(): {
         const registered =
           Boolean(profileRes.data?.onboarding_completed) ||
           Boolean(profile?.full_name?.trim()) ||
-          Boolean(user);
+          Boolean(user) ||
+          Boolean(v?.essentials_completed_at);
 
         const hasDocs = (docsRes.count ?? 0) > 0;
+        const screeningDone = Boolean(v?.quiz_completed_at);
+        const techDone = v?.interview_score != null;
+        const tradeDone =
+          v?.trade_test_status === "passed" ||
+          v?.trade_test_status === "not_required" ||
+          (v?.trade_test_required === false && techDone);
+        const skillVerified =
+          Boolean(v?.gcc_ready_at) ||
+          (Boolean(v?.medical_status === "passed") && Boolean(tradeDone));
+
+        setJourneyIncomplete(!v || v.stage !== "gcc_ready");
 
         setFlags({
           registration: registered,
-          documents: hasDocs,
-          screening: false,
-          tech_interview: false,
-          trade_test: false,
-          skill_verified: false,
+          documents: hasDocs || Boolean(v?.essentials_completed_at),
+          screening: screeningDone,
+          tech_interview: techDone,
+          trade_test: Boolean(tradeDone),
+          skill_verified: skillVerified,
           employer_matched: apps.length > 0,
           interview_scheduled: hasInterview,
           selected: hasSelected,
@@ -178,5 +201,5 @@ export function useWorkerPlacementProgress(): {
 
   const statuses = useMemo(() => derivePlacementStatuses(flags), [flags]);
 
-  return { loading, statuses };
+  return { loading, statuses, journeyIncomplete };
 }

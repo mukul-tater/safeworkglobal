@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -26,12 +30,18 @@ import {
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { workerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
+import {
+  WORKER_TERMS_FULL,
+  WORKER_TERMS_SUMMARY,
+  WORKER_TERMS_VERSION,
+} from '@/modules/worker-verification/constants';
+import { acceptTerms } from '@/modules/worker-verification/services/verificationService';
 
 type Step = 'form' | 'otp';
 
 /**
- * Worker signup — Name + Mobile (Firebase SMS OTP) + Password.
- * Email is not collected here; workers add/verify email inside the portal.
+ * Worker signup — Name + Mobile (Firebase SMS OTP) + Password + T&C.
+ * Continues to /worker/journey for essentials and skill verification.
  */
 export default function QuickWorkerSignup() {
   const navigate = useNavigate();
@@ -42,6 +52,8 @@ export default function QuickWorkerSignup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
 
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -71,7 +83,7 @@ export default function QuickWorkerSignup() {
   useEffect(() => {
     if (profileLoading) return;
     if (isAuthenticated && role === 'worker') {
-      navigate(isMobileVerified ? '/worker/dashboard' : '/worker/bind-mobile', { replace: true });
+      navigate(isMobileVerified ? '/worker/journey' : '/worker/bind-mobile', { replace: true });
     }
   }, [isAuthenticated, role, isMobileVerified, profileLoading, navigate]);
 
@@ -92,6 +104,7 @@ export default function QuickWorkerSignup() {
     if (password.length < 6) return 'Password must be at least 6 characters';
     if (password !== confirmPassword) return 'Passwords do not match';
     if (!country) return 'Please select your country';
+    if (!acceptedTerms) return 'Please agree to the terms and declarations';
     return null;
   };
 
@@ -103,11 +116,12 @@ export default function QuickWorkerSignup() {
       email: authEmail,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/worker/trust`,
+        emailRedirectTo: `${window.location.origin}/worker/journey`,
         data: {
           full_name: name.trim(),
           phone: digits,
           role: 'worker',
+          terms_version: WORKER_TERMS_VERSION,
         },
       },
     });
@@ -149,6 +163,12 @@ export default function QuickWorkerSignup() {
           mobile_verified: true,
         })
         .eq('id', user.id);
+
+      try {
+        await acceptTerms(user.id);
+      } catch {
+        /* migration may not be applied yet */
+      }
     }
   };
 
@@ -195,8 +215,8 @@ export default function QuickWorkerSignup() {
       }
 
       await createWorkerAccount();
-      toast.success('Welcome to SafeWorkGlobal! 🎉');
-      navigate('/worker/trust', { replace: true });
+      toast.success('Welcome to SafeWorkGlobal!');
+      navigate('/worker/journey', { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
@@ -386,6 +406,34 @@ export default function QuickWorkerSignup() {
                   </p>
                 </div>
 
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+                  <p className="text-xs text-muted-foreground leading-relaxed">{WORKER_TERMS_SUMMARY}</p>
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <Checkbox
+                      checked={acceptedTerms}
+                      onCheckedChange={(v) => {
+                        const on = !!v;
+                        setAcceptedTerms(on);
+                        if (on) setTermsOpen(true);
+                      }}
+                      className="mt-0.5"
+                    />
+                    <span className="text-xs leading-snug">
+                      I agree to the terms and declarations.{' '}
+                      <button
+                        type="button"
+                        className="text-primary font-medium hover:underline"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setTermsOpen(true);
+                        }}
+                      >
+                        Read full terms
+                      </button>
+                    </span>
+                  </label>
+                </div>
+
                 <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
                   {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Send SMS code
@@ -466,6 +514,34 @@ export default function QuickWorkerSignup() {
             )}
           </CardContent>
         </Card>
+
+        <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Worker terms & declarations</DialogTitle>
+              <DialogDescription>
+                Please read carefully. Agreeing confirms medical fitness and platform rules.
+              </DialogDescription>
+            </DialogHeader>
+            <pre className="whitespace-pre-wrap text-xs text-muted-foreground font-sans leading-relaxed">
+              {WORKER_TERMS_FULL}
+            </pre>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => setTermsOpen(false)}>
+                Close
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setAcceptedTerms(true);
+                  setTermsOpen(false);
+                }}
+              >
+                I agree
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

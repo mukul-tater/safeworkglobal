@@ -22,7 +22,7 @@ export function useWorkerJobAccess(): WorkerJobAccess {
 
   const isLegacyWorker = isAuthenticated && role === 'worker';
   const isWorker = isPhase1Worker || isLegacyWorker;
-  const onboardingPath = isPhase1Worker ? '/onboarding' : '/worker/onboarding';
+  const onboardingPath = isPhase1Worker ? '/onboarding' : '/worker/journey';
 
   useEffect(() => {
     if (profileLoading || workerAuthLoading) return;

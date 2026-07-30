@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Flag } from "lucide-react";
 import type { NavGroup, NavItem } from "@/components/layout/DashboardSidebar";
 import { workerNavGroups } from "@/config/workerNav";
 import {
@@ -42,9 +43,12 @@ export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean 
           ...overview,
           label: "Menu",
           defaultOpen: true,
-          items: overview.items
-            .filter((i) => i.path === "/worker/dashboard")
-            .map((i) => ({ ...i, label: "Home" })),
+          items: [
+            ...overview.items
+              .filter((i) => i.path === "/worker/dashboard")
+              .map((i) => ({ ...i, label: "Home" })),
+            { path: "/worker/journey", icon: Flag, label: "GCC Journey" },
+          ],
         }
       : null;
 
