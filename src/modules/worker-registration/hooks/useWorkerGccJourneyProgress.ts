@@ -4,48 +4,48 @@ import {
   CreditCard,
   FileSignature,
   Flag,
-  ImagePlus,
-  Stethoscope,
   UserRound,
   Video,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
   GCC_JOURNEY_NAV_STEPS,
-  VERIFICATION_STAGE_ORDER,
+  navStepForStage,
+  navStepIndex,
+  type GccNavStepId,
   type VerificationStage,
 } from "@/modules/worker-verification/constants";
-import { stageIndex } from "@/modules/worker-verification/services/verificationService";
 
 export type GccStepStatus = "completed" | "current" | "waiting";
 
-const STEP_ICONS: Record<VerificationStage, LucideIcon> = {
+const STEP_ICONS: Record<GccNavStepId, LucideIcon> = {
   essentials: UserRound,
-  quiz: ClipboardList,
-  media: ImagePlus,
-  awaiting_interview: Video,
-  awaiting_payment: CreditCard,
-  tests: Stethoscope,
+  test1: ClipboardList,
+  test2: Video,
+  payment: CreditCard,
+  test3: Wrench,
   bond: FileSignature,
   gcc_ready: Flag,
 };
 
-function deriveStatuses(stage: VerificationStage | null): Record<VerificationStage, GccStepStatus> {
-  const current = stage ?? "essentials";
-  const curIdx = stageIndex(current);
-  const out = {} as Record<VerificationStage, GccStepStatus>;
-  for (const s of VERIFICATION_STAGE_ORDER) {
-    const i = stageIndex(s);
-    if (current === "gcc_ready") {
-      out[s] = "completed";
+function deriveNavStatuses(stage: VerificationStage | null): Record<GccNavStepId, GccStepStatus> {
+  const currentNav = navStepForStage(stage ?? "essentials");
+  const curIdx = navStepIndex(currentNav);
+  const out = {} as Record<GccNavStepId, GccStepStatus>;
+
+  for (const step of GCC_JOURNEY_NAV_STEPS) {
+    const i = navStepIndex(step.id);
+    if (stage === "gcc_ready" || currentNav === "gcc_ready") {
+      out[step.id] = "completed";
     } else if (i < curIdx) {
-      out[s] = "completed";
+      out[step.id] = "completed";
     } else if (i === curIdx) {
-      out[s] = "current";
+      out[step.id] = "current";
     } else {
-      out[s] = "waiting";
+      out[step.id] = "waiting";
     }
   }
   return out;
@@ -58,7 +58,7 @@ function statusLabel(s: GccStepStatus): string {
 }
 
 /**
- * GCC Journey progress from worker_verification.stage (Test 1 / 2 / 3 path).
+ * GCC Journey: Test 1 = quiz+media, Test 2 = interview, Test 3 = physical trade test.
  */
 export function useWorkerGccJourneyProgress() {
   const { user, profile } = useAuth();
@@ -95,8 +95,8 @@ export function useWorkerGccJourneyProgress() {
     };
   }, [user?.id, profile?.id]);
 
-  const statuses = useMemo(() => deriveStatuses(stage), [stage]);
-  const completed = VERIFICATION_STAGE_ORDER.filter((s) => statuses[s] === "completed").length;
+  const statuses = useMemo(() => deriveNavStatuses(stage), [stage]);
+  const completed = GCC_JOURNEY_NAV_STEPS.filter((s) => statuses[s.id] === "completed").length;
   const journeyIncomplete = stage !== "gcc_ready";
 
   const navItems = useMemo(
@@ -107,7 +107,10 @@ export function useWorkerGccJourneyProgress() {
         icon: STEP_ICONS[step.id],
         label: step.label,
         statusLabel: statusLabel(statuses[step.id]),
-        statusTone: statuses[step.id] === "current" ? ("in_progress" as const) : statuses[step.id],
+        statusTone:
+          statuses[step.id] === "current"
+            ? ("in_progress" as const)
+            : statuses[step.id],
       })),
     [statuses],
   );

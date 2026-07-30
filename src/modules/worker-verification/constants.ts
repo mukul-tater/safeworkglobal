@@ -71,32 +71,69 @@ export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
   'gcc_ready',
 ];
 
-/** Short labels used inside the wizard UI. */
+/** Short labels used inside the wizard UI (DB stages). */
 export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   essentials: 'Essentials',
   quiz: 'Test 1 — Skill quiz',
-  media: 'Test 2 — Skill media',
-  awaiting_interview: 'Test 3 — Video interview',
+  media: 'Test 1 — Skill media',
+  awaiting_interview: 'Test 2 — Video interview',
   awaiting_payment: 'Payment',
-  tests: 'Medical / trade test',
+  tests: 'Test 3 — Physical trade test',
   bond: 'Bond',
   gcc_ready: 'GCC ready',
 };
 
-/**
- * Sidebar / home tracker — Test 1 / 2 / 3 + results path (no resume, no old 13-step placement).
- */
+/** Sidebar / home tracker step ids (quiz+media share Test 1). */
+export type GccNavStepId =
+  | 'essentials'
+  | 'test1'
+  | 'test2'
+  | 'payment'
+  | 'test3'
+  | 'bond'
+  | 'gcc_ready';
+
 export const GCC_JOURNEY_NAV_STEPS: {
-  id: VerificationStage;
+  id: GccNavStepId;
   label: string;
   shortLabel: string;
+  /** DB stages that count as this nav step. */
+  stages: VerificationStage[];
 }[] = [
-  { id: 'essentials', label: 'Essentials', shortLabel: 'Essentials' },
-  { id: 'quiz', label: 'Test 1 — Skill quiz', shortLabel: 'Test 1' },
-  { id: 'media', label: 'Test 2 — Skill media', shortLabel: 'Test 2' },
-  { id: 'awaiting_interview', label: 'Test 3 — Video interview', shortLabel: 'Test 3' },
-  { id: 'awaiting_payment', label: 'Payment', shortLabel: 'Payment' },
-  { id: 'tests', label: 'Medical / trade test', shortLabel: 'Medical' },
-  { id: 'bond', label: 'Bond', shortLabel: 'Bond' },
-  { id: 'gcc_ready', label: 'GCC ready', shortLabel: 'GCC ready' },
+  { id: 'essentials', label: 'Essentials', shortLabel: 'Essentials', stages: ['essentials'] },
+  {
+    id: 'test1',
+    label: 'Test 1 — Skill quiz & media',
+    shortLabel: 'Test 1',
+    stages: ['quiz', 'media'],
+  },
+  {
+    id: 'test2',
+    label: 'Test 2 — Video interview',
+    shortLabel: 'Test 2',
+    stages: ['awaiting_interview'],
+  },
+  {
+    id: 'payment',
+    label: 'Payment',
+    shortLabel: 'Payment',
+    stages: ['awaiting_payment'],
+  },
+  {
+    id: 'test3',
+    label: 'Test 3 — Physical trade test',
+    shortLabel: 'Test 3',
+    stages: ['tests'],
+  },
+  { id: 'bond', label: 'Bond', shortLabel: 'Bond', stages: ['bond'] },
+  { id: 'gcc_ready', label: 'GCC ready', shortLabel: 'GCC ready', stages: ['gcc_ready'] },
 ];
+
+export function navStepIndex(id: GccNavStepId): number {
+  return GCC_JOURNEY_NAV_STEPS.findIndex((s) => s.id === id);
+}
+
+export function navStepForStage(stage: VerificationStage): GccNavStepId {
+  const found = GCC_JOURNEY_NAV_STEPS.find((s) => s.stages.includes(stage));
+  return found?.id ?? 'essentials';
+}

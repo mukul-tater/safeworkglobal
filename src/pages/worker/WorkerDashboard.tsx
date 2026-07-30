@@ -44,7 +44,7 @@ export default function WorkerDashboard() {
         <Card className="mb-6 border-primary/20 bg-primary/5">
           <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
             <p className="text-sm text-foreground">
-              Continue your GCC journey — essentials, Test 1–3, interview results, and more.
+              Continue your GCC journey — Test 1 (quiz & media), Test 2 (interview), Test 3 (physical trade test).
             </p>
             <Button asChild variant="default" size="sm" className="rounded-lg shrink-0">
               <Link to="/worker/journey">Continue journey</Link>

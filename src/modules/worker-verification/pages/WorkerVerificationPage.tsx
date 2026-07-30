@@ -22,9 +22,11 @@ import { indianStates } from '@/lib/validations/partner';
 import {
   ASSESSMENT_FEE_INR,
   EDUCATION_LEVELS,
+  GCC_JOURNEY_NAV_STEPS,
   INTERVIEW_TRADE_TEST_THRESHOLD,
   VERIFICATION_STAGE_LABELS,
-  VERIFICATION_STAGE_ORDER,
+  navStepForStage,
+  navStepIndex,
   type VerificationStage,
 } from '@/modules/worker-verification/constants';
 import type { SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
@@ -36,7 +38,6 @@ import {
   markTestsPassed,
   recordInterviewScore,
   saveEssentials,
-  stageIndex,
   submitBond,
   submitQuiz,
 } from '@/modules/worker-verification/services/verificationService';
@@ -127,7 +128,8 @@ export default function WorkerVerificationPage() {
   }, [load]);
 
   const stage: VerificationStage = row?.stage || 'essentials';
-  const progress = ((stageIndex(stage) + 1) / VERIFICATION_STAGE_ORDER.length) * 100;
+  const navId = navStepForStage(stage);
+  const progress = ((navStepIndex(navId) + 1) / GCC_JOURNEY_NAV_STEPS.length) * 100;
 
   const currentQuiz = quizItems[quizIndex];
 
@@ -245,7 +247,7 @@ export default function WorkerVerificationPage() {
     try {
       const next = await completeMediaStep(user.id);
       setRow(next);
-      toast.success('Skill proof submitted — interview coming next');
+      toast.success('Test 1 complete — video interview is next');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not continue');
     } finally {
@@ -306,21 +308,27 @@ export default function WorkerVerificationPage() {
       <div className="max-w-2xl mx-auto space-y-5">
         <div>
           <p className="text-xs text-muted-foreground mb-1">
-            Step {stageIndex(stage) + 1} of {VERIFICATION_STAGE_ORDER.length} — {VERIFICATION_STAGE_LABELS[stage]}
+            Step {navStepIndex(navId) + 1} of {GCC_JOURNEY_NAV_STEPS.length} — {VERIFICATION_STAGE_LABELS[stage]}
           </p>
           <h1 className="text-2xl font-bold font-heading">Become GCC Ready</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Profile ~{Math.min(40, 15 + stageIndex(stage) * 5)}% so far — documents can wait until later.
+            Profile ~{Math.min(40, 15 + navStepIndex(navId) * 5)}% so far — documents can wait until later.
           </p>
           <Progress value={progress} className="h-2 mt-3" />
           <div className="flex flex-wrap gap-1.5 mt-3">
-            {VERIFICATION_STAGE_ORDER.map((s) => (
+            {GCC_JOURNEY_NAV_STEPS.map((s) => (
               <Badge
-                key={s}
-                variant={s === stage ? 'default' : stageIndex(s) < stageIndex(stage) ? 'secondary' : 'outline'}
+                key={s.id}
+                variant={
+                  s.id === navId
+                    ? 'default'
+                    : navStepIndex(s.id) < navStepIndex(navId)
+                      ? 'secondary'
+                      : 'outline'
+                }
                 className="text-[10px]"
               >
-                {VERIFICATION_STAGE_LABELS[s]}
+                {s.shortLabel}
               </Badge>
             ))}
           </div>
@@ -389,7 +397,7 @@ export default function WorkerVerificationPage() {
               </div>
               <Button className="w-full sm:w-auto" onClick={() => void onSaveEssentials()} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                Continue to skill check <ArrowRight className="h-4 w-4 ml-1" />
+                Continue to Test 1 <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </CardContent>
           </Card>
@@ -399,7 +407,7 @@ export default function WorkerVerificationPage() {
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Test 1 — Yes / No</span>
+                <span>Test 1 — Skill quiz (Yes / No)</span>
                 <span>{quizIndex + 1} / {quizItems.length}</span>
               </div>
               <h2 className="text-lg font-semibold font-heading leading-snug">{currentQuiz.question}</h2>
@@ -436,7 +444,7 @@ export default function WorkerVerificationPage() {
               </RadioGroup>
               <Button onClick={() => void onQuizContinue()} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                {quizIndex < quizItems.length - 1 ? 'Next question' : 'Finish skill check'}
+                {quizIndex < quizItems.length - 1 ? 'Next question' : 'Continue to skill media'}
               </Button>
             </CardContent>
           </Card>
@@ -446,9 +454,9 @@ export default function WorkerVerificationPage() {
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div>
-                <h2 className="font-semibold">Test 2 — Skill proof</h2>
+                <h2 className="font-semibold">Test 1 — Skill media</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Upload at least one photo and one short video of your work as{' '}
+                  Same test as the quiz — upload at least one photo and one short video of your work as{' '}
                   <span className="font-medium text-foreground">{row.primary_skill}</span>.
                 </p>
               </div>
@@ -495,8 +503,8 @@ export default function WorkerVerificationPage() {
         {stage === 'awaiting_interview' && (
           <WaitingCard
             icon={Calendar}
-            title="Video interview"
-            body={`Our team will schedule a video call and ask trade questions. Score ${INTERVIEW_TRADE_TEST_THRESHOLD}+ skips the physical trade test.`}
+            title="Test 2 — Video interview"
+            body={`Our team will schedule a video call and ask trade questions. Score ${INTERVIEW_TRADE_TEST_THRESHOLD}+ skips Test 3 (physical trade test).`}
           >
             <div className="flex flex-col sm:flex-row gap-2 items-end">
               <div className="space-y-1.5 flex-1">
@@ -533,7 +541,7 @@ export default function WorkerVerificationPage() {
           <WaitingCard
             icon={CreditCard}
             title="Assessment payment"
-            body={`Pay ₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')} to continue medical${row.trade_test_required ? ' and physical trade test' : ''}.`}
+            body={`Pay ₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')} to continue${row.trade_test_required ? ' to Test 3 (physical trade test)' : ' to medical clearance and bond'}.`}
           >
             <Button
               disabled={saving}
@@ -559,11 +567,11 @@ export default function WorkerVerificationPage() {
         {stage === 'tests' && (
           <WaitingCard
             icon={Stethoscope}
-            title="Medical & trade tests"
+            title="Test 3 — Physical trade test"
             body={
               row.trade_test_required
-                ? 'Complete medical examination and physical trade test at an approved centre / E-Mitra partner.'
-                : 'Complete medical examination. Physical trade test is not required for your interview score.'
+                ? 'Complete your physical trade test at an approved centre / E-Mitra partner (medical fitness is checked as part of this step).'
+                : 'Physical trade test is not required for your interview score. Confirm medical fitness, then continue to bond.'
             }
           >
             <Button
@@ -574,7 +582,7 @@ export default function WorkerVerificationPage() {
                 try {
                   const next = await markTestsPassed(user.id);
                   setRow(next);
-                  toast.success('Tests marked passed — continue to bond');
+                  toast.success('Test 3 complete — continue to bond');
                 } catch (e) {
                   toast.error(e instanceof Error ? e.message : 'Failed');
                 } finally {
@@ -582,7 +590,7 @@ export default function WorkerVerificationPage() {
                 }
               }}
             >
-              Mark tests passed (demo)
+              Mark Test 3 passed (demo)
             </Button>
           </WaitingCard>
         )}

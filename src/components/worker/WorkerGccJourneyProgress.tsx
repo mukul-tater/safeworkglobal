@@ -2,17 +2,17 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   GCC_JOURNEY_NAV_STEPS,
-  type VerificationStage,
+  type GccNavStepId,
 } from "@/modules/worker-verification/constants";
 import type { GccStepStatus } from "@/modules/worker-registration/hooks/useWorkerGccJourneyProgress";
 
 interface Props {
-  statuses: Record<VerificationStage, GccStepStatus>;
+  statuses: Record<GccNavStepId, GccStepStatus>;
   className?: string;
 }
 
 /**
- * Home tracker for GCC verification: Essentials → Test 1/2/3 → payment → medical → bond → ready.
+ * Home tracker: Essentials → Test 1 (quiz+media) → Test 2 (interview) → Payment → Test 3 (physical) → Bond → Ready.
  */
 export default function WorkerGccJourneyProgress({ statuses, className }: Props) {
   const completed = GCC_JOURNEY_NAV_STEPS.filter((s) => statuses[s.id] === "completed").length;
@@ -41,7 +41,7 @@ export default function WorkerGccJourneyProgress({ statuses, className }: Props)
         </p>
       </div>
 
-      <ol className="grid grid-cols-4 sm:grid-cols-8 gap-x-2 gap-y-6">
+      <ol className="grid grid-cols-4 sm:grid-cols-7 gap-x-2 gap-y-6">
         {GCC_JOURNEY_NAV_STEPS.map((step, index) => {
           const status = statuses[step.id];
           const done = status === "completed";
