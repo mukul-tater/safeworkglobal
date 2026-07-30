@@ -72,7 +72,7 @@ export default function PartnerRegister() {
           </div>
 
           <div className="grid gap-3">
-            {PARTNER_SIGNUP_OPTIONS.map((option) => {
+            {PARTNER_SIGNUP_OPTIONS.filter((o) => o.status === "live").map((option) => {
               const Icon = option.icon;
               const isSelected = selectedCode === option.code;
               const isLive = option.status === "live";
@@ -90,7 +90,6 @@ export default function PartnerRegister() {
                     isSelected
                       ? "border-primary bg-primary/5 ring-1 ring-primary/25"
                       : "border-border hover:bg-muted/50",
-                    !isLive && "opacity-75",
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -100,13 +99,7 @@ export default function PartnerRegister() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-sm sm:text-base">{option.name}</span>
-                        {isLive ? (
-                          <Badge className="h-5 text-[10px]">Available</Badge>
-                        ) : (
-                          <Badge variant="outline" className="h-5 text-[10px]">
-                            Coming soon
-                          </Badge>
-                        )}
+                        <Badge className="h-5 text-[10px]">Available</Badge>
                         {option.code === DEFAULT_PARTNER_SIGNUP_CODE && (
                           <Badge variant="secondary" className="h-5 text-[10px]">
                             Default
@@ -117,7 +110,7 @@ export default function PartnerRegister() {
                         {option.shortDescription}
                       </p>
                     </div>
-                    {isSelected && isLive && (
+                    {isSelected && (
                       <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     )}
                   </div>

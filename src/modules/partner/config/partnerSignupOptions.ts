@@ -6,6 +6,7 @@ export type PartnerSignupStatus = "live" | "coming_soon";
 /**
  * Public partner signup options (Get Started → Partner).
  * Add a new entry here when a partner type gets its own onboarding route.
+ * Only `status: "live"` options are shown in the chooser UI for now.
  */
 export interface PartnerSignupOption {
   code: string;
