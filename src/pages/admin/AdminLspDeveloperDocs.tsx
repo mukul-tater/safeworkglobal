@@ -251,11 +251,13 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
             An <strong>LSP (Local Service Provider)</strong> is a Rajasthan company whose software portal
             already reaches e-Mitra / CSC operators. SafeWork appears on that portal as an app icon.
             When an operator clicks it, they enter SafeWork through a <strong>trusted launch</strong>,
-            then use the normal E-Mitra partner experience (login, verify, register workers).
+            then complete SafeWork partner login and verification before using E-Mitra features
+            (register workers, dashboard, and so on).
           </p>
           <p>
             This guide is <strong className="text-foreground">private</strong> (admin-authenticated). It is
-            not a public marketing page. Share relevant sections with LSP engineering under NDA / partnership.
+            not a public marketing page. When sharing with an LSP, send only the integration sections below —
+            not internal admin checklists or ops runbooks.
           </p>
         </Section>
 
@@ -277,8 +279,11 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
                 </tr>
                 <tr>
                   <td className="p-3 text-foreground font-medium">LSP provider</td>
-                  <td className="p-3">Understand SafeWork structure; ship icon + launch API</td>
-                  <td className="p-3">Architecture · Integration · Launch URL · Samples</td>
+                  <td className="p-3">Ship icon + signed launch into SafeWork</td>
+                  <td className="p-3">
+                    Concepts · Architecture · Integration · Launch URL · Samples · Errors
+                    (safe to share)
+                  </td>
                 </tr>
                 <tr>
                   <td className="p-3 text-foreground font-medium">SafeWork developer</td>
@@ -293,12 +298,12 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
         <Section id="concepts" title="Core concepts">
           <ul className="list-disc pl-5 space-y-2">
             <li>
-              <strong className="text-foreground">LSP</strong> — distribution channel (their portal + operators).
-              Does not replace SafeWork worker/partner data.
+              <strong className="text-foreground">LSP</strong> — portal that surfaces the SafeWork icon and
+              issues a trusted launch. Operator and worker records live in SafeWork.
             </li>
             <li>
-              <strong className="text-foreground">E-Mitra partner</strong> — operator who registers workers inside
-              SafeWork after launch + login + verify.
+              <strong className="text-foreground">E-Mitra partner</strong> — operator with a SafeWork partner
+              account who registers workers after launch + login + verify.
             </li>
             <li>
               <strong className="text-foreground">Trusted launch</strong> — short-lived HMAC (or one-time token)
@@ -306,7 +311,7 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
             </li>
             <li>
               <strong className="text-foreground">Attribution</strong> — <code>source_lsp_id</code> on partner /
-              worker records for reporting and commercials.
+              worker records so activity can be linked to the launching LSP for reporting.
             </li>
           </ul>
         </Section>
@@ -348,8 +353,9 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
 
         <Section id="admin-needs" title="What we need from an LSP (SafeWork admin checklist)">
           <p>
-            Before creating credentials, confirm the partnership can deliver a real integration — not only a
-            logo on a slide.
+            <strong className="text-foreground">Internal only</strong> — do not paste this section into LSP
+            handouts. Confirm the partnership can deliver a real integration — not only a logo on a slide.
+            Collect company and launch details; operators create and verify their own SafeWork accounts.
           </p>
           <Sub title="Commercial / ops">
             <ul className="list-disc pl-5 space-y-1">
@@ -370,14 +376,17 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
               <li>
                 Audience = <strong className="text-foreground">e-Mitra operators only</strong> (v1)
               </li>
-              <li>Optional: can pass operator <code>emitra_id</code> + <code>mobile</code> on launch</li>
+              <li>
+                Optional prefills on launch: operator <code>emitra_id</code> + <code>mobile</code> (not a
+                bulk operator database)
+              </li>
             </ul>
           </Sub>
           <Sub title="Go-live deliverables from LSP">
             <ul className="list-disc pl-5 space-y-1">
               <li>Staging + production portal URLs</li>
               <li>Screenshot of icon placement</li>
-              <li>2–3 pilot operators (mobile + E-Mitra ID)</li>
+              <li>2–3 pilot operators (mobile + E-Mitra ID) for UAT only</li>
               <li>Escalation contact for launch failures during pilot</li>
             </ul>
           </Sub>
@@ -438,11 +447,13 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
               Respond <code>302</code> to that URL (prefer <code>target="_blank"</code> from the UI).
             </li>
             <li>
-              Operator completes SafeWork login + verify; then uses E-Mitra features as usual.
+              Operator signs in on SafeWork and completes verify; then uses E-Mitra features in SafeWork.
             </li>
           </ol>
           <p>
             Do not embed a pre-signed SafeWork URL in static HTML — signatures expire within 15 minutes.
+            Optional <code>emitra_id</code> / <code>mobile</code> on the launch URL are prefills only;
+            the operator still authenticates on SafeWork.
           </p>
         </Section>
 

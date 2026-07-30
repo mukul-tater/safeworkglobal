@@ -79,9 +79,25 @@ Confirm `.env` / production env points at the **same** project you migrated:
 | `lsp` code | Admin LSPs list |
 | `TOKEN_SECRET` | Create LSP or **Rotate secret** (shown once) |
 | Entry URL | `{origin}/lsp/entry` |
-| Spec + samples | `/admin/lsp-docs` sections 6–9 |
+| Spec + samples | `/admin/lsp-docs` — share only Integration · Launch URL · Samples · Errors (not this runbook) |
 
-## 6. Common failures
+Do **not** share this runbook or offboarding rules with LSPs.
+
+## 6. E-Mitra continuity (internal — never share with LSPs)
+
+**Product rule:** SafeWork owns the e-Mitra partner account. LSP is a distribution + attribution channel only.
+
+| Situation | What to do |
+|-----------|------------|
+| LSP suspended / partnership ends | Set LSP status → `suspended`. New launches fail. |
+| Approved e-Mitra partners from that LSP | **Keep access.** They login at `/emitra/login` with their own credentials. Do **not** bulk-suspend partners because the LSP left. |
+| Partner access | Driven only by `partner_profiles.status` (`approved` / `active`). LSP status is **not** checked on day-to-day e-Mitra login. |
+| Attribution / commission | Stop counting **new** activity toward the offboarded LSP; historical `source_lsp_id` on past workers can remain for audit. |
+| Rotate secret | Optional after exit so old launch URLs cannot be forged. |
+
+Collect from an LSP only company, contacts, coverage, and technical launch capability — plus a few pilot operators for UAT. Do **not** make the LSP the source of truth for operator identity or passwords.
+
+## 7. Common failures
 
 | Symptom | Fix |
 |---------|-----|
@@ -90,8 +106,8 @@ Confirm `.env` / production env points at the **same** project you migrated:
 | `bad_signature` | Wrong secret or payload order `code\|exp\|nonce\|emitra_id\|mobile` |
 | Works locally, fails prod | Different Supabase URL than migrated DB |
 
-## 7. Related docs
+## 8. Related docs
 
-- Product / API spec: `docs/lsp-rajasthan-entry.md`
-- In-app guide (admins): `/admin/lsp-docs`
+- Product / API spec: `docs/lsp-rajasthan-entry.md` (internal)
+- In-app guide: `/admin/lsp-docs` (share selective sections with LSP engineering)
 - Manage LSPs: `/admin/lsps`

@@ -52,6 +52,14 @@ Verify (NEW) — OTP (if not already) + E-Mitra ID
 - **E-Mitra partner** = operator who registers workers inside SafeWork.
 - Clicking the icon does **not** replace login; it proves the launch came from an approved LSP and attributes activity to that LSP.
 
+### Ownership & continuity (internal — do not put in LSP-facing kit)
+
+- SafeWork owns partner identity and login (`/emitra/login`). LSP does **not** issue or revoke SafeWork credentials.
+- `source_lsp_id` is **attribution** for reporting / commercials — not exclusive control of the operator.
+- Suspend / offboard an LSP → block **new launches** only. Approved partners keep working unless SafeWork suspends that partner for cause.
+- Ask LSP for company + tech + pilot contacts — not a full operator roster as account ownership.
+- Full offboarding checklist: [lsp-setup-runbook.md](./lsp-setup-runbook.md) §6.
+
 ---
 
 ## 3. Decisions to lock with LSP (before build)
@@ -215,6 +223,7 @@ Authorization: Bearer <lsp_api_key>
 - [ ] LSP onboarding doc + sample HTML “icon → launch”
 - [ ] Admin report: partners / workers by LSP
 - [ ] Suspend LSP kills new launches; existing sessions expire naturally
+- [x] Continuity: partner login independent of LSP status (documented in runbook §6)
 
 ### Out of scope for v1
 
@@ -243,6 +252,7 @@ Authorization: Bearer <lsp_api_key>
 4. `partner_profiles.source_lsp_id` and `lsp_verified_at` are set.
 5. Worker registered in that session has `source_lsp_id` populated.
 6. Suspended LSP cannot create new valid launches.
+7. After LSP suspend, an already-approved partner can still reach `/emitra/dashboard` via direct `/emitra/login` (LSP status not required for day-to-day access).
 
 ---
 
