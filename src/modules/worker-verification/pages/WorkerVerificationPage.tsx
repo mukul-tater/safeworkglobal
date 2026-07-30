@@ -78,7 +78,7 @@ export default function WorkerVerificationPage() {
   const [photoCount, setPhotoCount] = useState(0);
   const [videoCount, setVideoCount] = useState(0);
   const [skillId, setSkillId] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingKind, setUploadingKind] = useState<'photo' | 'video' | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
@@ -222,7 +222,7 @@ export default function WorkerVerificationPage() {
       toast.error('Photo must be under 10MB');
       return;
     }
-    setUploading(true);
+    setUploadingKind(type);
     try {
       const ext = file.name.split('.').pop() || (type === 'photo' ? 'jpg' : 'mp4');
       const folder = type === 'photo' ? 'photos' : 'videos';
@@ -244,7 +244,9 @@ export default function WorkerVerificationPage() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Upload failed');
     } finally {
-      setUploading(false);
+      setUploadingKind(null);
+      if (type === 'photo' && photoRef.current) photoRef.current.value = '';
+      if (type === 'video' && videoRef.current) videoRef.current.value = '';
     }
   };
 
@@ -578,8 +580,28 @@ export default function WorkerVerificationPage() {
                   {' '}before Test 2 (video interview).
                 </p>
               </div>
+
+              {uploadingKind && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="flex items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2.5 text-sm text-foreground"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                  <span>
+                    Uploading {uploadingKind === 'photo' ? 'photo' : 'video'}… Please wait.
+                  </span>
+                </div>
+              )}
+
               <div className="grid sm:grid-cols-2 gap-3">
-                <div className="border border-dashed rounded-xl p-5 text-center">
+                <div
+                  className={cn(
+                    'border border-dashed rounded-xl p-5 text-center transition-opacity',
+                    uploadingKind === 'photo' && 'border-primary/50 bg-primary/5',
+                    uploadingKind && uploadingKind !== 'photo' && 'opacity-60',
+                  )}
+                >
                   <ImagePlus className="h-7 w-7 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm font-medium mb-1">Photos ({photoCount})</p>
                   <input
@@ -587,14 +609,31 @@ export default function WorkerVerificationPage() {
                     type="file"
                     accept="image/*"
                     className="hidden"
+                    disabled={!!uploadingKind}
                     onChange={(e) => void uploadMedia(e.target.files?.[0] || null, 'photo')}
                   />
-                  <Button type="button" variant="outline" size="sm" disabled={uploading}
-                    onClick={() => photoRef.current?.click()}>
-                    <Upload className="h-3.5 w-3.5 mr-1" /> Upload photo
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!!uploadingKind}
+                    onClick={() => photoRef.current?.click()}
+                  >
+                    {uploadingKind === 'photo' ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <Upload className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    {uploadingKind === 'photo' ? 'Uploading…' : 'Upload photo'}
                   </Button>
                 </div>
-                <div className="border border-dashed rounded-xl p-5 text-center">
+                <div
+                  className={cn(
+                    'border border-dashed rounded-xl p-5 text-center transition-opacity',
+                    uploadingKind === 'video' && 'border-primary/50 bg-primary/5',
+                    uploadingKind && uploadingKind !== 'video' && 'opacity-60',
+                  )}
+                >
                   <Video className="h-7 w-7 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm font-medium mb-1">Videos ({videoCount})</p>
                   <input
@@ -602,15 +641,26 @@ export default function WorkerVerificationPage() {
                     type="file"
                     accept="video/*"
                     className="hidden"
+                    disabled={!!uploadingKind}
                     onChange={(e) => void uploadMedia(e.target.files?.[0] || null, 'video')}
                   />
-                  <Button type="button" variant="outline" size="sm" disabled={uploading}
-                    onClick={() => videoRef.current?.click()}>
-                    <Upload className="h-3.5 w-3.5 mr-1" /> Upload video
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!!uploadingKind}
+                    onClick={() => videoRef.current?.click()}
+                  >
+                    {uploadingKind === 'video' ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    ) : (
+                      <Upload className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    {uploadingKind === 'video' ? 'Uploading…' : 'Upload video'}
                   </Button>
                 </div>
               </div>
-              <Button onClick={() => void onCompleteMedia()} disabled={saving || uploading}>
+              <Button onClick={() => void onCompleteMedia()} disabled={saving || !!uploadingKind}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
                 Save & continue to Test 2
               </Button>
