@@ -1,4 +1,4 @@
-/** Load Razorpay Checkout.js once and open a test/live payment. */
+/** Load Razorpay Checkout.js once and open payment with a server-issued key + order. */
 
 export type RazorpaySuccessResponse = {
   razorpay_payment_id: string;
@@ -52,30 +52,27 @@ function loadRazorpayScript(): Promise<void> {
   return scriptPromise;
 }
 
-export function getRazorpayKeyId(): string {
-  return String(import.meta.env.VITE_RAZORPAY_KEY_ID || '').trim();
-}
-
-export function isRazorpayConfigured(): boolean {
-  return getRazorpayKeyId().startsWith('rzp_');
-}
-
 /**
- * Open Razorpay Checkout (test or live key).
- * Amount is in INR rupees; converted to paise for Razorpay.
+ * Open Razorpay Checkout.
+ * `keyId` must come from the razorpay-assessment edge function (create_order) —
+ * do not use VITE_ secrets; Lovable cannot store those safely.
  */
 export async function openRazorpayCheckout(opts: {
   amountInr: number;
   description: string;
+  keyId: string;
   name?: string;
   email?: string;
   contact?: string;
-  orderId?: string;
-  /** Prefer key returned from create_order; falls back to VITE_RAZORPAY_KEY_ID */
-  keyId?: string;
+  orderId: string;
 }): Promise<RazorpaySuccessResponse> {
-  const key = String(opts.keyId || getRazorpayKeyId()).trim();
-  if (!key) throw new Error('Razorpay is not configured (VITE_RAZORPAY_KEY_ID)');
+  const key = String(opts.keyId || '').trim();
+  if (!key.startsWith('rzp_')) {
+    throw new Error('Razorpay key missing from payment order. Deploy razorpay-assessment edge function.');
+  }
+  if (!opts.orderId) {
+    throw new Error('Razorpay order id missing');
+  }
 
   await loadRazorpayScript();
   if (!window.Razorpay) throw new Error('Razorpay SDK unavailable');

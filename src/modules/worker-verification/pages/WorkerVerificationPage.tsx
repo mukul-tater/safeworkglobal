@@ -55,7 +55,6 @@ import {
   TRADE_TEST_REPORTING_WINDOW_HINT,
   getTradeTestCentersForState,
 } from '@/data/tradeTestCenters';
-import { isRazorpayConfigured } from '@/modules/worker-verification/lib/razorpayCheckout';
 import { getWorkerActiveAssessment } from '@/modules/trade-test/services/assessmentService';
 import type { AssessmentRow } from '@/modules/trade-test/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -1109,7 +1108,7 @@ export default function WorkerVerificationPage() {
                 try {
                   const next = await payAssessmentFeeWithRazorpay({
                     name: profile?.full_name,
-                    email: displayableEmail(row.email) || displayableEmail(profile?.email),
+                    email: displayableEmail(row?.email) || displayableEmail(profile?.email),
                     contact: profile?.phone,
                   });
                   setRow({
@@ -1137,38 +1136,31 @@ export default function WorkerVerificationPage() {
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CreditCard className="h-4 w-4 mr-1" />}
               Pay ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')} with Razorpay
             </Button>
-            {(import.meta.env.DEV || import.meta.env.VITE_ALLOW_PILOT_PAYMENT_WAIVE === 'true') && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground"
-                disabled={saving}
-                onClick={async () => {
-                  if (!user?.id) return;
-                  setSaving(true);
-                  try {
-                    const next = await waiveAssessmentPaymentPilot(user.id);
-                    setRow({
-                      ...next,
-                      stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                    });
-                    notifyVerificationUpdated();
-                    toast.success('Fee waived for pilot');
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'Could not continue');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-              >
-                Continue without payment (pilot)
-              </Button>
-            )}
-            {!isRazorpayConfigured() && (
-              <p className="text-xs text-muted-foreground">
-                Tip: set <code>VITE_RAZORPAY_KEY_ID</code> in the app env. Order creation still uses the edge function key.
-              </p>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              disabled={saving}
+              onClick={async () => {
+                if (!user?.id) return;
+                setSaving(true);
+                try {
+                  const next = await waiveAssessmentPaymentPilot(user.id);
+                  setRow({
+                    ...next,
+                    stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                  });
+                  notifyVerificationUpdated();
+                  toast.success('Fee waived for pilot');
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not continue');
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              Continue without payment (pilot)
+            </Button>
           </WaitingCard>
         )}
 

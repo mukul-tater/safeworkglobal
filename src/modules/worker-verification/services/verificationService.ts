@@ -310,6 +310,11 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
   const amountInr = Number(orderData?.amount_inr || ASSESSMENT_FEE_INR);
   const keyId = String(orderData?.key_id || '');
   if (!orderId) throw new Error('Razorpay order was not created');
+  if (!keyId.startsWith('rzp_')) {
+    throw new Error(
+      'Razorpay key missing from server. Set RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET on the razorpay-assessment edge function (not VITE_).',
+    );
+  }
 
   const checkout = await openRazorpayCheckout({
     amountInr,
@@ -318,7 +323,7 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
     email: opts?.email || undefined,
     contact: opts?.contact || undefined,
     orderId,
-    keyId: keyId || undefined,
+    keyId,
   });
 
   const { data: verifyData, error: verifyErr } = await supabase.functions.invoke(

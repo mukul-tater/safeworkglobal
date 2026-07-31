@@ -12,10 +12,12 @@ dist
 dist-ssr
 *.local
 
-# Env / secrets (never commit)
+# Local env files (never commit). App boots via public fallbacks in supabase/client.ts.
 .env
 .env.*
 !.env.example
+.env.local
+.env.*.local
 backend/.env
 backend/.env.*
 !backend/.env.example
