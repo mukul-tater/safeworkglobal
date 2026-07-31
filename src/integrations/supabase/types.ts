@@ -4193,6 +4193,10 @@ export type Database = {
         Args: { p_placements: number }
         Returns: Database["public"]["Enums"]["partner_tier"]
       }
+      confirm_emitra_placement_reward: {
+        Args: { p_reward_id: string }
+        Returns: undefined
+      }
       consume_lsp_launch_token: { Args: { p_token: string }; Returns: Json }
       current_partner: {
         Args: never
@@ -4344,6 +4348,56 @@ export type Database = {
           p_sig: string
         }
         Returns: Json
+      }
+      waive_assessment_payment_pilot: {
+        Args: never
+        Returns: {
+          bond_status: string | null
+          city: string | null
+          created_at: string
+          education_level: string | null
+          email: string | null
+          essentials_completed_at: string | null
+          gcc_ready_at: string | null
+          id: string
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_score: number | null
+          media_submitted_at: string | null
+          medical_result_url: string | null
+          medical_status: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_status: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          stage: string
+          state: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_reporting_window: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_verification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      worker_can_apply_to_jobs: {
+        Args: { p_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
