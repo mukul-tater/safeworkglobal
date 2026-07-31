@@ -278,7 +278,15 @@ export async function recordInterviewScore(
  */
 export async function waiveAssessmentInterviewPilot(userId: string): Promise<WorkerVerification> {
   const { data, error } = await supabase.rpc('waive_assessment_interview_pilot');
-  if (error) throw new Error(error.message);
+  if (error) {
+    const msg = error.message || 'Could not skip interview';
+    if (/could not find the function|schema cache|PGRST202/i.test(msg)) {
+      throw new Error(
+        'Interview pilot RPC missing. Run supabase/migrations/20260731192000_waive_interview_pilot.sql in Lovable SQL, then retry.',
+      );
+    }
+    throw new Error(msg);
+  }
   const next = (data || (await getOrCreateVerification(userId))) as WorkerVerification;
   return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
 }
