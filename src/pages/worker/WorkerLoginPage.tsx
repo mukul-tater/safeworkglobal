@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, HardHat, Lock, Phone } from 'lucide-react';
+import { Eye, EyeOff, Loader2, HardHat, Lock, Mail } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,15 +9,30 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { isValidIndianMobile } from '@/lib/validations/common';
-import { workerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
+import { workerAuthEmailFromIdentifier } from '@/lib/workerAuthEmail';
 import { getEmitraReviewBlockMessage, isWorkerGccReady } from '@/lib/workerPortalAccess';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
+
+async function resolveAuthEmail(identifier: string): Promise<string | null> {
+  const trimmed = identifier.trim();
+  if (!trimmed) return null;
+
+  try {
+    const { data, error } = await (supabase as any).rpc('resolve_worker_auth_email', {
+      p_identifier: trimmed,
+    });
+    if (!error && data) return String(data);
+  } catch {
+    /* RPC may not be deployed yet — fall through */
+  }
+
+  return workerAuthEmailFromIdentifier(trimmed);
+}
 
 export default function WorkerLoginPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated, role, isMobileVerified, profileLoading } = useAuth();
-  const [mobile, setMobile] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,8 +49,8 @@ export default function WorkerLoginPage() {
     e.preventDefault();
     setError('');
 
-    if (!isValidIndianMobile(mobile)) {
-      setError('Enter a valid 10-digit Indian mobile number');
+    if (!identifier.trim()) {
+      setError('Enter your mobile number or email');
       return;
     }
     if (!password) {
@@ -43,9 +58,14 @@ export default function WorkerLoginPage() {
       return;
     }
 
-    const authEmail = workerAuthEmailFromMobile(mobile);
-
     setLoading(true);
+    const authEmail = await resolveAuthEmail(identifier);
+    if (!authEmail) {
+      setError('Enter a valid 10-digit mobile number or email address');
+      setLoading(false);
+      return;
+    }
+
     const result = await login(authEmail, password);
     if (!result.success) {
       setError(result.error || 'Login failed');
@@ -104,7 +124,7 @@ export default function WorkerLoginPage() {
           </div>
           <h1 className="text-2xl font-heading font-bold text-foreground">Worker Login</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Sign in with the mobile number and password from signup.
+            Sign in with your mobile number or email, and password.
           </p>
         </div>
 
@@ -124,18 +144,19 @@ export default function WorkerLoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div className="space-y-1.5">
-                <Label htmlFor="worker-mobile">Mobile Number</Label>
+                <Label htmlFor="worker-identifier">Mobile or email</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input
-                    id="worker-mobile"
-                    type="tel"
-                    placeholder="10-digit mobile number"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    id="worker-identifier"
+                    type="text"
+                    inputMode="text"
+                    placeholder="10-digit mobile or email"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
                     required
                     className="h-11 pl-10"
-                    autoComplete="tel"
+                    autoComplete="username"
                   />
                 </div>
               </div>

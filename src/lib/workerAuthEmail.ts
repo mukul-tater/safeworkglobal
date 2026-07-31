@@ -13,6 +13,20 @@ export function workerAuthEmailFromMobile(mobile: string): string {
   return `m${digits}@${WORKER_MOBILE_AUTH_EMAIL_DOMAIN}`;
 }
 
+/**
+ * Resolve a login identifier (10-digit mobile or email) to a Supabase Auth email.
+ * Prefer RPC `resolve_worker_auth_email` so contact emails map to the auth account;
+ * this local helper is the offline fallback (mobile → synthetic, email → as typed).
+ */
+export function workerAuthEmailFromIdentifier(identifier: string): string | null {
+  const raw = identifier.trim();
+  if (!raw) return null;
+  if (raw.includes('@')) return raw.toLowerCase();
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length >= 10) return workerAuthEmailFromMobile(digits);
+  return null;
+}
+
 export function partnerAuthEmailFromMobile(mobile: string): string {
   const digits = mobile.replace(/\D/g, '').slice(-10);
   return `emitra${digits}@${PARTNER_MOBILE_AUTH_EMAIL_DOMAIN}`;
