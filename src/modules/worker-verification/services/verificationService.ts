@@ -1,4 +1,5 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
+import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import type { SkillQuizItem, VerificationStage, WorkerVerification } from '../types';
 import {
   WORKER_TERMS_VERSION,
@@ -58,6 +59,11 @@ export async function saveEssentials(
     primary_skill: string;
   },
 ): Promise<WorkerVerification> {
+  const email = input.email.trim().toLowerCase();
+  if (!email.includes('@') || isWorkerMobileAuthEmail(email)) {
+    throw new Error('Connect a real email (Gmail) before continuing. Temporary mobile login emails are not allowed.');
+  }
+
   const row = await getOrCreateVerification(userId);
 
   await supabase
@@ -74,7 +80,7 @@ export async function saveEssentials(
       { onConflict: 'user_id' },
     );
 
-  await supabase.from('profiles').update({ email: input.email }).eq('id', userId);
+  await supabase.from('profiles').update({ email }).eq('id', userId);
 
   // Ensure a worker_skills row for media uploads
   const { data: existingSkill } = await supabase
@@ -96,7 +102,7 @@ export async function saveEssentials(
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
-      email: input.email,
+      email,
       city: input.city,
       state: input.state,
       education_level: input.education_level,

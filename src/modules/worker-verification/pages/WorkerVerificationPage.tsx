@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import WorkerPortalLayout from '@/components/layout/WorkerPortalLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,6 +19,15 @@ import {
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
+import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
+import {
+  clearPendingGmailLink,
+  getGoogleEmailFromUser,
+  hasPendingGmailLink,
+  isGoogleIdentityLinked,
+  startGoogleEmailLink,
+  syncLinkedGoogleEmail,
+} from '@/modules/worker-verification/lib/connectGoogleEmail';
 import {
   ASSESSMENT_FEE_INR,
   EDUCATION_LEVELS,
@@ -70,11 +79,13 @@ function notifyVerificationUpdated() {
  * essentials → quiz → media → interview → payment → tests → bond → GCC ready
  */
 export default function WorkerVerificationPage() {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [googleLinking, setGoogleLinking] = useState(false);
   const [row, setRow] = useState<WorkerVerification | null>(null);
 
   const [email, setEmail] = useState('');
@@ -82,6 +93,9 @@ export default function WorkerVerificationPage() {
   const [state, setState] = useState('');
   const [education, setEducation] = useState('');
   const [primarySkill, setPrimarySkill] = useState('');
+  const googleLinked = isGoogleIdentityLinked(user);
+  const googleEmail = getGoogleEmailFromUser(user);
+  const emailNeedsConnect = !email.trim() || isWorkerMobileAuthEmail(email);
 
   const [quizItems, setQuizItems] = useState<SkillQuizItem[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, boolean | undefined>>({});
@@ -124,7 +138,10 @@ export default function WorkerVerificationPage() {
         stage: normalizeVerificationStage(vRaw.stage, vRaw.trade_test_required),
       };
       setRow(v);
-      setEmail(v.email || profile?.email || '');
+      const linked = getGoogleEmailFromUser(user);
+      const rawEmail = v.email || profile?.email || linked || '';
+      // Don't show synthetic mobile-auth emails in the essentials field
+      setEmail(isWorkerMobileAuthEmail(rawEmail) ? linked || '' : rawEmail);
       setCity(v.city || '');
       setState(v.state || '');
       setEducation(v.education_level || '');
@@ -179,11 +196,51 @@ export default function WorkerVerificationPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, profile?.email]);
+  }, [user?.id, user, profile?.email]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // After Google OAuth linkIdentity redirect, persist Gmail onto the worker profile.
+  useEffect(() => {
+    if (!user?.id) return;
+    const fromQuery = searchParams.get('connect_email') === '1';
+    const pending = hasPendingGmailLink();
+    if (!fromQuery && !pending) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const synced = await syncLinkedGoogleEmail(user.id);
+        if (cancelled) return;
+        clearPendingGmailLink();
+        if (synced) {
+          setEmail(synced);
+          await refreshProfile();
+          toast.success(`Gmail connected: ${synced}`);
+        } else {
+          toast.error('Google connect finished, but no Gmail address was found. Try again.');
+        }
+      } catch (e) {
+        if (!cancelled) {
+          clearPendingGmailLink();
+          toast.error(e instanceof Error ? e.message : 'Could not save Gmail');
+        }
+      } finally {
+        if (fromQuery) {
+          const next = new URLSearchParams(searchParams);
+          next.delete('connect_email');
+          setSearchParams(next, { replace: true });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on return from OAuth
+  }, [user?.id]);
 
   const rawStage: VerificationStage = row
     ? normalizeVerificationStage(row.stage, row.trade_test_required)
@@ -304,10 +361,22 @@ export default function WorkerVerificationPage() {
       setSaving(false);
     }
   };
+  const onConnectGmail = async () => {
+    if (!user?.id) return;
+    setGoogleLinking(true);
+    try {
+      await startGoogleEmailLink(`${window.location.origin}/worker/journey?connect_email=1`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not connect Gmail');
+      setGoogleLinking(false);
+    }
+  };
+
   const onSaveEssentials = async () => {
     if (!user?.id) return;
-    if (!email.trim() || !email.includes('@')) {
-      toast.error('Enter a valid email');
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !trimmedEmail.includes('@') || isWorkerMobileAuthEmail(trimmedEmail)) {
+      toast.error('Connect your Gmail (or enter a real email) before continuing');
       return;
     }
     if (!city.trim() || !state || !education || !primarySkill) {
@@ -317,7 +386,7 @@ export default function WorkerVerificationPage() {
     setSaving(true);
     try {
       const next = await saveEssentials(user.id, {
-        email: email.trim(),
+        email: trimmedEmail,
         city: city.trim(),
         state,
         education_level: education,
@@ -325,6 +394,7 @@ export default function WorkerVerificationPage() {
       });
       setRow(next);
       notifyVerificationUpdated();
+      await refreshProfile();
       const items = await loadQuizItems(primarySkill);
       setQuizItems(items);
       setQuizIndex(0);
@@ -523,9 +593,9 @@ export default function WorkerVerificationPage() {
             <div className="mx-auto h-14 w-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
               <Flag className="h-7 w-7 text-emerald-600" />
             </div>
-            <h1 className="text-2xl font-bold font-heading">You are GCC Ready</h1>
+            <h1 className="text-2xl font-bold font-heading">Profile complete</h1>
             <p className="text-sm text-muted-foreground">
-              Verification and bond are complete. Browse jobs and apply when your profile documents are ready.
+              Your profile is ready for employers. Browse jobs and apply with priority visibility.
             </p>
             <Button asChild className="rounded-xl">
               <Link to="/jobs">Go to Job Search</Link>
@@ -574,9 +644,9 @@ export default function WorkerVerificationPage() {
           <p className="text-xs text-muted-foreground mb-1">
             Step {navStepIndex(navId) + 1} of {GCC_JOURNEY_NAV_STEPS.length} — {VERIFICATION_STAGE_LABELS[stage]}
           </p>
-          <h1 className="text-2xl font-bold font-heading">Become GCC Ready</h1>
+          <h1 className="text-2xl font-bold font-heading">Create profile</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Profile ~{Math.min(40, 15 + navStepIndex(navId) * 5)}% so far — documents can wait until later.
+            Create your profile as best as possible so employers can select you on priority.
           </p>
           <Progress value={progress} className="h-2 mt-3" />
           <div className="flex flex-wrap gap-1.5 mt-3" aria-label="Journey progress">
@@ -607,7 +677,7 @@ export default function WorkerVerificationPage() {
               <div>
                 <h2 className="font-semibold">Major details</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Name and mobile are already saved. Add email, location, education, and one primary skill.
+                  Name and mobile are already saved. Connect your Gmail, then add location, education, and one primary skill.
                 </p>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
@@ -621,7 +691,66 @@ export default function WorkerVerificationPage() {
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Email *</Label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  {(googleLinked || googleEmail || (!emailNeedsConnect && email)) ? (
+                    <div className="space-y-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Input
+                          type="email"
+                          value={email || googleEmail || ''}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="flex-1"
+                        />
+                        {googleLinked || googleEmail ? (
+                          <span className="inline-flex h-10 items-center gap-1.5 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success shrink-0">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Gmail connected
+                          </span>
+                        ) : null}
+                      </div>
+                      {!googleLinked && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full sm:w-auto h-10 gap-2"
+                          onClick={() => void onConnectGmail()}
+                          disabled={googleLinking}
+                        >
+                          {googleLinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                          Connect Gmail instead
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-11 gap-2 font-medium"
+                        onClick={() => void onConnectGmail()}
+                        disabled={googleLinking}
+                      >
+                        {googleLinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                        Connect Gmail
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Signup used a temporary mobile login email. Connect Gmail so we can reach you for interviews and updates.
+                      </p>
+                      <div className="relative my-1">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center text-[10px] uppercase tracking-wide">
+                          <span className="bg-card px-2 text-muted-foreground">or type email</span>
+                        </div>
+                      </div>
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label>City *</Label>
@@ -1338,6 +1467,17 @@ export default function WorkerVerificationPage() {
         )}
       </div>
     </WorkerPortalLayout>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
   );
 }
 

@@ -28,7 +28,7 @@ export default function WorkerDashboard() {
             Hi{firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Complete Tests 1–3 and verification to become GCC ready. Browse jobs anytime.
+            Complete your profile so employers can select you on priority. Browse jobs anytime.
           </p>
         </div>
         <Button asChild className="rounded-xl h-11 shrink-0">
