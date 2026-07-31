@@ -48,6 +48,7 @@ import {
   bookTradeTestCenter,
   payAssessmentFeeWithRazorpay,
   submitTradeTestResult,
+  waiveAssessmentInterviewPilot,
   waiveAssessmentPaymentPilot,
 } from '@/modules/worker-verification/services/verificationService';
 import {
@@ -1090,8 +1091,32 @@ export default function WorkerVerificationPage() {
           <WaitingCard
             icon={Calendar}
             title="Test 2 — Video interview"
-            body="Our team will schedule a video call and score it. You cannot advance this step yourself — check back after the interview is completed by SafeWork."
-          />
+            body="Normally SafeWork schedules a video call and scores it. For this pilot you can continue without waiting for the interview."
+          >
+            <Button
+              disabled={saving}
+              onClick={async () => {
+                if (!user?.id) return;
+                setSaving(true);
+                try {
+                  const next = await waiveAssessmentInterviewPilot(user.id);
+                  setRow({
+                    ...next,
+                    stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                  });
+                  notifyVerificationUpdated();
+                  toast.success('Interview skipped for pilot — continue to payment');
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not continue');
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Calendar className="h-4 w-4 mr-1" />}
+              Continue (pilot — interview skipped)
+            </Button>
+          </WaitingCard>
         )}
 
         {!viewingCompletedStep && stage === 'awaiting_payment' && (

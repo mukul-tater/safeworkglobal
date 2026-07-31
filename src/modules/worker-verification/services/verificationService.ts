@@ -273,6 +273,17 @@ export async function recordInterviewScore(
 }
 
 /**
+ * Pilot path — skip waiting for admin video-interview score.
+ * Advances awaiting_interview → awaiting_payment.
+ */
+export async function waiveAssessmentInterviewPilot(userId: string): Promise<WorkerVerification> {
+  const { data, error } = await supabase.rpc('waive_assessment_interview_pilot');
+  if (error) throw new Error(error.message);
+  const next = (data || (await getOrCreateVerification(userId))) as WorkerVerification;
+  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
+}
+
+/**
  * Pilot path — fee waived via SECURITY DEFINER RPC.
  * Prefer payAssessmentFeeWithRazorpay when Razorpay is configured.
  */
