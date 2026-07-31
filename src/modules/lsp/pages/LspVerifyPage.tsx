@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getPartnerProfile } from '@/modules/emitra/services/emitraService';
@@ -13,6 +14,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import {
+  useFirebasePhoneOtp,
+  WORKER_OTP_RECAPTCHA_BTN_ID,
+} from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 
 type Step = 'emitra' | 'otp' | 'done';
 
@@ -20,6 +26,7 @@ export default function LspVerifyPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, role, loading: authLoading } = useAuth();
   const session = getLspSession();
+  const firebaseOtp = useFirebasePhoneOtp();
 
   const [step, setStep] = useState<Step>('emitra');
   const [emitraId, setEmitraId] = useState(session?.emitraId || '');
@@ -51,6 +58,13 @@ export default function LspVerifyPage() {
     if (session?.mobile) setMobile(session.mobile);
   }, [session?.emitraId, session?.mobile]);
 
+  useEffect(() => {
+    if (step !== 'otp') return;
+    firebaseOtp.clearVerifierOnly();
+    firebaseOtp.dismissRecaptchaWidgets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   const requestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -59,13 +73,27 @@ export default function LspVerifyPage() {
       setError('Enter your E-Mitra ID');
       return;
     }
-    if (digits.length !== 10) {
+    if (!/^[6-9]\d{9}$/.test(digits)) {
       setError('Enter a valid 10-digit mobile number');
       return;
     }
-    // Demo OTP path (same as /emitra/login until production SMS is wired on this route)
-    toast.success(`OTP sent to ${digits}`, { description: 'Demo: enter any 6 digits' });
-    setStep('otp');
+    if (!isFirebaseConfigured()) {
+      setError('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await firebaseOtp.sendOtp(digits);
+      toast.success(`Verification code sent to +91 ${digits}`);
+      setStep('otp');
+      setOtp('');
+    } catch (err) {
+      firebaseOtp.resetRecaptcha();
+      setError(err instanceof Error ? err.message : 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const completeVerify = async (e: React.FormEvent) => {
@@ -79,6 +107,13 @@ export default function LspVerifyPage() {
 
     setLoading(true);
     try {
+      await firebaseOtp.verifyOtp(otp);
+      try {
+        await firebaseSignOut(getFirebaseAuth());
+      } catch {
+        /* ignore — Firebase session only used for OTP */
+      }
+
       const profile = await getPartnerProfile(user.id);
 
       if (!profile) {
@@ -89,7 +124,12 @@ export default function LspVerifyPage() {
 
       if (profile.emitra_id && profile.emitra_id.trim().toLowerCase() !== emitraId.trim().toLowerCase()) {
         setError('E-Mitra ID does not match your partner profile.');
-        setLoading(false);
+        return;
+      }
+
+      const digits = mobile.replace(/\D/g, '');
+      if (profile.mobile && profile.mobile.replace(/\D/g, '') !== digits) {
+        setError('Mobile number does not match your partner profile.');
         return;
       }
 
@@ -100,7 +140,6 @@ export default function LspVerifyPage() {
 
       if (bindErr) {
         setError(bindErr.message);
-        setLoading(false);
         return;
       }
       if (!bind?.ok) {
@@ -114,15 +153,14 @@ export default function LspVerifyPage() {
                 ? 'No partner profile found.'
                 : 'Could not bind LSP session.',
         );
-        setLoading(false);
         return;
       }
 
       toast.success(`Verified via ${session.name}`);
       setStep('done');
       navigate('/emitra/dashboard', { replace: true });
-    } catch (err: any) {
-      setError(err?.message || 'Verification failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
       setLoading(false);
     }
@@ -176,13 +214,24 @@ export default function LspVerifyPage() {
                 <Input
                   id="verify-mobile"
                   inputMode="numeric"
+                  maxLength={10}
                   value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
+                  onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
                   placeholder="10-digit mobile"
                   required
                 />
+                <p className="text-xs text-muted-foreground">
+                  We&apos;ll send an SMS code via Firebase (+91).
+                </p>
               </div>
-              <Button type="submit" className="w-full">Send OTP</Button>
+              <Button
+                id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send OTP'}
+              </Button>
               <p className="text-xs text-muted-foreground text-center">
                 New partner?{' '}
                 <Link
@@ -198,7 +247,10 @@ export default function LspVerifyPage() {
           {step === 'otp' && (
             <form onSubmit={completeVerify} className="space-y-4">
               <div className="space-y-2">
-                <Label>Enter OTP</Label>
+                <Label>Enter SMS OTP</Label>
+                <p className="text-sm text-muted-foreground">
+                  Code sent to <span className="font-medium text-foreground">+91 {mobile}</span>
+                </p>
                 <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
@@ -210,10 +262,46 @@ export default function LspVerifyPage() {
                   </InputOTPGroup>
                 </InputOTP>
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || otp.length !== 6}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify & continue'}
               </Button>
-              <Button type="button" variant="ghost" className="w-full" onClick={() => setStep('emitra')}>
+              <p className="text-xs text-center text-muted-foreground">
+                Didn&apos;t get the code?{' '}
+                <button
+                  id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                  type="button"
+                  className="text-primary font-medium hover:underline disabled:opacity-50"
+                  disabled={loading}
+                  onClick={async () => {
+                    setError('');
+                    setLoading(true);
+                    try {
+                      const digits = mobile.replace(/\D/g, '');
+                      await firebaseOtp.sendOtp(digits);
+                      setOtp('');
+                      toast.success(`New code sent to +91 ${digits}`);
+                    } catch (err) {
+                      firebaseOtp.resetRecaptcha();
+                      setError(err instanceof Error ? err.message : 'Failed to resend OTP');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Resend SMS
+                </button>
+              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  setStep('emitra');
+                  setOtp('');
+                  setError('');
+                  firebaseOtp.resetRecaptcha();
+                }}
+              >
                 Back
               </Button>
             </form>

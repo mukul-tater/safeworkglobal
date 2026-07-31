@@ -9,12 +9,14 @@ const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 const accountRegex = /^\d{6,18}$/;
 const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
-/** Step 1 — Basic / business information */
+/** Step 1 — Basic / business information (mobile must be Firebase SMS–verified) */
 export const emitraV2BasicSchema = z.object({
   center_name: z.string().trim().min(2, 'E-Mitra / CSC name is required').max(150),
   owner_name: z.string().trim().min(2, 'Owner full name is required').max(120),
   mobile: z.string().regex(phoneRegex, 'Enter a valid 10-digit mobile'),
-  whatsapp: z.string().regex(phoneRegex, 'Enter a valid WhatsApp number'),
+  mobile_verified: z.literal(true, {
+    errorMap: () => ({ message: 'Verify your mobile with the SMS OTP' }),
+  }),
   email: z
     .string()
     .trim()

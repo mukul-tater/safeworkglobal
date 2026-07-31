@@ -47,7 +47,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     navItems: [
       { label: "Dashboard", to: "/emitra/dashboard", icon: LayoutDashboard },
       { label: "My Workers", to: "/emitra/my-workers", icon: Users },
-      { label: "Onboard Worker", to: "/emitra/onboard-worker", icon: UserCheck },
+      { label: "Register Worker", to: "/emitra/onboard-worker", icon: UserCheck },
       { label: "Rewards", to: "/emitra/rewards", icon: Award },
       { label: "Withdrawals", to: "/emitra/withdrawals", icon: DollarSign },
       { label: "Notifications", to: "/emitra/notifications", icon: Bell },

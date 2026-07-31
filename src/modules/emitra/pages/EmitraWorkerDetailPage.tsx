@@ -101,7 +101,7 @@ export default function EmitraWorkerDetailPage() {
           <CardHeader className="pb-2"><CardTitle className="text-lg">Personal & Job Info</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             <Row k="Mobile" v={worker.mobile} />
-            <Row k="WhatsApp" v={worker.whatsapp} />
+            <Row k="Mobile / Contact" v={worker.mobile || worker.whatsapp} />
             <Row k="Experience" v={worker.experience_level} />
             <Row k="Skill Level" v={worker.skill_level} />
             <Row k="Location" v={`${worker.district}, ${worker.state}`} />

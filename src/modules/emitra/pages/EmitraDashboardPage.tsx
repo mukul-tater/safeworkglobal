@@ -118,7 +118,7 @@ export default function EmitraDashboardPage() {
         </div>
         {operational && (
           <Button asChild>
-            <Link to="/emitra/workers/register"><UserPlus className="h-4 w-4 mr-1" /> Register Worker</Link>
+            <Link to="/emitra/onboard-worker"><UserPlus className="h-4 w-4 mr-1" /> Register Worker</Link>
           </Button>
         )}
       </div>
@@ -221,7 +221,7 @@ export default function EmitraDashboardPage() {
           <CardHeader className="pb-2"><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader>
           <CardContent className="grid gap-2">
             <Button variant="outline" asChild disabled={!operational} className="justify-between h-11">
-              <Link to="/emitra/workers/register">
+              <Link to="/emitra/onboard-worker">
                 <span className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> Register New Worker</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>

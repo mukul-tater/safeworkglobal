@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/select';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   Loader2, Phone, ShieldCheck, CheckCircle2, ArrowLeft, HardHat, Lock, Eye, EyeOff,
@@ -28,13 +27,11 @@ import {
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
-import { workerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
 import {
   WORKER_TERMS_FULL,
   WORKER_TERMS_SUMMARY,
-  WORKER_TERMS_VERSION,
 } from '@/modules/worker-verification/constants';
-import { acceptTerms } from '@/modules/worker-verification/services/verificationService';
+import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
 
 type Step = 'form' | 'otp';
 
@@ -114,76 +111,6 @@ export default function QuickWorkerSignup() {
     return null;
   };
 
-  const createWorkerAccount = async () => {
-    const digits = mobile.replace(/\D/g, '').slice(-10);
-    const authEmail = workerAuthEmailFromMobile(digits);
-
-    const { error: signupErr } = await supabase.auth.signUp({
-      email: authEmail,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/worker/journey`,
-        data: {
-          full_name: name.trim(),
-          phone: digits,
-          role: 'worker',
-          terms_version: WORKER_TERMS_VERSION,
-        },
-      },
-    });
-
-    if (signupErr) {
-      if (/already registered|already exists/i.test(signupErr.message)) {
-        throw new Error('This mobile number is already registered. Please sign in instead.');
-      }
-      throw new Error(signupErr.message);
-    }
-
-    await supabase.auth.signInWithPassword({ email: authEmail, password });
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      const { data: roleRow } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (roleRow && roleRow.role !== 'worker') {
-        await supabase.auth.signOut();
-        throw new Error(
-          `This account is already registered as a ${roleRow.role}. Please log in with the correct role.`
-        );
-      }
-      await supabase
-        .from('worker_profiles')
-        .upsert({ user_id: user.id, country, nationality: country } as any, {
-          onConflict: 'user_id',
-        });
-      const { error: profileErr } = await supabase
-        .from('profiles')
-        .update({
-          full_name: name.trim(),
-          phone: digits,
-          mobile_verified: true,
-        })
-        .eq('id', user.id);
-      if (profileErr) throw new Error(profileErr.message);
-
-      try {
-        await acceptTerms(user.id);
-      } catch {
-        /* migration may not be applied yet */
-      }
-
-      // Signup OTP already verified this number — mark session verified now so
-      // ProtectedRoute does not send the worker to bind-mobile again.
-      markMobileVerified(digits);
-      await refreshProfile();
-    }
-  };
-
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -226,7 +153,17 @@ export default function QuickWorkerSignup() {
         /* ignore */
       }
 
-      await createWorkerAccount();
+      const created = await createVerifiedWorkerAccount({
+        fullName: name.trim(),
+        mobile,
+        password,
+        country,
+        source: { type: 'organic' },
+      });
+      // Signup OTP already verified this number — mark session verified now so
+      // ProtectedRoute does not send the worker to bind-mobile again.
+      markMobileVerified(created.mobile);
+      await refreshProfile();
       toast.success('Welcome to SafeWorkGlobal!');
       navigate('/worker/journey', { replace: true });
     } catch (err: unknown) {

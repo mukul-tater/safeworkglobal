@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 import { toast } from 'sonner';
 import {
   CheckCircle2,
@@ -27,8 +28,11 @@ import {
   type WorkerRegisterFormValues,
 } from '../validation/registrationSchema';
 import GoogleAuthButton, { AuthDivider } from '../components/GoogleAuthButton';
-import { useFirebasePhoneOtp } from '../hooks/useFirebasePhoneOtp';
-import { getOtpChannel } from '@/lib/otpConfig';
+import {
+  useFirebasePhoneOtp,
+  WORKER_OTP_RECAPTCHA_BTN_ID,
+} from '../hooks/useFirebasePhoneOtp';
+import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 
 const phoneRegex = /^[6-9]\d{9}$/;
 
@@ -36,7 +40,6 @@ export default function WorkerRegisterPage() {
   const navigate = useNavigate();
   const { register: registerWorker, isAuthenticated } = useWorkerAuth();
   const firebaseOtp = useFirebasePhoneOtp();
-  const useFirebase = getOtpChannel() === 'firebase';
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -80,30 +83,33 @@ export default function WorkerRegisterPage() {
     }
   }, [setValue]);
 
+  useEffect(() => {
+    if (!otpStep) return;
+    firebaseOtp.clearVerifierOnly();
+    firebaseOtp.dismissRecaptchaWidgets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otpStep]);
+
   const handleSendOtp = async () => {
     const digits = mobileNumber.replace(/\D/g, '');
     if (!phoneRegex.test(digits)) {
       toast.error('Enter a valid 10-digit mobile number first');
       return;
     }
+    if (!isFirebaseConfigured()) {
+      toast.error('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
+      return;
+    }
 
     setOtpSending(true);
     try {
       setValue('mobileNumber', digits);
-      setOtpStep(true);
       setMobileVerified(false);
       setValue('otpToken', '');
       setOtp('');
-
-      if (useFirebase) {
-        await firebaseOtp.sendOtp(digits);
-        toast.success('OTP sent to your mobile number');
-      } else {
-        const result = await workerApi.sendOtp(digits);
-        toast.success(result.message, {
-          description: result.demo ? 'Dev mode: enter any 6 digits' : undefined,
-        });
-      }
+      await firebaseOtp.sendOtp(digits);
+      setOtpStep(true);
+      toast.success(`Verification code sent to +91 ${digits}`);
     } catch (err) {
       firebaseOtp.resetRecaptcha();
       toast.error(err instanceof Error ? err.message : 'Failed to send OTP');
@@ -121,16 +127,17 @@ export default function WorkerRegisterPage() {
 
     setOtpVerifying(true);
     try {
-      let result;
-      if (useFirebase) {
-        const idToken = await firebaseOtp.verifyOtp(otp);
-        result = await workerApi.verifyFirebaseOtp(digits, idToken);
-      } else {
-        result = await workerApi.verifyOtp(digits, otp);
+      const idToken = await firebaseOtp.verifyOtp(otp);
+      try {
+        await firebaseSignOut(getFirebaseAuth());
+      } catch {
+        /* ignore */
       }
+      const result = await workerApi.verifyFirebaseOtp(digits, idToken);
       setValue('otpToken', result.otpToken, { shouldValidate: true });
       setMobileVerified(true);
       setOtpStep(false);
+      setOtp('');
       toast.success('Mobile number verified');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Invalid OTP');
@@ -171,7 +178,6 @@ export default function WorkerRegisterPage() {
         </p>
       }
     >
-      <div id="worker-recaptcha" />
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Card className="border-border/60 shadow-lg overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-primary via-primary/80 to-cyan-500" />
@@ -205,9 +211,12 @@ export default function WorkerRegisterPage() {
                     {...register('mobileNumber', {
                       onChange: (e) => {
                         e.target.value = e.target.value.replace(/\D/g, '');
-                        if (mobileVerified) {
+                        if (mobileVerified || otpStep) {
                           setMobileVerified(false);
+                          setOtpStep(false);
+                          setOtp('');
                           setValue('otpToken', '');
+                          firebaseOtp.resetRecaptcha();
                         }
                       },
                     })}
@@ -220,22 +229,32 @@ export default function WorkerRegisterPage() {
                   </Button>
                 ) : (
                   <Button
+                    id={otpStep ? undefined : WORKER_OTP_RECAPTCHA_BTN_ID}
                     type="button"
                     variant="secondary"
                     className="h-11 shrink-0 px-4"
-                    onClick={handleSendOtp}
+                    onClick={() => void handleSendOtp()}
                     disabled={otpSending || otpStep}
                   >
                     {otpSending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send OTP'}
                   </Button>
                 )}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                SMS verification via Firebase Phone Auth (+91).
+              </p>
+              {!firebaseOtp.isAvailable && (
+                <p className="text-xs text-amber-600 mt-1">
+                  SMS OTP needs Firebase Phone Auth keys before registration can continue.
+                </p>
+              )}
             </FormField>
 
             {otpStep && !mobileVerified && (
               <div className="rounded-lg border border-border/60 bg-muted/30 p-4 space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Enter the OTP sent to <span className="font-medium text-foreground">{mobileNumber}</span>
+                  Enter the SMS OTP sent to{' '}
+                  <span className="font-medium text-foreground">+91 {mobileNumber}</span>
                 </p>
                 <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                   <InputOTPGroup>
@@ -244,14 +263,24 @@ export default function WorkerRegisterPage() {
                     ))}
                   </InputOTPGroup>
                 </InputOTP>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
                     size="sm"
-                    onClick={handleVerifyOtp}
+                    onClick={() => void handleVerifyOtp()}
                     disabled={otpVerifying || otp.length !== 6}
                   >
                     {otpVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify OTP'}
+                  </Button>
+                  <Button
+                    id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void handleSendOtp()}
+                    disabled={otpSending}
+                  >
+                    Resend SMS
                   </Button>
                   <Button
                     type="button"
@@ -260,6 +289,7 @@ export default function WorkerRegisterPage() {
                     onClick={() => {
                       setOtpStep(false);
                       setOtp('');
+                      firebaseOtp.resetRecaptcha();
                     }}
                   >
                     Change number

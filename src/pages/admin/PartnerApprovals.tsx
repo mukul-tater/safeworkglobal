@@ -213,7 +213,7 @@ export default function PartnerApprovals() {
                   <KV k="E-Mitra ID" v={selected.emitra_id} />
                   <KV k="Owner" v={selected.owner_name} />
                   <KV k="Mobile" v={selected.mobile} />
-                  <KV k="WhatsApp" v={selected.whatsapp} />
+                  <KV k="Mobile verified" v={selected.mobile_verified ? "Yes" : "No"} />
                   <KV k="Email" v={selected.email} />
                   <KV k="Kiosk" v={selected.center_name} />
                   <KV k="Address" v={[selected.address, selected.village_city, selected.district, selected.state, selected.pincode].filter(Boolean).join(", ")} />

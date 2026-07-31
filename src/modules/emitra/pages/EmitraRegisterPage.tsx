@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import EmitraLayout from '../components/EmitraLayout';
@@ -20,6 +21,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { indianStates } from '@/lib/validations/partner';
+import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import {
+  useFirebasePhoneOtp,
+  WORKER_OTP_RECAPTCHA_BTN_ID,
+} from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { WORKER_SKILLS } from '../config/constants';
 import {
   emitraPersonalSchema, emitraDetailsSchema, emitraLocationSchema,
@@ -51,9 +57,11 @@ export default function EmitraRegisterPage() {
   const lspSession = getLspSession();
   const sourceLspCode = searchParams.get('source_lsp') || lspSession?.code || null;
   const [sourceLspId, setSourceLspId] = useState<string | null>(lspSession?.lspId ?? null);
+  const firebaseOtp = useFirebasePhoneOtp();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(!!user);
   const [saving, setSaving] = useState(false);
+  const [otpBusy, setOtpBusy] = useState(false);
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState('');
   const [mobileVerified, setMobileVerified] = useState(false);
@@ -72,6 +80,13 @@ export default function EmitraRegisterPage() {
   });
 
   const update = (patch: Partial<FormData>) => setData(d => ({ ...d, ...patch }));
+
+  useEffect(() => {
+    if (!otpStep) return;
+    firebaseOtp.clearVerifierOnly();
+    firebaseOtp.dismissRecaptchaWidgets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otpStep]);
 
   useEffect(() => {
     if (!sourceLspCode || sourceLspId) return;
@@ -155,29 +170,61 @@ export default function EmitraRegisterPage() {
     return true;
   };
 
-  const requestOtp = () => {
+  const requestOtp = async () => {
     const digits = (data.mobile || '').replace(/\D/g, '');
-    if (digits.length !== 10) {
+    if (!/^[6-9]\d{9}$/.test(digits)) {
       toast.error('Enter a valid mobile number first');
       return;
     }
-    toast.success(`OTP sent to ${digits}`, { description: 'Demo: enter any 6 digits' });
-    setOtpStep(true);
+    if (!isFirebaseConfigured()) {
+      toast.error('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
+      return;
+    }
+    setOtpBusy(true);
+    try {
+      await firebaseOtp.sendOtp(digits);
+      setOtpStep(true);
+      setOtp('');
+      toast.success(`Verification code sent to +91 ${digits}`);
+    } catch (err) {
+      firebaseOtp.resetRecaptcha();
+      toast.error(err instanceof Error ? err.message : 'Failed to send OTP');
+    } finally {
+      setOtpBusy(false);
+    }
   };
 
-  const verifyOtp = () => {
+  const verifyOtp = async () => {
     if (otp.length !== 6) {
       toast.error('Enter 6-digit OTP');
       return;
     }
-    setMobileVerified(true);
-    update({ mobile_verified: true });
-    setOtpStep(false);
-    toast.success('Mobile verified');
+    setOtpBusy(true);
+    try {
+      await firebaseOtp.verifyOtp(otp);
+      try {
+        await firebaseSignOut(getFirebaseAuth());
+      } catch {
+        /* ignore */
+      }
+      setMobileVerified(true);
+      update({ mobile_verified: true });
+      setOtpStep(false);
+      setOtp('');
+      toast.success('Mobile verified');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Invalid OTP');
+    } finally {
+      setOtpBusy(false);
+    }
   };
 
   const ensureAccount = async (): Promise<string | null> => {
     if (user) return user.id;
+    if (!mobileVerified) {
+      toast.error('Verify your mobile number with SMS OTP first');
+      return null;
+    }
     const digits = (data.mobile || '').replace(/\D/g, '');
     const authEmail = data.email?.trim() || `emitra${digits}@partners.safeworkglobal.app`;
     const password = `SWP-${digits}`;
@@ -202,7 +249,7 @@ export default function EmitraRegisterPage() {
   const buildPayload = (overrides: Record<string, unknown> = {}) => ({
     owner_name: data.owner_name,
     mobile: data.mobile,
-    whatsapp: data.whatsapp,
+    whatsapp: (data.mobile || '').replace(/\D/g, '') || null,
     email: data.email,
     emitra_id: data.emitra_id,
     center_name: data.center_name,
@@ -425,11 +472,34 @@ export default function EmitraRegisterPage() {
             </Field>
             <Field label="Mobile Number" error={errors.mobile} required>
               <div className="flex gap-2">
-                <Input className="h-11" inputMode="numeric" maxLength={10} value={data.mobile || ''}
-                  onChange={e => update({ mobile: e.target.value.replace(/\D/g, '') })} placeholder="10-digit mobile" />
+                <Input
+                  className="h-11"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={data.mobile || ''}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    if (mobileVerified || otpStep) {
+                      setMobileVerified(false);
+                      setOtpStep(false);
+                      setOtp('');
+                      firebaseOtp.resetRecaptcha();
+                    }
+                    update({ mobile: digits, mobile_verified: false });
+                  }}
+                  disabled={mobileVerified}
+                  placeholder="10-digit mobile"
+                />
                 {!mobileVerified ? (
-                  <Button type="button" variant="secondary" className="h-11 shrink-0 px-4" onClick={requestOtp} disabled={otpStep}>
-                    Verify
+                  <Button
+                    id={otpStep ? undefined : WORKER_OTP_RECAPTCHA_BTN_ID}
+                    type="button"
+                    variant="secondary"
+                    className="h-11 shrink-0 px-4"
+                    onClick={() => void requestOtp()}
+                    disabled={otpBusy || otpStep}
+                  >
+                    {otpBusy && !otpStep ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send OTP'}
                   </Button>
                 ) : (
                   <Badge className="self-center shrink-0 h-11 px-3 flex items-center bg-success/10 text-success border-success/20 hover:bg-success/10">
@@ -437,20 +507,32 @@ export default function EmitraRegisterPage() {
                   </Badge>
                 )}
               </div>
+              <p className="text-xs text-muted-foreground mt-1">SMS OTP via Firebase (+91)</p>
             </Field>
             {otpStep && !mobileVerified && (
               <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                <p className="text-sm text-muted-foreground">Enter OTP sent to {data.mobile}</p>
+                <p className="text-sm text-muted-foreground">Enter SMS OTP sent to +91 {data.mobile}</p>
                 <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                   <InputOTPGroup>{[0,1,2,3,4,5].map(i => <InputOTPSlot key={i} index={i} />)}</InputOTPGroup>
                 </InputOTP>
-                <Button type="button" size="sm" onClick={verifyOtp}>Confirm OTP</Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" onClick={() => void verifyOtp()} disabled={otpBusy || otp.length !== 6}>
+                    {otpBusy ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                    Confirm OTP
+                  </Button>
+                  <Button
+                    id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void requestOtp()}
+                    disabled={otpBusy}
+                  >
+                    Resend SMS
+                  </Button>
+                </div>
               </div>
             )}
-            <Field label="WhatsApp Number" error={errors.whatsapp} required>
-              <Input className="h-11" inputMode="numeric" maxLength={10} value={data.whatsapp || ''}
-                onChange={e => update({ whatsapp: e.target.value.replace(/\D/g, '') })} />
-            </Field>
           </div>
         )}
 

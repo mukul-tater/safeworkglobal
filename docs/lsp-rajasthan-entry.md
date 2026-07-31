@@ -169,7 +169,7 @@ After login, on `/lsp/verify`:
 1. Session must contain valid `source_lsp_id` from `/lsp/entry` (not expired; e.g. 24h cookie).
 2. User role must be `partner` (or prompt to apply).
 3. Collect / confirm:
-   - **Mobile** — OTP via existing Firebase / partner OTP path (replace demo OTP before production).
+   - **Mobile** — Firebase Phone Auth SMS OTP (same as emitra login/register).
    - **E-Mitra ID** — must match `partner_profiles.emitra_id` for this user, **or** be entered during first-time register and stored.
 4. Partner `status` must be operational (`approved` / whatever `isPartnerOperational` uses today).
 5. On success: set `partner_profiles.source_lsp_id`, `lsp_verified_at = now()`, navigate to `/emitra/dashboard`.
@@ -216,7 +216,7 @@ Authorization: Bearer <lsp_api_key>
 - [x] Redirect chain: entry → login → verify → dashboard
 - [x] Prefill register with `source_lsp_id`
 - [x] Copy `source_lsp_id` onto new `partner_workers`
-- [ ] Replace demo OTP on this path with real SMS (Firebase or MSG91)
+- [x] Firebase Phone Auth SMS OTP on `/lsp/verify`
 
 ### Phase C — Pilot ops (1–2 days)
 

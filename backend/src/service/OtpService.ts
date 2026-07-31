@@ -63,7 +63,7 @@ export class OtpService {
       console.info(`[OTP mock] ${mobileNumber} => ${code}`);
       return {
         demo: true,
-        message: 'OTP sent (dev mode — enter any 6 digits, or check server logs)',
+        message: 'OTP sent (dev mode — use the code from server logs). Prefer Firebase Phone Auth on the client.',
       };
     }
 
@@ -95,9 +95,8 @@ export class OtpService {
     }
 
     const normalized = otp.replace(/\D/g, '');
-    const mockAcceptsAny =
-      getProvider() === 'mock' && isMockAllowed() && normalized.length === 6;
-    if (!mockAcceptsAny && normalized !== record.code) {
+    // Never accept arbitrary codes — even in mock, the logged code must match.
+    if (normalized !== record.code) {
       throw new ValidationException({ otp: ['Invalid OTP. Please try again.'] });
     }
 

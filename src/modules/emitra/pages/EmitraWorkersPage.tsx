@@ -52,7 +52,7 @@ export default function EmitraWorkersPage() {
           <h1 className="text-2xl font-bold">My Workers</h1>
           <p className="text-sm text-muted-foreground">Search and manage registered workers</p>
         </div>
-        <Button asChild><Link to="/emitra/workers/register"><UserPlus className="h-4 w-4 mr-1" /> Register Worker</Link></Button>
+        <Button asChild><Link to="/emitra/onboard-worker"><UserPlus className="h-4 w-4 mr-1" /> Register Worker</Link></Button>
       </div>
 
       <Card className="p-4 mb-4 space-y-3">
@@ -106,7 +106,7 @@ export default function EmitraWorkersPage() {
         <Card className="p-12 text-center">
           <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="text-muted-foreground">No workers found</p>
-          <Button asChild className="mt-4"><Link to="/emitra/workers/register">Register First Worker</Link></Button>
+          <Button asChild className="mt-4"><Link to="/emitra/onboard-worker">Register First Worker</Link></Button>
         </Card>
       ) : (
         <div className="space-y-3">

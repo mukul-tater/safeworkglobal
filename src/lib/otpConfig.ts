@@ -1,15 +1,14 @@
 /**
- * OTP channel for Phase-1 `/register` (Express).
- * Live `/worker/quick-signup` uses Firebase Phone Auth via `isFirebaseConfigured()` —
- * see QuickWorkerSignup — not this helper.
+ * Phone OTP is Firebase Phone Auth everywhere (worker, emitra, LSP).
+ * Backend Fast2SMS/MSG91 send/verify routes are legacy and unused by the app UI.
  */
-export type OtpChannel = 'backend' | 'firebase';
+export type OtpChannel = 'firebase';
 
 export function getOtpChannel(): OtpChannel {
-  const provider = (import.meta.env.VITE_OTP_PROVIDER || 'backend').toLowerCase();
-  return provider === 'firebase' ? 'firebase' : 'backend';
+  return 'firebase';
 }
 
+/** @deprecated Always false — UI uses Firebase Phone Auth only. */
 export function useBackendOtp(): boolean {
-  return getOtpChannel() === 'backend';
+  return false;
 }

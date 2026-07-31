@@ -1,11 +1,8 @@
 import type {
-  SendOtpResponse,
-  VerifyOtpResponse,
   WorkerAuthResponse,
   WorkerRegisterPayload,
 } from '../types/worker.types';
 
-const OTP_SENT_KEY = 'safework_mock_otp_sent';
 const OTP_TOKEN_KEY = 'safework_mock_otp_token';
 const TOKEN_TTL_MS = 15 * 60 * 1000;
 
@@ -25,56 +22,20 @@ function validationError(message: string, field: string): never {
   throw err;
 }
 
+/**
+ * Offline register fallback only. OTP send/verify must go through Firebase Phone Auth
+ * + POST /workers/otp/verify-firebase — no demo “any 6 digits” path.
+ */
 export const mockWorkerPortal = {
-  sendOtp(mobileNumber: string): SendOtpResponse {
-    const mobile = normalizeMobile(mobileNumber);
-    if (!/^[6-9]\d{9}$/.test(mobile)) {
-      validationError('Invalid mobile number', 'mobileNumber');
-    }
-
-    sessionStorage.setItem(OTP_SENT_KEY, JSON.stringify({ mobile, sentAt: Date.now() }));
-    sessionStorage.removeItem(OTP_TOKEN_KEY);
-
-    return {
-      demo: true,
-      message: 'OTP sent (demo mode — enter any 6 digits)',
-    };
-  },
-
-  verifyOtp(mobileNumber: string, otp: string): VerifyOtpResponse {
-    const mobile = normalizeMobile(mobileNumber);
-    const code = otp.replace(/\D/g, '');
-
-    if (!/^[6-9]\d{9}$/.test(mobile) || code.length !== 6) {
-      validationError('Invalid OTP', 'otp');
-    }
-
-    const raw = sessionStorage.getItem(OTP_SENT_KEY);
-    if (!raw) {
-      validationError('OTP expired or not requested. Tap Send OTP again.', 'otp');
-    }
-
-    const sent = JSON.parse(raw) as { mobile: string };
-    if (sent.mobile !== mobile) {
-      validationError('OTP expired or not requested. Tap Send OTP again.', 'otp');
-    }
-
-    const otpToken = randomToken();
-    sessionStorage.setItem(
-      OTP_TOKEN_KEY,
-      JSON.stringify({ mobile, otpToken, expiresAt: Date.now() + TOKEN_TTL_MS }),
-    );
-    sessionStorage.removeItem(OTP_SENT_KEY);
-
-    return { otpToken, expiresInSeconds: TOKEN_TTL_MS / 1000 };
-  },
-
   register(payload: WorkerRegisterPayload): WorkerAuthResponse {
     const mobile = normalizeMobile(payload.mobileNumber);
     const raw = sessionStorage.getItem(OTP_TOKEN_KEY);
 
     if (!raw) {
-      validationError('Mobile verification expired', 'mobileNumber');
+      validationError(
+        'Mobile must be verified with Firebase SMS OTP first. Ensure the worker API is running.',
+        'mobileNumber',
+      );
     }
 
     const tokenState = JSON.parse(raw) as { mobile: string; otpToken: string; expiresAt: number };
@@ -83,7 +44,7 @@ export const mockWorkerPortal = {
       tokenState.mobile !== mobile ||
       tokenState.expiresAt < Date.now()
     ) {
-      validationError('Mobile verification expired', 'mobileNumber');
+      validationError('Mobile verification expired. Verify your number again.', 'mobileNumber');
     }
 
     if (payload.password !== payload.confirmPassword) {
@@ -120,5 +81,17 @@ export const mockWorkerPortal = {
         updatedDate: new Date().toISOString(),
       },
     };
+  },
+
+  /** Used only if verify-firebase succeeded earlier in the same browser session (tests). */
+  stashVerifiedToken(mobileNumber: string, otpToken: string) {
+    sessionStorage.setItem(
+      OTP_TOKEN_KEY,
+      JSON.stringify({
+        mobile: normalizeMobile(mobileNumber),
+        otpToken,
+        expiresAt: Date.now() + TOKEN_TTL_MS,
+      }),
+    );
   },
 };

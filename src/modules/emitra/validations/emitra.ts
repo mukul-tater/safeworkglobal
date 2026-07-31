@@ -10,7 +10,6 @@ const accountRegex = /^\d{6,18}$/;
 export const emitraPersonalSchema = z.object({
   owner_name: z.string().trim().min(2, 'Full name is required').max(120),
   mobile: z.string().regex(phoneRegex, 'Enter a valid 10-digit mobile'),
-  whatsapp: z.string().regex(phoneRegex, 'Enter a valid WhatsApp number'),
   email: z.string().trim().email('Enter a valid email').max(255),
 });
 
@@ -64,7 +63,6 @@ export const emitraDeclarationsSchema = z.object({
 export const workerPersonalSchema = z.object({
   full_name: z.string().trim().min(2, 'Full name is required').max(120),
   mobile: z.string().regex(phoneRegex, 'Valid 10-digit mobile required'),
-  whatsapp: z.string().regex(phoneRegex, 'Valid WhatsApp required'),
 });
 
 /** Step 2 — job / location details */

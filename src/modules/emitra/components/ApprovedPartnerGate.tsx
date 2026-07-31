@@ -13,23 +13,25 @@ export function useApprovedPartner() {
   const [loading, setLoading] = useState(true);
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [status, setStatus] = useState<PartnerStatus | null>(null);
+  const [emitraId, setEmitraId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     (supabase as any)
       .from('partner_profiles')
-      .select('id, status, rejection_reason')
+      .select('id, status, rejection_reason, emitra_id')
       .eq('user_id', user.id)
       .maybeSingle()
       .then(({ data }: any) => {
         setPartnerId(data?.id ?? null);
         setStatus(data?.status ?? null);
+        setEmitraId(data?.emitra_id ?? null);
         setLoading(false);
       });
   }, [user]);
 
   const isApproved = status === 'approved' || status === 'active';
-  return { loading, partnerId, status, isApproved };
+  return { loading, partnerId, status, isApproved, emitraId };
 }
 
 export default function ApprovedPartnerGate({ children }: { children: ReactNode }) {

@@ -17,11 +17,7 @@ import { mockWorkerPortal } from './mockWorkerPortal';
 
 const API_BASE = import.meta.env.VITE_WORKER_API_URL || '/api';
 
-const MOCK_FALLBACK_ROUTES = new Set([
-  '/workers/otp/send',
-  '/workers/otp/verify',
-  '/workers/register',
-]);
+const MOCK_FALLBACK_ROUTES = new Set(['/workers/register']);
 
 function isHtmlResponse(text: string): boolean {
   const trimmed = text.trim().toLowerCase();
@@ -31,17 +27,13 @@ function isHtmlResponse(text: string): boolean {
 function callMockFallback<T>(path: string, options?: RequestInit): T {
   const body = options?.body ? JSON.parse(options.body as string) : {};
 
-  if (path.endsWith('/otp/send')) {
-    return mockWorkerPortal.sendOtp(String(body.mobileNumber)) as T;
-  }
-  if (path.endsWith('/otp/verify')) {
-    return mockWorkerPortal.verifyOtp(String(body.mobileNumber), String(body.otp)) as T;
-  }
   if (path.endsWith('/register')) {
     return mockWorkerPortal.register(body as WorkerRegisterPayload) as T;
   }
 
-  throw new Error('Worker API is unavailable in demo mode for this action.');
+  throw new Error(
+    'Phone OTP requires Firebase Phone Auth and the worker API (/workers/otp/verify-firebase). Run npm run dev:all.',
+  );
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -105,6 +97,7 @@ export const workerApi = {
     return request(`/workers/districts/${stateId}`);
   },
 
+  /** @deprecated UI uses Firebase Phone Auth; prefer verifyFirebaseOtp. */
   sendOtp(mobileNumber: string): Promise<SendOtpResponse> {
     return request('/workers/otp/send', {
       method: 'POST',
@@ -112,6 +105,7 @@ export const workerApi = {
     });
   },
 
+  /** @deprecated UI uses Firebase Phone Auth; prefer verifyFirebaseOtp. */
   verifyOtp(mobileNumber: string, otp: string): Promise<VerifyOtpResponse> {
     return request('/workers/otp/verify', {
       method: 'POST',
@@ -123,6 +117,9 @@ export const workerApi = {
     return request('/workers/otp/verify-firebase', {
       method: 'POST',
       body: JSON.stringify({ mobileNumber, idToken }),
+    }).then((result) => {
+      mockWorkerPortal.stashVerifiedToken(mobileNumber, result.otpToken);
+      return result;
     });
   },
 

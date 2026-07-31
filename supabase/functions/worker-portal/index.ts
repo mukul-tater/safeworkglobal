@@ -7,10 +7,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const OTP_TTL_MS = 10 * 60 * 1000;
 const TOKEN_TTL_MS = 15 * 60 * 1000;
-// Mock/demo OTP bypass is OFF unless explicitly opted in for local development.
-const MOCK_MODE = Deno.env.get('OTP_ALLOW_MOCK') === 'true';
+
+const FIREBASE_OTP_REQUIRED =
+  'Phone OTP must use Firebase Phone Auth on the client, then POST /api/workers/otp/verify-firebase. Demo “any 6 digits” OTP is disabled.';
 
 type ApiSuccess<T> = { success: true; data: T; message?: string };
 type ApiError = { success: false; message: string; errors?: Record<string, string[]> };
@@ -28,10 +28,6 @@ function phoneRegex(mobile: string) {
 
 function isValidEmail(value: string) {
   return /^[^\s@,()]{1,64}@[^\s@,()]{1,190}\.[A-Za-z]{2,}$/.test(value);
-}
-
-function generateCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 function generateToken() {
@@ -56,76 +52,25 @@ serve(async (req) => {
     const body = req.method === 'POST' ? await req.json() : {};
 
     if (route === 'otp/send' || body.action === 'otp/send') {
-      const mobileNumber = String(body.mobileNumber ?? '').replace(/\D/g, '');
-      if (!phoneRegex(mobileNumber)) {
-        return json({ success: false, message: 'Validation failed', errors: { mobileNumber: ['Invalid mobile number'] } }, 400);
-      }
-
-      const code = generateCode();
-      const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
-
-      await supabase.from('worker_portal_otp').upsert({
-        mobile_number: mobileNumber,
-        otp_code: code,
-        expires_at: expiresAt,
-      });
-
-      console.log(`[worker-portal OTP] ${mobileNumber} => ${code}`);
-
-      return json({
-        success: true,
-        data: {
-          demo: MOCK_MODE,
-          message: MOCK_MODE
-            ? 'OTP sent (dev mode — enter any 6 digits, or check function logs)'
-            : 'OTP sent to your mobile number',
+      return json(
+        {
+          success: false,
+          message: FIREBASE_OTP_REQUIRED,
+          errors: { mobileNumber: [FIREBASE_OTP_REQUIRED] },
         },
-        message: 'OTP sent',
-      });
+        410,
+      );
     }
 
     if (route === 'otp/verify' || body.action === 'otp/verify') {
-      const mobileNumber = String(body.mobileNumber ?? '').replace(/\D/g, '');
-      const otp = String(body.otp ?? '').replace(/\D/g, '');
-
-      if (!phoneRegex(mobileNumber) || otp.length !== 6) {
-        return json({ success: false, message: 'Validation failed', errors: { otp: ['Invalid OTP'] } }, 400);
-      }
-
-      const { data: record } = await supabase
-        .from('worker_portal_otp')
-        .select('*')
-        .eq('mobile_number', mobileNumber)
-        .maybeSingle();
-
-      if (!record) {
-        return json({ success: false, message: 'Validation failed', errors: { otp: ['OTP expired or not requested'] } }, 400);
-      }
-
-      if (new Date(record.expires_at) < new Date()) {
-        await supabase.from('worker_portal_otp').delete().eq('mobile_number', mobileNumber);
-        return json({ success: false, message: 'Validation failed', errors: { otp: ['OTP expired'] } }, 400);
-      }
-
-      const valid = otp === record.otp_code;
-      if (!valid) {
-        return json({ success: false, message: 'Validation failed', errors: { otp: ['Invalid OTP'] } }, 400);
-      }
-
-      await supabase.from('worker_portal_otp').delete().eq('mobile_number', mobileNumber);
-
-      const otpToken = generateToken();
-      await supabase.from('worker_portal_tokens').insert({
-        token: otpToken,
-        mobile_number: mobileNumber,
-        expires_at: new Date(Date.now() + TOKEN_TTL_MS).toISOString(),
-      });
-
-      return json({
-        success: true,
-        data: { otpToken, expiresInSeconds: TOKEN_TTL_MS / 1000 },
-        message: 'Mobile number verified',
-      });
+      return json(
+        {
+          success: false,
+          message: FIREBASE_OTP_REQUIRED,
+          errors: { otp: [FIREBASE_OTP_REQUIRED] },
+        },
+        410,
+      );
     }
 
     if (route === 'register' || body.action === 'register') {

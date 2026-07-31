@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import EmitraLayout from '../components/EmitraLayout';
@@ -12,6 +13,11 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import {
+  useFirebasePhoneOtp,
+  WORKER_OTP_RECAPTCHA_BTN_ID,
+} from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { isPartnerOperational, getPartnerProfile } from '../services/emitraService';
 import { hasValidLspSession } from '@/modules/lsp/services/lspSession';
 
@@ -22,6 +28,7 @@ export default function EmitraLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login, isAuthenticated, role } = useAuth();
+  const firebaseOtp = useFirebasePhoneOtp();
   const nextPath = searchParams.get('next') || '';
 
   const afterLoginPath = () => {
@@ -44,6 +51,13 @@ export default function EmitraLoginPage() {
     }
   }, [isAuthenticated, role, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (step !== 'otp') return;
+    firebaseOtp.clearVerifierOnly();
+    firebaseOtp.dismissRecaptchaWidgets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   const checkPartnerApproved = async (userId: string): Promise<boolean> => {
     const profile = await getPartnerProfile(userId);
     return isPartnerOperational(profile);
@@ -62,41 +76,55 @@ export default function EmitraLoginPage() {
     e.preventDefault();
     setError('');
     const digits = mobile.replace(/\D/g, '');
-    if (digits.length !== 10) {
+    if (!/^[6-9]\d{9}$/.test(digits)) {
       setError('Enter a valid 10-digit mobile number');
       return;
     }
-
-    const { data: prof } = await supabase
-      .from('profiles')
-      .select('id, email')
-      .eq('phone', digits)
-      .maybeSingle();
-
-    if (!prof) {
-      setError('No partner account found with this mobile. Please apply first.');
+    if (!isFirebaseConfigured()) {
+      setError('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
       return;
     }
 
-    const { data: roleRow } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', prof.id)
-      .maybeSingle();
+    setLoading(true);
+    try {
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('phone', digits)
+        .maybeSingle();
 
-    if (roleRow?.role !== 'partner') {
-      setError('This mobile is not registered as an E-Mitra partner.');
-      return;
+      if (!prof) {
+        setError('No partner account found with this mobile. Please apply first.');
+        return;
+      }
+
+      const { data: roleRow } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', prof.id)
+        .maybeSingle();
+
+      if (roleRow?.role !== 'partner') {
+        setError('This mobile is not registered as an E-Mitra partner.');
+        return;
+      }
+
+      const approved = await checkPartnerApproved(prof.id!);
+      if (!approved) {
+        setError('Your partner application is pending approval. You will be notified once approved.');
+        return;
+      }
+
+      await firebaseOtp.sendOtp(digits);
+      toast.success(`Verification code sent to +91 ${digits}`);
+      setStep('otp');
+      setOtp('');
+    } catch (err) {
+      firebaseOtp.resetRecaptcha();
+      setError(err instanceof Error ? err.message : 'Failed to send OTP');
+    } finally {
+      setLoading(false);
     }
-
-    const approved = await checkPartnerApproved(prof.id!);
-    if (!approved) {
-      setError('Your partner application is pending approval. You will be notified once approved.');
-      return;
-    }
-
-    toast.success(`OTP sent to ${digits}`, { description: 'Demo: enter any 6 digits' });
-    setStep('otp');
   };
 
   const handleMobileOtpVerify = async (e: React.FormEvent) => {
@@ -109,28 +137,39 @@ export default function EmitraLoginPage() {
 
     setLoading(true);
     const digits = mobile.replace(/\D/g, '');
-    const { data: prof } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('phone', digits)
-      .maybeSingle();
 
-    if (!prof?.email) {
-      setError('Account lookup failed');
+    try {
+      await firebaseOtp.verifyOtp(otp);
+      try {
+        await firebaseSignOut(getFirebaseAuth());
+      } catch {
+        /* ignore */
+      }
+
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('phone', digits)
+        .maybeSingle();
+
+      if (!prof?.email) {
+        setError('Account lookup failed');
+        return;
+      }
+
+      const result = await partnerLogin(prof.email, digits);
+      if (!result.success) {
+        setError('Login failed. Use email + password or contact support.');
+        return;
+      }
+
+      toast.success('Welcome back!');
+      navigate(afterLoginPath(), { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid OTP');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const result = await partnerLogin(prof.email, digits);
-    if (!result.success) {
-      setError('Login failed. Use email + password or contact support.');
-      setLoading(false);
-      return;
-    }
-
-    toast.success('Welcome back!');
-    navigate(afterLoginPath(), { replace: true });
-    setLoading(false);
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -193,6 +232,7 @@ export default function EmitraLoginPage() {
               setMethod(v as Method);
               setStep('credentials');
               setError('');
+              firebaseOtp.resetRecaptcha();
             }}
           >
             <TabsList className="grid w-full grid-cols-2 mb-6 h-11">
@@ -225,15 +265,25 @@ export default function EmitraLoginPage() {
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    We&apos;ll send an SMS code via Firebase (+91).
+                  </p>
                 </div>
-                <Button type="submit" className="w-full h-11 font-medium">
+                <Button
+                  id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                  type="submit"
+                  className="w-full h-11 font-medium"
+                  disabled={loading}
+                >
+                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Send OTP
                 </Button>
               </form>
             ) : (
               <form onSubmit={handleMobileOtpVerify} className="space-y-5">
                 <p className="text-sm text-muted-foreground text-center">
-                  Enter the OTP sent to <span className="font-medium text-foreground">{mobile}</span>
+                  Enter the SMS OTP sent to{' '}
+                  <span className="font-medium text-foreground">+91 {mobile}</span>
                 </p>
                 <div className="flex justify-center py-1">
                   <InputOTP maxLength={6} value={otp} onChange={setOtp}>
@@ -248,7 +298,43 @@ export default function EmitraLoginPage() {
                   {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Verify & Sign In
                 </Button>
-                <Button type="button" variant="ghost" className="w-full" onClick={() => setStep('credentials')}>
+                <p className="text-xs text-center text-muted-foreground">
+                  Didn&apos;t get the code?{' '}
+                  <button
+                    id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                    type="button"
+                    className="text-primary font-medium hover:underline disabled:opacity-50"
+                    disabled={loading}
+                    onClick={async () => {
+                      setError('');
+                      setLoading(true);
+                      try {
+                        const digits = mobile.replace(/\D/g, '');
+                        await firebaseOtp.sendOtp(digits);
+                        setOtp('');
+                        toast.success(`New code sent to +91 ${digits}`);
+                      } catch (err) {
+                        firebaseOtp.resetRecaptcha();
+                        setError(err instanceof Error ? err.message : 'Failed to resend OTP');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                  >
+                    Resend SMS
+                  </button>
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => {
+                    setStep('credentials');
+                    setOtp('');
+                    setError('');
+                    firebaseOtp.resetRecaptcha();
+                  }}
+                >
                   Change number
                 </Button>
               </form>

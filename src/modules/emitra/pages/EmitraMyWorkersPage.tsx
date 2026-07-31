@@ -87,7 +87,7 @@ function Inner() {
           <h1 className="text-2xl font-bold">My Workers</h1>
           <p className="text-sm text-muted-foreground">Workers you onboarded through eMitra</p>
         </div>
-        <Button asChild><Link to="/emitra/onboard-worker"><UserPlus className="h-4 w-4 mr-1" /> Onboard Worker</Link></Button>
+        <Button asChild><Link to="/emitra/onboard-worker"><UserPlus className="h-4 w-4 mr-1" /> Register Worker</Link></Button>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="mb-4">
