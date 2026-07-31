@@ -123,6 +123,7 @@ export default function WorkerVerificationPage() {
   const [kycConsent, setKycConsent] = useState(false);
   const [forceIdentity, setForceIdentity] = useState(false);
   const [kycDone, setKycDone] = useState(false);
+  const [kycUploading, setKycUploading] = useState(false);
   const [tradeResultFile, setTradeResultFile] = useState<File | null>(null);
   const [medicalResultFile, setMedicalResultFile] = useState<File | null>(null);
   const [paying, setPaying] = useState(false);

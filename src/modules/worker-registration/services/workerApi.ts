@@ -114,7 +114,7 @@ export const workerApi = {
   },
 
   verifyFirebaseOtp(mobileNumber: string, idToken: string): Promise<VerifyOtpResponse> {
-    return request('/workers/otp/verify-firebase', {
+    return request<VerifyOtpResponse>('/workers/otp/verify-firebase', {
       method: 'POST',
       body: JSON.stringify({ mobileNumber, idToken }),
     }).then((result) => {
