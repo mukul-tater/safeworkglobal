@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import VerificationBadge, { calculateVerificationLevel, VerificationLevel } from '@/components/worker/VerificationBadge';
 import SendJobRequestDialog from '@/components/employer/SendJobRequestDialog';
 import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
+import { displayableEmail } from '@/lib/workerAuthEmail';
 
 interface WorkerProfile {
   user_id: string;
@@ -416,10 +417,10 @@ export default function WorkerPublicProfile() {
                             {workerProfile.current_location}
                           </span>
                         )}
-                        {profile.email && (
+                        {displayableEmail(profile.email) && (
                           <span className="flex items-center gap-1">
                             <Mail className="h-4 w-4" />
-                            {profile.email}
+                            {displayableEmail(profile.email)}
                           </span>
                         )}
                       </div>

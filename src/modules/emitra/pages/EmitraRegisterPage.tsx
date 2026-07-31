@@ -26,6 +26,10 @@ import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
+import {
+  displayableEmail,
+  partnerAuthEmailFromMobile,
+} from '@/lib/workerAuthEmail';
 import { WORKER_SKILLS } from '../config/constants';
 import {
   emitraPersonalSchema, emitraDetailsSchema, emitraLocationSchema,
@@ -114,7 +118,7 @@ export default function EmitraRegisterPage() {
           ...d,
           ...row,
           owner_name: row.owner_name || d.owner_name || '',
-          email: row.email || user.email || d.email || '',
+          email: displayableEmail(row.email) || displayableEmail(user.email) || d.email || '',
           worker_categories: row.worker_categories || [],
           has_computer: row.has_computer ?? false,
           has_scanner: row.has_scanner ?? false,
@@ -135,7 +139,7 @@ export default function EmitraRegisterPage() {
             (meta.name as string) ||
             d.owner_name ||
             '',
-          email: user.email || d.email || '',
+          email: displayableEmail(user.email) || d.email || '',
         }));
       }
       setLoading(false);
@@ -226,7 +230,8 @@ export default function EmitraRegisterPage() {
       return null;
     }
     const digits = (data.mobile || '').replace(/\D/g, '');
-    const authEmail = data.email?.trim() || `emitra${digits}@partners.safeworkglobal.app`;
+    const realEmail = displayableEmail(data.email);
+    const authEmail = realEmail || partnerAuthEmailFromMobile(digits);
     const password = `SWP-${digits}`;
 
     const result = await signup({
@@ -250,7 +255,7 @@ export default function EmitraRegisterPage() {
     owner_name: data.owner_name,
     mobile: data.mobile,
     whatsapp: (data.mobile || '').replace(/\D/g, '') || null,
-    email: data.email,
+    email: displayableEmail(data.email),
     emitra_id: data.emitra_id,
     center_name: data.center_name,
     years_in_operation: data.years_in_operation,

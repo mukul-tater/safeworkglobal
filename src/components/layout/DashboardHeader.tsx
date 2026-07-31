@@ -17,6 +17,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import NotificationDrawer from "@/components/NotificationDrawer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { displayableEmail, formatIndianMobile } from "@/lib/workerAuthEmail";
+import { getGoogleEmailFromUser } from "@/modules/worker-verification/lib/connectGoogleEmail";
 
 interface ProfileMenuItem {
   label: string;
@@ -47,7 +49,13 @@ export default function DashboardHeader({
   const signOutLabel = showLanguageSwitcher && workerLang ? workerLang.t("header.signOut") : "Sign Out";
 
   const displayName = worker?.fullName || profile?.full_name || "User";
-  const displaySubtext = worker?.mobileNumber || user?.email || "";
+  const displaySubtext =
+    formatIndianMobile(worker?.mobileNumber) ||
+    getGoogleEmailFromUser(user) ||
+    displayableEmail(profile?.email) ||
+    displayableEmail(user?.email) ||
+    formatIndianMobile(profile?.phone) ||
+    "";
 
   const handleLogout = async () => {
     try {
@@ -59,7 +67,7 @@ export default function DashboardHeader({
     }
   };
 
-  const fallbackChar = displayName[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U";
+  const fallbackChar = displayName[0]?.toUpperCase() || "U";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80">

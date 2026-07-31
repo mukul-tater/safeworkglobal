@@ -13,10 +13,19 @@ import { LogOut, User, Home, Settings, HelpCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import NotificationDrawer from "@/components/NotificationDrawer";
+import { displayableEmail, formatIndianMobile } from "@/lib/workerAuthEmail";
+import { getGoogleEmailFromUser } from "@/modules/worker-verification/lib/connectGoogleEmail";
 
 export default function WorkerHeader() {
   const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
+
+  const contactLine =
+    getGoogleEmailFromUser(user) ||
+    displayableEmail(profile?.email) ||
+    displayableEmail(user?.email) ||
+    formatIndianMobile(profile?.phone) ||
+    "";
 
   const handleLogout = async () => {
     try {
@@ -51,7 +60,7 @@ export default function WorkerHeader() {
                 <Avatar className="h-9 w-9 md:h-10 md:w-10 border-2 border-primary/10">
                   <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
                   <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                    {profile?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "W"}
+                    {profile?.full_name?.[0]?.toUpperCase() || "W"}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -60,7 +69,9 @@ export default function WorkerHeader() {
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none">{profile?.full_name || "Worker"}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                  {contactLine ? (
+                    <p className="text-xs leading-none text-muted-foreground">{contactLine}</p>
+                  ) : null}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

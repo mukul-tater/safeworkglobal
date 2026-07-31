@@ -31,7 +31,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { ReactNode } from "react";
-import { isWorkerMobileAuthEmail } from "@/lib/workerAuthEmail";
+import { displayableEmail, formatIndianMobile, isWorkerMobileAuthEmail } from "@/lib/workerAuthEmail";
+import { getGoogleEmailFromUser } from "@/modules/worker-verification/lib/connectGoogleEmail";
 import { Badge } from "@/components/ui/badge";
 
 const NATIONALITIES = [
@@ -56,8 +57,12 @@ export default function WorkerProfile() {
   const [contactEmail, setContactEmail] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
 
-  const needsContactEmail = isWorkerMobileAuthEmail(user?.email);
-  const displayEmail = needsContactEmail ? null : (user?.email || null);
+  const googleEmail = getGoogleEmailFromUser(user);
+  const displayEmail =
+    googleEmail ||
+    displayableEmail(profile?.email) ||
+    displayableEmail(user?.email);
+  const needsContactEmail = !displayEmail && isWorkerMobileAuthEmail(user?.email);
 
   const { register, handleSubmit, formState: { errors }, reset, setValue, watch, control } = useForm<WorkerProfileFormData>({
     resolver: zodResolver(workerProfileSchema),
@@ -222,7 +227,7 @@ export default function WorkerProfile() {
                 {profile.full_name || 'My Profile'}
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {displayEmail || (profile.phone ? `+91 ${profile.phone}` : 'Add your email below')}
+                {displayEmail || formatIndianMobile(profile.phone) || 'Connect Gmail on your journey'}
               </p>
               <p className="text-xs text-muted-foreground mt-2 max-w-md leading-relaxed">
                 A complete profile with verified skills helps employers trust your application.
@@ -297,19 +302,20 @@ export default function WorkerProfile() {
                     Signup used mobile verification. Add a real email here to recover your account and get updates.
                   </p>
                 </div>
-              ) : (
+              ) : displayEmail ? (
                 <>
                   <div className="mt-1.5 flex items-center gap-2">
                     <Input
                       id="email"
                       type="email"
-                      value={user?.email || ''}
+                      value={displayEmail}
                       disabled
                       className="h-11 bg-muted"
                     />
-                    {isEmailVerified ? (
+                    {googleEmail || isEmailVerified ? (
                       <Badge variant="outline" className="shrink-0 gap-1 text-success border-success/30">
-                        <BadgeCheck className="h-3.5 w-3.5" /> Verified
+                        <BadgeCheck className="h-3.5 w-3.5" />
+                        {googleEmail ? 'Gmail connected' : 'Verified'}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="shrink-0 text-amber-600 border-amber-500/30">
@@ -317,19 +323,19 @@ export default function WorkerProfile() {
                       </Badge>
                     )}
                   </div>
-                  {!isEmailVerified && (
+                  {!googleEmail && !isEmailVerified && (
                     <Button
                       type="button"
                       variant="link"
                       className="h-auto p-0 mt-1 text-xs"
                       disabled={emailSaving}
                       onClick={async () => {
-                        if (!user?.email) return;
+                        if (!displayEmail) return;
                         setEmailSaving(true);
                         try {
                           const { error } = await supabase.auth.resend({
                             type: 'signup',
-                            email: user.email,
+                            email: displayEmail,
                           });
                           if (error) throw error;
                           toast.success('Verification email resent');
@@ -344,6 +350,10 @@ export default function WorkerProfile() {
                     </Button>
                   )}
                 </>
+              ) : (
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  No email connected yet. Use Connect Gmail on your placement journey.
+                </p>
               )}
             </div>
 

@@ -23,6 +23,7 @@ import VerificationBadge, { calculateVerificationLevel, VerificationLevel } from
 import { isWorkerKycVerified } from '@/lib/workerKyc';
 import { loadWorkerSkillsWithMedia, type WorkerSkillWithMedia } from '@/lib/workerSkillMedia';
 import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
+import { displayableEmail } from '@/lib/workerAuthEmail';
 
 interface ApplicationData {
   id: string;
@@ -547,10 +548,12 @@ export default function ApplicationDetail() {
                         <div className="flex flex-wrap gap-4 mt-4 text-sm">
                           {kycVerified ? (
                             <>
-                              <a href={`mailto:${profile.email}`} className="flex items-center gap-1 text-primary hover:underline">
-                                <Mail className="h-4 w-4" />
-                                {profile.email}
-                              </a>
+                              {displayableEmail(profile.email) && (
+                                <a href={`mailto:${displayableEmail(profile.email)}`} className="flex items-center gap-1 text-primary hover:underline">
+                                  <Mail className="h-4 w-4" />
+                                  {displayableEmail(profile.email)}
+                                </a>
+                              )}
                               {profile.phone && (
                                 <a href={`tel:${profile.phone}`} className="flex items-center gap-1 text-primary hover:underline">
                                   <Phone className="h-4 w-4" />

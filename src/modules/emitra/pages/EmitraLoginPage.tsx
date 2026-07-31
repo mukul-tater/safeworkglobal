@@ -18,6 +18,7 @@ import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
+import { partnerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
 import { isPartnerOperational, getPartnerProfile } from '../services/emitraService';
 import { hasValidLspSession } from '@/modules/lsp/services/lspSession';
 
@@ -65,9 +66,10 @@ export default function EmitraLoginPage() {
 
   const partnerLogin = async (authEmail: string, mobileDigits: string) => {
     const pwd = `SWP-${mobileDigits}`;
+    const synthetic = partnerAuthEmailFromMobile(mobileDigits);
     let result = await login(authEmail, pwd);
-    if (!result.success && authEmail !== `emitra${mobileDigits}@partners.safeworkglobal.app`) {
-      result = await login(`emitra${mobileDigits}@partners.safeworkglobal.app`, pwd);
+    if (!result.success && authEmail !== synthetic) {
+      result = await login(synthetic, pwd);
     }
     return result;
   };

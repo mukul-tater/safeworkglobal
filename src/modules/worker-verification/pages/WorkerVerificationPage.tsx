@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
-import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
+import { displayableEmail, isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import {
   clearPendingGmailLink,
   getGoogleEmailFromUser,
@@ -139,9 +139,8 @@ export default function WorkerVerificationPage() {
       };
       setRow(v);
       const linked = getGoogleEmailFromUser(user);
-      const rawEmail = v.email || profile?.email || linked || '';
-      // Don't show synthetic mobile-auth emails in the essentials field
-      setEmail(isWorkerMobileAuthEmail(rawEmail) ? linked || '' : rawEmail);
+      // Never prefill synthetic mobile-auth emails — only Connect Gmail / typed real email
+      setEmail(linked || displayableEmail(v.email) || displayableEmail(profile?.email) || '');
       setCity(v.city || '');
       setState(v.state || '');
       setEducation(v.education_level || '');

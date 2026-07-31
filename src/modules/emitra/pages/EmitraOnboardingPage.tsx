@@ -26,6 +26,10 @@ import {
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import {
+  displayableEmail,
+  partnerAuthEmailFromMobile,
+} from '@/lib/workerAuthEmail';
+import {
   emitraV2BasicSchema,
   emitraV2LocationSchema,
   emitraV2BankSchema,
@@ -155,7 +159,7 @@ export default function EmitraOnboardingPage() {
           ...d,
           ...row,
           owner_name: row.owner_name || d.owner_name || '',
-          email: row.email || user.email || d.email || '',
+          email: displayableEmail(row.email) || displayableEmail(user.email) || d.email || '',
           center_name: row.center_name || d.center_name || '',
           address_line1: (row as any).address_line1 || row.address || d.address_line1 || '',
           city_town: (row as any).city_town || row.village_city || d.city_town || '',
@@ -179,7 +183,7 @@ export default function EmitraOnboardingPage() {
         setData((d) => ({
           ...d,
           owner_name: (meta.full_name as string) || (meta.name as string) || d.owner_name || '',
-          email: user.email || d.email || '',
+          email: displayableEmail(user.email) || d.email || '',
         }));
       }
       setLoading(false);
@@ -264,7 +268,8 @@ export default function EmitraOnboardingPage() {
       return null;
     }
     const digits = (data.mobile || '').replace(/\D/g, '');
-    const authEmail = data.email?.trim() || `emitra${digits}@partners.safeworkglobal.app`;
+    const realEmail = displayableEmail(data.email);
+    const authEmail = realEmail || partnerAuthEmailFromMobile(digits);
     const password = `SWP-${digits}`;
 
     const result = await signup({
@@ -297,7 +302,7 @@ export default function EmitraOnboardingPage() {
       mobile: data.mobile,
       // Store verified mobile for contact; WhatsApp channel removed from onboarding
       whatsapp: digits || null,
-      email: data.email?.trim() || null,
+      email: displayableEmail(data.email),
       emitra_id: data.emitra_id,
       center_name: data.center_name,
       aadhaar_number: data.aadhaar_number,
