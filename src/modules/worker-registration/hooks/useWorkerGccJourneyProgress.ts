@@ -155,10 +155,9 @@ export function useWorkerGccJourneyProgress() {
   const navItems = useMemo(
     () =>
       GCC_JOURNEY_NAV_STEPS.map((step) => {
-        const tone =
-          statuses[step.id] === "current"
-            ? ("in_progress" as const)
-            : statuses[step.id];
+        const status = statuses[step.id];
+        const tone: "completed" | "in_progress" | "waiting" =
+          status === "current" ? "in_progress" : status === "completed" ? "completed" : "waiting";
         return {
           id: step.id,
           path: "/worker/journey",
