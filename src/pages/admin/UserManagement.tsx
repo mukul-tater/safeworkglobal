@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Eye, Ban, CheckCircle, Search, Filter, UserX, UserCheck, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { displayableEmail } from "@/lib/workerAuthEmail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -70,7 +71,7 @@ export default function UserManagement() {
         const moderation = moderations.find((m) => m.user_id === profile.id);
         return {
           id: profile.id,
-          email: profile.email,
+          email: displayableEmail(profile.email) || "",
           full_name: profile.full_name,
           phone: profile.phone,
           role: userRole?.role || "worker",
@@ -184,7 +185,7 @@ export default function UserManagement() {
   const filteredUsers = users.filter((user) => {
     const matchesSearch = !searchQuery || 
       user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === "all" || user.role === roleFilter;
     const matchesStatus = statusFilter === "all" ||
@@ -268,7 +269,9 @@ export default function UserManagement() {
                     {user.is_banned ? "Banned" : "Active"}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground text-sm truncate">{user.email}</p>
+                <p className="text-muted-foreground text-sm truncate">
+                  {user.email || user.phone || "No contact email yet"}
+                </p>
                 <div className="flex gap-4 mt-1">
                   {user.phone && <span className="text-xs text-muted-foreground">{user.phone}</span>}
                   <span className="text-xs text-muted-foreground">Joined {user.joined}</span>
@@ -336,7 +339,7 @@ export default function UserManagement() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div><Label className="text-xs text-muted-foreground">Name</Label><p className="font-medium">{viewUser.full_name || "N/A"}</p></div>
-                <div><Label className="text-xs text-muted-foreground">Email</Label><p className="font-medium text-sm">{viewUser.email}</p></div>
+                <div><Label className="text-xs text-muted-foreground">Email</Label><p className="font-medium text-sm">{viewUser.email || "Not provided yet"}</p></div>
                 <div><Label className="text-xs text-muted-foreground">Phone</Label><p className="font-medium">{viewUser.phone || "N/A"}</p></div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Role</Label>

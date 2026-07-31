@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { displayableEmail } from "@/lib/workerAuthEmail";
 import {
   Dialog,
   DialogContent,
@@ -112,7 +113,7 @@ export default function IDVerification() {
           workersMap.set(doc.worker_id, {
             user_id: doc.worker_id,
             full_name: profile?.full_name || null,
-            email: profile?.email || '',
+            email: displayableEmail(profile?.email) || '',
             nationality: workerProfile?.nationality || null,
             ecr_status: workerProfile?.ecr_status || null,
             documents: []
@@ -170,7 +171,7 @@ export default function IDVerification() {
   const filteredWorkers = workers.filter(worker => {
     const matchesSearch = 
       worker.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      worker.email.toLowerCase().includes(searchTerm.toLowerCase());
+      worker.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     if (statusFilter === "all") return matchesSearch;
     
@@ -322,7 +323,7 @@ export default function IDVerification() {
                         <TableCell>
                           <div>
                             <p className="font-medium">{worker.full_name || 'Unknown'}</p>
-                            <p className="text-sm text-muted-foreground">{worker.email}</p>
+                            <p className="text-sm text-muted-foreground">{worker.email || 'No contact email yet'}</p>
                           </div>
                         </TableCell>
                         <TableCell>{worker.nationality || 'Not specified'}</TableCell>
@@ -375,7 +376,7 @@ export default function IDVerification() {
               <div className="space-y-4 py-4">
                 <div className="bg-muted/50 rounded-lg p-4">
                   <p className="text-sm">
-                    <span className="font-medium">Email:</span> {selectedWorker?.email}
+                    <span className="font-medium">Email:</span> {selectedWorker?.email || 'Not provided yet'}
                   </p>
                   <p className="text-sm">
                     <span className="font-medium">Nationality:</span> {selectedWorker?.nationality || 'Not specified'}

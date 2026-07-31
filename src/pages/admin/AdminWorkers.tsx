@@ -11,6 +11,7 @@ import { Search, Eye, MapPin, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatSalaryINR } from "@/lib/utils";
+import { displayableEmail } from "@/lib/workerAuthEmail";
 
 interface WorkerRow {
   id: string;
@@ -66,7 +67,7 @@ export default function AdminWorkers() {
         ];
         return {
           id: p.id,
-          email: p.email,
+          email: displayableEmail(p.email) || "",
           full_name: p.full_name,
           phone: p.phone,
           joined: new Date(p.created_at).toLocaleDateString(),
@@ -96,7 +97,7 @@ export default function AdminWorkers() {
     const matchesSearch =
       !q ||
       w.full_name?.toLowerCase().includes(q) ||
-      w.email.toLowerCase().includes(q) ||
+      w.email?.toLowerCase().includes(q) ||
       w.phone?.toLowerCase().includes(q) ||
       w.skills.some((s) => s.toLowerCase().includes(q));
     const matchesStatus =
@@ -161,7 +162,7 @@ export default function AdminWorkers() {
                       <Badge variant="outline">{w.application_count} applications</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{w.email}</p>
+                  <p className="text-sm text-muted-foreground">{w.email || w.phone || "No contact email yet"}</p>
                   <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
                     {w.country && (
                       <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{w.country}</span>
@@ -195,7 +196,7 @@ export default function AdminWorkers() {
           </DialogHeader>
           {viewWorker && (
             <div className="space-y-3 text-sm">
-              <p><span className="font-medium">Email:</span> {viewWorker.email}</p>
+              <p><span className="font-medium">Email:</span> {viewWorker.email || "Not provided yet"}</p>
               <p><span className="font-medium">Phone:</span> {viewWorker.phone || "—"}</p>
               <p><span className="font-medium">Location:</span> {viewWorker.country || "—"}</p>
               <p><span className="font-medium">Experience:</span> {viewWorker.experience_years ?? "—"} years</p>

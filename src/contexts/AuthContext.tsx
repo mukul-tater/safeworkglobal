@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { redirectToPublicHome } from '@/lib/signOut';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { displayableEmail } from '@/lib/workerAuthEmail';
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner';
 
@@ -70,11 +71,15 @@ function deriveProfileFromUser(u: User): Omit<Profile, 'id'> & { id: string } {
 
   return {
     id: u.id,
-    email: u.email || '',
+    email: displayableEmail(u.email) || '',
     full_name: fullName,
     phone,
     avatar_url: avatarUrl,
   };
+}
+
+function sanitizeProfileEmail<T extends { email?: string | null }>(row: T): T {
+  return { ...row, email: displayableEmail(row.email) || '' };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -126,7 +131,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isStale()) return;
 
     if (data && !error) {
-      setProfile(data);
+      // Drop synthetic mobile-auth emails from UI state (and clear them in DB once).
+      const email = displayableEmail(data.email) || '';
+      if (data.email && !email) {
+        void supabase.from('profiles').update({ email: null }).eq('id', currentUser.id);
+      }
+      setProfile(sanitizeProfileEmail({ ...data, email }));
       return;
     }
 
@@ -137,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .upsert(
         {
           id: derived.id,
-          email: derived.email,
+          email: derived.email || null,
           full_name: derived.full_name,
           phone: derived.phone,
           avatar_url: derived.avatar_url,
@@ -150,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isStale()) return;
 
     if (upserted && !upsertError) {
-      setProfile(upserted);
+      setProfile(sanitizeProfileEmail(upserted));
     } else {
       // Last-resort fallback: surface the derived profile in-memory so the UI
       // still renders a name and never displays "Unknown".
@@ -330,7 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!user) return prev;
         return {
           id: user.id,
-          email: user.email ?? '',
+          email: displayableEmail(user.email) || '',
           full_name: (user.user_metadata?.full_name as string) ?? null,
           phone: phone ?? (user.user_metadata?.phone as string) ?? null,
           avatar_url: null,

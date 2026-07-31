@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { AdminDashboardSkeleton } from "@/components/ui/page-skeleton";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import { adminNavGroups, adminProfileMenu } from "@/config/adminNav";
+import { displayableEmail } from "@/lib/workerAuthEmail";
 
 interface DashboardStats {
   totalUsers: number; totalWorkers: number; totalEmployers: number; totalAdmins: number;
@@ -126,7 +127,11 @@ export default function AdminDashboard() {
       if (recentUsersRes.data) {
         for (const p of recentUsersRes.data) {
           const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', p.id).maybeSingle();
-          recentUsersWithRoles.push({ ...p, role: roleData?.role || 'unknown' });
+          recentUsersWithRoles.push({
+            ...p,
+            email: displayableEmail(p.email) || '',
+            role: roleData?.role || 'unknown',
+          });
         }
       }
       setRecentUsers(recentUsersWithRoles);
@@ -337,7 +342,7 @@ export default function AdminDashboard() {
                 <div key={u.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                   <div className="flex-1">
                     <p className="font-medium">{u.full_name || 'No name'}</p>
-                    <p className="text-sm text-muted-foreground">{u.email}</p>
+                    <p className="text-sm text-muted-foreground">{u.email || 'No contact email yet'}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={getRoleBadgeColor(u.role)}>{u.role}</Badge>

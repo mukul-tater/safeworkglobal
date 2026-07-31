@@ -21,12 +21,6 @@ import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
 import { displayableEmail, isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import {
-  getGoogleEmailFromUser,
-  isGoogleIdentityLinked,
-  persistConnectedGmail,
-  startGoogleEmailLink,
-} from '@/modules/worker-verification/lib/connectGoogleEmail';
-import {
   ASSESSMENT_FEE_INR,
   EDUCATION_LEVELS,
   GCC_JOURNEY_NAV_STEPS,
@@ -82,8 +76,6 @@ export default function WorkerVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [googleLinking, setGoogleLinking] = useState(false);
-  const [kycUploading, setKycUploading] = useState(false);
   const [row, setRow] = useState<WorkerVerification | null>(null);
 
   const [email, setEmail] = useState('');
@@ -91,9 +83,6 @@ export default function WorkerVerificationPage() {
   const [state, setState] = useState('');
   const [education, setEducation] = useState('');
   const [primarySkill, setPrimarySkill] = useState('');
-  const googleLinked = isGoogleIdentityLinked(user);
-  const googleEmail = getGoogleEmailFromUser(user);
-  const emailNeedsConnect = !email.trim() || isWorkerMobileAuthEmail(email);
 
   const [quizItems, setQuizItems] = useState<SkillQuizItem[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, boolean | undefined>>({});
@@ -137,9 +126,8 @@ export default function WorkerVerificationPage() {
         stage: normalizeVerificationStage(vRaw.stage, vRaw.trade_test_required),
       };
       setRow(v);
-      const linked = getGoogleEmailFromUser(user);
-      // Never prefill synthetic mobile-auth emails — only Connect Gmail / typed real email
-      setEmail(linked || displayableEmail(v.email) || displayableEmail(profile?.email) || '');
+      // Never prefill synthetic mobile-auth emails — worker types a real contact email
+      setEmail(displayableEmail(v.email) || displayableEmail(profile?.email) || '');
       setCity(v.city || '');
       setState(v.state || '');
       setEducation(v.education_level || '');
@@ -319,27 +307,11 @@ export default function WorkerVerificationPage() {
       setSaving(false);
     }
   };
-  const onConnectGmail = async () => {
-    if (!user?.id) return;
-    setGoogleLinking(true);
-    try {
-      const gmail = await startGoogleEmailLink();
-      const saved = await persistConnectedGmail(user.id, gmail);
-      setEmail(saved);
-      await refreshProfile();
-      toast.success(`Gmail connected: ${saved}`);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not connect Gmail');
-    } finally {
-      setGoogleLinking(false);
-    }
-  };
-
   const onSaveEssentials = async () => {
     if (!user?.id) return;
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail || !trimmedEmail.includes('@') || isWorkerMobileAuthEmail(trimmedEmail)) {
-      toast.error('Connect your Gmail (or enter a real email) before continuing');
+      toast.error('Enter a real email address before continuing');
       return;
     }
     if (!city.trim() || !state || !education || !primarySkill) {
@@ -640,7 +612,7 @@ export default function WorkerVerificationPage() {
               <div>
                 <h2 className="font-semibold">Major details</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Name and mobile are already saved. Connect your Gmail, then add location, education, and one primary skill.
+                  Name and mobile are already saved. Add your email, location, education, and one primary skill.
                 </p>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
@@ -654,66 +626,15 @@ export default function WorkerVerificationPage() {
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Email *</Label>
-                  {(googleLinked || googleEmail || (!emailNeedsConnect && email)) ? (
-                    <div className="space-y-2">
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Input
-                          type="email"
-                          value={email || googleEmail || ''}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="flex-1"
-                        />
-                        {googleLinked || googleEmail ? (
-                          <span className="inline-flex h-10 items-center gap-1.5 rounded-md border border-success/30 bg-success/10 px-3 text-xs font-medium text-success shrink-0">
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Gmail connected
-                          </span>
-                        ) : null}
-                      </div>
-                      {!googleLinked && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full sm:w-auto h-10 gap-2"
-                          onClick={() => void onConnectGmail()}
-                          disabled={googleLinking}
-                        >
-                          {googleLinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-                          Connect Gmail instead
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full h-11 gap-2 font-medium"
-                        onClick={() => void onConnectGmail()}
-                        disabled={googleLinking}
-                      >
-                        {googleLinking ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-                        Connect Gmail
-                      </Button>
-                      <p className="text-xs text-muted-foreground">
-                        Signup used a temporary mobile login email. Connect Gmail so we can reach you for interviews and updates.
-                      </p>
-                      <div className="relative my-1">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t border-border" />
-                        </div>
-                        <div className="relative flex justify-center text-[10px] uppercase tracking-wide">
-                          <span className="bg-card px-2 text-muted-foreground">or type email</span>
-                        </div>
-                      </div>
-                      <Input
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                    </div>
-                  )}
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Signup used mobile login. Enter a real email so we can reach you for interviews and updates.
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label>City *</Label>
@@ -1430,17 +1351,6 @@ export default function WorkerVerificationPage() {
         )}
       </div>
     </WorkerPortalLayout>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-    </svg>
   );
 }
 

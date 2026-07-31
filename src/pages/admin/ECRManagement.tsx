@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { displayableEmail } from "@/lib/workerAuthEmail";
 import {
   Dialog,
   DialogContent,
@@ -113,7 +114,7 @@ export default function ECRManagement() {
         return {
           user_id: wp.user_id,
           full_name: profile?.full_name || null,
-          email: profile?.email || '',
+          email: displayableEmail(profile?.email) || '',
           nationality: wp.nationality,
           ecr_status: wp.ecr_status,
           ecr_category: wp.ecr_category,
@@ -190,7 +191,7 @@ export default function ECRManagement() {
   const filteredWorkers = workers.filter(worker => {
     const matchesSearch = 
       worker.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      worker.email.toLowerCase().includes(searchTerm.toLowerCase());
+      worker.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     if (statusFilter === "all") return matchesSearch;
     if (statusFilter === "not_checked") return matchesSearch && (!worker.ecr_status || worker.ecr_status === 'not_checked');
@@ -342,7 +343,7 @@ export default function ECRManagement() {
                       <TableCell>
                         <div>
                           <p className="font-medium">{worker.full_name || 'Unknown'}</p>
-                          <p className="text-sm text-muted-foreground">{worker.email}</p>
+                          <p className="text-sm text-muted-foreground">{worker.email || 'No contact email yet'}</p>
                         </div>
                       </TableCell>
                       <TableCell>{worker.nationality || 'Not specified'}</TableCell>
@@ -400,7 +401,7 @@ export default function ECRManagement() {
               <div className="space-y-4 py-4">
                 <div className="bg-muted/50 rounded-lg p-4">
                   <p className="font-medium">{selectedWorker?.full_name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedWorker?.email}</p>
+                  <p className="text-sm text-muted-foreground">{selectedWorker?.email || 'Not provided yet'}</p>
                   <p className="text-sm text-muted-foreground">Nationality: {selectedWorker?.nationality}</p>
                 </div>
 

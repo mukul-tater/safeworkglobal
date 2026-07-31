@@ -1,4 +1,8 @@
-/** Auth email used when worker signs up with mobile only (no email on signup form). */
+/**
+ * Internal Auth login key for mobile-only signup.
+ * Supabase email/password requires an email; workers verify via Firebase OTP then
+ * sign in with mobile+password. This address is never a contact email — hide it in UI.
+ */
 export const WORKER_MOBILE_AUTH_EMAIL_DOMAIN = 'workers.safeworkglobal.app';
 
 /** Auth email used when eMitra partner signs up with mobile only. */

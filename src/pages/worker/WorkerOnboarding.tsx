@@ -27,6 +27,7 @@ import {
   workerOnboardingStep1Schema,
   workerOnboardingStep2Schema,
 } from '@/lib/validations/onboarding';
+import { displayableEmail } from '@/lib/workerAuthEmail';
 
 const STEPS = [
   { id: 1, title: 'Basic Details', icon: MapPin },
@@ -117,7 +118,7 @@ export default function WorkerOnboarding() {
     if (profile) {
       setFullName((prev) => prev || profile.full_name || '');
       setMobile((prev) => prev || profile.phone || '');
-      setEmail((prev) => prev || profile.email || '');
+      setEmail((prev) => prev || displayableEmail(profile.email) || '');
     }
   }, [profile]);
 

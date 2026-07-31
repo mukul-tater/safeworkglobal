@@ -61,7 +61,7 @@ export async function saveEssentials(
 ): Promise<WorkerVerification> {
   const email = input.email.trim().toLowerCase();
   if (!email.includes('@') || isWorkerMobileAuthEmail(email)) {
-    throw new Error('Connect a real email (Gmail) before continuing. Temporary mobile login emails are not allowed.');
+    throw new Error('Enter a real email before continuing. Temporary mobile login emails are not allowed.');
   }
 
   const row = await getOrCreateVerification(userId);

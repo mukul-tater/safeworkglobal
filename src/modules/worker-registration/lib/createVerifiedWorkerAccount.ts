@@ -143,12 +143,14 @@ export async function createVerifiedWorkerAccount(
       } as any);
     }
 
+    // Clear synthetic auth email copied by handle_new_user — contact email is collected later.
     const { error: profileErr } = await supabase
       .from('profiles')
       .update({
         full_name: input.fullName.trim(),
         phone: digits,
         mobile_verified: true,
+        email: null,
       })
       .eq('id', user.id);
     if (profileErr) throw new Error(profileErr.message);
