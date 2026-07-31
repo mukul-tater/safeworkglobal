@@ -3284,6 +3284,78 @@ export type Database = {
           },
         ]
       }
+      worker_assessment_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          provider: string | null
+          provider_ref: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          provider?: string | null
+          provider_ref?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          provider?: string | null
+          provider_ref?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      worker_bonds: {
+        Row: {
+          created_at: string
+          id: string
+          method: string
+          notes: string | null
+          stamp_doc_url: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          video_proof_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          method: string
+          notes?: string | null
+          stamp_doc_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          video_proof_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          stamp_doc_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          video_proof_url?: string | null
+        }
+        Relationships: []
+      }
       worker_certifications: {
         Row: {
           certification_name: string
@@ -3674,6 +3746,80 @@ export type Database = {
           },
         ]
       }
+      worker_skill_quiz_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          expected_answer: boolean
+          id: string
+          image_url: string | null
+          question: string
+          question_hi: string | null
+          skill_code: string
+          sort_order: number
+          youtube_url: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          expected_answer?: boolean
+          id?: string
+          image_url?: string | null
+          question: string
+          question_hi?: string | null
+          skill_code: string
+          sort_order?: number
+          youtube_url?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          expected_answer?: boolean
+          id?: string
+          image_url?: string | null
+          question?: string
+          question_hi?: string | null
+          skill_code?: string
+          sort_order?: number
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      worker_skill_quiz_responses: {
+        Row: {
+          answer: boolean
+          created_at: string
+          id: string
+          is_correct: boolean
+          quiz_item_id: string
+          user_id: string
+        }
+        Insert: {
+          answer: boolean
+          created_at?: string
+          id?: string
+          is_correct: boolean
+          quiz_item_id: string
+          user_id: string
+        }
+        Update: {
+          answer?: boolean
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          quiz_item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_skill_quiz_responses_quiz_item_id_fkey"
+            columns: ["quiz_item_id"]
+            isOneToOne: false
+            referencedRelation: "worker_skill_quiz_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worker_skills: {
         Row: {
           created_at: string | null
@@ -3755,6 +3901,147 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      worker_verification: {
+        Row: {
+          bond_status: string | null
+          city: string | null
+          created_at: string
+          education_level: string | null
+          email: string | null
+          essentials_completed_at: string | null
+          gcc_ready_at: string | null
+          id: string
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_score: number | null
+          media_submitted_at: string | null
+          medical_result_url: string | null
+          medical_status: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_status: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          stage: string
+          state: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bond_status?: string | null
+          city?: string | null
+          created_at?: string
+          education_level?: string | null
+          email?: string | null
+          essentials_completed_at?: string | null
+          gcc_ready_at?: string | null
+          id?: string
+          interview_notes?: string | null
+          interview_rated_at?: string | null
+          interview_score?: number | null
+          media_submitted_at?: string | null
+          medical_result_url?: string | null
+          medical_status?: string | null
+          paid_at?: string | null
+          payment_amount?: number | null
+          payment_status?: string | null
+          primary_skill?: string | null
+          quiz_completed_at?: string | null
+          quiz_score?: number | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          stage?: string
+          state?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          trade_test_required?: boolean | null
+          trade_test_result_url?: string | null
+          trade_test_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bond_status?: string | null
+          city?: string | null
+          created_at?: string
+          education_level?: string | null
+          email?: string | null
+          essentials_completed_at?: string | null
+          gcc_ready_at?: string | null
+          id?: string
+          interview_notes?: string | null
+          interview_rated_at?: string | null
+          interview_score?: number | null
+          media_submitted_at?: string | null
+          medical_result_url?: string | null
+          medical_status?: string | null
+          paid_at?: string | null
+          payment_amount?: number | null
+          payment_status?: string | null
+          primary_skill?: string | null
+          quiz_completed_at?: string | null
+          quiz_score?: number | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          stage?: string
+          state?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          trade_test_required?: boolean | null
+          trade_test_result_url?: string | null
+          trade_test_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      worker_verification_interviews: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_link: string | null
+          notes: string | null
+          rated_by: string | null
+          scheduled_at: string | null
+          score: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_link?: string | null
+          notes?: string | null
+          rated_by?: string | null
+          scheduled_at?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_link?: string | null
+          notes?: string | null
+          rated_by?: string | null
+          scheduled_at?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       worker_videos: {
         Row: {
