@@ -24,8 +24,16 @@ declare global {
   }
 }
 
+/** Web OAuth client ID is public (not a secret). Fallback keeps Lovable builds working
+ *  when VITE_* cannot be stored in Cloud Secrets. */
+const DEFAULT_GOOGLE_WEB_CLIENT_ID =
+  '616979591324-6kdq763s8r18jea7a3k8p80e3cku603e.apps.googleusercontent.com';
+
 function googleClientId(): string {
-  return (import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID as string | undefined)?.trim() || '';
+  return (
+    (import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID as string | undefined)?.trim() ||
+    DEFAULT_GOOGLE_WEB_CLIENT_ID
+  );
 }
 
 /** Google (or other real) email from linked OAuth identities — ignores synthetic mobile auth emails. */
