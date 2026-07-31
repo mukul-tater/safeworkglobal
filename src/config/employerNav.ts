@@ -36,7 +36,7 @@ export const employerNavGroups: NavGroup[] = [
       { path: "/employer/formalities", icon: FileCheck, label: "Formalities" },
       { path: "/employer/contracts", icon: FileSignature, label: "Contracts" },
       { path: "/employer/contract-history", icon: History, label: "Contract History" },
-      { path: "/employer/escrow", icon: Shield, label: "Payments" },
+      { path: "/employer/escrow", icon: Shield, label: "Payments (soon)" },
     ],
   },
   {

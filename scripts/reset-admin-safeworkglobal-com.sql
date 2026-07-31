@@ -1,15 +1,20 @@
 -- Reset / ensure admin@safeworkglobal.com for /admin/login
--- Email:    admin@safeworkglobal.com
--- Password: Admin@2024!
 --
--- Run in Supabase Dashboard → SQL Editor (project etpiadoqryvtlpmiuxia).
+-- Password is NOT stored in this repo. Before running:
+--   select set_config('app.admin_bootstrap_password', 'YOUR_STRONG_PASSWORD', false);
+-- Then run this script in Supabase / Lovable SQL Editor.
 
 DO $$
 DECLARE
   v_uid uuid;
   v_email text := 'admin@safeworkglobal.com';
-  v_pass text := 'Admin@2024!';
+  v_pass text := current_setting('app.admin_bootstrap_password', true);
 BEGIN
+  IF v_pass IS NULL OR length(v_pass) < 8 THEN
+    RAISE EXCEPTION
+      'Set a strong password first: select set_config(''app.admin_bootstrap_password'', ''YOUR_STRONG_PASSWORD'', false);';
+  END IF;
+
   SELECT id INTO v_uid FROM auth.users WHERE lower(email) = v_email;
 
   IF v_uid IS NULL THEN
@@ -87,7 +92,6 @@ BEGIN
   ON CONFLICT DO NOTHING;
 END $$;
 
--- Confirm
 SELECT id, email, email_confirmed_at IS NOT NULL AS confirmed
 FROM auth.users
 WHERE lower(email) = 'admin@safeworkglobal.com';

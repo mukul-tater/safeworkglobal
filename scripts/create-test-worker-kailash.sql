@@ -1,6 +1,6 @@
 -- Test worker for portal / GCC journey QA
 -- Email:    kailash@safeworkglobal.com
--- Password: Worker@2024!
+-- Password: set via app.admin_bootstrap_password (session var)
 --
 -- Run in Supabase Dashboard → SQL Editor (project etpiadoqryvtlpmiuxia).
 -- Note: this sets the account to role "worker" (removes admin/partner/employer
@@ -10,8 +10,13 @@ DO $$
 DECLARE
   v_uid uuid;
   v_email text := 'kailash@safeworkglobal.com';
-  v_pass text := 'Worker@2024!';
+  v_pass text := current_setting('app.admin_bootstrap_password', true);
 BEGIN
+  IF v_pass IS NULL OR length(v_pass) < 8 THEN
+    RAISE EXCEPTION
+      'Set password first: select set_config(''app.admin_bootstrap_password'', ''YOUR_PASSWORD'', false);';
+  END IF;
+
   SELECT id INTO v_uid FROM auth.users WHERE lower(email) = v_email;
 
   IF v_uid IS NULL THEN

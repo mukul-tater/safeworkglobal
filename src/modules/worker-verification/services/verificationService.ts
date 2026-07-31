@@ -270,6 +270,17 @@ export async function recordInterviewScore(
 }
 
 /**
+ * Pilot path until Razorpay is live — calls SECURITY DEFINER RPC.
+ * Advances awaiting_payment → trade_test | medical with provider pilot_waive.
+ */
+export async function waiveAssessmentPaymentPilot(userId: string): Promise<WorkerVerification> {
+  const { data, error } = await supabase.rpc('waive_assessment_payment_pilot');
+  if (error) throw new Error(error.message);
+  const next = (data || (await getOrCreateVerification(userId))) as WorkerVerification;
+  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
+}
+
+/**
  * Admin only until Razorpay webhook verification ships.
  * Workers cannot mark paid (DB trigger + payment RLS).
  */

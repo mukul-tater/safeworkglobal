@@ -30,6 +30,8 @@ backend/data/
 credentials.json
 secrets.json
 .secrets
+docs/admin-login-credentials.md
+**/local-credentials*.md
 
 # Cursor MCP (may contain client IDs / local paths)
 .cursor/mcp.json

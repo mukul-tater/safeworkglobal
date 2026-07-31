@@ -45,6 +45,7 @@ import {
   submitMedicalResult,
   submitQuiz,
   submitTradeTestResult,
+  waiveAssessmentPaymentPilot,
 } from '@/modules/worker-verification/services/verificationService';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -1011,10 +1012,36 @@ export default function WorkerVerificationPage() {
           <WaitingCard
             icon={CreditCard}
             title="Payment"
-            body={`Assessment fee: ₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')}. Online payment opens once Razorpay is approved. An admin will confirm payment and unlock the next step${
-              tradeNeeded ? ' (physical trade test, then medical).' : ' (medical clearance).'
-            }`}
-          />
+            body={`Assessment fee: ₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')}. Razorpay checkout is not live yet — for this pilot you can continue with the fee waived. An admin can also confirm payment in the GCC queue.`}
+          >
+            <Button
+              disabled={saving}
+              onClick={async () => {
+                if (!user?.id) return;
+                setSaving(true);
+                try {
+                  const next = await waiveAssessmentPaymentPilot(user.id);
+                  setRow({
+                    ...next,
+                    stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                  });
+                  notifyVerificationUpdated();
+                  toast.success(
+                    next.trade_test_required
+                      ? 'Fee waived for pilot — continue to trade test'
+                      : 'Fee waived for pilot — continue to medical',
+                  );
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'Could not continue');
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CreditCard className="h-4 w-4 mr-1" />}
+              Continue (pilot — fee waived)
+            </Button>
+          </WaitingCard>
         )}
 
         {(stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (

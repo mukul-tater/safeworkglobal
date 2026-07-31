@@ -1,15 +1,21 @@
 -- Ensure demo admin can sign in at /admin/login
--- Email:    admin@safeworkglobal.demo
--- Password: Admin@2024!
+-- Email: admin@safeworkglobal.demo
 --
--- Run once in Supabase Dashboard → SQL Editor (same project as the app).
+-- Password is NOT stored in this repo. Before running, set it in the SQL session:
+--   select set_config('app.admin_bootstrap_password', 'YOUR_STRONG_PASSWORD', false);
+-- Then run this script in Supabase / Lovable SQL Editor.
 
 DO $$
 DECLARE
   v_uid uuid;
   v_email text := 'admin@safeworkglobal.demo';
-  v_pass text := 'Admin@2024!';
+  v_pass text := current_setting('app.admin_bootstrap_password', true);
 BEGIN
+  IF v_pass IS NULL OR length(v_pass) < 8 THEN
+    RAISE EXCEPTION
+      'Set a strong password first: select set_config(''app.admin_bootstrap_password'', ''YOUR_STRONG_PASSWORD'', false);';
+  END IF;
+
   SELECT id INTO v_uid FROM auth.users WHERE lower(email) = v_email;
 
   IF v_uid IS NULL THEN
