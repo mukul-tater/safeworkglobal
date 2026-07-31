@@ -330,12 +330,42 @@ export async function markPaymentPaid(
   return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
 }
 
+/** Worker confirms auto-assigned trade test centre (by home state). */
+export async function bookTradeTestCenter(
+  userId: string,
+  input: {
+    centerId: string;
+    centerName: string;
+    reportingWindow: string;
+  },
+): Promise<WorkerVerification> {
+  const row = await getOrCreateVerification(userId);
+  const { data, error } = await supabase
+    .from('worker_verification')
+    .update({
+      trade_test_center_id: input.centerId,
+      trade_test_center_name: input.centerName,
+      trade_test_reporting_window: input.reportingWindow,
+      trade_test_booked_at: new Date().toISOString(),
+      trade_test_status: row.trade_test_status === 'passed' ? 'passed' : 'scheduled',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', row.id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as WorkerVerification;
+}
+
 /** Worker uploads result; admin must pass to advance. */
 export async function submitTradeTestResult(
   userId: string,
   resultUrl: string,
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
+  if (!row.trade_test_center_id) {
+    throw new Error('Confirm your trade test centre before uploading the result');
+  }
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
@@ -527,6 +557,10 @@ export async function resetVerificationJourney(userId: string): Promise<WorkerVe
       medical_status: 'pending',
       trade_test_status: 'pending',
       trade_test_result_url: null,
+      trade_test_center_id: null,
+      trade_test_center_name: null,
+      trade_test_reporting_window: null,
+      trade_test_booked_at: null,
       medical_result_url: null,
       razorpay_payment_id: null,
       razorpay_order_id: null,

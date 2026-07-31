@@ -3,65 +3,72 @@ export type TradeTestCenter = {
   name: string;
   city: string;
   state: string;
-  partner: string;
 };
 
-/** SafeWork Global verified physical trade test centers (demo / marketing list). */
+/** Fixed morning reporting window for physical trade tests. */
+export const TRADE_TEST_REPORTING_WINDOW = '9:00 AM – 10:00 AM';
+export const TRADE_TEST_REPORTING_WINDOW_HINT =
+  'Report at the centre between 9:00 AM and 10:00 AM on your test day.';
+
+/**
+ * Active booking hubs — one primary centre per state.
+ * e.g. Rajasthan workers are assigned Jaipur only.
+ */
 export const TRADE_TEST_CENTERS: TradeTestCenter[] = [
   {
-    id: "jaipur-bsl",
-    name: "BSL Skill Assessment Centre — Jaipur",
-    city: "Jaipur",
-    state: "Rajasthan",
-    partner: "BSL Group",
+    id: 'jaipur',
+    name: 'Trade Test Center — Jaipur',
+    city: 'Jaipur',
+    state: 'Rajasthan',
   },
   {
-    id: "jodhpur-bsl",
-    name: "BSL Skill Assessment Centre — Jodhpur",
-    city: "Jodhpur",
-    state: "Rajasthan",
-    partner: "BSL Group",
+    id: 'delhi',
+    name: 'Trade Test Center — Delhi',
+    city: 'Delhi',
+    state: 'Delhi',
   },
   {
-    id: "udaipur-bsl",
-    name: "BSL Skill Assessment Centre — Udaipur",
-    city: "Udaipur",
-    state: "Rajasthan",
-    partner: "BSL Group",
+    id: 'mumbai',
+    name: 'Trade Test Center — Mumbai',
+    city: 'Mumbai',
+    state: 'Maharashtra',
   },
   {
-    id: "delhi-ncr",
-    name: "SafeWork Verified Trade Test — Delhi NCR",
-    city: "Gurugram",
-    state: "Haryana",
-    partner: "BSL Group",
+    id: 'hyderabad',
+    name: 'Trade Test Center — Hyderabad',
+    city: 'Hyderabad',
+    state: 'Telangana',
   },
   {
-    id: "mumbai",
-    name: "SafeWork Verified Trade Test — Mumbai",
-    city: "Mumbai",
-    state: "Maharashtra",
-    partner: "BSL Group",
+    id: 'lucknow',
+    name: 'Trade Test Center — Lucknow',
+    city: 'Lucknow',
+    state: 'Uttar Pradesh',
   },
   {
-    id: "kochi",
-    name: "SafeWork Verified Trade Test — Kochi",
-    city: "Kochi",
-    state: "Kerala",
-    partner: "BSL Group",
-  },
-  {
-    id: "hyderabad",
-    name: "SafeWork Verified Trade Test — Hyderabad",
-    city: "Hyderabad",
-    state: "Telangana",
-    partner: "BSL Group",
-  },
-  {
-    id: "lucknow",
-    name: "SafeWork Verified Trade Test — Lucknow",
-    city: "Lucknow",
-    state: "Uttar Pradesh",
-    partner: "BSL Group",
+    id: 'kochi',
+    name: 'Trade Test Center — Kochi',
+    city: 'Kochi',
+    state: 'Kerala',
   },
 ];
+
+function normalizeState(state: string | null | undefined): string {
+  return (state || '').trim().toLowerCase();
+}
+
+/** Centres available for a worker's home state (auto-generated options). */
+export function getTradeTestCentersForState(
+  state: string | null | undefined,
+): TradeTestCenter[] {
+  const key = normalizeState(state);
+  if (!key) return [];
+  return TRADE_TEST_CENTERS.filter((c) => normalizeState(c.state) === key);
+}
+
+export function getTradeTestCenterById(
+  id: string | null | undefined,
+): TradeTestCenter | undefined {
+  if (!id) return undefined;
+  return TRADE_TEST_CENTERS.find((c) => c.id === id);
+}

@@ -37,6 +37,9 @@ type Row = {
   trade_test_required: boolean | null;
   trade_test_status: string | null;
   trade_test_result_url: string | null;
+  trade_test_center_name: string | null;
+  trade_test_reporting_window: string | null;
+  state: string | null;
   medical_status: string | null;
   medical_result_url: string | null;
   bond_status: string | null;
@@ -221,6 +224,13 @@ export default function AdminVerificationQueue() {
 
               {tab === 'trade_test' && (
                 <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    {r.state ? <>State: {r.state} · </> : null}
+                    Centre: {r.trade_test_center_name || 'Not confirmed'}
+                    {r.trade_test_reporting_window
+                      ? ` · Report ${r.trade_test_reporting_window}`
+                      : ''}
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     Status: {r.trade_test_status || 'pending'}
                     {r.trade_test_result_url ? (

@@ -97,7 +97,7 @@ const STEPS: JourneyStep[] = [
     title: "Payment",
     shortTitle: "Payment",
     description:
-      "Pay the fee securely to unlock booking at a SafeWork verified center.",
+      "Pay the fee securely to unlock booking at a trade test center near you.",
     icon: CreditCard,
     bullets: [
       "Secure online payment",
@@ -111,7 +111,7 @@ const STEPS: JourneyStep[] = [
     number: 6,
     title: "Physical Trade Test",
     shortTitle: "Physical Trade Test",
-    description: "Practical assessment at your nearest SafeWork verified trade test center.",
+    description: "Practical assessment at your nearest trade test center.",
     icon: Wrench,
     bullets: [
       "Practical assessment",
@@ -157,7 +157,7 @@ function CentersList() {
               {center.name}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {center.city}, {center.state} · {center.partner}
+              {center.city}, {center.state}
             </p>
           </div>
         </motion.li>
@@ -175,7 +175,7 @@ function TradeTestCentersInfo() {
           <button
             type="button"
             className="hidden sm:inline-flex items-center justify-center rounded-full p-1 text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-            aria-label="SafeWork Global verified trade test centers"
+            aria-label="Trade test center locations"
           >
             <Info className="h-4 w-4" />
           </button>
@@ -197,10 +197,10 @@ function TradeTestCentersInfo() {
               </div>
               <div>
                 <p className="text-sm font-bold font-heading text-foreground">
-                  SafeWork Global verified trade test centers
+                  Trade test centers
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Book your physical trade test at a nearest partner centre.
+                  Book your physical trade test at a center near you.
                 </p>
               </div>
             </div>
@@ -215,7 +215,7 @@ function TradeTestCentersInfo() {
           <button
             type="button"
             className="inline-flex sm:hidden items-center justify-center rounded-full p-1 text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="SafeWork Global verified trade test centers"
+            aria-label="Trade test center locations"
           >
             <Info className="h-4 w-4" />
           </button>
@@ -223,10 +223,10 @@ function TradeTestCentersInfo() {
         <DialogContent className="max-w-md rounded-2xl sm:rounded-2xl">
           <DialogHeader>
             <DialogTitle className="font-heading">
-              Verified trade test centers
+              Trade test centers
             </DialogTitle>
             <DialogDescription>
-              SafeWork Global&apos;s verified centres for your physical trade test.
+              Physical trade test locations — pick the city closest to you.
             </DialogDescription>
           </DialogHeader>
           <CentersList />
@@ -326,7 +326,7 @@ function StepDetail({
         {isTradeTest && (
           <p className="text-xs text-muted-foreground mb-5 flex items-center gap-1.5">
             <Info className="h-3.5 w-3.5 text-primary shrink-0" />
-            Hover or tap the info icon to see SafeWork Global&apos;s verified trade test centers.
+            Hover or tap the info icon to see trade test center locations.
           </p>
         )}
 

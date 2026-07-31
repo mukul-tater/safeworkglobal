@@ -45,9 +45,15 @@ import {
   submitBond,
   submitMedicalResult,
   submitQuiz,
+  bookTradeTestCenter,
   submitTradeTestResult,
   waiveAssessmentPaymentPilot,
 } from '@/modules/worker-verification/services/verificationService';
+import {
+  TRADE_TEST_REPORTING_WINDOW,
+  TRADE_TEST_REPORTING_WINDOW_HINT,
+  getTradeTestCentersForState,
+} from '@/data/tradeTestCenters';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -109,6 +115,7 @@ export default function WorkerVerificationPage() {
   const [kycDone, setKycDone] = useState(false);
   const [kycUploading, setKycUploading] = useState(false);
   const [tradeResultFile, setTradeResultFile] = useState<File | null>(null);
+  const [selectedTradeCenterId, setSelectedTradeCenterId] = useState('');
   const [medicalResultFile, setMedicalResultFile] = useState<File | null>(null);
 
   const load = useCallback(async () => {
@@ -128,6 +135,11 @@ export default function WorkerVerificationPage() {
       setState(v.state || '');
       setEducation(v.education_level || '');
       setPrimarySkill(v.primary_skill || '');
+      const centersForState = getTradeTestCentersForState(v.state);
+      setSelectedTradeCenterId(
+        v.trade_test_center_id
+        || (centersForState.length === 1 ? centersForState[0].id : centersForState[0]?.id || ''),
+      );
 
       const { data: wp } = await supabase
         .from('worker_profiles')
@@ -1087,7 +1099,10 @@ export default function WorkerVerificationPage() {
           </WaitingCard>
         )}
 
-        {!viewingCompletedStep && (stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (
+        {!viewingCompletedStep && (stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (() => {
+          const centers = getTradeTestCentersForState(row.state);
+          const centerConfirmed = Boolean(row.trade_test_center_id);
+          return (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
@@ -1098,18 +1113,111 @@ export default function WorkerVerificationPage() {
                   <h2 className="font-semibold">Test 3 — Physical trade test</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Required for <span className="font-medium text-foreground">{row.primary_skill}</span>.
-                    Complete the practical test at an approved centre, then upload your result (image or PDF).
+                    Your centre is assigned from your home state
+                    {row.state ? (
+                      <> (<span className="font-medium text-foreground">{row.state}</span>)</>
+                    ) : null}
+                    . Confirm the centre, attend in the morning window, then upload your result.
                   </p>
                 </div>
               </div>
+
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="gap-1">
+                    <Calendar className="h-3 w-3" />
+                    Reporting time: {TRADE_TEST_REPORTING_WINDOW}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">{TRADE_TEST_REPORTING_WINDOW_HINT}</p>
+
+                {centers.length === 0 ? (
+                  <p className="text-sm text-destructive">
+                    No trade test centre is mapped for {row.state || 'your state'} yet.
+                    Update your state in Essentials or contact support.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Available centre{centers.length > 1 ? 's' : ''} for your state</Label>
+                    <RadioGroup
+                      value={selectedTradeCenterId}
+                      onValueChange={setSelectedTradeCenterId}
+                      disabled={saving || (centerConfirmed && Boolean(row.trade_test_result_url))}
+                      className="space-y-2"
+                    >
+                      {centers.map((c) => (
+                        <label
+                          key={c.id}
+                          className={cn(
+                            'flex items-start gap-3 rounded-lg border p-3 cursor-pointer',
+                            selectedTradeCenterId === c.id && 'border-primary bg-primary/5',
+                          )}
+                        >
+                          <RadioGroupItem value={c.id} id={`tt-center-${c.id}`} className="mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium">{c.name}</p>
+                            <p className="text-xs text-muted-foreground">{c.city}, {c.state}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </RadioGroup>
+                  </div>
+                )}
+
+                {centerConfirmed ? (
+                  <p className="text-sm text-success">
+                    ✓ Centre confirmed: {row.trade_test_center_name}
+                    {row.trade_test_reporting_window
+                      ? ` · Report ${row.trade_test_reporting_window}`
+                      : ''}
+                  </p>
+                ) : (
+                  <Button
+                    disabled={saving || !selectedTradeCenterId || centers.length === 0}
+                    onClick={async () => {
+                      if (!user?.id) return;
+                      const center = centers.find((c) => c.id === selectedTradeCenterId);
+                      if (!center) {
+                        toast.error('Select a trade test centre');
+                        return;
+                      }
+                      setSaving(true);
+                      try {
+                        const next = await bookTradeTestCenter(user.id, {
+                          centerId: center.id,
+                          centerName: center.name,
+                          reportingWindow: TRADE_TEST_REPORTING_WINDOW,
+                        });
+                        setRow({
+                          ...next,
+                          stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                        });
+                        notifyVerificationUpdated();
+                        toast.success(`Centre confirmed — report ${TRADE_TEST_REPORTING_WINDOW}`);
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : 'Could not confirm centre');
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                    Confirm trade test centre
+                  </Button>
+                )}
+              </div>
+
               <div className="space-y-1.5">
                 <Label>Trade test result (image or PDF) *</Label>
                 <Input
                   type="file"
                   accept="image/*,.pdf,application/pdf"
-                  disabled={saving}
+                  disabled={saving || !centerConfirmed}
                   onChange={(e) => setTradeResultFile(e.target.files?.[0] || null)}
                 />
+                {!centerConfirmed && (
+                  <p className="text-xs text-muted-foreground">Confirm your centre before uploading.</p>
+                )}
                 {tradeResultFile && (
                   <p className="text-xs text-success">✓ {tradeResultFile.name}</p>
                 )}
@@ -1118,7 +1226,7 @@ export default function WorkerVerificationPage() {
                 )}
               </div>
               <Button
-                disabled={saving || (!tradeResultFile && !row.trade_test_result_url)}
+                disabled={saving || !centerConfirmed || (!tradeResultFile && !row.trade_test_result_url)}
                 onClick={async () => {
                   if (!user?.id) return;
                   if (!tradeResultFile && !row.trade_test_result_url) {
@@ -1144,7 +1252,10 @@ export default function WorkerVerificationPage() {
                       url = signed.signedUrl;
                     }
                     const next = await submitTradeTestResult(user.id, url);
-                    setRow(next);
+                    setRow({
+                      ...next,
+                      stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                    });
                     setTradeResultFile(null);
                     notifyVerificationUpdated();
                     toast.success('Trade test result uploaded — waiting for admin review');
@@ -1160,7 +1271,8 @@ export default function WorkerVerificationPage() {
               </Button>
             </CardContent>
           </Card>
-        )}
+          );
+        })()}
 
         {!viewingCompletedStep && stage === 'medical' && (
           <Card>

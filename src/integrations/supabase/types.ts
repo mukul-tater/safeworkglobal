@@ -3930,6 +3930,10 @@ export type Database = {
           state: string | null
           terms_accepted_at: string | null
           terms_version: string | null
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_reporting_window: string | null
           trade_test_required: boolean | null
           trade_test_result_url: string | null
           trade_test_status: string | null
@@ -3963,6 +3967,10 @@ export type Database = {
           state?: string | null
           terms_accepted_at?: string | null
           terms_version?: string | null
+          trade_test_booked_at?: string | null
+          trade_test_center_id?: string | null
+          trade_test_center_name?: string | null
+          trade_test_reporting_window?: string | null
           trade_test_required?: boolean | null
           trade_test_result_url?: string | null
           trade_test_status?: string | null
@@ -3996,6 +4004,10 @@ export type Database = {
           state?: string | null
           terms_accepted_at?: string | null
           terms_version?: string | null
+          trade_test_booked_at?: string | null
+          trade_test_center_id?: string | null
+          trade_test_center_name?: string | null
+          trade_test_reporting_window?: string | null
           trade_test_required?: boolean | null
           trade_test_result_url?: string | null
           trade_test_status?: string | null
