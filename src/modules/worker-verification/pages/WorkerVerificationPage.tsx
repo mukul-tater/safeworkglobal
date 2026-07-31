@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import WorkerPortalLayout from '@/components/layout/WorkerPortalLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,12 +21,10 @@ import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
 import { displayableEmail, isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import {
-  clearPendingGmailLink,
   getGoogleEmailFromUser,
-  hasPendingGmailLink,
   isGoogleIdentityLinked,
+  persistConnectedGmail,
   startGoogleEmailLink,
-  syncLinkedGoogleEmail,
 } from '@/modules/worker-verification/lib/connectGoogleEmail';
 import {
   ASSESSMENT_FEE_INR,
@@ -81,11 +79,11 @@ function notifyVerificationUpdated() {
 export default function WorkerVerificationPage() {
   const { user, profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [googleLinking, setGoogleLinking] = useState(false);
+  const [kycUploading, setKycUploading] = useState(false);
   const [row, setRow] = useState<WorkerVerification | null>(null);
 
   const [email, setEmail] = useState('');
@@ -201,46 +199,6 @@ export default function WorkerVerificationPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  // After Google OAuth linkIdentity redirect, persist Gmail onto the worker profile.
-  useEffect(() => {
-    if (!user?.id) return;
-    const fromQuery = searchParams.get('connect_email') === '1';
-    const pending = hasPendingGmailLink();
-    if (!fromQuery && !pending) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const synced = await syncLinkedGoogleEmail(user.id);
-        if (cancelled) return;
-        clearPendingGmailLink();
-        if (synced) {
-          setEmail(synced);
-          await refreshProfile();
-          toast.success(`Gmail connected: ${synced}`);
-        } else {
-          toast.error('Google connect finished, but no Gmail address was found. Try again.');
-        }
-      } catch (e) {
-        if (!cancelled) {
-          clearPendingGmailLink();
-          toast.error(e instanceof Error ? e.message : 'Could not save Gmail');
-        }
-      } finally {
-        if (fromQuery) {
-          const next = new URLSearchParams(searchParams);
-          next.delete('connect_email');
-          setSearchParams(next, { replace: true });
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on return from OAuth
-  }, [user?.id]);
 
   const rawStage: VerificationStage = row
     ? normalizeVerificationStage(row.stage, row.trade_test_required)
@@ -365,9 +323,14 @@ export default function WorkerVerificationPage() {
     if (!user?.id) return;
     setGoogleLinking(true);
     try {
-      await startGoogleEmailLink(`${window.location.origin}/worker/journey?connect_email=1`);
+      const gmail = await startGoogleEmailLink();
+      const saved = await persistConnectedGmail(user.id, gmail);
+      setEmail(saved);
+      await refreshProfile();
+      toast.success(`Gmail connected: ${saved}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not connect Gmail');
+    } finally {
       setGoogleLinking(false);
     }
   };

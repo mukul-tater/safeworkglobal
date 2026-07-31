@@ -1,8 +1,32 @@
 import type { User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 
-const PENDING_GMAIL_LINK_KEY = 'pending_worker_gmail_link';
+const supabase: any = supabaseTyped;
+
+const GSI_SCRIPT = 'https://accounts.google.com/gsi/client';
+const CONNECTED_GMAIL_KEY = 'worker_connected_gmail';
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: {
+            client_id: string;
+            scope: string;
+            callback: (response: { access_token?: string; error?: string; error_description?: string }) => void;
+            error_callback?: (error: { type?: string; message?: string }) => void;
+          }) => { requestAccessToken: (opts?: { prompt?: string }) => void };
+        };
+      };
+    };
+  }
+}
+
+function googleClientId(): string {
+  return (import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID as string | undefined)?.trim() || '';
+}
 
 /** Google (or other real) email from linked OAuth identities — ignores synthetic mobile auth emails. */
 export function getGoogleEmailFromUser(user: User | null | undefined): string | null {
@@ -18,82 +42,147 @@ export function getGoogleEmailFromUser(user: User | null | undefined): string | 
     return user.email.trim().toLowerCase();
   }
 
+  const stored = sessionStorage.getItem(CONNECTED_GMAIL_KEY)?.trim();
+  if (stored && !isWorkerMobileAuthEmail(stored)) {
+    return stored.toLowerCase();
+  }
+
   return null;
 }
 
 export function isGoogleIdentityLinked(user: User | null | undefined): boolean {
-  return !!user?.identities?.some((i) => i.provider === 'google');
+  if (user?.identities?.some((i) => i.provider === 'google')) return true;
+  const stored = sessionStorage.getItem(CONNECTED_GMAIL_KEY)?.trim();
+  return !!(stored && !isWorkerMobileAuthEmail(stored));
 }
 
-export function markPendingGmailLink() {
-  sessionStorage.setItem(PENDING_GMAIL_LINK_KEY, '1');
+function loadGsiScript(): Promise<void> {
+  if (window.google?.accounts?.oauth2) return Promise.resolve();
+
+  const existing = document.querySelector<HTMLScriptElement>(`script[src="${GSI_SCRIPT}"]`);
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Failed to load Google sign-in')), {
+        once: true,
+      });
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = GSI_SCRIPT;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Google sign-in'));
+    document.head.appendChild(script);
+  });
 }
 
-export function hasPendingGmailLink(): boolean {
-  return sessionStorage.getItem(PENDING_GMAIL_LINK_KEY) === '1';
-}
-
-export function clearPendingGmailLink() {
-  sessionStorage.removeItem(PENDING_GMAIL_LINK_KEY);
+async function fetchGoogleEmail(accessToken: string): Promise<string> {
+  const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    throw new Error('Could not read Gmail from Google. Try again.');
+  }
+  const data = (await res.json()) as { email?: string; email_verified?: boolean };
+  const email = data.email?.trim().toLowerCase();
+  if (!email || !email.includes('@') || isWorkerMobileAuthEmail(email)) {
+    throw new Error('Google did not return a valid Gmail address.');
+  }
+  return email;
 }
 
 /**
- * Start Supabase manual identity linking (Google → current logged-in worker).
- * Requires Auth → Providers → Google + Manual linking enabled in the Supabase project.
+ * Connect Gmail via Google Identity Services (OAuth token popup).
+ * Does NOT use supabase.auth.linkIdentity — works without Manual linking.
+ * Keeps the current phone-auth session; only saves email on profiles.
  */
-export async function startGoogleEmailLink(redirectTo: string): Promise<void> {
-  markPendingGmailLink();
+export async function startGoogleEmailLink(_redirectTo?: string): Promise<string> {
+  const clientId = googleClientId();
+  if (!clientId) {
+    throw new Error(
+      'Google Client ID is not configured. Set VITE_GOOGLE_OAUTH_CLIENT_ID in .env (Web client ID from Google Cloud).',
+    );
+  }
 
-  const { data, error } = await supabase.auth.linkIdentity({
-    provider: 'google',
-    options: {
-      redirectTo,
-      queryParams: {
-        prompt: 'select_account',
-      },
-    },
+  await loadGsiScript();
+  if (!window.google?.accounts?.oauth2) {
+    throw new Error('Google sign-in failed to initialize. Refresh and try again.');
+  }
+
+  const accessToken = await new Promise<string>((resolve, reject) => {
+    try {
+      const client = window.google!.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'openid email profile',
+        callback: (response) => {
+          if (response.error || !response.access_token) {
+            reject(
+              new Error(
+                response.error_description ||
+                  response.error ||
+                  'Google sign-in was cancelled or failed.',
+              ),
+            );
+            return;
+          }
+          resolve(response.access_token);
+        },
+        error_callback: (error) => {
+          reject(new Error(error.message || error.type || 'Google sign-in was cancelled.'));
+        },
+      });
+      client.requestAccessToken({ prompt: 'select_account' });
+    } catch (e) {
+      reject(e instanceof Error ? e : new Error('Could not start Google connect'));
+    }
   });
 
-  if (error) {
-    sessionStorage.removeItem(PENDING_GMAIL_LINK_KEY);
-    const msg = error.message || 'Could not start Google connect';
-    if (/manual.?linking|not enabled/i.test(msg)) {
-      throw new Error(
-        'Google email linking is not enabled. In Supabase Dashboard → Authentication → Settings, turn on Manual linking.',
-      );
-    }
-    if (/provider/i.test(msg) && /not.*enabled|disabled/i.test(msg)) {
-      throw new Error(
-        'Google sign-in is not enabled in Supabase. Enable Authentication → Providers → Google.',
-      );
-    }
-    throw new Error(msg);
-  }
-
-  // Some clients return the URL instead of redirecting automatically.
-  if (data?.url) {
-    window.location.assign(data.url);
-  }
+  return fetchGoogleEmail(accessToken);
 }
 
-/** Persist linked Gmail onto profiles + worker_verification (does not advance stage). */
+/** Persist Gmail onto profiles + worker_verification (does not advance stage). */
+export async function persistConnectedGmail(userId: string, email: string): Promise<string> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized.includes('@') || isWorkerMobileAuthEmail(normalized)) {
+    throw new Error('Invalid Gmail address');
+  }
+
+  const { error: profileErr } = await supabase
+    .from('profiles')
+    .update({ email: normalized })
+    .eq('id', userId);
+  if (profileErr) throw new Error(profileErr.message);
+
+  await supabase
+    .from('worker_verification')
+    .update({ email: normalized, updated_at: new Date().toISOString() })
+    .eq('user_id', userId);
+
+  sessionStorage.setItem(CONNECTED_GMAIL_KEY, normalized);
+  return normalized;
+}
+
+/** @deprecated Prefer persistConnectedGmail after startGoogleEmailLink */
 export async function syncLinkedGoogleEmail(userId: string): Promise<string | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const email = getGoogleEmailFromUser(user);
   if (!email) return null;
+  return persistConnectedGmail(userId, email);
+}
 
-  const { error: profileErr } = await supabase
-    .from('profiles')
-    .update({ email })
-    .eq('id', userId);
-  if (profileErr) throw new Error(profileErr.message);
+export function clearPendingGmailLink() {
+  /* no-op: redirect-based linking removed */
+}
 
-  await supabase
-    .from('worker_verification')
-    .update({ email, updated_at: new Date().toISOString() })
-    .eq('user_id', userId);
+export function hasPendingGmailLink(): boolean {
+  return false;
+}
 
-  return email;
+export function markPendingGmailLink() {
+  /* no-op */
 }
