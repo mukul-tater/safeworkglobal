@@ -256,7 +256,7 @@ export default function Auth() {
     if (result.success) {
       toast.success('Account created successfully!');
       if (signupRole === 'worker') {
-        navigate('/worker/onboarding');
+        navigate('/worker/journey');
       } else {
         navigate('/dashboard');
       }

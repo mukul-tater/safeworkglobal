@@ -13,6 +13,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import { workerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
+import { getEmitraReviewBlockMessage, isWorkerGccReady } from '@/lib/workerPortalAccess';
+import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
 
 type LoginMethod = 'mobile' | 'email';
 
@@ -78,9 +80,31 @@ export default function WorkerLoginPage() {
         setLoading(false);
         return;
       }
+
+      const reviewBlock = await getEmitraReviewBlockMessage(user.id);
+      if (reviewBlock) {
+        await supabase.auth.signOut();
+        setError(reviewBlock);
+        setLoading(false);
+        return;
+      }
+
+      const ready = await isWorkerGccReady(user.id);
+      if (!ready) {
+        try {
+          await getOrCreateVerification(user.id);
+        } catch {
+          /* journey row optional for redirect */
+        }
+        toast.success('Welcome back — continue your verification');
+        navigate('/worker/journey', { replace: true });
+        setLoading(false);
+        return;
+      }
     }
     toast.success('Welcome back!');
     navigate('/worker/dashboard', { replace: true });
+    setLoading(false);
   };
 
   const handleGoogle = async () => {

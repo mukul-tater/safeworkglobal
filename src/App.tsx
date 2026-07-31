@@ -19,10 +19,8 @@ import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
-import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import PartnerOnboarding from "./pages/partner/PartnerOnboarding";
 import PartnerRegister from "./modules/partner/pages/PartnerRegister";
-import PartnerRegisterLegacy from "./modules/partner/pages/PartnerRegisterLegacy";
 import PendingApproval from "./modules/partner/pages/PendingApproval";
 import PartnerDashboardRouter from "./modules/partner/pages/PartnerDashboardRouter";
 import SsvnDashboard from "./modules/partner/pages/ssvn/SsvnDashboard";
@@ -71,7 +69,6 @@ import AdminPartnerWorkers from "./pages/admin/AdminPartnerWorkers";
 import AdminContentModeration from "./pages/admin/AdminContentModeration";
 import AdminMessages from "./pages/admin/AdminMessages";
 import {
-  EmitraRegisterPage,
   EmitraOnboardingPage,
   EmitraLoginPage,
   EmitraDashboardPage,
@@ -88,6 +85,7 @@ import {
 import AdminEmitraWorkerReview from "./pages/admin/AdminEmitraWorkerReview";
 import AdminEmitraWithdrawals from "./pages/admin/AdminEmitraWithdrawals";
 import AdminEmitraAnalytics from "./pages/admin/AdminEmitraAnalytics";
+import AdminVerificationQueue from "./pages/admin/AdminVerificationQueue";
 import AdminLsps from "./pages/admin/AdminLsps";
 import AdminLspDeveloperDocs from "./pages/admin/AdminLspDeveloperDocs";
 import LspEntryPage from "./modules/lsp/pages/LspEntryPage";
@@ -147,7 +145,7 @@ function AppShell() {
           <Route path="/login" element={<Navigate to="/worker/login" replace />} />
           <Route path="/worker-start" element={<Navigate to="/worker/quick-signup" replace />} />
           <Route path="/home" element={<Navigate to="/worker/dashboard" replace />} />
-          <Route path="/onboarding" element={<Navigate to="/worker/onboarding" replace />} />
+          <Route path="/onboarding" element={<Navigate to="/worker/journey" replace />} />
 
           {/* Employer portal */}
           {legacyEmployerRoutes}
@@ -160,10 +158,11 @@ function AppShell() {
           <Route path="/lsp/verify" element={<LspVerifyPage />} />
           <Route path="/lsp/denied" element={<LspDeniedPage />} />
 
-          {/* E-Mitra partner — v2 onboarding at /emitra/register; legacy kept unlinked */}
+          {/* E-Mitra partner — canonical register/login; legacy URLs redirect */}
           <Route path="/emitra/register" element={<EmitraOnboardingPage />} />
-          <Route path="/emitra/register-legacy" element={<EmitraRegisterPage />} />
+          <Route path="/emitra/register-legacy" element={<Navigate to="/emitra/register" replace />} />
           <Route path="/emitra/login" element={<EmitraLoginPage />} />
+          <Route path="/partner/login" element={<Navigate to="/emitra/login" replace />} />
           <Route
             path="/emitra/dashboard"
             element={
@@ -264,10 +263,7 @@ function AppShell() {
             path="/partner/register"
             element={<PartnerRegister />}
           />
-          <Route
-            path="/partner/register-legacy"
-            element={<PartnerRegisterLegacy />}
-          />
+          <Route path="/partner/register-legacy" element={<Navigate to="/partner/register" replace />} />
           <Route
             path="/partner/pending"
             element={
@@ -303,8 +299,7 @@ function AppShell() {
           <Route path="/partner/sen-global/leads" element={<ProtectedRoute allowedRoles={["partner"]}><SenGlobalLeads /></ProtectedRoute>} />
           <Route path="/partner/sen-global/revenue" element={<ProtectedRoute allowedRoles={["partner"]}><SenGlobalRevenue /></ProtectedRoute>} />
 
-          {/* Legacy partner dashboard (kept for backwards compat) */}
-          <Route path="/partner/legacy-dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><PartnerDashboard /></ProtectedRoute>} />
+          <Route path="/partner/legacy-dashboard" element={<Navigate to="/partner/dashboard" replace />} />
 
           {/* Admin portal */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -323,6 +318,7 @@ function AppShell() {
           <Route path="/admin/jobs" element={<AdminRoute><JobVerification /></AdminRoute>} />
           <Route path="/admin/content-moderation" element={<AdminRoute><AdminContentModeration /></AdminRoute>} />
           <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
+          <Route path="/admin/verification-queue" element={<AdminRoute><AdminVerificationQueue /></AdminRoute>} />
           <Route path="/admin/document-verification" element={<AdminRoute><DocumentVerification /></AdminRoute>} />
           <Route path="/admin/id-verification" element={<AdminRoute><IDVerification /></AdminRoute>} />
           <Route path="/admin/ecr-management" element={<AdminRoute><ECRManagement /></AdminRoute>} />

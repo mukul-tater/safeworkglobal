@@ -35,7 +35,8 @@ export default function EmitraLoginPage() {
   const afterLoginPath = () => {
     if (nextPath.startsWith('/') && !nextPath.startsWith('//')) return nextPath;
     if (hasValidLspSession()) return '/lsp/verify';
-    return '/emitra/dashboard';
+    // Single partner entry — router sends eMitra (SEN) to /emitra/dashboard
+    return '/partner/dashboard';
   };
   const [method, setMethod] = useState<Method>('mobile');
   const [step, setStep] = useState<Step>('credentials');
@@ -64,8 +65,7 @@ export default function EmitraLoginPage() {
     return isPartnerOperational(profile);
   };
 
-  const partnerLogin = async (authEmail: string, mobileDigits: string) => {
-    const pwd = `SWP-${mobileDigits}`;
+  const partnerLogin = async (authEmail: string, pwd: string, mobileDigits: string) => {
     const synthetic = partnerAuthEmailFromMobile(mobileDigits);
     let result = await login(authEmail, pwd);
     if (!result.success && authEmail !== synthetic) {
@@ -136,6 +136,10 @@ export default function EmitraLoginPage() {
       setError('Enter the 6-digit OTP');
       return;
     }
+    if (password.length < 6) {
+      setError('Enter the password you set during partner registration');
+      return;
+    }
 
     setLoading(true);
     const digits = mobile.replace(/\D/g, '');
@@ -150,18 +154,14 @@ export default function EmitraLoginPage() {
 
       const { data: prof } = await supabase
         .from('profiles')
-        .select('email')
+        .select('email, phone')
         .eq('phone', digits)
         .maybeSingle();
 
-      if (!prof?.email) {
-        setError('Account lookup failed');
-        return;
-      }
-
-      const result = await partnerLogin(prof.email, digits);
+      const authEmail = prof?.email?.trim() || partnerAuthEmailFromMobile(digits);
+      const result = await partnerLogin(authEmail, password, digits);
       if (!result.success) {
-        setError('Login failed. Use email + password or contact support.');
+        setError(result.error || 'Wrong password. Use the password from registration, or sign in with email.');
         return;
       }
 
@@ -296,7 +296,23 @@ export default function EmitraLoginPage() {
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
-                <Button type="submit" className="w-full h-11 font-medium" disabled={loading || otp.length !== 6}>
+                <div className="space-y-2">
+                  <Label htmlFor="partner-otp-password">Password</Label>
+                  <Input
+                    id="partner-otp-password"
+                    type="password"
+                    autoComplete="current-password"
+                    className="h-11"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password from registration"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-11 font-medium"
+                  disabled={loading || otp.length !== 6 || password.length < 6}
+                >
                   {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Verify & Sign In
                 </Button>

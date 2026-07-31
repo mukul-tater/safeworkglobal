@@ -13,7 +13,7 @@ export default function WorkerSidebar() {
   const navItems = [
     { path: "/worker/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/worker/profile", icon: User, label: "Profile" },
-    { path: "/worker/verification", icon: BadgeCheck, label: "Verification Status" },
+    { path: "/worker/journey", icon: BadgeCheck, label: "Verification" },
     { path: "/jobs", icon: Briefcase, label: "Job Search" },
     { path: "/worker/saved-searches", icon: Bookmark, label: "Saved Searches" },
     { path: "/worker/applications", icon: FileText, label: "Applications" },

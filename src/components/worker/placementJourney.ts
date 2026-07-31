@@ -61,7 +61,7 @@ export const PLACEMENT_STEPS: PlacementStepDef[] = [
     id: "screening",
     shortLabel: "Screening",
     fullLabel: "Basic Screening Passed",
-    path: "/worker/verification",
+    path: "/worker/journey",
     icon: ClipboardList,
   },
   {
@@ -82,7 +82,7 @@ export const PLACEMENT_STEPS: PlacementStepDef[] = [
     id: "skill_verified",
     shortLabel: "Skill Verified",
     fullLabel: "Skill Verified",
-    path: "/worker/verification",
+    path: "/worker/journey",
     icon: BadgeCheck,
   },
   {

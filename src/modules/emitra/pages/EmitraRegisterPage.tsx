@@ -229,26 +229,9 @@ export default function EmitraRegisterPage() {
       toast.error('Verify your mobile number with SMS OTP first');
       return null;
     }
-    const digits = (data.mobile || '').replace(/\D/g, '');
-    const realEmail = displayableEmail(data.email);
-    const authEmail = realEmail || partnerAuthEmailFromMobile(digits);
-    const password = `SWP-${digits}`;
-
-    const result = await signup({
-      email: authEmail,
-      password,
-      full_name: data.owner_name,
-      phone: digits,
-      role: 'partner',
-    });
-
-    if (!result.success) {
-      toast.error(result.error || 'Account creation failed');
-      return null;
-    }
-
-    const { data: { user: newUser } } = await supabase.auth.getUser();
-    return newUser?.id || null;
+    toast.error('This registration form is retired. Use /emitra/register instead.');
+    navigate('/emitra/register', { replace: true });
+    return null;
   };
 
   const buildPayload = (overrides: Record<string, unknown> = {}) => ({

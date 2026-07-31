@@ -242,14 +242,13 @@ export async function completeIdentityKyc(
   return data as WorkerVerification;
 }
 
-/** Admin/dev helper — mark interview scored (also usable for demo from UI later). */
+/** Admin only — score interview and open payment stage (RLS/trigger enforced). */
 export async function recordInterviewScore(
   userId: string,
   score: number,
   notes?: string,
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
-  // Skill list decides trade test; interview score is recorded for ops only.
   const tradeRequired = skillRequiresTradeTest(row.primary_skill);
   const { data, error } = await supabase
     .from('worker_verification')
@@ -270,6 +269,10 @@ export async function recordInterviewScore(
   return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
 }
 
+/**
+ * Admin only until Razorpay webhook verification ships.
+ * Workers cannot mark paid (DB trigger + payment RLS).
+ */
 export async function markPaymentPaid(
   userId: string,
   amount: number,
@@ -284,13 +287,14 @@ export async function markPaymentPaid(
     row.trade_test_required ?? skillRequiresTradeTest(row.primary_skill);
   const nextStage: VerificationStage = tradeRequired ? 'trade_test' : 'medical';
 
-  await supabase.from('worker_assessment_payments').insert({
+  const { error: payErr } = await supabase.from('worker_assessment_payments').insert({
     user_id: userId,
     amount,
     status: 'paid',
     provider: opts?.provider || 'manual',
     paid_at: new Date().toISOString(),
   });
+  if (payErr) throw new Error(payErr.message);
 
   const { data, error } = await supabase
     .from('worker_verification')
@@ -313,6 +317,7 @@ export async function markPaymentPaid(
   return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
 }
 
+/** Worker uploads result; admin must pass to advance. */
 export async function submitTradeTestResult(
   userId: string,
   resultUrl: string,
@@ -322,6 +327,42 @@ export async function submitTradeTestResult(
     .from('worker_verification')
     .update({
       trade_test_result_url: resultUrl,
+      trade_test_status: 'scheduled',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', row.id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as WorkerVerification;
+}
+
+/** Worker uploads result; admin must pass to advance. */
+export async function submitMedicalResult(
+  userId: string,
+  resultUrl: string,
+): Promise<WorkerVerification> {
+  const row = await getOrCreateVerification(userId);
+  const { data, error } = await supabase
+    .from('worker_verification')
+    .update({
+      medical_result_url: resultUrl,
+      medical_status: 'scheduled',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', row.id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as WorkerVerification;
+}
+
+/** Admin — pass trade test and move to medical. */
+export async function approveTradeTest(userId: string): Promise<WorkerVerification> {
+  const row = await getOrCreateVerification(userId);
+  const { data, error } = await supabase
+    .from('worker_verification')
+    .update({
       trade_test_status: 'passed',
       stage: 'medical',
       updated_at: new Date().toISOString(),
@@ -333,15 +374,12 @@ export async function submitTradeTestResult(
   return data as WorkerVerification;
 }
 
-export async function submitMedicalResult(
-  userId: string,
-  resultUrl: string,
-): Promise<WorkerVerification> {
+/** Admin — pass medical and move to bond. */
+export async function approveMedical(userId: string): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
-      medical_result_url: resultUrl,
       medical_status: 'passed',
       stage: 'bond',
       updated_at: new Date().toISOString(),
@@ -355,13 +393,10 @@ export async function submitMedicalResult(
 
 /** @deprecated Prefer submitTradeTestResult / submitMedicalResult */
 export async function markTestsPassed(userId: string): Promise<WorkerVerification> {
-  const row = await getOrCreateVerification(userId);
-  if (row.trade_test_required !== false && row.stage === 'trade_test') {
-    throw new Error('Upload your physical trade test result to continue');
-  }
-  return submitMedicalResult(userId, row.medical_result_url || 'demo-passed');
+  throw new Error('Admin must approve trade/medical results');
 }
 
+/** Worker submits bond for admin review — does not grant GCC ready. */
 export async function submitBond(
   userId: string,
   method: 'estamp' | 'emitra' | 'physical_upload',
@@ -369,14 +404,33 @@ export async function submitBond(
   videoProofUrl?: string,
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
-  await supabase.from('worker_bonds').insert({
+  const { error: bondErr } = await supabase.from('worker_bonds').insert({
     user_id: userId,
     method,
     stamp_doc_url: stampDocUrl || null,
     video_proof_url: videoProofUrl || null,
     status: 'submitted',
   });
+  if (bondErr) throw new Error(bondErr.message);
 
+  const { data, error } = await supabase
+    .from('worker_verification')
+    .update({
+      bond_status: 'submitted',
+      stage: 'bond',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', row.id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+
+  return data as WorkerVerification;
+}
+
+/** Admin — approve bond and mark GCC ready. */
+export async function approveBond(userId: string): Promise<WorkerVerification> {
+  const row = await getOrCreateVerification(userId);
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
@@ -394,6 +448,12 @@ export async function submitBond(
     .from('worker_profiles')
     .update({ onboarding_completed: true, onboarded_at: new Date().toISOString() })
     .eq('user_id', userId);
+
+  await supabase
+    .from('worker_bonds')
+    .update({ status: 'approved', updated_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('status', 'submitted');
 
   return data as WorkerVerification;
 }

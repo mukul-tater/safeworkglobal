@@ -110,6 +110,8 @@ export default function EmitraOnboardingPage() {
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState('');
   const [mobileVerified, setMobileVerified] = useState(false);
+  const [accountPassword, setAccountPassword] = useState('');
+  const [accountPasswordConfirm, setAccountPasswordConfirm] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [data, setData] = useState<FormData>({ ...DEFAULTS });
 
@@ -267,14 +269,21 @@ export default function EmitraOnboardingPage() {
       toast.error('Verify your mobile number with SMS OTP first');
       return null;
     }
+    if (accountPassword.length < 6) {
+      toast.error('Set a password of at least 6 characters');
+      return null;
+    }
+    if (accountPassword !== accountPasswordConfirm) {
+      toast.error('Passwords do not match');
+      return null;
+    }
     const digits = (data.mobile || '').replace(/\D/g, '');
     const realEmail = displayableEmail(data.email);
     const authEmail = realEmail || partnerAuthEmailFromMobile(digits);
-    const password = `SWP-${digits}`;
 
     const result = await signup({
       email: authEmail,
-      password,
+      password: accountPassword,
       full_name: data.owner_name,
       phone: digits,
       role: 'partner',
@@ -483,6 +492,28 @@ export default function EmitraOnboardingPage() {
                     </p>
                   )}
                 </Field>
+                {mobileVerified && !user && (
+                  <>
+                    <Field label="Account password" error={errors.password} required>
+                      <Input
+                        type="password"
+                        autoComplete="new-password"
+                        value={accountPassword}
+                        onChange={(e) => setAccountPassword(e.target.value)}
+                        placeholder="At least 6 characters"
+                      />
+                    </Field>
+                    <Field label="Confirm password" error={errors.password_confirm} required>
+                      <Input
+                        type="password"
+                        autoComplete="new-password"
+                        value={accountPasswordConfirm}
+                        onChange={(e) => setAccountPasswordConfirm(e.target.value)}
+                        placeholder="Re-enter password"
+                      />
+                    </Field>
+                  </>
+                )}
                 {otpStep && !mobileVerified && (
                   <div className="sm:col-span-2 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
                     <div className="flex items-center gap-2 text-sm font-medium">

@@ -21,8 +21,6 @@ import WorkerInterviews from '@/pages/worker/WorkerInterviews';
 import WorkerCalendar from '@/pages/worker/WorkerCalendar';
 import WorkerContractHistory from '@/pages/worker/ContractHistory';
 import WorkerPayments from '@/pages/worker/WorkerPayments';
-import WorkerVerificationStatus from '@/pages/worker/VerificationStatus';
-import WorkerOnboarding from '@/pages/worker/WorkerOnboarding';
 import ApplicationSuccess from '@/pages/worker/ApplicationSuccess';
 import WorkerGoogleLandingRedirect from '@/modules/worker-registration/pages/WorkerGoogleLandingRedirect';
 import QuickWorkerSignup from '@/pages/worker/QuickWorkerSignup';
@@ -65,8 +63,9 @@ export const legacyWorkerRoutes = (
     <Route path="/worker/trust" element={<WorkerGoogleLandingRedirect />} />
     <Route path="/worker/discover" element={<Navigate to="/jobs" replace />} />
     {workerRoute('/worker/application-success/:applicationId', <ApplicationSuccess />)}
-    {workerRoute('/worker/onboarding', <WorkerOnboarding />)}
+    <Route path="/worker/onboarding" element={<Navigate to="/worker/journey" replace />} />
     {workerRoute('/worker/journey', <WorkerVerificationPage />)}
+    <Route path="/worker/verification" element={<Navigate to="/worker/journey" replace />} />
     {workerRoute('/worker/dashboard', <WorkerDashboard />)}
     {workerRoute('/worker/profile', <WorkerProfile />)}
     {workerRoute('/worker/applications', <WorkerApplications />)}
@@ -85,7 +84,6 @@ export const legacyWorkerRoutes = (
     {workerRoute('/worker/interviews', <WorkerInterviews />)}
     {workerRoute('/worker/calendar', <WorkerCalendar />)}
     {workerRoute('/worker/contract-history', <WorkerContractHistory />)}
-    {workerRoute('/worker/verification', <WorkerVerificationStatus />)}
     {workerRoute('/worker/payments', <WorkerPayments />)}
     <Route path="/worker-profile/:id" element={<WorkerPublicProfile />} />
   </>

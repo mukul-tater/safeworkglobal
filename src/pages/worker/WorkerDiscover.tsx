@@ -118,7 +118,7 @@ export default function WorkerDiscover() {
                   Complete your profile to increase your chances of getting hired
                 </p>
               </div>
-              <Button size="sm" variant="default" onClick={() => navigate('/worker/onboarding')} className="shrink-0">
+              <Button size="sm" variant="default" onClick={() => navigate('/worker/journey')} className="shrink-0">
                 Complete <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
               </Button>
             </div>

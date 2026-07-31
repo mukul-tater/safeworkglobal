@@ -57,6 +57,7 @@ export const adminNavGroups: NavGroup[] = [
   {
     label: "Verification",
     items: [
+      { path: "/admin/verification-queue", icon: ClipboardCheck, label: "GCC Queue" },
       { path: "/admin/document-verification", icon: FileCheck, label: "Documents" },
       { path: "/admin/id-verification", icon: CreditCard, label: "ID Verification" },
       { path: "/admin/ecr-management", icon: Plane, label: "ECR Management" },

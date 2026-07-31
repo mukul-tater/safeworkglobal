@@ -105,7 +105,7 @@ export default function ApplicationSuccess() {
           >
             <Briefcase className="h-4 w-4" /> Apply to more jobs
           </Button>
-          <Link to="/worker/onboarding" className="block text-center text-sm text-muted-foreground hover:text-foreground pt-2">
+          <Link to="/worker/journey" className="block text-center text-sm text-muted-foreground hover:text-foreground pt-2">
             Complete my profile →
           </Link>
         </div>

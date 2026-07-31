@@ -76,7 +76,7 @@ export default function WorkerTrust() {
           <Button
             variant="outline"
             className="w-full h-12 font-medium"
-            onClick={() => navigate('/worker/onboarding')}
+            onClick={() => navigate('/worker/journey')}
           >
             Complete my profile first
           </Button>

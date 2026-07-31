@@ -1,6 +1,11 @@
+import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
 import AccessDenied from '@/pages/AccessDenied';
+import { getEmitraReviewBlockMessage } from '@/lib/workerPortalAccess';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,7 +21,24 @@ export default function ProtectedRoute({
   loginPath = '/auth',
   requireMobileVerified = false,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, role, loading, profileLoading, needsRoleSelection, isMobileVerified } = useAuth();
+  const { user, isAuthenticated, role, loading, profileLoading, needsRoleSelection, isMobileVerified } =
+    useAuth();
+  const [emitraBlock, setEmitraBlock] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!isAuthenticated || role !== 'worker' || !user?.id) {
+      setEmitraBlock(null);
+      return;
+    }
+    setEmitraBlock(undefined);
+    void getEmitraReviewBlockMessage(user.id).then((msg) => {
+      if (!cancelled) setEmitraBlock(msg);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, role, user?.id]);
 
   // Initial auth only. Do not unmount the app on later profile refreshes (tab focus).
   if (loading) {
@@ -67,6 +89,36 @@ export default function ProtectedRoute({
     !isMobileVerified
   ) {
     return <Navigate to="/worker/bind-mobile" replace />;
+  }
+
+  if (role === 'worker' && emitraBlock === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (role === 'worker' && emitraBlock) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-muted/30">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 space-y-4 text-center">
+            <h1 className="text-lg font-semibold">Account under review</h1>
+            <p className="text-sm text-muted-foreground">{emitraBlock}</p>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = '/worker/login';
+              }}
+            >
+              Sign out
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return <>{children}</>;

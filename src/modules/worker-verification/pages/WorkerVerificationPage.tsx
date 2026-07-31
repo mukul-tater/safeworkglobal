@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import WorkerPortalLayout from '@/components/layout/WorkerPortalLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,8 +39,6 @@ import {
   completeIdentityKyc,
   getOrCreateVerification,
   loadQuizItems,
-  markPaymentPaid,
-  recordInterviewScore,
   resetVerificationJourney,
   saveEssentials,
   submitBond,
@@ -48,10 +46,6 @@ import {
   submitQuiz,
   submitTradeTestResult,
 } from '@/modules/worker-verification/services/verificationService';
-import {
-  isRazorpayConfigured,
-  openRazorpayCheckout,
-} from '@/modules/worker-verification/lib/razorpayCheckout';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
@@ -72,7 +66,6 @@ function notifyVerificationUpdated() {
  */
 export default function WorkerVerificationPage() {
   const { user, profile, refreshProfile } = useAuth();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -96,7 +89,6 @@ export default function WorkerVerificationPage() {
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
-  const [demoScore, setDemoScore] = useState('75');
   const [bondMethod, setBondMethod] = useState<'estamp' | 'emitra' | 'physical_upload'>('estamp');
   const [resetting, setResetting] = useState(false);
   const showDevReset = isJourneyResetEnabled();
@@ -113,7 +105,6 @@ export default function WorkerVerificationPage() {
   const [kycUploading, setKycUploading] = useState(false);
   const [tradeResultFile, setTradeResultFile] = useState<File | null>(null);
   const [medicalResultFile, setMedicalResultFile] = useState<File | null>(null);
-  const [paying, setPaying] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -482,7 +473,6 @@ export default function WorkerVerificationPage() {
       setPhotoCount(0);
       setVideoCount(0);
       setSkillId(null);
-      setDemoScore('75');
       notifyVerificationUpdated();
       toast.success('Journey reset to Essentials (dev)');
       await load();
@@ -1013,124 +1003,18 @@ export default function WorkerVerificationPage() {
           <WaitingCard
             icon={Calendar}
             title="Test 2 — Video interview"
-            body={`Our team will schedule a video call and ask trade questions. Score is recorded for ops. Physical trade test depends on your skill (e.g. Electrician/Welder require Test 3; Driver/Helper skip to medical).`}
-          >
-            <div className="flex flex-col sm:flex-row gap-2 items-end">
-              <div className="space-y-1.5 flex-1">
-                <Label className="text-xs">Demo: enter interview score (admin will do this live)</Label>
-                <Input value={demoScore} onChange={(e) => setDemoScore(e.target.value)} type="number" min={0} max={100} />
-              </div>
-              <Button
-                disabled={saving}
-                onClick={async () => {
-                  if (!user?.id) return;
-                  setSaving(true);
-                  try {
-                    const next = await recordInterviewScore(user.id, Number(demoScore) || 0, 'Demo score');
-                    setRow(next);
-      notifyVerificationUpdated();
-                    toast.success(
-                      next.trade_test_required
-                        ? `Trade test required for ${next.primary_skill || 'your skill'} after payment`
-                        : `No trade test for ${next.primary_skill || 'your skill'} — medical after payment`,
-                    );
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'Failed');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-              >
-                Save score & continue
-              </Button>
-            </div>
-          </WaitingCard>
+            body="Our team will schedule a video call and score it. You cannot advance this step yourself — check back after the interview is completed by SafeWork."
+          />
         )}
 
         {stage === 'awaiting_payment' && (
           <WaitingCard
             icon={CreditCard}
             title="Payment"
-            body={`Pay ₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')} to continue${
-              tradeNeeded
-                ? ' to Test 3 (physical trade test), then medical.'
-                : ' to medical clearance (no physical trade test for your skill).'
+            body={`Assessment fee: ₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')}. Online payment opens once Razorpay is approved. An admin will confirm payment and unlock the next step${
+              tradeNeeded ? ' (physical trade test, then medical).' : ' (medical clearance).'
             }`}
-          >
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                disabled={saving || paying}
-                onClick={async () => {
-                  if (!user?.id) return;
-                  if (!isRazorpayConfigured()) {
-                    toast.error('Add VITE_RAZORPAY_KEY_ID (rzp_test_…) to enable Razorpay');
-                    return;
-                  }
-                  setPaying(true);
-                  try {
-                    const res = await openRazorpayCheckout({
-                      amountInr: ASSESSMENT_FEE_INR,
-                      description: 'SafeWork GCC verification fee',
-                      name: profile?.full_name || undefined,
-                      email: row.email || profile?.email || undefined,
-                      contact: profile?.phone || undefined,
-                    });
-                    const next = await markPaymentPaid(user.id, ASSESSMENT_FEE_INR, {
-                      provider: 'razorpay',
-                      razorpayPaymentId: res.razorpay_payment_id,
-                      razorpayOrderId: res.razorpay_order_id,
-                    });
-                    setRow({
-                      ...next,
-                      stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                    });
-                    notifyVerificationUpdated();
-                    toast.success('Payment successful');
-                  } catch (e) {
-                    const msg = e instanceof Error ? e.message : 'Payment failed';
-                    if (msg !== 'Payment cancelled') toast.error(msg);
-                  } finally {
-                    setPaying(false);
-                  }
-                }}
-              >
-                {paying ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CreditCard className="h-4 w-4 mr-1" />}
-                Pay with Razorpay
-              </Button>
-              {isJourneyResetEnabled() && (
-                <Button
-                  variant="outline"
-                  disabled={saving || paying}
-                  onClick={async () => {
-                    if (!user?.id) return;
-                    setSaving(true);
-                    try {
-                      const next = await markPaymentPaid(user.id, ASSESSMENT_FEE_INR, {
-                        provider: 'manual_demo',
-                      });
-                      setRow({
-                        ...next,
-                        stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                      });
-                      notifyVerificationUpdated();
-                      toast.success('Demo payment recorded');
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : 'Payment failed');
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                >
-                  Mark paid (demo)
-                </Button>
-              )}
-            </div>
-            {!isRazorpayConfigured() && (
-              <p className="text-[11px] text-muted-foreground mt-2">
-                Set <code className="text-xs">VITE_RAZORPAY_KEY_ID=rzp_test_…</code> for Checkout. Demo mark-paid is available on preview hosts.
-              </p>
-            )}
-          </WaitingCard>
+          />
         )}
 
         {(stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (
@@ -1193,7 +1077,7 @@ export default function WorkerVerificationPage() {
                     setRow(next);
                     setTradeResultFile(null);
                     notifyVerificationUpdated();
-                    toast.success('Trade test result saved — next: Medical');
+                    toast.success('Trade test result uploaded — waiting for admin review');
                   } catch (e) {
                     toast.error(e instanceof Error ? e.message : 'Upload failed');
                   } finally {
@@ -1272,7 +1156,7 @@ export default function WorkerVerificationPage() {
                     setRow(next);
                     setMedicalResultFile(null);
                     notifyVerificationUpdated();
-                    toast.success('Medical result saved — next: Bond');
+                    toast.success('Medical result uploaded — waiting for admin review');
                   } catch (e) {
                     toast.error(e instanceof Error ? e.message : 'Upload failed');
                   } finally {
@@ -1325,27 +1209,32 @@ export default function WorkerVerificationPage() {
                   </label>
                 ))}
               </RadioGroup>
-              <Button
-                disabled={saving}
-                onClick={async () => {
-                  if (!user?.id) return;
-                  setSaving(true);
-                  try {
-                    const next = await submitBond(user.id, bondMethod);
-                    setRow(next);
-      notifyVerificationUpdated();
-                    toast.success('Bond submitted — you are GCC ready');
-                    navigate('/jobs');
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'Failed');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                Submit bond & finish
-              </Button>
+              {row.bond_status === 'submitted' ? (
+                <p className="text-sm text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2">
+                  Bond submitted — SafeWork will review and mark you GCC ready.
+                </p>
+              ) : (
+                <Button
+                  disabled={saving}
+                  onClick={async () => {
+                    if (!user?.id) return;
+                    setSaving(true);
+                    try {
+                      const next = await submitBond(user.id, bondMethod);
+                      setRow(next);
+                      notifyVerificationUpdated();
+                      toast.success('Bond submitted — waiting for admin approval');
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : 'Failed');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                  Submit bond for review
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
