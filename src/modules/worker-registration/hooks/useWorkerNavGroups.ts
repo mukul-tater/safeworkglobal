@@ -5,7 +5,7 @@ import { useWorkerGccJourneyProgress } from "@/modules/worker-registration/hooks
 import { GCC_JOURNEY_NAV_STEPS } from "@/modules/worker-verification/constants";
 
 /**
- * Worker nav: GCC Journey = verification Tests 1–3 + payment / medical / bond / ready.
+ * Worker nav: My progress = verification Tests 1–3 + payment / medical / bond / ready.
  * Old 13-step placement accordion (resume path) is not shown.
  */
 export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean } {
@@ -13,7 +13,7 @@ export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean 
 
   const navGroups = useMemo(() => {
     const journeyGroup: NavGroup = {
-      label: "GCC Journey",
+      label: "My progress",
       badge: `${completed}/${GCC_JOURNEY_NAV_STEPS.length}`,
       defaultOpen: true,
       items: navItems,
