@@ -29,10 +29,10 @@ export default function WorkerGccJourneyProgress({ statuses, className }: Props)
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 mb-5">
         <div>
           <h2 className="text-base sm:text-lg font-semibold font-heading text-foreground">
-            Your GCC journey
+            Your progress
           </h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {current ? `Next: ${current.label}` : "GCC ready — verification complete."}
+            {current ? `Next: ${current.label}` : "All set — verification complete."}
           </p>
         </div>
         <p className="text-sm font-medium text-foreground tabular-nums shrink-0">
