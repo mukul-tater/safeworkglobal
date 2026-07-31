@@ -34,7 +34,8 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
     name: "SSVN",
     shortDescription: "Skill verification & assessment centres",
     icon: Building2,
-    status: "coming_soon",
+    status: "live",
+    registerPath: "/partner/register-ssvn",
     accentClass: "bg-violet-500/10 text-violet-700 dark:text-violet-400",
   },
   {

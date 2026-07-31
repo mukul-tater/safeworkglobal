@@ -192,7 +192,7 @@ const Header = () => {
                       Employer account? Sign in
                     </button>
                     <button
-                      onClick={() => navigate('/emitra/login')}
+                      onClick={() => navigate('/partner/login')}
                       className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
                     >
                       Partner account? Sign in
@@ -328,7 +328,7 @@ const Header = () => {
                       Already registered as a worker? Sign in
                     </button>
                     <button
-                      onClick={() => { navigate('/emitra/login'); closeMobileMenu(); }}
+                      onClick={() => { navigate('/partner/login'); closeMobileMenu(); }}
                       className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
                     >
                       Partner account? Sign in

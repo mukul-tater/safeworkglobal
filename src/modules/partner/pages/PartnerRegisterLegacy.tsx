@@ -1,10 +1,9 @@
 /**
- * Legacy generic partner registration form.
- * Unlinked from Get Started — kept at /partner/register-legacy.
- * New flow: PartnerRegister (type chooser) → E-Mitra → /emitra/register.
+ * SSVN / generic partner registration form.
+ * Canonical SSVN path: /partner/register-ssvn
  */
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
@@ -21,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { indianStates } from "@/lib/validations/partner";
+import { partnerAuthEmailFromMobile, displayableEmail } from "@/lib/workerAuthEmail";
 
 interface PartnerType {
   id: string;
@@ -29,9 +29,10 @@ interface PartnerType {
   description: string | null;
 }
 
-export default function PartnerRegister() {
-  const { user, isAuthenticated, assignRole } = useAuth();
+export default function PartnerRegisterLegacy() {
+  const { user, isAuthenticated, assignRole, signup, refreshProfile, refreshRole } = useAuth();
   const navigate = useNavigate();
+  const isSsvnPath = window.location.pathname.includes("register-ssvn");
   const [types, setTypes] = useState<PartnerType[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -40,6 +41,8 @@ export default function PartnerRegister() {
     owner_name: "",
     mobile: "",
     email: "",
+    password: "",
+    confirmPassword: "",
     state: "",
     district: "",
     city: "",
@@ -59,34 +62,102 @@ export default function PartnerRegister() {
       .select("id, code, name, description")
       .eq("active", true)
       .order("sort_order")
-      .then(({ data }: any) => setTypes(data ?? []));
-  }, []);
+      .then(({ data }: any) => {
+        const list = (data ?? []) as PartnerType[];
+        const filtered = isSsvnPath
+          ? list.filter((t) => t.code === "SSVN")
+          : list;
+        setTypes(filtered.length ? filtered : list);
+        if (isSsvnPath) {
+          const ssvn = list.find((t) => t.code === "SSVN");
+          if (ssvn) setForm((f) => ({ ...f, partner_type_id: ssvn.id }));
+        }
+      });
+  }, [isSsvnPath]);
 
   useEffect(() => {
-    if (user?.email && !form.email) setForm((f) => ({ ...f, email: user.email ?? "" }));
+    if (user?.email && !form.email) {
+      setForm((f) => ({ ...f, email: displayableEmail(user.email) || "" }));
+    }
   }, [user]); // eslint-disable-line
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const submit = async () => {
-    if (!isAuthenticated || !user) {
-      toast.error("Please sign in first");
-      navigate("/auth?redirect=/partner/register");
-      return;
+  const ensureAuthenticated = async (): Promise<string> => {
+    if (isAuthenticated && user?.id) return user.id;
+
+    const digits = form.mobile.replace(/\D/g, "");
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      throw new Error("Enter a valid 10-digit mobile number");
     }
+    if (!form.email.trim() && !digits) {
+      throw new Error("Email or mobile is required to create your login");
+    }
+    if (form.password.length < 6) {
+      throw new Error("Password must be at least 6 characters");
+    }
+    if (form.password !== form.confirmPassword) {
+      throw new Error("Passwords do not match");
+    }
+
+    const authEmail = form.email.trim() || partnerAuthEmailFromMobile(digits);
+    const result = await signup({
+      email: authEmail,
+      password: form.password,
+      full_name: form.owner_name || form.company_name,
+      phone: digits,
+      role: "partner",
+    });
+    if (!result.success) {
+      throw new Error(result.error || "Could not create account");
+    }
+
+    // Sign-in may already be active after signup; refresh context
+    await refreshProfile();
+    await refreshRole();
+    const { data: { user: created } } = await supabase.auth.getUser();
+    if (!created?.id) {
+      // Some projects require email confirm — try password login
+      const { error } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: form.password,
+      });
+      if (error) {
+        throw new Error(
+          "Account created but sign-in failed. Confirm email if required, then sign in at /partner/ssvn/login and finish registration.",
+        );
+      }
+    }
+    const { data: { user: after } } = await supabase.auth.getUser();
+    if (!after?.id) throw new Error("Authentication failed after signup");
+    await assignRole("partner").catch(() => {});
+    await (supabase as any)
+      .from("profiles")
+      .update({ phone: digits, full_name: form.owner_name || form.company_name })
+      .eq("id", after.id);
+    return after.id;
+  };
+
+  const submit = async () => {
     if (!form.partner_type_id || !form.company_name || !form.mobile) {
-      toast.error("Fill required fields");
+      toast.error("Fill required fields (company, mobile, partner type)");
       return;
     }
     setSaving(true);
     try {
-      // Ensure the user has partner role
+      const userId = await ensureAuthenticated();
       await assignRole("partner").catch(() => {});
+
+      const digits = form.mobile.replace(/\D/g, "");
+      await (supabase as any)
+        .from("profiles")
+        .update({ phone: digits })
+        .eq("id", userId);
 
       const { data: partner, error } = await (supabase as any)
         .from("partners")
         .insert({
-          user_id: user.id,
+          user_id: userId,
           partner_type_id: form.partner_type_id,
           status: "pending",
           state: form.state || null,
@@ -103,7 +174,7 @@ export default function PartnerRegister() {
           partner_id: partner.id,
           company_name: form.company_name,
           owner_name: form.owner_name || null,
-          mobile: form.mobile,
+          mobile: digits,
           email: form.email || null,
           address: form.address || null,
           pincode: form.pincode || null,
@@ -133,13 +204,23 @@ export default function PartnerRegister() {
     <div className="min-h-screen bg-muted/30 py-10 px-4">
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Partner Registration</h1>
-          <p className="text-muted-foreground">Join the SafeWork Global partner network</p>
+          <h1 className="text-3xl font-bold">
+            {isSsvnPath ? "Trade Test Centre (SSVN) Registration" : "Partner Registration"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isSsvnPath
+              ? "Apply to operate a SafeWork trade test centre. After approval, sign in at SSVN login."
+              : "Join the SafeWork Global partner network"}
+          </p>
         </div>
         <Card className="p-6 space-y-6">
           <section>
             <h2 className="font-semibold mb-3">Partner Type</h2>
-            <Select value={form.partner_type_id} onValueChange={(v) => set("partner_type_id", v)}>
+            <Select
+              value={form.partner_type_id}
+              onValueChange={(v) => set("partner_type_id", v)}
+              disabled={isSsvnPath}
+            >
               <SelectTrigger><SelectValue placeholder="Select partner type" /></SelectTrigger>
               <SelectContent>
                 {types.map((t) => (
@@ -156,6 +237,39 @@ export default function PartnerRegister() {
             </Select>
           </section>
 
+          {!isAuthenticated && (
+            <section className="rounded-lg border bg-muted/30 p-4 space-y-3">
+              <h2 className="font-semibold">Create login</h2>
+              <p className="text-xs text-muted-foreground">
+                Set a password now. After SafeWork approves you, sign in at{" "}
+                <Link to="/partner/ssvn/login" className="text-primary underline">
+                  /partner/ssvn/login
+                </Link>
+                .
+              </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Password *</Label>
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    value={form.password}
+                    onChange={(e) => set("password", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Confirm password *</Label>
+                  <Input
+                    type="password"
+                    autoComplete="new-password"
+                    value={form.confirmPassword}
+                    onChange={(e) => set("confirmPassword", e.target.value)}
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
           <section className="grid md:grid-cols-2 gap-4">
             <div>
               <Label>Company / Center Name *</Label>
@@ -167,10 +281,15 @@ export default function PartnerRegister() {
             </div>
             <div>
               <Label>Mobile *</Label>
-              <Input value={form.mobile} onChange={(e) => set("mobile", e.target.value)} />
+              <Input
+                inputMode="numeric"
+                maxLength={10}
+                value={form.mobile}
+                onChange={(e) => set("mobile", e.target.value.replace(/\D/g, ""))}
+              />
             </div>
             <div>
-              <Label>Email</Label>
+              <Label>Email {!isAuthenticated ? "(recommended)" : ""}</Label>
               <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
             </div>
           </section>
@@ -238,11 +357,19 @@ export default function PartnerRegister() {
             </div>
           </section>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => navigate("/")}>Cancel</Button>
-            <Button onClick={submit} disabled={saving}>
-              {saving ? "Submitting..." : "Submit Registration"}
-            </Button>
+          <div className="flex flex-col sm:flex-row justify-between gap-2">
+            <p className="text-sm text-muted-foreground self-center">
+              Already registered?{" "}
+              <Link to="/partner/ssvn/login" className="text-primary font-medium hover:underline">
+                SSVN sign in
+              </Link>
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => navigate("/")}>Cancel</Button>
+              <Button onClick={submit} disabled={saving}>
+                {saving ? "Submitting..." : "Submit Registration"}
+              </Button>
+            </div>
           </div>
         </Card>
       </div>

@@ -59,6 +59,19 @@ export default function PendingApproval() {
           <div><b>Partner Type:</b> {partner.partner_type_name}</div>
           <div><b>Status:</b> {partner.status}</div>
         </div>
+        {partner.partner_type_code === "SSVN" && (
+          <p className="text-xs text-muted-foreground mb-4">
+            After approval, sign in at{" "}
+            <button
+              type="button"
+              className="text-primary underline"
+              onClick={() => navigate("/partner/ssvn/login")}
+            >
+              Trade Test Centre login
+            </button>
+            .
+          </p>
+        )}
         <Button variant="outline" onClick={() => logout()}>Logout</Button>
       </Card>
     </div>

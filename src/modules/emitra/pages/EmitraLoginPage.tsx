@@ -387,12 +387,20 @@ export default function EmitraLoginPage() {
             </form>
           )}
 
-          <p className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border">
-            New partner?{' '}
-            <Link to="/emitra/register" className="text-primary font-medium hover:underline">
-              Apply as SafeWork Partner
-            </Link>
-          </p>
+          <div className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border space-y-2">
+            <p>
+              New E-Mitra partner?{' '}
+              <Link to="/emitra/register" className="text-primary font-medium hover:underline">
+                Apply here
+              </Link>
+            </p>
+            <p>
+              Trade test centre (SSVN)?{' '}
+              <Link to="/partner/ssvn/login" className="text-primary font-medium hover:underline">
+                Use SSVN login
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </EmitraLayout>

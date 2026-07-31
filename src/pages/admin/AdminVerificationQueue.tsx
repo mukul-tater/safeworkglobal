@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { adminNavGroups, adminProfileMenu } from '@/config/adminNav';
 import { Card } from '@/components/ui/card';
@@ -246,17 +247,26 @@ export default function AdminVerificationQueue() {
                         </a>
                       </>
                     ) : (
-                      ' · No upload yet'
+                      ' · No legacy upload'
                     )}
                   </p>
-                  <Button
-                    disabled={actingId === r.user_id || !r.trade_test_result_url}
-                    onClick={() =>
-                      void run(r.user_id, () => approveTradeTest(r.user_id), 'Trade test passed')
-                    }
-                  >
-                    Approve trade test
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button asChild variant="default" size="sm">
+                      <Link to="/admin/trade-test-allocations">
+                        Allocate / quality review
+                      </Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={actingId === r.user_id || !r.trade_test_result_url}
+                      onClick={() =>
+                        void run(r.user_id, () => approveTradeTest(r.user_id), 'Trade test passed')
+                      }
+                    >
+                      Legacy approve upload
+                    </Button>
+                  </div>
                 </div>
               )}
 

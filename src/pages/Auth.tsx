@@ -135,7 +135,7 @@ export default function Auth() {
       return;
     }
     if (role === 'partner') {
-      navigate('/emitra/dashboard', { replace: true });
+      navigate('/partner/dashboard', { replace: true });
       return;
     }
     if (role === 'admin') {

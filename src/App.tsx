@@ -21,11 +21,16 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import PartnerOnboarding from "./pages/partner/PartnerOnboarding";
 import PartnerRegister from "./modules/partner/pages/PartnerRegister";
+import PartnerRegisterLegacy from "./modules/partner/pages/PartnerRegisterLegacy";
 import PendingApproval from "./modules/partner/pages/PendingApproval";
 import PartnerDashboardRouter from "./modules/partner/pages/PartnerDashboardRouter";
 import SsvnDashboard from "./modules/partner/pages/ssvn/SsvnDashboard";
 import SsvnAssessments from "./modules/partner/pages/ssvn/SsvnAssessments";
 import SsvnCheckin from "./modules/partner/pages/ssvn/SsvnCheckin";
+import SsvnAssessmentWizard from "./modules/partner/pages/ssvn/SsvnAssessmentWizard";
+import SsvnLoginPage from "./modules/partner/pages/ssvn/SsvnLoginPage";
+import PartnerLoginChooser from "./modules/partner/pages/PartnerLoginChooser";
+import AdminTradeTestAllocations from "./pages/admin/AdminTradeTestAllocations";
 import PartnerWallet from "./modules/partner/pages/shared/PartnerWallet";
 import PartnerReports from "./modules/partner/pages/shared/PartnerReports";
 import PartnerSupport from "./modules/partner/pages/shared/PartnerSupport";
@@ -162,7 +167,8 @@ function AppShell() {
           <Route path="/emitra/register" element={<EmitraOnboardingPage />} />
           <Route path="/emitra/register-legacy" element={<Navigate to="/emitra/register" replace />} />
           <Route path="/emitra/login" element={<EmitraLoginPage />} />
-          <Route path="/partner/login" element={<Navigate to="/emitra/login" replace />} />
+          <Route path="/partner/login" element={<PartnerLoginChooser />} />
+          <Route path="/partner/ssvn/login" element={<SsvnLoginPage />} />
           <Route
             path="/emitra/dashboard"
             element={
@@ -263,6 +269,7 @@ function AppShell() {
             path="/partner/register"
             element={<PartnerRegister />}
           />
+          <Route path="/partner/register-ssvn" element={<PartnerRegisterLegacy />} />
           <Route path="/partner/register-legacy" element={<Navigate to="/partner/register" replace />} />
           <Route
             path="/partner/pending"
@@ -281,9 +288,12 @@ function AppShell() {
 
           {/* SSVN — Skill Verification Network */}
           <Route path="/partner/ssvn/dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnDashboard /></ProtectedRoute>} />
+          <Route path="/partner/ssvn/inbox" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Inbox — Accept assignments" filter="inbox" /></ProtectedRoute>} />
           <Route path="/partner/ssvn/calendar" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Assessment Calendar" filter="calendar" /></ProtectedRoute>} />
           <Route path="/partner/ssvn/today" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Today's Schedule" filter="today" /></ProtectedRoute>} />
+          <Route path="/partner/ssvn/active" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Active assessments" filter="active" /></ProtectedRoute>} />
           <Route path="/partner/ssvn/history" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessments title="Assessment History" filter="history" /></ProtectedRoute>} />
+          <Route path="/partner/ssvn/assessment/:assessmentId" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnAssessmentWizard /></ProtectedRoute>} />
           <Route path="/partner/ssvn/checkin" element={<ProtectedRoute allowedRoles={["partner"]}><SsvnCheckin /></ProtectedRoute>} />
 
           {/* SRN — Recruitment Network */}
@@ -319,6 +329,7 @@ function AppShell() {
           <Route path="/admin/content-moderation" element={<AdminRoute><AdminContentModeration /></AdminRoute>} />
           <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
           <Route path="/admin/verification-queue" element={<AdminRoute><AdminVerificationQueue /></AdminRoute>} />
+          <Route path="/admin/trade-test-allocations" element={<AdminRoute><AdminTradeTestAllocations /></AdminRoute>} />
           <Route path="/admin/document-verification" element={<AdminRoute><DocumentVerification /></AdminRoute>} />
           <Route path="/admin/id-verification" element={<AdminRoute><IDVerification /></AdminRoute>} />
           <Route path="/admin/ecr-management" element={<AdminRoute><ECRManagement /></AdminRoute>} />

@@ -135,7 +135,7 @@ export default function PartnerRegister() {
 
           <p className="text-xs text-muted-foreground text-center">
             Already a partner?{" "}
-            <Link to="/emitra/login" className="text-primary hover:underline font-medium">
+            <Link to="/partner/login" className="text-primary hover:underline font-medium">
               Sign in
             </Link>
           </p>

@@ -24,6 +24,8 @@ import { isWorkerKycVerified } from '@/lib/workerKyc';
 import { loadWorkerSkillsWithMedia, type WorkerSkillWithMedia } from '@/lib/workerSkillMedia';
 import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
 import { displayableEmail } from '@/lib/workerAuthEmail';
+import { getEmployerVisibleReport } from '@/modules/trade-test/services/assessmentService';
+import { SOP_SCORE_FIELDS, type AssessmentRow, type AssessmentScoresRow } from '@/modules/trade-test/types';
 
 interface ApplicationData {
   id: string;
@@ -126,6 +128,10 @@ export default function ApplicationDetail() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [verificationLevel, setVerificationLevel] = useState<VerificationLevel>('not_verified');
   const [kycVerified, setKycVerified] = useState(false);
+  const [tradeReport, setTradeReport] = useState<{
+    assessment: AssessmentRow;
+    scores: AssessmentScoresRow | null;
+  } | null>(null);
 
   useEffect(() => {
     if (applicationId) {
@@ -196,6 +202,13 @@ export default function ApplicationDetail() {
       
       const level = calculateVerificationLevel(hasIdDoc, verifiedCount, hasPassport, ecrStatus);
       setVerificationLevel(level);
+
+      try {
+        const report = await getEmployerVisibleReport(appData.worker_id);
+        setTradeReport(report);
+      } catch {
+        setTradeReport(null);
+      }
 
     } catch (error) {
       console.error('Error loading application:', error);
@@ -482,6 +495,53 @@ export default function ApplicationDetail() {
 
               {/* Main Content - 3 columns */}
               <div className="xl:col-span-3 space-y-6">
+                {tradeReport && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Award className="h-4 w-4" />
+                        Trade test report
+                        <Badge variant="outline" className="ml-1 bg-green-500/10 text-green-700 border-green-500/20">
+                          SafeWork reviewed
+                        </Badge>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex flex-wrap gap-2 text-sm">
+                        <Badge>
+                          {(tradeReport.assessment.outcome || '').replace(/_/g, ' ')}
+                        </Badge>
+                        {tradeReport.assessment.overall_score != null && (
+                          <Badge variant="secondary">
+                            Overall score: {tradeReport.assessment.overall_score}
+                          </Badge>
+                        )}
+                        {tradeReport.assessment.center_name && (
+                          <span className="text-muted-foreground">
+                            Centre: {tradeReport.assessment.center_name}
+                          </span>
+                        )}
+                      </div>
+                      {tradeReport.scores && (
+                        <div className="grid sm:grid-cols-2 gap-2 text-sm">
+                          {SOP_SCORE_FIELDS.map((f) => (
+                            <div
+                              key={f.key}
+                              className="flex justify-between gap-2 rounded-md border px-3 py-2"
+                            >
+                              <span className="text-muted-foreground">{f.label}</span>
+                              <span className="font-medium">{tradeReport.scores![f.key]}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Identity evidence from the centre is not shared with employers.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Worker Profile Card */}
                 <Card>
                   <CardContent className="p-6">

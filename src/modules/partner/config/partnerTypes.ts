@@ -59,9 +59,9 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/ssvn/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/ssvn/dashboard", icon: LayoutDashboard },
-      { label: "Assessment Calendar", to: "/partner/ssvn/calendar", icon: Calendar },
-      { label: "Today's Schedule", to: "/partner/ssvn/today", icon: ClipboardCheck },
-      { label: "Candidate Check-in", to: "/partner/ssvn/checkin", icon: UserCheck },
+      { label: "Inbox (Accept)", to: "/partner/ssvn/inbox", icon: ClipboardCheck },
+      { label: "Today's Schedule", to: "/partner/ssvn/today", icon: Calendar },
+      { label: "Active assessments", to: "/partner/ssvn/active", icon: UserCheck },
       { label: "Assessment History", to: "/partner/ssvn/history", icon: FileBarChart },
       { label: "Reports", to: "/partner/reports", icon: FileBarChart },
       { label: "Wallet", to: "/partner/wallet", icon: Wallet },
