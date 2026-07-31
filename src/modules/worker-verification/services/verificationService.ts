@@ -2,6 +2,7 @@ import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import type { SkillQuizItem, VerificationStage, WorkerVerification } from '../types';
 import {
+  ASSESSMENT_FEE_INR,
   WORKER_TERMS_VERSION,
   normalizeVerificationStage,
   skillRequiresTradeTest,
@@ -272,13 +273,77 @@ export async function recordInterviewScore(
 }
 
 /**
- * Pilot path until Razorpay is live — calls SECURITY DEFINER RPC.
- * Advances awaiting_payment → trade_test | medical with provider pilot_waive.
+ * Pilot path — fee waived via SECURITY DEFINER RPC.
+ * Prefer payAssessmentFeeWithRazorpay when Razorpay is configured.
  */
 export async function waiveAssessmentPaymentPilot(userId: string): Promise<WorkerVerification> {
   const { data, error } = await supabase.rpc('waive_assessment_payment_pilot');
   if (error) throw new Error(error.message);
   const next = (data || (await getOrCreateVerification(userId))) as WorkerVerification;
+  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
+}
+
+/**
+ * Create Razorpay order → Checkout → verify signature via edge function → advance stage.
+ */
+export async function payAssessmentFeeWithRazorpay(opts?: {
+  name?: string | null;
+  email?: string | null;
+  contact?: string | null;
+}): Promise<WorkerVerification> {
+  const { openRazorpayCheckout } = await import('../lib/razorpayCheckout');
+
+  const { data: orderData, error: orderErr } = await supabase.functions.invoke(
+    'razorpay-assessment',
+    { body: { action: 'create_order' } },
+  );
+  if (orderErr) {
+    const detail =
+      (orderData as { error?: string } | null)?.error ||
+      orderErr.message ||
+      'Could not start payment';
+    throw new Error(detail);
+  }
+  if (orderData?.error) throw new Error(String(orderData.error));
+
+  const orderId = String(orderData?.order_id || '');
+  const amountInr = Number(orderData?.amount_inr || ASSESSMENT_FEE_INR);
+  const keyId = String(orderData?.key_id || '');
+  if (!orderId) throw new Error('Razorpay order was not created');
+
+  const checkout = await openRazorpayCheckout({
+    amountInr,
+    description: 'SafeWork Global assessment fee',
+    name: opts?.name || undefined,
+    email: opts?.email || undefined,
+    contact: opts?.contact || undefined,
+    orderId,
+    keyId: keyId || undefined,
+  });
+
+  const { data: verifyData, error: verifyErr } = await supabase.functions.invoke(
+    'razorpay-assessment',
+    {
+      body: {
+        action: 'verify_payment',
+        razorpay_payment_id: checkout.razorpay_payment_id,
+        razorpay_order_id: checkout.razorpay_order_id || orderId,
+        razorpay_signature: checkout.razorpay_signature,
+      },
+    },
+  );
+  if (verifyErr) {
+    const detail =
+      (verifyData as { error?: string } | null)?.error ||
+      verifyErr.message ||
+      'Payment verification failed';
+    throw new Error(detail);
+  }
+  if (verifyData?.error) throw new Error(String(verifyData.error));
+
+  const next = (verifyData?.verification || (await getOrCreateVerification(
+    (await supabase.auth.getUser()).data.user!.id,
+  ))) as WorkerVerification;
   return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
 }
 

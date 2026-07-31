@@ -12,7 +12,10 @@ dist
 dist-ssr
 *.local
 
-# Local backend secrets (never commit)
+# Env / secrets (never commit)
+.env
+.env.*
+!.env.example
 backend/.env
 backend/.env.*
 !backend/.env.example

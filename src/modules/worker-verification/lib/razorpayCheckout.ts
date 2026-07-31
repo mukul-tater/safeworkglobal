@@ -71,8 +71,10 @@ export async function openRazorpayCheckout(opts: {
   email?: string;
   contact?: string;
   orderId?: string;
+  /** Prefer key returned from create_order; falls back to VITE_RAZORPAY_KEY_ID */
+  keyId?: string;
 }): Promise<RazorpaySuccessResponse> {
-  const key = getRazorpayKeyId();
+  const key = String(opts.keyId || getRazorpayKeyId()).trim();
   if (!key) throw new Error('Razorpay is not configured (VITE_RAZORPAY_KEY_ID)');
 
   await loadRazorpayScript();
