@@ -85,12 +85,17 @@ export default function ManageJobs() {
   };
 
   const updateJobStatus = async (jobId: string, newStatus: string) => {
+    // Employers cannot activate jobs — only draft / pause / close / resubmit for review
+    if (newStatus === "ACTIVE") {
+      toast({
+        title: "Admin approval required",
+        description: "Submit the job for review instead of activating it directly.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
-      const updateData: any = { status: newStatus };
-      
-      if (newStatus === "ACTIVE" && !jobs.find(j => j.id === jobId)?.posted_at) {
-        updateData.posted_at = new Date().toISOString();
-      }
+      const updateData: { status: string } = { status: newStatus };
 
       const { error } = await supabase
         .from("jobs")
@@ -275,7 +280,12 @@ export default function ManageJobs() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="DRAFT">Draft</SelectItem>
-                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="PENDING">Pending approval</SelectItem>
+                        {job.status === "ACTIVE" && (
+                          <SelectItem value="ACTIVE" disabled>
+                            Active (admin)
+                          </SelectItem>
+                        )}
                         <SelectItem value="PAUSED">Paused</SelectItem>
                         <SelectItem value="CLOSED">Closed</SelectItem>
                       </SelectContent>

@@ -17,8 +17,19 @@ import type {
 import { ConflictException, NotFoundException, UnauthorizedException } from '../exception/AppException.js';
 import { otpService } from './OtpService.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'gigbridge-worker-dev-secret-change-in-production';
 const JWT_EXPIRES_IN = '7d';
+const FORBIDDEN_JWT_DEFAULT = 'gigbridge-worker-dev-secret-change-in-production';
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET?.trim();
+  if (!secret) {
+    throw new Error('JWT_SECRET is required — set it in backend/.env (no default secret)');
+  }
+  if (secret === FORBIDDEN_JWT_DEFAULT) {
+    throw new Error('JWT_SECRET must not use the former hardcoded default value');
+  }
+  return secret;
+}
 
 export class WorkerService {
   constructor(
@@ -194,14 +205,14 @@ export class WorkerService {
   }
 
   private generateToken(workerId: number, mobileNumber: string): string {
-    return jwt.sign({ sub: workerId, mobileNumber, type: 'worker' }, JWT_SECRET, {
+    return jwt.sign({ sub: workerId, mobileNumber, type: 'worker' }, getJwtSecret(), {
       expiresIn: JWT_EXPIRES_IN,
     });
   }
 
   verifyToken(token: string): { workerId: number } {
     try {
-      const payload = jwt.verify(token, JWT_SECRET) as { sub: number };
+      const payload = jwt.verify(token, getJwtSecret()) as { sub: number };
       return { workerId: payload.sub };
     } catch {
       throw new UnauthorizedException('Invalid or expired token');

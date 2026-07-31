@@ -87,7 +87,7 @@ const jobPostingBaseSchema = z.object({
 
   skills: z.array(z.string().trim().min(1)).optional().default([]),
 
-  status: z.enum(["DRAFT", "ACTIVE"], {
+  status: z.enum(["DRAFT", "PENDING", "ACTIVE"], {
     required_error: "Status is required",
   }).default("DRAFT"),
 });

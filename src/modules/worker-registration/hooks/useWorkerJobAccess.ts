@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useWorkerAuth } from '../context/WorkerAuthContext';
-import { workerApi } from '../services/workerApi';
 import {
   getEmitraReviewBlockMessage,
   isWorkerGccReady,
@@ -19,21 +17,23 @@ interface WorkerJobAccess {
   reviewBlockMessage: string | null;
 }
 
+/**
+ * Job access for the Supabase worker portal.
+ * Phase-1 JWT worker auth is retired — apply always requires gcc_ready.
+ */
 export function useWorkerJobAccess(): WorkerJobAccess {
   const { isAuthenticated, role, user, profileLoading } = useAuth();
-  const { worker, token, isAuthenticated: isPhase1Worker, loading: workerAuthLoading } = useWorkerAuth();
   const [canApplyToJobs, setCanApplyToJobs] = useState(false);
   const [reviewBlockMessage, setReviewBlockMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const isLegacyWorker = isAuthenticated && role === 'worker';
-  const isWorker = isPhase1Worker || isLegacyWorker;
+  const isWorker = isAuthenticated && role === 'worker';
   const onboardingPath = '/worker/journey';
 
   useEffect(() => {
-    if (profileLoading || workerAuthLoading) return;
+    if (profileLoading) return;
 
-    if (!isWorker) {
+    if (!isWorker || !user) {
       setCanApplyToJobs(false);
       setReviewBlockMessage(null);
       setLoading(false);
@@ -44,30 +44,14 @@ export function useWorkerJobAccess(): WorkerJobAccess {
 
     const resolveAccess = async () => {
       try {
-        if (isLegacyWorker && user) {
-          const block = await getEmitraReviewBlockMessage(user.id);
-          if (!cancelled) setReviewBlockMessage(block);
-          if (block) {
-            if (!cancelled) setCanApplyToJobs(false);
-            return;
-          }
-          const ready = await isWorkerGccReady(user.id);
-          if (!cancelled) setCanApplyToJobs(ready);
+        const block = await getEmitraReviewBlockMessage(user.id);
+        if (!cancelled) setReviewBlockMessage(block);
+        if (block) {
+          if (!cancelled) setCanApplyToJobs(false);
           return;
         }
-
-        if (isPhase1Worker && worker) {
-          if (worker.onboardingCompleted) {
-            if (!cancelled) setCanApplyToJobs(true);
-            return;
-          }
-          if (token) {
-            const onboarding = await workerApi.getOnboarding(token);
-            if (!cancelled) setCanApplyToJobs(Boolean(onboarding.canApplyToJobs));
-            return;
-          }
-          if (!cancelled) setCanApplyToJobs(false);
-        }
+        const ready = await isWorkerGccReady(user.id);
+        if (!cancelled) setCanApplyToJobs(ready);
       } catch {
         if (!cancelled) {
           setCanApplyToJobs(false);
@@ -84,16 +68,7 @@ export function useWorkerJobAccess(): WorkerJobAccess {
     return () => {
       cancelled = true;
     };
-  }, [
-    profileLoading,
-    workerAuthLoading,
-    isWorker,
-    isPhase1Worker,
-    isLegacyWorker,
-    worker,
-    token,
-    user,
-  ]);
+  }, [profileLoading, isWorker, user]);
 
   return {
     loading,

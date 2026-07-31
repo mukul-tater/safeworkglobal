@@ -8,10 +8,28 @@ import { authMiddleware } from './middleware/authMiddleware.js';
 import { errorHandler } from './exception/errorHandler.js';
 import { uploadWorkerPhoto, uploadWorkerVideo, uploadsRoot } from './middleware/uploadMiddleware.js';
 
+function corsOriginOption(): boolean | string | string[] {
+  const configured = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (configured.length > 0) {
+    return configured;
+  }
+
+  // Local/dev only — never reflect arbitrary origins in production
+  if (process.env.NODE_ENV !== 'production') {
+    return ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'];
+  }
+
+  return false;
+}
+
 export function createApp() {
   const app = express();
 
-  app.use(cors({ origin: true, credentials: true }));
+  app.use(cors({ origin: corsOriginOption(), credentials: true }));
   app.use(express.json());
 
   app.use('/uploads', express.static(uploadsRoot));

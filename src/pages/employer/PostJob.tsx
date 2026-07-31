@@ -272,9 +272,10 @@ export default function PostJob() {
         openings: data.openings,
         visa_sponsorship: data.visa_sponsorship,
         remote_allowed: data.remote_allowed,
-        status: data.status,
+        // Employers submit for review — only admins activate jobs
+        status: data.status === "ACTIVE" ? "PENDING" : data.status,
         expires_at: data.expires_at,
-        posted_at: data.status === "ACTIVE" ? new Date().toISOString() : null,
+        posted_at: null,
       };
 
       let jobId = draftJobIdRef.current;
@@ -320,9 +321,10 @@ export default function PostJob() {
 
       toast({
         title: "Success",
-        description: data.status === "ACTIVE" 
-          ? "Job posted successfully" 
-          : "Job saved as draft",
+        description:
+          data.status === "ACTIVE" || data.status === "PENDING"
+            ? "Job submitted for admin approval"
+            : "Job saved as draft",
       });
 
       navigate("/employer/manage-jobs");
@@ -642,12 +644,12 @@ export default function PostJob() {
               <Button
                 type="button"
                 onClick={() => {
-                  setValue("status", "ACTIVE");
+                  setValue("status", "PENDING");
                   handleSubmit(onSubmit)();
                 }}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Posting..." : "Post Job"}
+                {isSubmitting ? "Submitting..." : "Submit for approval"}
               </Button>
             </div>
           </div>

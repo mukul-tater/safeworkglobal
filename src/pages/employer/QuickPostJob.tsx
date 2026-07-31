@@ -81,8 +81,8 @@ export default function QuickPostJob() {
           salary_min: salaryMin ? Number(salaryMin) : null,
           salary_max: salaryMax ? Number(salaryMax) : null,
           currency: "INR",
-          status: "ACTIVE",
-          posted_at: new Date().toISOString(),
+          status: "PENDING",
+          posted_at: null,
           expires_at: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
         })
         .select("id")
@@ -96,8 +96,8 @@ export default function QuickPostJob() {
         );
       }
 
-      toast.success("Job posted!");
-      navigate(`/employer/recommended-workers?jobId=${job.id}`);
+      toast.success("Job submitted for admin approval");
+      navigate(`/employer/manage-jobs`);
     } catch (err: any) {
       toast.error(err.message || "Failed to post job");
     } finally {
