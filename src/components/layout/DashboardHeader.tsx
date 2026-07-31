@@ -51,9 +51,8 @@ export default function DashboardHeader({
   const displayName = worker?.fullName || profile?.full_name || "User";
   const displaySubtext =
     formatIndianMobile(worker?.mobileNumber) ||
-    getGoogleEmailFromUser(user) ||
     displayableEmail(profile?.email) ||
-    displayableEmail(user?.email) ||
+    getGoogleEmailFromUser(user) ||
     formatIndianMobile(profile?.phone) ||
     "";
 

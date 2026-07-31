@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import WorkerPortalLayout from '@/components/layout/WorkerPortalLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +31,7 @@ import {
   normalizeVerificationStage,
   skillRequiresTradeTest,
   youtubeEmbedUrl,
+  type GccNavStepId,
   type VerificationStage,
 } from '@/modules/worker-verification/constants';
 import type { SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
@@ -67,6 +68,7 @@ function notifyVerificationUpdated() {
  */
 export default function WorkerVerificationPage() {
   const { user, profile, refreshProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -91,6 +93,8 @@ export default function WorkerVerificationPage() {
   const videoRef = useRef<HTMLInputElement>(null);
 
   const [bondMethod, setBondMethod] = useState<'estamp' | 'emitra' | 'physical_upload'>('estamp');
+  const [bondStampFile, setBondStampFile] = useState<File | null>(null);
+  const [bondVideoFile, setBondVideoFile] = useState<File | null>(null);
   const [resetting, setResetting] = useState(false);
   const showDevReset = isJourneyResetEnabled();
 
@@ -190,6 +194,24 @@ export default function WorkerVerificationPage() {
   const tradeNeeded = row?.trade_test_required ?? skillRequiresTradeTest(row?.primary_skill);
   const navId = navStepForStage(stage);
   const progress = ((navStepIndex(navId) + 1) / GCC_JOURNEY_NAV_STEPS.length) * 100;
+
+  const journeyParam = searchParams.get('journey') as GccNavStepId | null;
+  const validJourneyIds = GCC_JOURNEY_NAV_STEPS.map((s) => s.id);
+  const viewingJourney =
+    journeyParam && validJourneyIds.includes(journeyParam) ? journeyParam : null;
+  const viewingCompletedStep =
+    !!viewingJourney &&
+    viewingJourney !== navId &&
+    navStepIndex(viewingJourney) < navStepIndex(navId);
+  const viewingStepMeta = viewingCompletedStep
+    ? GCC_JOURNEY_NAV_STEPS.find((s) => s.id === viewingJourney)
+    : null;
+
+  const clearJourneyQuery = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('journey');
+    setSearchParams(next, { replace: true });
+  };
 
   const currentQuiz = quizItems[quizIndex];
 
@@ -597,7 +619,28 @@ export default function WorkerVerificationPage() {
           </div>
         </div>
 
-        {stage === 'essentials' && (
+        {viewingCompletedStep && viewingStepMeta && (
+          <Card>
+            <CardContent className="p-5 sm:p-6 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-success/10 text-success">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">{viewingStepMeta.label}</h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    This step is done. Continue with your current step: {VERIFICATION_STAGE_LABELS[stage]}.
+                  </p>
+                </div>
+              </div>
+              <Button type="button" onClick={clearJourneyQuery}>
+                Back to current step
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!viewingCompletedStep && stage === 'essentials' && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div>
@@ -674,7 +717,7 @@ export default function WorkerVerificationPage() {
           </Card>
         )}
 
-        {stage === 'quiz' && currentQuiz && (
+        {!viewingCompletedStep && stage === 'quiz' && currentQuiz && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -765,7 +808,7 @@ export default function WorkerVerificationPage() {
           </Card>
         )}
 
-        {stage === 'media' && (
+        {!viewingCompletedStep && stage === 'media' && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div>
@@ -887,7 +930,7 @@ export default function WorkerVerificationPage() {
           </Card>
         )}
 
-        {stage === 'identity' && (
+        {!viewingCompletedStep && stage === 'identity' && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
@@ -1000,7 +1043,7 @@ export default function WorkerVerificationPage() {
           </Card>
         )}
 
-        {stage === 'awaiting_interview' && (
+        {!viewingCompletedStep && stage === 'awaiting_interview' && (
           <WaitingCard
             icon={Calendar}
             title="Test 2 — Video interview"
@@ -1008,7 +1051,7 @@ export default function WorkerVerificationPage() {
           />
         )}
 
-        {stage === 'awaiting_payment' && (
+        {!viewingCompletedStep && stage === 'awaiting_payment' && (
           <WaitingCard
             icon={CreditCard}
             title="Payment"
@@ -1044,7 +1087,7 @@ export default function WorkerVerificationPage() {
           </WaitingCard>
         )}
 
-        {(stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (
+        {!viewingCompletedStep && (stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
@@ -1119,7 +1162,7 @@ export default function WorkerVerificationPage() {
           </Card>
         )}
 
-        {stage === 'medical' && (
+        {!viewingCompletedStep && stage === 'medical' && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
@@ -1198,7 +1241,7 @@ export default function WorkerVerificationPage() {
           </Card>
         )}
 
-        {stage === 'bond' && (
+        {!viewingCompletedStep && stage === 'bond' && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
@@ -1241,26 +1284,67 @@ export default function WorkerVerificationPage() {
                   Bond submitted — SafeWork will review and mark you GCC ready.
                 </p>
               ) : (
-                <Button
-                  disabled={saving}
-                  onClick={async () => {
-                    if (!user?.id) return;
-                    setSaving(true);
-                    try {
-                      const next = await submitBond(user.id, bondMethod);
-                      setRow(next);
-                      notifyVerificationUpdated();
-                      toast.success('Bond submitted — waiting for admin approval');
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : 'Failed');
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                  Submit bond for review
-                </Button>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label>Stamp paper / agreement PDF or photo *</Label>
+                    <Input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={(e) => setBondStampFile(e.target.files?.[0] ?? null)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Video recording proof *</Label>
+                    <Input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => setBondVideoFile(e.target.files?.[0] ?? null)}
+                    />
+                  </div>
+                  <Button
+                    disabled={saving}
+                    onClick={async () => {
+                      if (!user?.id) return;
+                      if (!bondStampFile || !bondVideoFile) {
+                        toast.error('Upload stamp paper and video proof before submitting');
+                        return;
+                      }
+                      setSaving(true);
+                      try {
+                        const stampPath = `${user.id}/bond/stamp-${Date.now()}-${bondStampFile.name}`;
+                        const videoPath = `${user.id}/bond/video-${Date.now()}-${bondVideoFile.name}`;
+                        const { error: stampErr } = await supabase.storage
+                          .from(DOCS_BUCKET)
+                          .upload(stampPath, bondStampFile, { upsert: true });
+                        if (stampErr) throw stampErr;
+                        const { error: videoErr } = await supabase.storage
+                          .from(STORAGE_BUCKET)
+                          .upload(videoPath, bondVideoFile, { upsert: true });
+                        if (videoErr) throw videoErr;
+                        const { data: stampPub } = supabase.storage.from(DOCS_BUCKET).getPublicUrl(stampPath);
+                        const { data: videoPub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(videoPath);
+                        const next = await submitBond(
+                          user.id,
+                          bondMethod,
+                          stampPub.publicUrl,
+                          videoPub.publicUrl,
+                        );
+                        setRow(next);
+                        setBondStampFile(null);
+                        setBondVideoFile(null);
+                        notifyVerificationUpdated();
+                        toast.success('Bond submitted — waiting for admin approval');
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : 'Failed');
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                    Submit bond for review
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>

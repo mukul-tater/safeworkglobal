@@ -401,8 +401,9 @@ function Inner() {
               <div>
                 <h2 className="text-lg font-semibold">Worker account ready</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  <span className="font-medium text-foreground">{name}</span> can sign in at Worker Login
-                  with mobile <span className="font-medium text-foreground">+91 {createdMobile}</span>{' '}
+                  <span className="font-medium text-foreground">{name}</span> is onboarded and approved.
+                  They can sign in at Worker Login with mobile{' '}
+                  <span className="font-medium text-foreground">+91 {createdMobile}</span>{' '}
                   and the password you set. Linked to your E-Mitra center.
                 </p>
               </div>

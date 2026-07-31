@@ -29,8 +29,14 @@ export function useWorkerNavGroups(): { navGroups: NavGroup[]; loading: boolean 
           label: "Menu",
           defaultOpen: true,
           items: overview.items
-            .filter((i) => i.path === "/worker/dashboard")
-            .map((i) => ({ ...i, label: "Home" })),
+            .filter((i) => i.path === "/worker/dashboard" || i.path === "/worker/profile")
+            .map((i) =>
+              i.path === "/worker/dashboard"
+                ? { ...i, label: "Home" }
+                : i.path === "/worker/profile"
+                  ? { ...i, label: "Profile" }
+                  : i,
+            ),
         }
       : null;
 

@@ -21,9 +21,8 @@ export default function WorkerHeader() {
   const navigate = useNavigate();
 
   const contactLine =
-    getGoogleEmailFromUser(user) ||
     displayableEmail(profile?.email) ||
-    displayableEmail(user?.email) ||
+    getGoogleEmailFromUser(user) ||
     formatIndianMobile(profile?.phone) ||
     "";
 

@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * eMitra-sourced workers must be approved before using the worker portal / applying.
+ * eMitra-sourced workers onboarded via partner OTP are approved at create time.
+ * Only rejected (or legacy pending) rows are blocked from the portal.
  * Organic workers use review_status = not_required.
  */
 export async function getEmitraReviewBlockMessage(userId: string): Promise<string | null> {

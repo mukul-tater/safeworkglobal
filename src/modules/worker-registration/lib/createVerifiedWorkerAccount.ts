@@ -114,8 +114,9 @@ export async function createVerifiedWorkerAccount(
       source_type: source.type,
       source_partner_id: source.type === 'emitra' ? source.partnerProfileId : null,
       onboarded_at: source.type === 'emitra' ? new Date().toISOString() : null,
-      // Explicit — handle_new_user may INSERT organic first; upsert UPDATE skips INSERT trigger
-      review_status: source.type === 'emitra' ? 'pending' : 'not_required',
+      // eMitra OTP-verified onboarding is trusted — worker can log in immediately.
+      // Trigger only forces pending when status is null / not_required.
+      review_status: source.type === 'emitra' ? 'approved' : 'not_required',
     };
 
     if (input.profileSeed?.primary_work_type) {

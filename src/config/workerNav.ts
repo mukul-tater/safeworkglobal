@@ -8,7 +8,7 @@ export const workerNavGroups: NavGroup[] = [
     items: [
       { path: "/worker/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { path: "/worker/profile", icon: User, label: "Profile" },
-      { path: "/worker/journey", icon: BadgeCheck, label: "Verification" },
+      { path: "/worker/journey", icon: BadgeCheck, label: "My progress" },
     ],
   },
   {

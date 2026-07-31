@@ -19,7 +19,6 @@ import {
   Loader2, Phone, ShieldCheck, CheckCircle2, ArrowLeft, HardHat, Lock, Eye, EyeOff,
 } from 'lucide-react';
 import { NATIONALITIES } from '@/lib/constants';
-import { lovable } from '@/integrations/lovable/index';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import {
   useFirebasePhoneOtp,
@@ -46,7 +45,6 @@ export default function QuickWorkerSignup() {
   const firebaseOtp = useFirebasePhoneOtp();
 
   const [step, setStep] = useState<Step>('form');
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -59,24 +57,6 @@ export default function QuickWorkerSignup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [country, setCountry] = useState('India');
   const [otp, setOtp] = useState('');
-
-  const handleGoogle = async () => {
-    setGoogleLoading(true);
-    try {
-      sessionStorage.setItem('pending_oauth_role', 'worker');
-      const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: `${window.location.origin}/auth`,
-      });
-      if (result.error) {
-        sessionStorage.removeItem('pending_oauth_role');
-        toast.error('Google signup failed');
-        setGoogleLoading(false);
-      }
-    } catch {
-      sessionStorage.removeItem('pending_oauth_role');
-      setGoogleLoading(false);
-    }
-  };
 
   // If already signed in when opening this page, send them on.
   // Do NOT redirect while OTP/account creation is in progress — signIn happens
@@ -102,7 +82,7 @@ export default function QuickWorkerSignup() {
     if (name.trim().length < 2) return 'Name must be at least 2 characters';
     if (!isValidIndianMobile(mobile)) return 'Enter a valid 10-digit Indian mobile number';
     if (!isFirebaseConfigured()) {
-      return 'Phone SMS verification is not configured. Use Continue with Google, or ask the admin to add Firebase Phone Auth keys.';
+      return 'Phone SMS verification is not configured. Ask the admin to add Firebase Phone Auth keys.';
     }
     if (password.length < 6) return 'Password must be at least 6 characters';
     if (password !== confirmPassword) return 'Passwords do not match';
@@ -222,26 +202,6 @@ export default function QuickWorkerSignup() {
 
             {step === 'form' && (
               <form onSubmit={handleRequestOtp} className="space-y-4" noValidate>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-11"
-                  onClick={handleGoogle}
-                  disabled={googleLoading || formLoading}
-                >
-                  {googleLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  Continue with Google
-                </Button>
-
-                <div className="relative my-1">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="bg-card px-2 text-muted-foreground">OR VERIFY WITH MOBILE</span>
-                  </div>
-                </div>
-
                 <div className="space-y-1.5">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
@@ -275,7 +235,7 @@ export default function QuickWorkerSignup() {
                   </p>
                   {!firebaseOtp.isAvailable && (
                     <p className="text-xs text-warning">
-                      SMS OTP needs Firebase Phone Auth keys. Until then, use Google signup.
+                      SMS OTP needs Firebase Phone Auth keys before signup can continue.
                     </p>
                   )}
                 </div>
@@ -381,7 +341,7 @@ export default function QuickWorkerSignup() {
                   id={WORKER_OTP_RECAPTCHA_BTN_ID}
                   type="submit"
                   className="w-full h-11 font-semibold"
-                  disabled={formLoading || googleLoading}
+                  disabled={formLoading}
                 >
                   {formLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Send SMS code

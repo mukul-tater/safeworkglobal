@@ -45,70 +45,14 @@ export default function OnboardingStepper({ onDismiss }: OnboardingStepperProps)
     if (!user) return;
 
     try {
-      const emailStep: OnboardingStep = {
-        id: 'email',
-        title: 'Verify Email',
-        shortTitle: 'Email',
-        description: 'Confirm your email address',
-        icon: <Mail className="h-3.5 w-3.5" />,
-        route: '/verify-email?send=1',
-        completed: isEmailVerified,
-      };
-
       if (role === 'worker') {
-        const [profileRes, docsRes, skillsRes] = await Promise.all([
-          supabase.from('worker_profiles').select('*').eq('user_id', user.id).maybeSingle(),
-          supabase.from('worker_documents').select('id').eq('worker_id', user.id),
-          supabase.from('worker_skills').select('id').eq('worker_id', user.id),
-        ]);
+        // GCC journey owns worker onboarding — skip legacy verify-email / docs stepper.
+        setSteps([]);
+        setLoading(false);
+        return;
+      }
 
-        const workerProfile = profileRes.data;
-        const hasBasicInfo = !!profile?.full_name && !!profile?.phone;
-        const hasBio = !!workerProfile?.bio;
-        const hasDocs = (docsRes.data?.length || 0) > 0;
-        const hasSkills = (skillsRes.data?.length || 0) > 0;
-        const hasAvailability = !!workerProfile?.availability;
-
-        setSteps([
-          emailStep,
-          {
-            id: 'basic',
-            title: 'Complete Basic Profile',
-            shortTitle: 'Profile',
-            description: 'Add your name, phone, and bio',
-            icon: <User className="h-3.5 w-3.5" />,
-            route: '/worker/profile',
-            completed: hasBasicInfo && hasBio,
-          },
-          {
-            id: 'documents',
-            title: 'Upload Documents',
-            shortTitle: 'Documents',
-            description: 'Add passport, ID, and certificates',
-            icon: <FileText className="h-3.5 w-3.5" />,
-            route: '/worker/documents',
-            completed: hasDocs,
-          },
-          {
-            id: 'skills',
-            title: 'Add Your Skills',
-            shortTitle: 'Skills',
-            description: 'Add skills with photos or videos',
-            icon: <GraduationCap className="h-3.5 w-3.5" />,
-            route: '/worker/profile#skills',
-            completed: hasSkills,
-          },
-          {
-            id: 'availability',
-            title: 'Set Availability',
-            shortTitle: 'Availability',
-            description: 'Tell employers when you can start',
-            icon: <CalendarClock className="h-3.5 w-3.5" />,
-            route: '/worker/profile#preferences',
-            completed: hasAvailability,
-          },
-        ]);
-      } else if (role === 'employer') {
+      if (role === 'employer') {
         const [profileRes, jobsRes] = await Promise.all([
           supabase.from('employer_profiles').select('*').eq('user_id', user.id).maybeSingle(),
           supabase.from('jobs').select('id').eq('employer_id', user.id),
@@ -120,7 +64,15 @@ export default function OnboardingStepper({ onDismiss }: OnboardingStepperProps)
         const hasJobs = (jobsRes.data?.length || 0) > 0;
 
         setSteps([
-          emailStep,
+          {
+            id: 'email',
+            title: 'Verify Email',
+            shortTitle: 'Email',
+            description: 'Confirm your email address',
+            icon: <Mail className="h-3.5 w-3.5" />,
+            route: '/verify-email?send=1',
+            completed: isEmailVerified,
+          },
           {
             id: 'basic',
             title: 'Complete Your Profile',

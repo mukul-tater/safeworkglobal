@@ -18,7 +18,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { ProfileSkeleton } from "@/components/ui/page-skeleton";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
-import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
 import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { saveWorkerProfilePartial, type WorkerProfileAutoSaveData } from "@/lib/autoSaveProfiles";
@@ -49,7 +48,7 @@ const AVAILABILITY_OPTIONS = [
 ];
 
 export default function WorkerProfile() {
-  const { user, profile, refreshProfile, isEmailVerified } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [nationality, setNationality] = useState<string>("");
@@ -62,7 +61,7 @@ export default function WorkerProfile() {
     googleEmail ||
     displayableEmail(profile?.email) ||
     displayableEmail(user?.email);
-  const needsContactEmail = !displayEmail && isWorkerMobileAuthEmail(user?.email);
+  const isMobileAuthWorker = isWorkerMobileAuthEmail(user?.email);
 
   const { register, handleSubmit, formState: { errors }, reset, setValue, watch, control } = useForm<WorkerProfileFormData>({
     resolver: zodResolver(workerProfileSchema),
@@ -210,7 +209,6 @@ export default function WorkerProfile() {
   return layout(
     <div className="max-w-3xl mx-auto">
       <PortalBreadcrumb currentPageTitle="Profile" />
-      <OnboardingStepper />
 
       {/* Profile hero */}
       <div className="mb-6 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 shadow-sm overflow-hidden">
@@ -227,10 +225,11 @@ export default function WorkerProfile() {
                 {profile.full_name || 'My Profile'}
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {displayEmail || formatIndianMobile(profile.phone) || 'Connect Gmail on your journey'}
+                {displayEmail || formatIndianMobile(profile.phone) || 'Add a contact email below'}
               </p>
               <p className="text-xs text-muted-foreground mt-2 max-w-md leading-relaxed">
                 A complete profile with verified skills helps employers trust your application.
+                Continue <Link to="/worker/journey" className="text-primary underline-offset-2 hover:underline">My progress</Link> for placement steps.
               </p>
               <AutoSaveStatus status={autoSaveStatus} className="mt-2" />
             </div>
@@ -258,8 +257,70 @@ export default function WorkerProfile() {
             </div>
 
             <div>
-              <Label htmlFor="email">Email</Label>
-              {needsContactEmail ? (
+              <Label htmlFor="email">Contact email</Label>
+              {displayEmail ? (
+                <div className="mt-1.5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="email"
+                      type="email"
+                      value={displayEmail}
+                      disabled
+                      className="h-11 bg-muted"
+                    />
+                    <Badge variant="outline" className="shrink-0 gap-1 text-success border-success/30">
+                      <BadgeCheck className="h-3.5 w-3.5" />
+                      {googleEmail ? 'Gmail linked' : 'Saved'}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      type="email"
+                      placeholder="Update contact email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      className="h-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0"
+                      disabled={emailSaving || !/^\S+@\S+\.\S+$/.test(contactEmail.trim())}
+                      onClick={async () => {
+                        const next = contactEmail.trim().toLowerCase();
+                        if (!/^\S+@\S+\.\S+$/.test(next) || isWorkerMobileAuthEmail(next)) {
+                          toast.error('Enter a valid contact email');
+                          return;
+                        }
+                        setEmailSaving(true);
+                        try {
+                          const { error } = await supabase.from('profiles').update({ email: next }).eq('id', user!.id);
+                          if (error) throw error;
+                          await (supabase as any)
+                            .from('worker_verification')
+                            .update({ email: next, updated_at: new Date().toISOString() })
+                            .eq('user_id', user!.id);
+                          toast.success('Contact email updated');
+                          setContactEmail('');
+                          await refreshProfile();
+                        } catch (err: unknown) {
+                          toast.error(err instanceof Error ? err.message : 'Failed to update email');
+                        } finally {
+                          setEmailSaving(false);
+                        }
+                      }}
+                    >
+                      {emailSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {isMobileAuthWorker
+                      ? 'Contact only — sign in stays with mobile + password.'
+                      : 'Used for interviews and updates.'}
+                  </p>
+                </div>
+              ) : (
                 <div className="mt-1.5 space-y-2">
                   <Input
                     id="email"
@@ -277,16 +338,20 @@ export default function WorkerProfile() {
                     disabled={emailSaving || !/^\S+@\S+\.\S+$/.test(contactEmail.trim())}
                     onClick={async () => {
                       const next = contactEmail.trim().toLowerCase();
-                      if (!/^\S+@\S+\.\S+$/.test(next)) {
-                        toast.error('Enter a valid email');
+                      if (!/^\S+@\S+\.\S+$/.test(next) || isWorkerMobileAuthEmail(next)) {
+                        toast.error('Enter a valid contact email');
                         return;
                       }
                       setEmailSaving(true);
                       try {
-                        const { error } = await supabase.auth.updateUser({ email: next });
+                        const { error } = await supabase.from('profiles').update({ email: next }).eq('id', user!.id);
                         if (error) throw error;
-                        await supabase.from('profiles').update({ email: next }).eq('id', user!.id);
-                        toast.success('Verification link sent — check your inbox to confirm this email');
+                        await (supabase as any)
+                          .from('worker_verification')
+                          .update({ email: next, updated_at: new Date().toISOString() })
+                          .eq('user_id', user!.id);
+                        toast.success('Contact email saved');
+                        setContactEmail('');
                         await refreshProfile();
                       } catch (err: unknown) {
                         toast.error(err instanceof Error ? err.message : 'Failed to update email');
@@ -296,64 +361,14 @@ export default function WorkerProfile() {
                     }}
                   >
                     {emailSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                    Add & verify email
+                    Save contact email
                   </Button>
                   <p className="text-xs text-muted-foreground">
-                    Signup used mobile verification. Add a real email here to recover your account and get updates.
+                    {isMobileAuthWorker
+                      ? 'Used for interviews and updates. Sign in stays with your mobile number + password.'
+                      : 'Used for interviews and updates.'}
                   </p>
                 </div>
-              ) : displayEmail ? (
-                <>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <Input
-                      id="email"
-                      type="email"
-                      value={displayEmail}
-                      disabled
-                      className="h-11 bg-muted"
-                    />
-                    {googleEmail || isEmailVerified ? (
-                      <Badge variant="outline" className="shrink-0 gap-1 text-success border-success/30">
-                        <BadgeCheck className="h-3.5 w-3.5" />
-                        {googleEmail ? 'Gmail connected' : 'Verified'}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="shrink-0 text-amber-600 border-amber-500/30">
-                        Unverified
-                      </Badge>
-                    )}
-                  </div>
-                  {!googleEmail && !isEmailVerified && (
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="h-auto p-0 mt-1 text-xs"
-                      disabled={emailSaving}
-                      onClick={async () => {
-                        if (!displayEmail) return;
-                        setEmailSaving(true);
-                        try {
-                          const { error } = await supabase.auth.resend({
-                            type: 'signup',
-                            email: displayEmail,
-                          });
-                          if (error) throw error;
-                          toast.success('Verification email resent');
-                        } catch (err: unknown) {
-                          toast.error(err instanceof Error ? err.message : 'Could not resend verification');
-                        } finally {
-                          setEmailSaving(false);
-                        }
-                      }}
-                    >
-                      Resend verification email
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <p className="mt-1.5 text-sm text-muted-foreground">
-                  No email connected yet. Use Connect Gmail on your placement journey.
-                </p>
               )}
             </div>
 

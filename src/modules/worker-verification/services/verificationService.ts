@@ -82,21 +82,23 @@ export async function saveEssentials(
 
   await supabase.from('profiles').update({ email }).eq('id', userId);
 
-  // Ensure a worker_skills row for media uploads
-  const { data: existingSkill } = await supabase
+  // Ensure a worker_skills row for media uploads — fail loudly if this breaks
+  const { data: existingSkill, error: skillFetchErr } = await supabase
     .from('worker_skills')
     .select('id')
     .eq('worker_id', userId)
     .eq('skill_name', input.primary_skill)
     .maybeSingle();
+  if (skillFetchErr) throw new Error(skillFetchErr.message);
 
   if (!existingSkill) {
-    await supabase.from('worker_skills').insert({
+    const { error: skillInsertErr } = await supabase.from('worker_skills').insert({
       worker_id: userId,
       skill_name: input.primary_skill,
       proficiency_level: 'intermediate',
       years_of_experience: 0,
     });
+    if (skillInsertErr) throw new Error(skillInsertErr.message);
   }
 
   const { data, error } = await supabase
@@ -414,12 +416,15 @@ export async function submitBond(
   stampDocUrl?: string,
   videoProofUrl?: string,
 ): Promise<WorkerVerification> {
+  if (!stampDocUrl?.trim() || !videoProofUrl?.trim()) {
+    throw new Error('Stamp paper and video proof uploads are required');
+  }
   const row = await getOrCreateVerification(userId);
   const { error: bondErr } = await supabase.from('worker_bonds').insert({
     user_id: userId,
     method,
-    stamp_doc_url: stampDocUrl || null,
-    video_proof_url: videoProofUrl || null,
+    stamp_doc_url: stampDocUrl,
+    video_proof_url: videoProofUrl,
     status: 'submitted',
   });
   if (bondErr) throw new Error(bondErr.message);
