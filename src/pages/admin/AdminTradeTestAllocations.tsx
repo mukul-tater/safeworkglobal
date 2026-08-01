@@ -162,6 +162,7 @@ export default function AdminTradeTestAllocations() {
   return (
     <DashboardLayout
       navGroups={adminNavGroups}
+      portalLabel="Admin"
       portalName="Admin"
       portalHomePath="/admin/dashboard"
       profileMenuItems={adminProfileMenu}
