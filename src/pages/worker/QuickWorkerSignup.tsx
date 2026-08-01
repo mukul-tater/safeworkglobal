@@ -31,6 +31,7 @@ import {
   WORKER_TERMS_SUMMARY,
 } from '@/modules/worker-verification/constants';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
+import GoogleAuthButton, { AuthDivider } from '@/modules/worker-registration/components/GoogleAuthButton';
 
 type Step = 'form' | 'otp';
 
@@ -198,6 +199,13 @@ export default function QuickWorkerSignup() {
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription className="text-sm">{error}</AlertDescription>
               </Alert>
+            )}
+
+            {step === 'form' && (
+              <div className="space-y-3 mb-4">
+                <GoogleAuthButton label="Sign up with Google" role="worker" />
+                <AuthDivider />
+              </div>
             )}
 
             {step === 'form' && (
