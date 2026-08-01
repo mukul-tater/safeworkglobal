@@ -202,6 +202,13 @@ export default function QuickWorkerSignup() {
             )}
 
             {step === 'form' && (
+              <div className="space-y-3 mb-4">
+                <GoogleAuthButton label="Sign up with Google" role="worker" />
+                <AuthDivider />
+              </div>
+            )}
+
+            {step === 'form' && (
               <form onSubmit={handleRequestOtp} className="space-y-4" noValidate>
                 <div className="space-y-1.5">
                   <Label htmlFor="name">Full Name</Label>
