@@ -82,78 +82,241 @@ export type Database = {
           },
         ]
       }
-      assessments: {
+      assessment_media: {
         Row: {
-          assessor_name: string | null
+          assessment_id: string
           created_at: string
           created_by: string | null
+          id: string
+          label: string | null
+          media_type: string
+          storage_path: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          media_type: string
+          storage_path: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          media_type?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_media_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_scores: {
+        Row: {
+          accuracy: number
+          assessment_id: string
+          assessor_name: string
+          created_at: string
+          id: string
+          practical_skills: number
+          productivity: number
+          quality: number
+          remarks: string | null
+          safety_ppe: number
+          submitted_at: string
+          time_taken: number
+          tool_identification: number
+          workplace_behaviour: number
+        }
+        Insert: {
+          accuracy?: number
+          assessment_id: string
+          assessor_name: string
+          created_at?: string
+          id?: string
+          practical_skills?: number
+          productivity?: number
+          quality?: number
+          remarks?: string | null
+          safety_ppe?: number
+          submitted_at?: string
+          time_taken?: number
+          tool_identification?: number
+          workplace_behaviour?: number
+        }
+        Update: {
+          accuracy?: number
+          assessment_id?: string
+          assessor_name?: string
+          created_at?: string
+          id?: string
+          practical_skills?: number
+          productivity?: number
+          quality?: number
+          remarks?: string | null
+          safety_ppe?: number
+          submitted_at?: string
+          time_taken?: number
+          tool_identification?: number
+          workplace_behaviour?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_scores_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: true
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessments: {
+        Row: {
+          aadhaar_verified: boolean
+          accepted_at: string | null
+          appointment_date: string | null
+          assessor_name: string | null
+          attendance_confirmed: boolean
+          centre_submitted_at: string | null
+          created_at: string
+          created_by: string | null
+          docs_experience_ok: boolean | null
+          docs_notes: string | null
+          docs_passport_ok: boolean | null
           employer_id: string | null
           end_time: string | null
           equipment: Json
+          face_match_confirmed: boolean
           id: string
           job_id: string | null
+          kyc_completed_at: string | null
+          kyc_photo_path: string | null
+          kyc_video_path: string | null
           location: string | null
           media: Json
+          outcome: string | null
           overall_score: number | null
           partner_id: string | null
+          quality_notes: string | null
+          quality_reviewed_at: string | null
+          quality_reviewed_by: string | null
           recommendation: string | null
+          reject_reason: string | null
+          rejected_at: string | null
           remarks: string | null
+          reported_at: string | null
+          reporting_window: string | null
           scheduled_at: string | null
           scores: Json
           start_time: string | null
           status: Database["public"]["Enums"]["assessment_status"]
           trade_id: string | null
           trade_level: string | null
+          trade_test_center_id: string | null
           updated_at: string
           worker_id: string
+          worker_verification_id: string | null
         }
         Insert: {
+          aadhaar_verified?: boolean
+          accepted_at?: string | null
+          appointment_date?: string | null
           assessor_name?: string | null
+          attendance_confirmed?: boolean
+          centre_submitted_at?: string | null
           created_at?: string
           created_by?: string | null
+          docs_experience_ok?: boolean | null
+          docs_notes?: string | null
+          docs_passport_ok?: boolean | null
           employer_id?: string | null
           end_time?: string | null
           equipment?: Json
+          face_match_confirmed?: boolean
           id?: string
           job_id?: string | null
+          kyc_completed_at?: string | null
+          kyc_photo_path?: string | null
+          kyc_video_path?: string | null
           location?: string | null
           media?: Json
+          outcome?: string | null
           overall_score?: number | null
           partner_id?: string | null
+          quality_notes?: string | null
+          quality_reviewed_at?: string | null
+          quality_reviewed_by?: string | null
           recommendation?: string | null
+          reject_reason?: string | null
+          rejected_at?: string | null
           remarks?: string | null
+          reported_at?: string | null
+          reporting_window?: string | null
           scheduled_at?: string | null
           scores?: Json
           start_time?: string | null
           status?: Database["public"]["Enums"]["assessment_status"]
           trade_id?: string | null
           trade_level?: string | null
+          trade_test_center_id?: string | null
           updated_at?: string
           worker_id: string
+          worker_verification_id?: string | null
         }
         Update: {
+          aadhaar_verified?: boolean
+          accepted_at?: string | null
+          appointment_date?: string | null
           assessor_name?: string | null
+          attendance_confirmed?: boolean
+          centre_submitted_at?: string | null
           created_at?: string
           created_by?: string | null
+          docs_experience_ok?: boolean | null
+          docs_notes?: string | null
+          docs_passport_ok?: boolean | null
           employer_id?: string | null
           end_time?: string | null
           equipment?: Json
+          face_match_confirmed?: boolean
           id?: string
           job_id?: string | null
+          kyc_completed_at?: string | null
+          kyc_photo_path?: string | null
+          kyc_video_path?: string | null
           location?: string | null
           media?: Json
+          outcome?: string | null
           overall_score?: number | null
           partner_id?: string | null
+          quality_notes?: string | null
+          quality_reviewed_at?: string | null
+          quality_reviewed_by?: string | null
           recommendation?: string | null
+          reject_reason?: string | null
+          rejected_at?: string | null
           remarks?: string | null
+          reported_at?: string | null
+          reporting_window?: string | null
           scheduled_at?: string | null
           scores?: Json
           start_time?: string | null
           status?: Database["public"]["Enums"]["assessment_status"]
           trade_id?: string | null
           trade_level?: string | null
+          trade_test_center_id?: string | null
           updated_at?: string
           worker_id?: string
+          worker_verification_id?: string | null
         }
         Relationships: [
           {
@@ -168,6 +331,13 @@ export type Database = {
             columns: ["trade_id"]
             isOneToOne: false
             referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_trade_test_center_id_fkey"
+            columns: ["trade_test_center_id"]
+            isOneToOne: false
+            referencedRelation: "trade_test_centers"
             referencedColumns: ["id"]
           },
         ]
@@ -3049,6 +3219,50 @@ export type Database = {
           },
         ]
       }
+      trade_test_centers: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          partner_id: string | null
+          reporting_window: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id: string
+          is_active?: boolean
+          name: string
+          partner_id?: string | null
+          reporting_window?: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          partner_id?: string | null
+          reporting_window?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_test_centers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trades: {
         Row: {
           active: boolean
@@ -3904,6 +4118,7 @@ export type Database = {
       }
       worker_verification: {
         Row: {
+          assessment_id: string | null
           bond_status: string | null
           city: string | null
           created_at: string
@@ -3941,6 +4156,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assessment_id?: string | null
           bond_status?: string | null
           city?: string | null
           created_at?: string
@@ -3978,6 +4194,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assessment_id?: string | null
           bond_status?: string | null
           city?: string | null
           created_at?: string
@@ -4014,7 +4231,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "worker_verification_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       worker_verification_interviews: {
         Row: {
@@ -4349,9 +4574,57 @@ export type Database = {
         }
         Returns: Json
       }
+      waive_assessment_interview_pilot: {
+        Args: never
+        Returns: {
+          assessment_id: string | null
+          bond_status: string | null
+          city: string | null
+          created_at: string
+          education_level: string | null
+          email: string | null
+          essentials_completed_at: string | null
+          gcc_ready_at: string | null
+          id: string
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_score: number | null
+          media_submitted_at: string | null
+          medical_result_url: string | null
+          medical_status: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_status: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          stage: string
+          state: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_reporting_window: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_verification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       waive_assessment_payment_pilot: {
         Args: never
         Returns: {
+          assessment_id: string | null
           bond_status: string | null
           city: string | null
           created_at: string
@@ -4411,6 +4684,12 @@ export type Database = {
         | "approved"
         | "rejected"
         | "retest"
+        | "allocated"
+        | "accepted"
+        | "centre_rejected"
+        | "kyc_done"
+        | "centre_submitted"
+        | "under_review"
       migration_readiness_category:
         | "placement_ready"
         | "needs_preparation"
@@ -4625,6 +4904,12 @@ export const Constants = {
         "approved",
         "rejected",
         "retest",
+        "allocated",
+        "accepted",
+        "centre_rejected",
+        "kyc_done",
+        "centre_submitted",
+        "under_review",
       ],
       migration_readiness_category: [
         "placement_ready",
