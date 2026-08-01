@@ -31,6 +31,7 @@ import {
   WORKER_TERMS_SUMMARY,
 } from '@/modules/worker-verification/constants';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
+import GoogleAuthButton, { AuthDivider } from '@/modules/worker-registration/components/GoogleAuthButton';
 
 type Step = 'form' | 'otp';
 
