@@ -91,6 +91,10 @@ import AdminEmitraWorkerReview from "./pages/admin/AdminEmitraWorkerReview";
 import AdminEmitraWithdrawals from "./pages/admin/AdminEmitraWithdrawals";
 import AdminEmitraAnalytics from "./pages/admin/AdminEmitraAnalytics";
 import AdminVerificationQueue from "./pages/admin/AdminVerificationQueue";
+import AdminQuizCms from "./pages/admin/AdminQuizCms";
+import AdminJourneyOps from "./pages/admin/AdminJourneyOps";
+import InterviewerLoginPage from "./modules/interviewer/pages/InterviewerLoginPage";
+import InterviewerQueuePage from "./modules/interviewer/pages/InterviewerQueuePage";
 import AdminLsps from "./pages/admin/AdminLsps";
 import AdminLspDeveloperDocs from "./pages/admin/AdminLspDeveloperDocs";
 import LspEntryPage from "./modules/lsp/pages/LspEntryPage";
@@ -329,6 +333,17 @@ function AppShell() {
           <Route path="/admin/content-moderation" element={<AdminRoute><AdminContentModeration /></AdminRoute>} />
           <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
           <Route path="/admin/verification-queue" element={<AdminRoute><AdminVerificationQueue /></AdminRoute>} />
+          <Route path="/admin/journey-ops" element={<AdminRoute><AdminJourneyOps /></AdminRoute>} />
+          <Route path="/admin/quiz-cms" element={<AdminRoute><AdminQuizCms /></AdminRoute>} />
+          <Route path="/interviewer/login" element={<InterviewerLoginPage />} />
+          <Route
+            path="/interviewer/queue"
+            element={
+              <ProtectedRoute allowedRoles={["interviewer", "admin"]} loginPath="/interviewer/login">
+                <InterviewerQueuePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/admin/trade-test-allocations" element={<AdminRoute><AdminTradeTestAllocations /></AdminRoute>} />
           <Route path="/admin/document-verification" element={<AdminRoute><DocumentVerification /></AdminRoute>} />
           <Route path="/admin/id-verification" element={<AdminRoute><IDVerification /></AdminRoute>} />
