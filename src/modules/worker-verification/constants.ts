@@ -79,6 +79,8 @@ export type VerificationStage =
   | 'medical'
   | 'tests' // legacy — normalized to trade_test / medical in UI
   | 'bond'
+  | 'pdot'
+  | 'deployment'
   | 'gcc_ready';
 
 export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
@@ -91,6 +93,8 @@ export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
   'trade_test',
   'medical',
   'bond',
+  'pdot',
+  'deployment',
   'gcc_ready',
 ];
 
@@ -106,6 +110,8 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   medical: 'Medical',
   tests: 'Test 3 — Physical trade test',
   bond: 'Bond',
+  pdot: 'PDOT training',
+  deployment: 'Deployment',
   gcc_ready: 'GCC ready',
 };
 
@@ -123,6 +129,8 @@ export type GccNavStepId =
   | 'test3'
   | 'medical'
   | 'bond'
+  | 'pdot'
+  | 'deployment'
   | 'gcc_ready';
 
 export const GCC_JOURNEY_NAV_STEPS: {
@@ -176,8 +184,33 @@ export const GCC_JOURNEY_NAV_STEPS: {
     stages: ['medical'],
   },
   { id: 'bond', label: 'Bond', shortLabel: 'Bond', stages: ['bond'] },
+  {
+    id: 'pdot',
+    label: 'PDOT training',
+    shortLabel: 'PDOT',
+    stages: ['pdot'],
+  },
   { id: 'gcc_ready', label: 'GCC ready', shortLabel: 'GCC ready', stages: ['gcc_ready'] },
+  {
+    id: 'deployment',
+    label: 'Deployment',
+    shortLabel: 'Deployment',
+    stages: ['deployment'],
+  },
 ];
+
+/** Minimum Test 1 score to pass. Failing allows unlimited retries for now. */
+export const QUIZ_PASS_SCORE = 60;
+
+/** Deployment checklist items shown to admin + worker (read-only for worker). */
+export const DEPLOYMENT_CHECKLIST = [
+  { key: 'deploy_offer_status', label: 'Offer letter' },
+  { key: 'deploy_contract_status', label: 'Employment contract' },
+  { key: 'deploy_emigration_status', label: 'Emigration / PoE clearance' },
+  { key: 'deploy_visa_status', label: 'Visa' },
+  { key: 'deploy_insurance_status', label: 'Insurance' },
+  { key: 'deploy_ticket_status', label: 'Flight ticket' },
+] as const;
 
 export function normalizeVerificationStage(
   stage: string | null | undefined,
