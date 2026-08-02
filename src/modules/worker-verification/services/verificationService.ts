@@ -1,6 +1,13 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
-import type { SkillQuizItem, VerificationStage, WorkerVerification } from '../types';
+import type {
+  BondTemplate,
+  InterviewerAssignment,
+  SkillQuizConfig,
+  SkillQuizItem,
+  VerificationStage,
+  WorkerVerification,
+} from '../types';
 import {
   ASSESSMENT_FEE_INR,
   WORKER_TERMS_VERSION,
