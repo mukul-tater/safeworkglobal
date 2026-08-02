@@ -10,6 +10,7 @@ import type {
 } from '../types';
 import {
   ASSESSMENT_FEE_INR,
+  QUIZ_PASS_SCORE,
   WORKER_TERMS_VERSION,
   normalizeVerificationStage,
   skillRequiresTradeTest,
@@ -202,13 +203,14 @@ export async function submitQuiz(
   const row = await getOrCreateVerification(userId);
   const correct = answers.filter((a) => a.answer === a.expected).length;
   const score = answers.length ? Math.round((correct / answers.length) * 1000) / 10 : 0;
+  const passed = score >= QUIZ_PASS_SCORE;
 
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
       quiz_score: score,
-      quiz_completed_at: new Date().toISOString(),
-      stage: 'media',
+      quiz_completed_at: passed ? new Date().toISOString() : null,
+      stage: passed ? 'media' : 'quiz',
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id)
