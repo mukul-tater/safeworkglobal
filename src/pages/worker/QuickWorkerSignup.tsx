@@ -9,26 +9,21 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  Loader2, Phone, ShieldCheck, CheckCircle2, ArrowLeft, HardHat, Lock, Eye, EyeOff,
+  Loader2, Phone, ShieldCheck, Lock, Eye, EyeOff,
 } from 'lucide-react';
-import { NATIONALITIES } from '@/lib/constants';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
-import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import { getFirebaseAuth, isFirebaseConfigured, redirectLocalhostForPhoneAuth } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import {
   WORKER_TERMS_FULL,
-  WORKER_TERMS_SUMMARY,
 } from '@/modules/worker-verification/constants';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
 import GoogleAuthButton, { AuthDivider } from '@/modules/worker-registration/components/GoogleAuthButton';
@@ -56,13 +51,17 @@ export default function QuickWorkerSignup() {
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [country, setCountry] = useState('India');
+  const country = 'India';
   const [otp, setOtp] = useState('');
 
   // If already signed in when opening this page, send them on.
   // Do NOT redirect while OTP/account creation is in progress — signIn happens
   // before mobile_verified is written, and bouncing to bind-mobile causes a
   // second "Verify your mobile" screen right after signup OTP.
+  useEffect(() => {
+    redirectLocalhostForPhoneAuth();
+  }, []);
+
   useEffect(() => {
     if (profileLoading || formLoading) return;
     if (step !== 'form') return;
@@ -87,7 +86,6 @@ export default function QuickWorkerSignup() {
     }
     if (password.length < 6) return 'Password must be at least 6 characters';
     if (password !== confirmPassword) return 'Passwords do not match';
-    if (!country) return 'Please select your country';
     if (!acceptedTerms) return 'Please agree to the terms and declarations';
     return null;
   };
@@ -171,46 +169,34 @@ export default function QuickWorkerSignup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-info/5 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to home
-        </button>
-
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-3">
-            <ShieldCheck className="h-7 w-7 text-primary" />
+    <div className="fixed inset-0 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-info/5 flex items-center justify-center px-4 py-2">
+      <div className="w-full max-w-md max-h-full min-h-0">
+        <div className="text-center mb-2">
+          <div className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 mb-1.5">
+            <ShieldCheck className="h-5 w-5 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold font-heading">Create your worker profile</h1>
-          <p className="text-sm text-muted-foreground mt-1">Takes under 2 minutes • No agent fees</p>
-        </div>
-
-        <div className="mb-4 flex items-center justify-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
-          <HardHat className="h-3.5 w-3.5" />
-          Signing up as a Worker
+          <h1 className="text-lg font-bold font-heading">Create your worker profile</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Name · Mobile OTP · Password</p>
         </div>
 
         <Card className="shadow-lg border-border/60">
-          <CardContent className="p-6">
+          <CardContent className="p-3.5 sm:p-4">
             {error && (
-              <Alert variant="destructive" className="mb-4">
+              <Alert variant="destructive" className="mb-2.5 py-2">
                 <AlertDescription className="text-sm">{error}</AlertDescription>
               </Alert>
             )}
 
             {step === 'form' && (
-              <div className="space-y-3 mb-4">
+              <div className="space-y-1.5 mb-2.5">
                 <GoogleAuthButton label="Sign up with Google" role="worker" />
                 <AuthDivider />
               </div>
             )}
 
             {step === 'form' && (
-              <form onSubmit={handleRequestOtp} className="space-y-4" noValidate>
-                <div className="space-y-1.5">
+              <form onSubmit={handleRequestOtp} className="space-y-2.5" noValidate>
+                <div className="space-y-1">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
@@ -218,29 +204,26 @@ export default function QuickWorkerSignup() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="h-11"
+                    className="h-9"
                     autoComplete="name"
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <Label htmlFor="mobile">Mobile Number</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
                       id="mobile"
                       type="tel"
-                      placeholder="10-digit mobile number"
+                      placeholder="10-digit mobile"
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
                       required
-                      className="h-11 pl-10"
+                      className="h-9 pl-10"
                       autoComplete="tel"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    We&apos;ll send an SMS code to verify it&apos;s you (+91). Email can be added later in your profile.
-                  </p>
                   {!firebaseOtp.isAvailable && (
                     <p className="text-xs text-warning">
                       SMS OTP needs Firebase Phone Auth keys before signup can continue.
@@ -248,119 +231,88 @@ export default function QuickWorkerSignup() {
                   )}
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="At least 6 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="h-11 pl-10 pr-10"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    <Input
-                      id="confirmPassword"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Re-enter password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="h-11 pl-10"
-                      autoComplete="new-password"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Country</Label>
-                  <Select
-                    value={country}
-                    onValueChange={(v) => {
-                      if (v === 'India') setCountry(v);
-                    }}
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Select your country" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-64">
-                      {NATIONALITIES.filter((c) => c !== 'All Nationalities').map((c) => (
-                        <SelectItem key={c} value={c} disabled={c !== 'India'}>
-                          {c}
-                          {c !== 'India' ? ' (coming soon)' : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Worker signup is India-only for now (+91 SMS OTP).
-                  </p>
-                </div>
-
-                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
-                  <p className="text-xs text-muted-foreground leading-relaxed">{WORKER_TERMS_SUMMARY}</p>
-                  <label className="flex items-start gap-2.5 cursor-pointer">
-                    <Checkbox
-                      checked={acceptedTerms}
-                      onCheckedChange={(v) => {
-                        const on = !!v;
-                        setAcceptedTerms(on);
-                        if (on) setTermsOpen(true);
-                      }}
-                      className="mt-0.5"
-                    />
-                    <span className="text-xs leading-snug">
-                      I agree to the terms and declarations.{' '}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Min 6 chars"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="h-9 pl-10 pr-9"
+                        autoComplete="new-password"
+                      />
                       <button
                         type="button"
-                        className="text-primary font-medium hover:underline"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setTermsOpen(true);
-                        }}
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
-                        Read full terms
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
-                    </span>
-                  </label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label htmlFor="confirmPassword">Confirm</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <Input
+                        id="confirmPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Re-enter"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="h-9 pl-10"
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                <label className="flex items-center gap-2.5 cursor-pointer rounded-lg border border-border bg-muted/30 px-2.5 py-2.5">
+                  <Checkbox
+                    checked={acceptedTerms}
+                    onCheckedChange={(v) => {
+                      const on = !!v;
+                      setAcceptedTerms(on);
+                      if (on) setTermsOpen(true);
+                    }}
+                    className="shrink-0"
+                  />
+                  <span className="min-w-0 flex-1 text-xs leading-5 text-muted-foreground">
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      className="inline p-0 m-0 border-0 bg-transparent font-medium text-primary align-baseline hover:underline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setTermsOpen(true);
+                      }}
+                    >
+                      terms &amp; declarations
+                    </button>
+                  </span>
+                </label>
 
                 <Button
                   id={WORKER_OTP_RECAPTCHA_BTN_ID}
                   type="submit"
-                  className="w-full h-11 font-semibold"
+                  className="w-full h-9 font-semibold"
                   disabled={formLoading}
                 >
                   {formLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                   Send SMS code
                 </Button>
 
-                <div className="flex items-center gap-2 text-xs text-success bg-success/5 border border-success/20 rounded-lg p-2.5">
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                  <span>Verified jobs only · No upfront fees</span>
-                </div>
-
-                <p className="text-xs text-center text-muted-foreground pt-1">
+                <p className="text-xs text-center text-muted-foreground">
                   Already have an account?{' '}
                   <button
                     type="button"
@@ -374,7 +326,7 @@ export default function QuickWorkerSignup() {
             )}
 
             {step === 'otp' && (
-              <form onSubmit={handleVerifyAndCreate} className="space-y-5">
+              <form onSubmit={handleVerifyAndCreate} className="space-y-4">
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">Enter the 6-digit SMS code sent to</p>
                   <p className="font-semibold text-foreground mt-0.5">+91 {mobile}</p>
@@ -408,7 +360,7 @@ export default function QuickWorkerSignup() {
 
                 <Button
                   type="submit"
-                  className="w-full h-11 font-semibold"
+                  className="w-full h-10 font-semibold"
                   disabled={formLoading || otp.length !== 6}
                 >
                   {formLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}

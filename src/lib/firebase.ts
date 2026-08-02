@@ -50,3 +50,17 @@ export function getFirebaseAuth(): Auth {
   }
   return auth;
 }
+
+/**
+ * Firebase Phone Auth reCAPTCHA often fails on hostname "localhost"
+ * (auth/invalid-app-credential) even when "localhost" is authorized.
+ * Same app on 127.0.0.1 works. Returns true if a redirect was started.
+ */
+export function redirectLocalhostForPhoneAuth(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (window.location.hostname !== 'localhost') return false;
+  const url = new URL(window.location.href);
+  url.hostname = '127.0.0.1';
+  window.location.replace(url.toString());
+  return true;
+}
