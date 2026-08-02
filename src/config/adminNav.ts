@@ -58,6 +58,8 @@ export const adminNavGroups: NavGroup[] = [
     label: "Verification",
     items: [
       { path: "/admin/verification-queue", icon: ClipboardCheck, label: "GCC Queue" },
+      { path: "/admin/journey-ops", icon: Plane, label: "Journey Ops" },
+      { path: "/admin/quiz-cms", icon: BookOpen, label: "Quiz CMS (Test 1)" },
       { path: "/admin/trade-test-allocations", icon: ClipboardCheck, label: "Trade Test Allocations" },
       { path: "/admin/document-verification", icon: FileCheck, label: "Documents" },
       { path: "/admin/id-verification", icon: CreditCard, label: "ID Verification" },
