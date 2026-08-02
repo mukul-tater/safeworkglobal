@@ -131,9 +131,68 @@ export async function saveEssentials(
   return data as WorkerVerification;
 }
 
-export async function loadQuizItems(skill: string): Promise<SkillQuizItem[]> {
-  // Questions ship in per-skill JSON under quiz-data/ (e.g. welder.questions.json).
-  return loadQuizItemsFromJson(skill);
+/**
+ * Test 1 questions come from the admin CMS (`worker_skill_quiz_items` +
+ * `skill_quiz_configs`). Region matching is optional: prefer questions for the
+ * worker's state, else fall back to skill-only / All-India rows.
+ * Falls back to bundled JSON when the CMS has nothing for the skill yet.
+ */
+export async function loadQuizItems(
+  skill: string,
+  region?: string | null,
+): Promise<SkillQuizItem[]> {
+  try {
+    const [{ data: cfgRows }, { data: itemRows }] = await Promise.all([
+      supabase
+        .from('skill_quiz_configs')
+        .select('*')
+        .eq('skill_code', skill)
+        .eq('active', true),
+      supabase
+        .from('worker_skill_quiz_items')
+        .select('*')
+        .eq('skill_code', skill)
+        .eq('active', true)
+        .order('sort_order', { ascending: true }),
+    ]);
+
+    const configs = (cfgRows || []) as SkillQuizConfig[];
+    const config =
+      (region && configs.find((c) => c.region === region)) ||
+      configs.find((c) => !c.region) ||
+      null;
+
+    const all = (itemRows || []) as SkillQuizItem[];
+    if (!all.length) return loadQuizItemsFromJson(skill);
+
+    const regional = region ? all.filter((q) => q.region === region) : [];
+    const generic = all.filter((q) => !q.region);
+    let pool = regional.length ? [...regional, ...generic] : generic.length ? generic : all;
+
+    if (config?.selection_mode === 'explicit_ids' && config.selected_ids?.length) {
+      const wanted = new Set(config.selected_ids);
+      const explicit = all.filter((q) => wanted.has(q.id));
+      if (explicit.length) pool = explicit;
+    } else {
+      pool = [...pool].sort(() => Math.random() - 0.5);
+    }
+
+    const count = Math.max(1, config?.questions_to_show ?? 5);
+    return pool.slice(0, count);
+  } catch {
+    return loadQuizItemsFromJson(skill);
+  }
+}
+
+export async function loadActiveBondTemplate(): Promise<BondTemplate | null> {
+  const { data } = await supabase
+    .from('bond_templates')
+    .select('*')
+    .eq('active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as BondTemplate) || null;
 }
 
 export async function submitQuiz(
