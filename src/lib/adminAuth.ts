@@ -43,20 +43,8 @@ export async function ensureAdminAccess(): Promise<{ ok: true } | { ok: false; e
     return { ok: true };
   }
 
-  const missingFn =
-    error &&
-    /could not find the function|function public.ensure_whitelisted_admin|PGRST202/i.test(error.message);
-
-  if (missingFn) {
-    return {
-      ok: false,
-      error:
-        'Admin database setup is incomplete. Run scripts/fix-admin-login.sql in Supabase SQL Editor, then try again.',
-    };
-  }
-
   return {
     ok: false,
-    error: error?.message || 'This account is not an administrator.',
+    error: 'This account is not an administrator. Ask an existing admin to grant access.',
   };
 }
