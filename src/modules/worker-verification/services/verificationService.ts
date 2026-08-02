@@ -1,8 +1,16 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
-import type { SkillQuizItem, VerificationStage, WorkerVerification } from '../types';
+import type {
+  BondTemplate,
+  InterviewerAssignment,
+  SkillQuizConfig,
+  SkillQuizItem,
+  VerificationStage,
+  WorkerVerification,
+} from '../types';
 import {
   ASSESSMENT_FEE_INR,
+  QUIZ_PASS_SCORE,
   WORKER_TERMS_VERSION,
   normalizeVerificationStage,
   skillRequiresTradeTest,
@@ -124,9 +132,68 @@ export async function saveEssentials(
   return data as WorkerVerification;
 }
 
-export async function loadQuizItems(skill: string): Promise<SkillQuizItem[]> {
-  // Questions ship in per-skill JSON under quiz-data/ (e.g. welder.questions.json).
-  return loadQuizItemsFromJson(skill);
+/**
+ * Test 1 questions come from the admin CMS (`worker_skill_quiz_items` +
+ * `skill_quiz_configs`). Region matching is optional: prefer questions for the
+ * worker's state, else fall back to skill-only / All-India rows.
+ * Falls back to bundled JSON when the CMS has nothing for the skill yet.
+ */
+export async function loadQuizItems(
+  skill: string,
+  region?: string | null,
+): Promise<SkillQuizItem[]> {
+  try {
+    const [{ data: cfgRows }, { data: itemRows }] = await Promise.all([
+      supabase
+        .from('skill_quiz_configs')
+        .select('*')
+        .eq('skill_code', skill)
+        .eq('active', true),
+      supabase
+        .from('worker_skill_quiz_items')
+        .select('*')
+        .eq('skill_code', skill)
+        .eq('active', true)
+        .order('sort_order', { ascending: true }),
+    ]);
+
+    const configs = (cfgRows || []) as SkillQuizConfig[];
+    const config =
+      (region && configs.find((c) => c.region === region)) ||
+      configs.find((c) => !c.region) ||
+      null;
+
+    const all = (itemRows || []) as SkillQuizItem[];
+    if (!all.length) return loadQuizItemsFromJson(skill);
+
+    const regional = region ? all.filter((q) => q.region === region) : [];
+    const generic = all.filter((q) => !q.region);
+    let pool = regional.length ? [...regional, ...generic] : generic.length ? generic : all;
+
+    if (config?.selection_mode === 'explicit_ids' && config.selected_ids?.length) {
+      const wanted = new Set(config.selected_ids);
+      const explicit = all.filter((q) => wanted.has(q.id));
+      if (explicit.length) pool = explicit;
+    } else {
+      pool = [...pool].sort(() => Math.random() - 0.5);
+    }
+
+    const count = Math.max(1, config?.questions_to_show ?? 5);
+    return pool.slice(0, count);
+  } catch {
+    return loadQuizItemsFromJson(skill);
+  }
+}
+
+export async function loadActiveBondTemplate(): Promise<BondTemplate | null> {
+  const { data } = await supabase
+    .from('bond_templates')
+    .select('*')
+    .eq('active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as BondTemplate) || null;
 }
 
 export async function submitQuiz(
@@ -136,13 +203,14 @@ export async function submitQuiz(
   const row = await getOrCreateVerification(userId);
   const correct = answers.filter((a) => a.answer === a.expected).length;
   const score = answers.length ? Math.round((correct / answers.length) * 1000) / 10 : 0;
+  const passed = score >= QUIZ_PASS_SCORE;
 
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
       quiz_score: score,
-      quiz_completed_at: new Date().toISOString(),
-      stage: 'media',
+      quiz_completed_at: passed ? new Date().toISOString() : null,
+      stage: passed ? 'media' : 'quiz',
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id)
@@ -170,32 +238,32 @@ export async function completeMediaStep(userId: string): Promise<WorkerVerificat
 }
 
 /**
- * Soft KYC — PAN + Aadhaar last-4 + passport number + document photos.
- * Advances to Test 2 (video interview) when coming from the identity stage;
- * if the worker already finished later stages, keep their stage.
+ * KYC — PAN + full Aadhaar number + passport number + document photos.
+ * Stays on the identity stage: an admin must verify KYC before the video
+ * interview can be scheduled (admin_verify_worker_kyc advances the stage).
  */
 export async function completeIdentityKyc(
   userId: string,
   opts: {
     panNumber: string;
-    aadhaarLast4: string;
+    aadhaarNumber: string;
     passportNumber: string;
     nextStageIfCurrentIdentity?: boolean;
   },
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
-  const stay =
-    row.stage !== 'identity' &&
-    row.stage !== 'media' &&
-    row.stage !== 'essentials' &&
-    row.stage !== 'quiz';
+  const aadhaar = opts.aadhaarNumber.replace(/\D/g, '');
+  if (aadhaar.length !== 12) {
+    throw new Error('Enter your full 12-digit Aadhaar number');
+  }
 
   const now = new Date().toISOString();
   const passport = opts.passportNumber.trim().toUpperCase();
   const kycPayload = {
     user_id: userId,
     pan_number: opts.panNumber.trim().toUpperCase(),
-    aadhaar_last4: opts.aadhaarLast4,
+    aadhaar_number: aadhaar,
+    aadhaar_last4: aadhaar.slice(-4),
     passport_number: passport,
     has_passport: true,
     kyc_status: 'submitted',
@@ -221,28 +289,159 @@ export async function completeIdentityKyc(
     if (wpErr) throw new Error(wpErr.message);
   }
 
-  const nextStage = stay ? row.stage : 'awaiting_interview';
-  if (nextStage === row.stage) {
-    return { ...row, updated_at: now };
-  }
-
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
-      stage: nextStage,
+      kyc_status: 'submitted',
+      stage: row.stage === 'identity' ? 'identity' : row.stage,
       updated_at: now,
     })
     .eq('id', row.id)
     .select('*')
     .single();
 
-  // KYC profile write already succeeded — don't fail the whole submit if stage
-  // advance is blocked (e.g. identity stage constraint not applied yet).
+  // KYC profile write already succeeded — don't fail the whole submit if the
+  // verification-row update is blocked.
   if (error) {
-    console.warn('Identity KYC stage advance failed:', error.message);
+    console.warn('Identity KYC status update failed:', error.message);
     return { ...row, updated_at: now };
   }
   return data as WorkerVerification;
+}
+
+/* ------------------------------------------------------------------ */
+/* Privileged actions — SECURITY DEFINER RPCs (admin / interviewer)    */
+/* ------------------------------------------------------------------ */
+
+async function rpc<T = unknown>(name: string, args?: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.rpc(name, args ?? {});
+  if (error) throw new Error(error.message);
+  return data as T;
+}
+
+/** Admin — approve or reject KYC. Approving unlocks interview scheduling. */
+export async function reviewWorkerKyc(
+  userId: string,
+  approved: boolean,
+  reason?: string,
+): Promise<void> {
+  await rpc('admin_verify_worker_kyc', {
+    p_user_id: userId,
+    p_approved: approved,
+    p_reason: reason || null,
+  });
+}
+
+/** Admin — set interview date/time/link and assign an interviewer. */
+export async function scheduleWorkerInterview(input: {
+  userId: string;
+  scheduledAt: string;
+  meetingUrl: string;
+  interviewerUserId: string;
+}): Promise<string> {
+  return rpc<string>('admin_schedule_worker_interview', {
+    p_user_id: input.userId,
+    p_scheduled_at: input.scheduledAt,
+    p_meeting_url: input.meetingUrl,
+    p_interviewer_user_id: input.interviewerUserId,
+  });
+}
+
+/** Interviewer (or admin) — Approved unlocks payment automatically. */
+export async function recordInterviewDecision(input: {
+  interviewId: string;
+  approved: boolean;
+  reason?: string;
+  score?: number;
+}): Promise<void> {
+  await rpc('interviewer_record_decision', {
+    p_interview_id: input.interviewId,
+    p_approved: input.approved,
+    p_reason: input.reason || null,
+    p_score: input.score ?? null,
+  });
+}
+
+export async function listInterviewerAssignments(): Promise<InterviewerAssignment[]> {
+  const rows = await rpc<InterviewerAssignment[]>('interviewer_list_assignments');
+  return rows || [];
+}
+
+/** Admin — schedule trade test or medical with date/time + place. */
+export async function scheduleWorkerAssessment(input: {
+  userId: string;
+  kind: 'trade_test' | 'medical';
+  scheduledAt: string;
+  place?: string;
+  instructions?: string;
+}): Promise<void> {
+  await rpc('admin_schedule_worker_assessment', {
+    p_user_id: input.userId,
+    p_kind: input.kind,
+    p_scheduled_at: input.scheduledAt,
+    p_place: input.place || null,
+    p_instructions: input.instructions || null,
+  });
+}
+
+/** Worker — enters courier tracking number after posting the signed bond. */
+export async function submitBondTracking(tracking: string): Promise<void> {
+  await rpc('worker_submit_bond_tracking', { p_tracking: tracking });
+}
+
+/** Admin — original bond received in office. Moves worker to PDOT. */
+export async function markBondReceived(userId: string): Promise<void> {
+  await rpc('admin_mark_bond_received', { p_user_id: userId });
+}
+
+/** Admin — PDOT training plan (provider, batch, link, date). */
+export async function setPdotPlan(input: {
+  userId: string;
+  provider?: string;
+  batch?: string;
+  trainingUrl?: string;
+  scheduledAt?: string | null;
+}): Promise<void> {
+  await rpc('admin_set_pdot_plan', {
+    p_user_id: input.userId,
+    p_provider: input.provider || null,
+    p_batch: input.batch || null,
+    p_training_url: input.trainingUrl || null,
+    p_scheduled_at: input.scheduledAt || null,
+  });
+}
+
+/** Admin — PDOT training completed. Requires bond received; sets GCC ready. */
+export async function markPdotCompleted(userId: string, proofUrl?: string): Promise<void> {
+  await rpc('admin_mark_pdot_completed', {
+    p_user_id: userId,
+    p_proof_url: proofUrl || null,
+  });
+}
+
+/** Admin — deployment checklist. */
+export async function updateDeploymentChecklist(input: {
+  userId: string;
+  offer?: string;
+  contract?: string;
+  emigration?: string;
+  visa?: string;
+  insurance?: string;
+  ticket?: string;
+  deployed?: boolean;
+  notes?: string;
+}): Promise<void> {
+  await rpc('admin_update_deployment_checklist', {
+    p_user_id: input.userId,
+    p_offer: input.offer || null,
+    p_contract: input.contract || null,
+    p_emigration: input.emigration || null,
+    p_visa: input.visa || null,
+    p_insurance: input.insurance || null,
+    p_ticket: input.ticket || null,
+    p_deployed: input.deployed ?? null,
+    p_notes: input.notes || null,
+  });
 }
 
 /** Admin only — score interview and open payment stage (RLS/trigger enforced). */

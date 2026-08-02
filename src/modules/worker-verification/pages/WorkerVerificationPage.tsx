@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
   Calendar, CreditCard, Stethoscope, FileSignature, Flag, RotateCcw, ShieldCheck, Wrench,
+  GraduationCap, Plane, Download, Truck,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -24,6 +25,7 @@ import {
   ASSESSMENT_FEE_INR,
   EDUCATION_LEVELS,
   GCC_JOURNEY_NAV_STEPS,
+  DEPLOYMENT_CHECKLIST,
   VERIFICATION_STAGE_LABELS,
   isJourneyResetEnabled,
   navStepForStage,
@@ -34,15 +36,17 @@ import {
   type GccNavStepId,
   type VerificationStage,
 } from '@/modules/worker-verification/constants';
-import type { SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
+import type { BondTemplate, SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
 import {
   completeMediaStep,
   completeIdentityKyc,
   getOrCreateVerification,
+  loadActiveBondTemplate,
   loadQuizItems,
   resetVerificationJourney,
   saveEssentials,
   submitBond,
+  submitBondTracking,
   submitMedicalResult,
   submitQuiz,
   bookTradeTestCenter,
@@ -130,7 +134,10 @@ export default function WorkerVerificationPage() {
   const showDevReset = isJourneyResetEnabled();
 
   const [panNumber, setPanNumber] = useState('');
-  const [aadhaarLast4, setAadhaarLast4] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [aadhaarOnFile, setAadhaarOnFile] = useState('');
+  const [bondTracking, setBondTracking] = useState('');
+  const [bondTemplate, setBondTemplate] = useState<BondTemplate | null>(null);
   const [passportNumber, setPassportNumber] = useState('');
   const [panFile, setPanFile] = useState<File | null>(null);
   const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
@@ -182,8 +189,16 @@ export default function WorkerVerificationPage() {
       const kycOk = kycStatus === 'submitted' || kycStatus === 'verified';
       setKycDone(kycOk);
       if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
-      if ((wp as any)?.aadhaar_last4) setAadhaarLast4(String((wp as any).aadhaar_last4));
+      if ((wp as any)?.aadhaar_last4) setAadhaarOnFile(String((wp as any).aadhaar_last4));
       if ((wp as any)?.passport_number) setPassportNumber(String((wp as any).passport_number));
+      if (v.bond_courier_tracking) setBondTracking(String(v.bond_courier_tracking));
+      if (v.stage === 'bond') {
+        try {
+          setBondTemplate(await loadActiveBondTemplate());
+        } catch {
+          setBondTemplate(null);
+        }
+      }
 
       // Mandatory for apply: if KYC missing and worker already passed skill proof, show Identity.
       const pastMedia =
@@ -193,7 +208,7 @@ export default function WorkerVerificationPage() {
       setForceIdentity(!kycOk && pastMedia && v.stage !== 'identity');
 
       if (v.primary_skill && (v.stage === 'quiz' || !v.quiz_completed_at)) {
-        const items = await loadQuizItems(v.primary_skill);
+        const items = await loadQuizItems(v.primary_skill, v.state);
         setQuizItems(items);
       }
 
@@ -267,8 +282,9 @@ export default function WorkerVerificationPage() {
       toast.error('Enter a valid PAN (e.g. ABCDE1234F)');
       return;
     }
-    if (!/^\d{4}$/.test(aadhaarLast4)) {
-      toast.error('Enter last 4 digits of Aadhaar');
+    const aadhaar = aadhaarNumber.replace(/\D/g, '');
+    if (!/^\d{12}$/.test(aadhaar)) {
+      toast.error('Enter your full 12-digit Aadhaar number');
       return;
     }
     if (!/^[A-Z0-9]{6,9}$/.test(passport)) {
@@ -343,7 +359,7 @@ export default function WorkerVerificationPage() {
 
       const next = await completeIdentityKyc(user.id, {
         panNumber: pan,
-        aadhaarLast4,
+        aadhaarNumber: aadhaar,
         passportNumber: passport,
       });
       setRow(next);
@@ -352,11 +368,7 @@ export default function WorkerVerificationPage() {
       setAadhaarFile(null);
       setPassportFile(null);
       notifyVerificationUpdated();
-      toast.success(
-        next.stage === 'awaiting_interview'
-          ? 'Identity submitted — Test 2 (video interview) is next'
-          : 'Identity submitted — you can apply to jobs',
-      );
+      toast.success('Identity submitted — SafeWork will verify your documents before the video interview');
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'KYC submit failed');
@@ -974,7 +986,15 @@ export default function WorkerVerificationPage() {
           </Card>
         )}
 
-        {!viewingCompletedStep && stage === 'identity' && (
+        {!viewingCompletedStep && stage === 'identity' && kycDone && (
+          <WaitingCard
+            icon={ShieldCheck}
+            title="Identity under review"
+            body="Your PAN, Aadhaar and passport documents are submitted. SafeWork is verifying them — your video interview is scheduled right after approval."
+          />
+        )}
+
+        {!viewingCompletedStep && stage === 'identity' && !kycDone && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
@@ -984,7 +1004,7 @@ export default function WorkerVerificationPage() {
                 <div>
                   <h2 className="font-semibold">Identity (KYC)</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Required before applying to jobs. Enter PAN, Aadhaar (last 4), and Passport numbers, and upload a photo of each.
+                     Required before applying to jobs. Enter PAN, your full Aadhaar number, and Passport number, and upload a photo of each. SafeWork verifies these before your video interview is scheduled.
                   </p>
                 </div>
               </div>
@@ -1011,16 +1031,20 @@ export default function WorkerVerificationPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Aadhaar — Last 4 Digits *</Label>
+                  <Label>Aadhaar Number *</Label>
                   <Input
-                    value={aadhaarLast4}
-                    onChange={(e) => setAadhaarLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    placeholder="1234"
+                    value={aadhaarNumber}
+                    onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                    placeholder="123412341234"
                     inputMode="numeric"
-                    maxLength={4}
+                    maxLength={12}
                     disabled={saving}
                   />
-                  <p className="text-[11px] text-muted-foreground">We never store your full Aadhaar</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {aadhaarOnFile
+                      ? `On file: XXXX XXXX ${aadhaarOnFile}`
+                      : 'Stored securely and used only for emigration paperwork'}
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Passport Number *</Label>
@@ -1091,9 +1115,25 @@ export default function WorkerVerificationPage() {
           <WaitingCard
             icon={Calendar}
             title="Test 2 — Video interview"
-            body="Normally SafeWork schedules a video call and scores it. For this pilot you can continue without waiting for the interview."
+            body={
+              row.interview_scheduled_at
+                ? `Your video interview is scheduled for ${new Date(row.interview_scheduled_at).toLocaleString('en-IN')}. Join on time from a quiet place with good network.`
+                : row.interview_status === 'rejected'
+                  ? 'Your last interview was not approved. SafeWork will reschedule a new interview — you will see the new date here.'
+                  : 'SafeWork will schedule your video interview and assign an interviewer. The date, time and joining link appear here.'
+            }
           >
+            {row.interview_meeting_url && (
+              <Button asChild>
+                <a href={row.interview_meeting_url} target="_blank" rel="noreferrer">
+                  <Video className="h-4 w-4 mr-1" />
+                  Join interview
+                </a>
+              </Button>
+            )}
+            {showDevReset && (
             <Button
+              variant="outline"
               disabled={saving}
               onClick={async () => {
                 if (!user?.id) return;
@@ -1116,6 +1156,7 @@ export default function WorkerVerificationPage() {
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Calendar className="h-4 w-4 mr-1" />}
               Continue (pilot — interview skipped)
             </Button>
+            )}
           </WaitingCard>
         )}
 
@@ -1494,10 +1535,79 @@ export default function WorkerVerificationPage() {
                 <div>
                   <h2 className="font-semibold">Candidate bond</h2>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    Stamp paper agreement with SafeWork + video recording proof. Choose eStamp online or nearest E-Mitra.
+                    Download the bond, print it, sign it, and courier the original to SafeWork. Then enter your courier tracking number below.
                   </p>
                 </div>
               </div>
+
+              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+                {bondTemplate ? (
+                  <>
+                    <Button asChild variant="outline" size="sm">
+                      <a href={bondTemplate.file_url} target="_blank" rel="noreferrer">
+                        <Download className="h-4 w-4 mr-1" />
+                        Download bond ({bondTemplate.version})
+                      </a>
+                    </Button>
+                    <div className="text-xs text-muted-foreground whitespace-pre-line">
+                      <p className="font-medium text-foreground">Courier the signed original to:</p>
+                      {bondTemplate.courier_address}
+                      {bondTemplate.instructions ? `\n\n${bondTemplate.instructions}` : ''}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    SafeWork is preparing your bond document — it will appear here for download shortly.
+                  </p>
+                )}
+              </div>
+
+              {row.bond_received_at ? (
+                <p className="text-sm rounded-lg border border-success/30 bg-success/5 px-3 py-2">
+                  Bond original received by SafeWork. Next: PDOT training.
+                </p>
+              ) : row.bond_courier_tracking ? (
+                <p className="text-sm text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2">
+                  Tracking submitted ({row.bond_courier_tracking}) — SafeWork will confirm once the original arrives.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Courier tracking number *</Label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      value={bondTracking}
+                      onChange={(e) => setBondTracking(e.target.value.toUpperCase().slice(0, 40))}
+                      placeholder="e.g. AWB123456789"
+                      disabled={saving}
+                    />
+                    <Button
+                      disabled={saving || bondTracking.trim().length < 5}
+                      onClick={async () => {
+                        setSaving(true);
+                        try {
+                          await submitBondTracking(bondTracking.trim());
+                          notifyVerificationUpdated();
+                          toast.success('Tracking number submitted');
+                          await load();
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : 'Could not submit tracking');
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                    >
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Truck className="h-4 w-4 mr-1" />}
+                      Submit tracking
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground">
+                  Optional — upload a scan of the signed bond
+                </summary>
+                <div className="pt-3 space-y-3">
               <RadioGroup
                 value={bondMethod}
                 onValueChange={(v) => setBondMethod(v as typeof bondMethod)}
@@ -1588,6 +1698,72 @@ export default function WorkerVerificationPage() {
                     Submit bond for review
                   </Button>
                 </div>
+              )}
+                </div>
+              </details>
+            </CardContent>
+          </Card>
+        )}
+
+        {!viewingCompletedStep && stage === 'pdot' && (
+          <WaitingCard
+            icon={GraduationCap}
+            title="PDOT — Pre-departure orientation training"
+            body={
+              row.pdot_scheduled_at
+                ? `Your PDOT training is scheduled for ${new Date(row.pdot_scheduled_at).toLocaleString('en-IN')}${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Attend fully — SafeWork marks you GCC ready after completion.`
+                : `SafeWork will confirm your PDOT training batch${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Details appear here.`
+            }
+          >
+            {row.pdot_training_url && (
+              <Button asChild variant="outline">
+                <a href={row.pdot_training_url} target="_blank" rel="noreferrer">
+                  <GraduationCap className="h-4 w-4 mr-1" />
+                  Open training
+                </a>
+              </Button>
+            )}
+          </WaitingCard>
+        )}
+
+        {!viewingCompletedStep && stage === 'deployment' && (
+          <Card>
+            <CardContent className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Plane className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Deployment</h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    SafeWork updates each step below as your travel paperwork clears.
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-2">
+                {DEPLOYMENT_CHECKLIST.map((item) => {
+                  const value = String((row as any)[item.key] || 'pending');
+                  const done = value === 'completed' || value === 'approved' || value === 'issued';
+                  return (
+                    <li
+                      key={item.key}
+                      className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+                    >
+                      <span className="flex items-center gap-2">
+                        <CheckCircle2
+                          className={cn('h-4 w-4', done ? 'text-success' : 'text-muted-foreground/40')}
+                        />
+                        {item.label}
+                      </span>
+                      <Badge variant={done ? 'default' : 'secondary'}>{value.replace(/_/g, ' ')}</Badge>
+                    </li>
+                  );
+                })}
+              </ul>
+              {row.deployed_at && (
+                <p className="text-sm rounded-lg border border-success/30 bg-success/5 px-3 py-2">
+                  Deployed on {new Date(row.deployed_at).toLocaleDateString('en-IN')} — all the best!
+                </p>
               )}
             </CardContent>
           </Card>

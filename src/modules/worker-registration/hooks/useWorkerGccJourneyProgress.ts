@@ -4,7 +4,9 @@ import {
   CreditCard,
   FileSignature,
   Flag,
+  GraduationCap,
   ImagePlus,
+  Plane,
   ShieldCheck,
   Stethoscope,
   UserRound,
@@ -35,7 +37,9 @@ const STEP_ICONS: Record<GccNavStepId, LucideIcon> = {
   test3: Wrench,
   medical: Stethoscope,
   bond: FileSignature,
+  pdot: GraduationCap,
   gcc_ready: Flag,
+  deployment: Plane,
 };
 
 function deriveNavStatuses(
@@ -48,7 +52,7 @@ function deriveNavStatuses(
 
   for (const step of GCC_JOURNEY_NAV_STEPS) {
     const i = navStepIndex(step.id);
-    if (stage === "gcc_ready" || currentNav === "gcc_ready") {
+    if (currentNav === "gcc_ready" && i <= curIdx) {
       out[step.id] = "completed";
     } else if (step.id === "test3" && !tradeRequired && curIdx > navStepIndex("payment")) {
       out[step.id] = "completed";
@@ -150,7 +154,7 @@ export function useWorkerGccJourneyProgress() {
     [stage, tradeRequired],
   );
   const completed = GCC_JOURNEY_NAV_STEPS.filter((s) => statuses[s.id] === "completed").length;
-  const journeyIncomplete = stage !== "gcc_ready";
+  const journeyIncomplete = stage !== "gcc_ready" && stage !== "deployment";
 
   const navItems = useMemo(
     () =>
