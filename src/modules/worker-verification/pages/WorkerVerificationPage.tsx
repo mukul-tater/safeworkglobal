@@ -184,7 +184,7 @@ export default function WorkerVerificationPage() {
       const kycOk = kycStatus === 'submitted' || kycStatus === 'verified';
       setKycDone(kycOk);
       if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
-      if ((wp as any)?.aadhaar_last4) setAadhaarLast4(String((wp as any).aadhaar_last4));
+      if ((wp as any)?.aadhaar_last4) setAadhaarOnFile(String((wp as any).aadhaar_last4));
       if ((wp as any)?.passport_number) setPassportNumber(String((wp as any).passport_number));
 
       // Mandatory for apply: if KYC missing and worker already passed skill proof, show Identity.
@@ -269,8 +269,9 @@ export default function WorkerVerificationPage() {
       toast.error('Enter a valid PAN (e.g. ABCDE1234F)');
       return;
     }
-    if (!/^\d{4}$/.test(aadhaarLast4)) {
-      toast.error('Enter last 4 digits of Aadhaar');
+    const aadhaar = aadhaarNumber.replace(/\D/g, '');
+    if (!/^\d{12}$/.test(aadhaar)) {
+      toast.error('Enter your full 12-digit Aadhaar number');
       return;
     }
     if (!/^[A-Z0-9]{6,9}$/.test(passport)) {
@@ -345,7 +346,7 @@ export default function WorkerVerificationPage() {
 
       const next = await completeIdentityKyc(user.id, {
         panNumber: pan,
-        aadhaarLast4,
+        aadhaarNumber: aadhaar,
         passportNumber: passport,
       });
       setRow(next);
@@ -354,11 +355,7 @@ export default function WorkerVerificationPage() {
       setAadhaarFile(null);
       setPassportFile(null);
       notifyVerificationUpdated();
-      toast.success(
-        next.stage === 'awaiting_interview'
-          ? 'Identity submitted — Test 2 (video interview) is next'
-          : 'Identity submitted — you can apply to jobs',
-      );
+      toast.success('Identity submitted — SafeWork will verify your documents before the video interview');
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'KYC submit failed');
@@ -986,7 +983,7 @@ export default function WorkerVerificationPage() {
                 <div>
                   <h2 className="font-semibold">Identity (KYC)</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Required before applying to jobs. Enter PAN, Aadhaar (last 4), and Passport numbers, and upload a photo of each.
+                     Required before applying to jobs. Enter PAN, your full Aadhaar number, and Passport number, and upload a photo of each. SafeWork verifies these before your video interview is scheduled.
                   </p>
                 </div>
               </div>
@@ -1013,16 +1010,20 @@ export default function WorkerVerificationPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Aadhaar — Last 4 Digits *</Label>
+                  <Label>Aadhaar Number *</Label>
                   <Input
-                    value={aadhaarLast4}
-                    onChange={(e) => setAadhaarLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    placeholder="1234"
+                    value={aadhaarNumber}
+                    onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                    placeholder="123412341234"
                     inputMode="numeric"
-                    maxLength={4}
+                    maxLength={12}
                     disabled={saving}
                   />
-                  <p className="text-[11px] text-muted-foreground">We never store your full Aadhaar</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {aadhaarOnFile
+                      ? `On file: XXXX XXXX ${aadhaarOnFile}`
+                      : 'Stored securely and used only for emigration paperwork'}
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Passport Number *</Label>
