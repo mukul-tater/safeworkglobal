@@ -1115,9 +1115,25 @@ export default function WorkerVerificationPage() {
           <WaitingCard
             icon={Calendar}
             title="Test 2 — Video interview"
-            body="Normally SafeWork schedules a video call and scores it. For this pilot you can continue without waiting for the interview."
+            body={
+              row.interview_scheduled_at
+                ? `Your video interview is scheduled for ${new Date(row.interview_scheduled_at).toLocaleString('en-IN')}. Join on time from a quiet place with good network.`
+                : row.interview_status === 'rejected'
+                  ? 'Your last interview was not approved. SafeWork will reschedule a new interview — you will see the new date here.'
+                  : 'SafeWork will schedule your video interview and assign an interviewer. The date, time and joining link appear here.'
+            }
           >
+            {row.interview_meeting_url && (
+              <Button asChild>
+                <a href={row.interview_meeting_url} target="_blank" rel="noreferrer">
+                  <Video className="h-4 w-4 mr-1" />
+                  Join interview
+                </a>
+              </Button>
+            )}
+            {showDevReset && (
             <Button
+              variant="outline"
               disabled={saving}
               onClick={async () => {
                 if (!user?.id) return;
@@ -1140,6 +1156,7 @@ export default function WorkerVerificationPage() {
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Calendar className="h-4 w-4 mr-1" />}
               Continue (pilot — interview skipped)
             </Button>
+            )}
           </WaitingCard>
         )}
 
