@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
   Calendar, CreditCard, Stethoscope, FileSignature, Flag, RotateCcw, ShieldCheck, Wrench,
+  GraduationCap, Plane, Download, Truck,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -24,6 +25,7 @@ import {
   ASSESSMENT_FEE_INR,
   EDUCATION_LEVELS,
   GCC_JOURNEY_NAV_STEPS,
+  DEPLOYMENT_CHECKLIST,
   VERIFICATION_STAGE_LABELS,
   isJourneyResetEnabled,
   navStepForStage,
@@ -34,15 +36,17 @@ import {
   type GccNavStepId,
   type VerificationStage,
 } from '@/modules/worker-verification/constants';
-import type { SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
+import type { BondTemplate, SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
 import {
   completeMediaStep,
   completeIdentityKyc,
   getOrCreateVerification,
+  loadActiveBondTemplate,
   loadQuizItems,
   resetVerificationJourney,
   saveEssentials,
   submitBond,
+  submitBondTracking,
   submitMedicalResult,
   submitQuiz,
   bookTradeTestCenter,
