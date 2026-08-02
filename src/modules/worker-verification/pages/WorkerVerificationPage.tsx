@@ -137,6 +137,7 @@ export default function WorkerVerificationPage() {
   const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [aadhaarOnFile, setAadhaarOnFile] = useState('');
   const [bondTracking, setBondTracking] = useState('');
+  const [bondTemplate, setBondTemplate] = useState<BondTemplate | null>(null);
   const [passportNumber, setPassportNumber] = useState('');
   const [panFile, setPanFile] = useState<File | null>(null);
   const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
@@ -190,6 +191,14 @@ export default function WorkerVerificationPage() {
       if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
       if ((wp as any)?.aadhaar_last4) setAadhaarOnFile(String((wp as any).aadhaar_last4));
       if ((wp as any)?.passport_number) setPassportNumber(String((wp as any).passport_number));
+      if (v.bond_courier_tracking) setBondTracking(String(v.bond_courier_tracking));
+      if (v.stage === 'bond') {
+        try {
+          setBondTemplate(await loadActiveBondTemplate());
+        } catch {
+          setBondTemplate(null);
+        }
+      }
 
       // Mandatory for apply: if KYC missing and worker already passed skill proof, show Identity.
       const pastMedia =
