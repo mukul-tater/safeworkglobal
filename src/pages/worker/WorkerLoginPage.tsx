@@ -31,14 +31,8 @@ type LoginMethod = 'mobile' | 'email';
 async function resolveAuthEmail(identifier: string): Promise<string | null> {
   const trimmed = identifier.trim();
   if (!trimmed) return null;
-  try {
-    const { data, error } = await (supabase as any).rpc('resolve_worker_auth_email', {
-      p_identifier: trimmed,
-    });
-    if (!error && data) return String(data);
-  } catch {
-    /* RPC optional until migration is applied */
-  }
+  // Resolved locally only: a public lookup RPC would let anyone enumerate
+  // which emails/phone numbers are registered accounts.
   return workerAuthEmailFromIdentifier(trimmed);
 }
 
