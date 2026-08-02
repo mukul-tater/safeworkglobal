@@ -390,6 +390,45 @@ export type Database = {
         }
         Relationships: []
       }
+      bond_templates: {
+        Row: {
+          active: boolean
+          courier_address: string
+          created_at: string
+          created_by: string | null
+          file_url: string
+          id: string
+          instructions: string | null
+          title: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          active?: boolean
+          courier_address?: string
+          created_at?: string
+          created_by?: string | null
+          file_url: string
+          id?: string
+          instructions?: string | null
+          title?: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          active?: boolean
+          courier_address?: string
+          created_at?: string
+          created_by?: string | null
+          file_url?: string
+          id?: string
+          instructions?: string | null
+          title?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       compliance_checks: {
         Row: {
           check_type: string
@@ -3118,6 +3157,45 @@ export type Database = {
         }
         Relationships: []
       }
+      skill_quiz_configs: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          pass_score: number
+          questions_to_show: number
+          region: string | null
+          selected_ids: string[]
+          selection_mode: string
+          skill_code: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          pass_score?: number
+          questions_to_show?: number
+          region?: string | null
+          selected_ids?: string[]
+          selection_mode?: string
+          skill_code: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          pass_score?: number
+          questions_to_show?: number
+          region?: string | null
+          selected_ids?: string[]
+          selection_mode?: string
+          skill_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       srn_stage_documents: {
         Row: {
           doc_type: string
@@ -3766,6 +3844,7 @@ export type Database = {
       worker_profiles: {
         Row: {
           aadhaar_last4: string | null
+          aadhaar_number: string | null
           availability: string | null
           bio: string | null
           country: string | null
@@ -3792,6 +3871,7 @@ export type Database = {
           onboarding_completed: boolean | null
           open_to_relocation: boolean | null
           pan_number: string | null
+          passport_expiry: string | null
           passport_number: string | null
           preferred_shift: string | null
           preferred_work_city: string | null
@@ -3814,6 +3894,7 @@ export type Database = {
         }
         Insert: {
           aadhaar_last4?: string | null
+          aadhaar_number?: string | null
           availability?: string | null
           bio?: string | null
           country?: string | null
@@ -3840,6 +3921,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           open_to_relocation?: boolean | null
           pan_number?: string | null
+          passport_expiry?: string | null
           passport_number?: string | null
           preferred_shift?: string | null
           preferred_work_city?: string | null
@@ -3862,6 +3944,7 @@ export type Database = {
         }
         Update: {
           aadhaar_last4?: string | null
+          aadhaar_number?: string | null
           availability?: string | null
           bio?: string | null
           country?: string | null
@@ -3888,6 +3971,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           open_to_relocation?: boolean | null
           pan_number?: string | null
+          passport_expiry?: string | null
           passport_number?: string | null
           preferred_shift?: string | null
           preferred_work_city?: string | null
@@ -3967,10 +4051,13 @@ export type Database = {
           expected_answer: boolean
           id: string
           image_url: string | null
+          options: Json | null
           question: string
           question_hi: string | null
+          region: string | null
           skill_code: string
           sort_order: number
+          updated_at: string
           youtube_url: string | null
         }
         Insert: {
@@ -3979,10 +4066,13 @@ export type Database = {
           expected_answer?: boolean
           id?: string
           image_url?: string | null
+          options?: Json | null
           question: string
           question_hi?: string | null
+          region?: string | null
           skill_code: string
           sort_order?: number
+          updated_at?: string
           youtube_url?: string | null
         }
         Update: {
@@ -3991,10 +4081,13 @@ export type Database = {
           expected_answer?: boolean
           id?: string
           image_url?: string | null
+          options?: Json | null
           question?: string
           question_hi?: string | null
+          region?: string | null
           skill_code?: string
           sort_order?: number
+          updated_at?: string
           youtube_url?: string | null
         }
         Relationships: []
@@ -4119,23 +4212,53 @@ export type Database = {
       worker_verification: {
         Row: {
           assessment_id: string | null
+          bond_courier_tracking: string | null
+          bond_couriered_at: string | null
+          bond_received_at: string | null
           bond_status: string | null
+          bond_template_id: string | null
           city: string | null
           created_at: string
+          deploy_contract_status: string
+          deploy_emigration_status: string
+          deploy_insurance_status: string
+          deploy_offer_status: string
+          deploy_ticket_status: string
+          deploy_visa_status: string
+          deployed_at: string | null
+          deployment_notes: string | null
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
           gcc_ready_at: string | null
           id: string
+          interview_attempts: number
+          interview_meeting_url: string | null
           interview_notes: string | null
           interview_rated_at: string | null
+          interview_scheduled_at: string | null
           interview_score: number | null
+          interview_status: string
+          interviewer_user_id: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
           media_submitted_at: string | null
+          medical_instructions: string | null
+          medical_place: string | null
           medical_result_url: string | null
+          medical_scheduled_at: string | null
           medical_status: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_status: string | null
+          pdot_batch: string | null
+          pdot_completed_at: string | null
+          pdot_proof_url: string | null
+          pdot_provider: string | null
+          pdot_scheduled_at: string | null
+          pdot_status: string
+          pdot_training_url: string | null
           primary_skill: string | null
           quiz_completed_at: string | null
           quiz_score: number | null
@@ -4148,32 +4271,65 @@ export type Database = {
           trade_test_booked_at: string | null
           trade_test_center_id: string | null
           trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
           trade_test_reporting_window: string | null
           trade_test_required: boolean | null
           trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
           trade_test_status: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           assessment_id?: string | null
+          bond_courier_tracking?: string | null
+          bond_couriered_at?: string | null
+          bond_received_at?: string | null
           bond_status?: string | null
+          bond_template_id?: string | null
           city?: string | null
           created_at?: string
+          deploy_contract_status?: string
+          deploy_emigration_status?: string
+          deploy_insurance_status?: string
+          deploy_offer_status?: string
+          deploy_ticket_status?: string
+          deploy_visa_status?: string
+          deployed_at?: string | null
+          deployment_notes?: string | null
           education_level?: string | null
           email?: string | null
           essentials_completed_at?: string | null
           gcc_ready_at?: string | null
           id?: string
+          interview_attempts?: number
+          interview_meeting_url?: string | null
           interview_notes?: string | null
           interview_rated_at?: string | null
+          interview_scheduled_at?: string | null
           interview_score?: number | null
+          interview_status?: string
+          interviewer_user_id?: string | null
+          kyc_rejection_reason?: string | null
+          kyc_status?: string
+          kyc_verified_at?: string | null
           media_submitted_at?: string | null
+          medical_instructions?: string | null
+          medical_place?: string | null
           medical_result_url?: string | null
+          medical_scheduled_at?: string | null
           medical_status?: string | null
           paid_at?: string | null
           payment_amount?: number | null
           payment_status?: string | null
+          pdot_batch?: string | null
+          pdot_completed_at?: string | null
+          pdot_proof_url?: string | null
+          pdot_provider?: string | null
+          pdot_scheduled_at?: string | null
+          pdot_status?: string
+          pdot_training_url?: string | null
           primary_skill?: string | null
           quiz_completed_at?: string | null
           quiz_score?: number | null
@@ -4186,32 +4342,65 @@ export type Database = {
           trade_test_booked_at?: string | null
           trade_test_center_id?: string | null
           trade_test_center_name?: string | null
+          trade_test_instructions?: string | null
+          trade_test_place?: string | null
           trade_test_reporting_window?: string | null
           trade_test_required?: boolean | null
           trade_test_result_url?: string | null
+          trade_test_scheduled_at?: string | null
           trade_test_status?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           assessment_id?: string | null
+          bond_courier_tracking?: string | null
+          bond_couriered_at?: string | null
+          bond_received_at?: string | null
           bond_status?: string | null
+          bond_template_id?: string | null
           city?: string | null
           created_at?: string
+          deploy_contract_status?: string
+          deploy_emigration_status?: string
+          deploy_insurance_status?: string
+          deploy_offer_status?: string
+          deploy_ticket_status?: string
+          deploy_visa_status?: string
+          deployed_at?: string | null
+          deployment_notes?: string | null
           education_level?: string | null
           email?: string | null
           essentials_completed_at?: string | null
           gcc_ready_at?: string | null
           id?: string
+          interview_attempts?: number
+          interview_meeting_url?: string | null
           interview_notes?: string | null
           interview_rated_at?: string | null
+          interview_scheduled_at?: string | null
           interview_score?: number | null
+          interview_status?: string
+          interviewer_user_id?: string | null
+          kyc_rejection_reason?: string | null
+          kyc_status?: string
+          kyc_verified_at?: string | null
           media_submitted_at?: string | null
+          medical_instructions?: string | null
+          medical_place?: string | null
           medical_result_url?: string | null
+          medical_scheduled_at?: string | null
           medical_status?: string | null
           paid_at?: string | null
           payment_amount?: number | null
           payment_status?: string | null
+          pdot_batch?: string | null
+          pdot_completed_at?: string | null
+          pdot_proof_url?: string | null
+          pdot_provider?: string | null
+          pdot_scheduled_at?: string | null
+          pdot_status?: string
+          pdot_training_url?: string | null
           primary_skill?: string | null
           quiz_completed_at?: string | null
           quiz_score?: number | null
@@ -4224,9 +4413,12 @@ export type Database = {
           trade_test_booked_at?: string | null
           trade_test_center_id?: string | null
           trade_test_center_name?: string | null
+          trade_test_instructions?: string | null
+          trade_test_place?: string | null
           trade_test_reporting_window?: string | null
           trade_test_required?: boolean | null
           trade_test_result_url?: string | null
+          trade_test_scheduled_at?: string | null
           trade_test_status?: string | null
           updated_at?: string
           user_id?: string
@@ -4239,13 +4431,26 @@ export type Database = {
             referencedRelation: "assessments"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "worker_verification_bond_template_id_fkey"
+            columns: ["bond_template_id"]
+            isOneToOne: false
+            referencedRelation: "bond_templates"
+            referencedColumns: ["id"]
+          },
         ]
       }
       worker_verification_interviews: {
         Row: {
+          attempt_no: number
           created_at: string
+          decided_at: string | null
+          decision: string | null
+          decision_reason: string | null
           id: string
+          interviewer_user_id: string | null
           meeting_link: string | null
+          meeting_url: string | null
           notes: string | null
           rated_by: string | null
           scheduled_at: string | null
@@ -4255,9 +4460,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attempt_no?: number
           created_at?: string
+          decided_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
           id?: string
+          interviewer_user_id?: string | null
           meeting_link?: string | null
+          meeting_url?: string | null
           notes?: string | null
           rated_by?: string | null
           scheduled_at?: string | null
@@ -4267,9 +4478,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attempt_no?: number
           created_at?: string
+          decided_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
           id?: string
+          interviewer_user_id?: string | null
           meeting_link?: string | null
+          meeting_url?: string | null
           notes?: string | null
           rated_by?: string | null
           scheduled_at?: string | null
@@ -4372,6 +4589,14 @@ export type Database = {
       }
       admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
       admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
+      admin_mark_bond_received: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      admin_mark_pdot_completed: {
+        Args: { p_proof_url?: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_mark_withdrawal_paid: {
         Args: { p_payment_reference?: string; p_withdrawal_id: string }
         Returns: undefined
@@ -4387,6 +4612,25 @@ export type Database = {
         Returns: undefined
       }
       admin_rotate_lsp_secret: { Args: { p_lsp_id: string }; Returns: Json }
+      admin_schedule_worker_assessment: {
+        Args: {
+          p_instructions?: string
+          p_kind: string
+          p_place?: string
+          p_scheduled_at: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_schedule_worker_interview: {
+        Args: {
+          p_interviewer_user_id: string
+          p_meeting_url: string
+          p_scheduled_at: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       admin_set_lsp_status: {
         Args: { p_lsp_id: string; p_status: string }
         Returns: undefined
@@ -4399,11 +4643,39 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_set_pdot_plan: {
+        Args: {
+          p_batch?: string
+          p_provider?: string
+          p_scheduled_at?: string
+          p_training_url?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       admin_set_user_role: {
         Args: {
           p_role: Database["public"]["Enums"]["app_role"]
           p_user_id: string
         }
+        Returns: undefined
+      }
+      admin_update_deployment_checklist: {
+        Args: {
+          p_contract?: string
+          p_deployed?: boolean
+          p_emigration?: string
+          p_insurance?: string
+          p_notes?: string
+          p_offer?: string
+          p_ticket?: string
+          p_user_id: string
+          p_visa?: string
+        }
+        Returns: undefined
+      }
+      admin_verify_worker_kyc: {
+        Args: { p_approved: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
       }
       assign_initial_role: {
@@ -4484,6 +4756,31 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      interviewer_list_assignments: {
+        Args: never
+        Returns: {
+          attempt_no: number
+          decision: string
+          full_name: string
+          interview_id: string
+          meeting_url: string
+          primary_skill: string
+          quiz_score: number
+          scheduled_at: string
+          state: string
+          status: string
+          worker_user_id: string
+        }[]
+      }
+      interviewer_record_decision: {
+        Args: {
+          p_approved: boolean
+          p_interview_id: string
+          p_reason?: string
+          p_score?: number
+        }
+        Returns: undefined
       }
       is_whitelisted_admin_email: {
         Args: { p_email: string }
@@ -4578,23 +4875,53 @@ export type Database = {
         Args: never
         Returns: {
           assessment_id: string | null
+          bond_courier_tracking: string | null
+          bond_couriered_at: string | null
+          bond_received_at: string | null
           bond_status: string | null
+          bond_template_id: string | null
           city: string | null
           created_at: string
+          deploy_contract_status: string
+          deploy_emigration_status: string
+          deploy_insurance_status: string
+          deploy_offer_status: string
+          deploy_ticket_status: string
+          deploy_visa_status: string
+          deployed_at: string | null
+          deployment_notes: string | null
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
           gcc_ready_at: string | null
           id: string
+          interview_attempts: number
+          interview_meeting_url: string | null
           interview_notes: string | null
           interview_rated_at: string | null
+          interview_scheduled_at: string | null
           interview_score: number | null
+          interview_status: string
+          interviewer_user_id: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
           media_submitted_at: string | null
+          medical_instructions: string | null
+          medical_place: string | null
           medical_result_url: string | null
+          medical_scheduled_at: string | null
           medical_status: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_status: string | null
+          pdot_batch: string | null
+          pdot_completed_at: string | null
+          pdot_proof_url: string | null
+          pdot_provider: string | null
+          pdot_scheduled_at: string | null
+          pdot_status: string
+          pdot_training_url: string | null
           primary_skill: string | null
           quiz_completed_at: string | null
           quiz_score: number | null
@@ -4607,9 +4934,12 @@ export type Database = {
           trade_test_booked_at: string | null
           trade_test_center_id: string | null
           trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
           trade_test_reporting_window: string | null
           trade_test_required: boolean | null
           trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
           trade_test_status: string | null
           updated_at: string
           user_id: string
@@ -4625,23 +4955,53 @@ export type Database = {
         Args: never
         Returns: {
           assessment_id: string | null
+          bond_courier_tracking: string | null
+          bond_couriered_at: string | null
+          bond_received_at: string | null
           bond_status: string | null
+          bond_template_id: string | null
           city: string | null
           created_at: string
+          deploy_contract_status: string
+          deploy_emigration_status: string
+          deploy_insurance_status: string
+          deploy_offer_status: string
+          deploy_ticket_status: string
+          deploy_visa_status: string
+          deployed_at: string | null
+          deployment_notes: string | null
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
           gcc_ready_at: string | null
           id: string
+          interview_attempts: number
+          interview_meeting_url: string | null
           interview_notes: string | null
           interview_rated_at: string | null
+          interview_scheduled_at: string | null
           interview_score: number | null
+          interview_status: string
+          interviewer_user_id: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
           media_submitted_at: string | null
+          medical_instructions: string | null
+          medical_place: string | null
           medical_result_url: string | null
+          medical_scheduled_at: string | null
           medical_status: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_status: string | null
+          pdot_batch: string | null
+          pdot_completed_at: string | null
+          pdot_proof_url: string | null
+          pdot_provider: string | null
+          pdot_scheduled_at: string | null
+          pdot_status: string
+          pdot_training_url: string | null
           primary_skill: string | null
           quiz_completed_at: string | null
           quiz_score: number | null
@@ -4654,9 +5014,12 @@ export type Database = {
           trade_test_booked_at: string | null
           trade_test_center_id: string | null
           trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
           trade_test_reporting_window: string | null
           trade_test_required: boolean | null
           trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
           trade_test_status: string | null
           updated_at: string
           user_id: string
@@ -4672,9 +5035,19 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: boolean
       }
+      worker_submit_bond_tracking: {
+        Args: { p_tracking: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "admin" | "employer" | "worker" | "agent" | "partner"
+      app_role:
+        | "admin"
+        | "employer"
+        | "worker"
+        | "agent"
+        | "partner"
+        | "interviewer"
       assessment_status:
         | "scheduled"
         | "checked_in"
@@ -4894,7 +5267,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "employer", "worker", "agent", "partner"],
+      app_role: [
+        "admin",
+        "employer",
+        "worker",
+        "agent",
+        "partner",
+        "interviewer",
+      ],
       assessment_status: [
         "scheduled",
         "checked_in",
