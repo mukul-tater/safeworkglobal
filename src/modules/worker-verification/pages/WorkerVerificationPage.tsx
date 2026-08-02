@@ -1535,10 +1535,79 @@ export default function WorkerVerificationPage() {
                 <div>
                   <h2 className="font-semibold">Candidate bond</h2>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    Stamp paper agreement with SafeWork + video recording proof. Choose eStamp online or nearest E-Mitra.
+                    Download the bond, print it, sign it, and courier the original to SafeWork. Then enter your courier tracking number below.
                   </p>
                 </div>
               </div>
+
+              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+                {bondTemplate ? (
+                  <>
+                    <Button asChild variant="outline" size="sm">
+                      <a href={bondTemplate.file_url} target="_blank" rel="noreferrer">
+                        <Download className="h-4 w-4 mr-1" />
+                        Download bond ({bondTemplate.version})
+                      </a>
+                    </Button>
+                    <div className="text-xs text-muted-foreground whitespace-pre-line">
+                      <p className="font-medium text-foreground">Courier the signed original to:</p>
+                      {bondTemplate.courier_address}
+                      {bondTemplate.instructions ? `\n\n${bondTemplate.instructions}` : ''}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    SafeWork is preparing your bond document — it will appear here for download shortly.
+                  </p>
+                )}
+              </div>
+
+              {row.bond_received_at ? (
+                <p className="text-sm rounded-lg border border-success/30 bg-success/5 px-3 py-2">
+                  Bond original received by SafeWork. Next: PDOT training.
+                </p>
+              ) : row.bond_courier_tracking ? (
+                <p className="text-sm text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2">
+                  Tracking submitted ({row.bond_courier_tracking}) — SafeWork will confirm once the original arrives.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Courier tracking number *</Label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      value={bondTracking}
+                      onChange={(e) => setBondTracking(e.target.value.toUpperCase().slice(0, 40))}
+                      placeholder="e.g. AWB123456789"
+                      disabled={saving}
+                    />
+                    <Button
+                      disabled={saving || bondTracking.trim().length < 5}
+                      onClick={async () => {
+                        setSaving(true);
+                        try {
+                          await submitBondTracking(bondTracking.trim());
+                          notifyVerificationUpdated();
+                          toast.success('Tracking number submitted');
+                          await load();
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : 'Could not submit tracking');
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                    >
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Truck className="h-4 w-4 mr-1" />}
+                      Submit tracking
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground">
+                  Optional — upload a scan of the signed bond
+                </summary>
+                <div className="pt-3 space-y-3">
               <RadioGroup
                 value={bondMethod}
                 onValueChange={(v) => setBondMethod(v as typeof bondMethod)}
@@ -1629,6 +1698,72 @@ export default function WorkerVerificationPage() {
                     Submit bond for review
                   </Button>
                 </div>
+              )}
+                </div>
+              </details>
+            </CardContent>
+          </Card>
+        )}
+
+        {!viewingCompletedStep && stage === 'pdot' && (
+          <WaitingCard
+            icon={GraduationCap}
+            title="PDOT — Pre-departure orientation training"
+            body={
+              row.pdot_scheduled_at
+                ? `Your PDOT training is scheduled for ${new Date(row.pdot_scheduled_at).toLocaleString('en-IN')}${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Attend fully — SafeWork marks you GCC ready after completion.`
+                : `SafeWork will confirm your PDOT training batch${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Details appear here.`
+            }
+          >
+            {row.pdot_training_url && (
+              <Button asChild variant="outline">
+                <a href={row.pdot_training_url} target="_blank" rel="noreferrer">
+                  <GraduationCap className="h-4 w-4 mr-1" />
+                  Open training
+                </a>
+              </Button>
+            )}
+          </WaitingCard>
+        )}
+
+        {!viewingCompletedStep && stage === 'deployment' && (
+          <Card>
+            <CardContent className="p-5 sm:p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Plane className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Deployment</h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    SafeWork updates each step below as your travel paperwork clears.
+                  </p>
+                </div>
+              </div>
+              <ul className="space-y-2">
+                {DEPLOYMENT_CHECKLIST.map((item) => {
+                  const value = String((row as any)[item.key] || 'pending');
+                  const done = value === 'completed' || value === 'approved' || value === 'issued';
+                  return (
+                    <li
+                      key={item.key}
+                      className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+                    >
+                      <span className="flex items-center gap-2">
+                        <CheckCircle2
+                          className={cn('h-4 w-4', done ? 'text-success' : 'text-muted-foreground/40')}
+                        />
+                        {item.label}
+                      </span>
+                      <Badge variant={done ? 'default' : 'secondary'}>{value.replace(/_/g, ' ')}</Badge>
+                    </li>
+                  );
+                })}
+              </ul>
+              {row.deployed_at && (
+                <p className="text-sm rounded-lg border border-success/30 bg-success/5 px-3 py-2">
+                  Deployed on {new Date(row.deployed_at).toLocaleDateString('en-IN')} — all the best!
+                </p>
               )}
             </CardContent>
           </Card>
