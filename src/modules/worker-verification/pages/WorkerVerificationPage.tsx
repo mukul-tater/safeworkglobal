@@ -208,7 +208,7 @@ export default function WorkerVerificationPage() {
       setForceIdentity(!kycOk && pastMedia && v.stage !== 'identity');
 
       if (v.primary_skill && (v.stage === 'quiz' || !v.quiz_completed_at)) {
-        const items = await loadQuizItems(v.primary_skill);
+        const items = await loadQuizItems(v.primary_skill, v.state);
         setQuizItems(items);
       }
 
@@ -986,7 +986,15 @@ export default function WorkerVerificationPage() {
           </Card>
         )}
 
-        {!viewingCompletedStep && stage === 'identity' && (
+        {!viewingCompletedStep && stage === 'identity' && kycDone && (
+          <WaitingCard
+            icon={ShieldCheck}
+            title="Identity under review"
+            body="Your PAN, Aadhaar and passport documents are submitted. SafeWork is verifying them — your video interview is scheduled right after approval."
+          />
+        )}
+
+        {!viewingCompletedStep && stage === 'identity' && !kycDone && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
