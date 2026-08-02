@@ -196,6 +196,75 @@ export async function loadActiveBondTemplate(): Promise<BondTemplate | null> {
   return (data as BondTemplate) || null;
 }
 
+/** Admin — list users holding the interviewer role (for assignment dropdowns). */
+export async function listInterviewers(): Promise<
+  { user_id: string; full_name: string | null; email: string | null }[]
+> {
+  const { data: roles, error } = await supabase
+    .from('user_roles')
+    .select('user_id')
+    .eq('role', 'interviewer' as never);
+  if (error) throw new Error(error.message);
+  const ids = (roles || []).map((r) => (r as { user_id: string }).user_id);
+  if (!ids.length) return [];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .in('id', ids);
+  return ids.map((id) => {
+    const p = (profiles || []).find((x) => x.id === id);
+    return { user_id: id, full_name: p?.full_name ?? null, email: p?.email ?? null };
+  });
+}
+
+/** Admin — all bond templates (newest first). */
+export async function listBondTemplates(): Promise<BondTemplate[]> {
+  const { data, error } = await supabase
+    .from('bond_templates')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data || []) as BondTemplate[];
+}
+
+/** Admin — upload a bond PDF and make it the active template. */
+export async function createBondTemplate(input: {
+  version: string;
+  title: string;
+  courierAddress: string;
+  instructions?: string;
+  file: File;
+}): Promise<void> {
+  const ext = input.file.name.split('.').pop() || 'pdf';
+  const path = `bond-templates/${input.version.replace(/\s+/g, '-')}-${Date.now()}.${ext}`;
+  const { error: upErr } = await supabase.storage
+    .from('worker-documents')
+    .upload(path, input.file, { upsert: true });
+  if (upErr) throw new Error(upErr.message);
+  const { data: signed, error: urlErr } = await supabase.storage
+    .from('worker-documents')
+    .createSignedUrl(path, 31536000);
+  if (urlErr || !signed?.signedUrl) throw new Error(urlErr?.message || 'Could not create file URL');
+
+  await supabase.from('bond_templates').update({ active: false } as never).eq('active', true);
+  const { error } = await supabase.from('bond_templates').insert({
+    version: input.version.trim(),
+    title: input.title.trim(),
+    file_url: signed.signedUrl,
+    courier_address: input.courierAddress.trim(),
+    instructions: input.instructions?.trim() || null,
+    active: true,
+  } as never);
+  if (error) throw new Error(error.message);
+}
+
+/** Admin — flip which bond template workers download. */
+export async function setActiveBondTemplate(id: string): Promise<void> {
+  await supabase.from('bond_templates').update({ active: false } as never).eq('active', true);
+  const { error } = await supabase.from('bond_templates').update({ active: true } as never).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
 export async function submitQuiz(
   userId: string,
   answers: { quiz_item_id: string; answer: boolean; expected: boolean }[],
