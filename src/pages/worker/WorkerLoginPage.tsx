@@ -5,12 +5,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { lovable } from '@/integrations/lovable/index';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import {
   workerAuthEmailFromIdentifier,
@@ -18,6 +21,10 @@ import {
 } from '@/lib/workerAuthEmail';
 import { getEmitraReviewBlockMessage, isWorkerGccReady } from '@/lib/workerPortalAccess';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
+import {
+  WORKER_TERMS_FULL,
+  WORKER_TERMS_SUMMARY,
+} from '@/modules/worker-verification/constants';
 
 type LoginMethod = 'mobile' | 'email';
 
@@ -35,16 +42,20 @@ async function resolveAuthEmail(identifier: string): Promise<string | null> {
   return workerAuthEmailFromIdentifier(trimmed);
 }
 
+/**
+ * Worker sign-in — Mobile or Email + password + terms acceptance.
+ */
 export default function WorkerLoginPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated, role, isMobileVerified, profileLoading } = useAuth();
-  const [method, setMethod] = useState<LoginMethod>('email');
+  const [method, setMethod] = useState<LoginMethod>('mobile');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -57,6 +68,11 @@ export default function WorkerLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!acceptedTerms) {
+      setError('Please agree to the terms and declarations to continue');
+      return;
+    }
 
     let authEmail = '';
     if (method === 'mobile') {
@@ -132,26 +148,6 @@ export default function WorkerLoginPage() {
     setLoading(false);
   };
 
-  const handleGoogle = async () => {
-    setError('');
-    setGoogleLoading(true);
-    try {
-      sessionStorage.setItem('pending_oauth_role', 'worker');
-      const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: `${window.location.origin}/auth`,
-      });
-      if (result.error) {
-        sessionStorage.removeItem('pending_oauth_role');
-        setError(result.error instanceof Error ? result.error.message : 'Google sign-in failed');
-      }
-    } catch {
-      sessionStorage.removeItem('pending_oauth_role');
-      setError('Google sign-in failed. Please try again.');
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="fixed inset-0 pointer-events-none" style={{ background: 'var(--gradient-mesh)' }} />
@@ -160,9 +156,9 @@ export default function WorkerLoginPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-success/10 mb-4">
             <HardHat className="h-7 w-7 text-success" />
           </div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">Worker Login</h1>
+          <h1 className="text-2xl font-heading font-bold text-foreground">Worker Sign In</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Sign in with email or mobile, and your password.
+            Choose mobile or email, enter your password, and continue.
           </p>
         </div>
 
@@ -180,33 +176,6 @@ export default function WorkerLoginPage() {
               </Alert>
             )}
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full h-11 gap-2 font-medium"
-              onClick={handleGoogle}
-              disabled={googleLoading}
-            >
-              {googleLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <svg className="h-4 w-4" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-              )}
-              Sign in with Google
-            </Button>
-
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">or continue with</span>
-              </div>
-            </div>
-
             <Tabs
               value={method}
               onValueChange={(v) => {
@@ -216,34 +185,17 @@ export default function WorkerLoginPage() {
               className="mb-4"
             >
               <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="email" className="gap-1.5">
-                  <Mail className="h-3.5 w-3.5" /> Email
-                </TabsTrigger>
                 <TabsTrigger value="mobile" className="gap-1.5">
                   <Phone className="h-3.5 w-3.5" /> Mobile
+                </TabsTrigger>
+                <TabsTrigger value="email" className="gap-1.5">
+                  <Mail className="h-3.5 w-3.5" /> Email
                 </TabsTrigger>
               </TabsList>
             </Tabs>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              {method === 'email' ? (
-                <div className="space-y-1.5">
-                  <Label htmlFor="worker-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    <Input
-                      id="worker-email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="h-11 pl-10"
-                      autoComplete="email"
-                    />
-                  </div>
-                </div>
-              ) : (
+              {method === 'mobile' ? (
                 <div className="space-y-1.5">
                   <Label htmlFor="worker-mobile">Mobile Number</Label>
                   <div className="relative">
@@ -260,6 +212,23 @@ export default function WorkerLoginPage() {
                     />
                   </div>
                 </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Label htmlFor="worker-email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      id="worker-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="h-11 pl-10"
+                      autoComplete="email"
+                    />
+                  </div>
+                </div>
               )}
 
               <div className="space-y-1.5">
@@ -269,7 +238,7 @@ export default function WorkerLoginPage() {
                   <Input
                     id="worker-password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder="Your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -288,9 +257,41 @@ export default function WorkerLoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+                <p className="text-xs text-muted-foreground leading-relaxed">{WORKER_TERMS_SUMMARY}</p>
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <Checkbox
+                    checked={acceptedTerms}
+                    onCheckedChange={(v) => {
+                      const on = !!v;
+                      setAcceptedTerms(on);
+                      if (on) setTermsOpen(true);
+                    }}
+                    className="mt-0.5"
+                  />
+                  <span className="text-sm text-foreground leading-snug">
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      className="text-primary font-medium underline-offset-2 hover:underline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setTermsOpen(true);
+                      }}
+                    >
+                      terms &amp; declarations
+                    </button>
+                  </span>
+                </label>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-11 font-medium"
+                disabled={loading || !acceptedTerms}
+              >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In to Worker Portal
+                Sign In
               </Button>
             </form>
 
@@ -310,6 +311,34 @@ export default function WorkerLoginPage() {
           <Link to="/emitra/login" className="text-primary hover:underline">Partner sign in</Link>
         </p>
       </div>
+
+      <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Worker terms &amp; declarations</DialogTitle>
+            <DialogDescription>
+              Please review these terms before signing in.
+            </DialogDescription>
+          </DialogHeader>
+          <pre className="whitespace-pre-wrap text-xs text-muted-foreground font-sans leading-relaxed">
+            {WORKER_TERMS_FULL}
+          </pre>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={() => setTermsOpen(false)}>
+              Close
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setAcceptedTerms(true);
+                setTermsOpen(false);
+              }}
+            >
+              I agree
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
