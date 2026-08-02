@@ -52,8 +52,8 @@ const emptyDraft = (sort: number): Draft => ({
 });
 
 export default function AdminQuizCms() {
-  const skills = useMemo(() => WORKER_SKILLS.map((s) => (typeof s === 'string' ? s : s.value)), []);
-  const [skill, setSkill] = useState<string>(skills[0] || 'welder');
+  const skills = useMemo<string[]>(() => [...WORKER_SKILLS], []);
+  const [skill, setSkill] = useState<string>(skills[0]);
   const [items, setItems] = useState<SkillQuizItem[]>([]);
   const [configs, setConfigs] = useState<SkillQuizConfig[]>([]);
   const [loading, setLoading] = useState(true);
