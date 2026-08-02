@@ -130,7 +130,9 @@ export default function WorkerVerificationPage() {
   const showDevReset = isJourneyResetEnabled();
 
   const [panNumber, setPanNumber] = useState('');
-  const [aadhaarLast4, setAadhaarLast4] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [aadhaarOnFile, setAadhaarOnFile] = useState('');
+  const [bondTracking, setBondTracking] = useState('');
   const [passportNumber, setPassportNumber] = useState('');
   const [panFile, setPanFile] = useState<File | null>(null);
   const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
