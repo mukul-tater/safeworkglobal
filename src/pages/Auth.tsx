@@ -110,6 +110,7 @@ export default function Auth() {
     if (pending !== role) {
       const labelMap: Record<AppRole, string> = {
         worker: 'Worker', employer: 'Employer', partner: 'Partner (e-Mitra)', admin: 'Admin',
+            interviewer: 'Interviewer',
       };
       (async () => {
         await supabase.auth.signOut();
@@ -219,6 +220,7 @@ export default function Auth() {
           await supabase.auth.signOut();
           const labelMap: Record<AppRole, string> = {
             worker: 'Worker', employer: 'Employer', partner: 'Partner (e-Mitra)', admin: 'Admin',
+            interviewer: 'Interviewer',
           };
           setError(
             `This account is already registered as a ${labelMap[storedRole]}. ` +
