@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 
-export type AppRole = 'admin' | 'employer' | 'worker' | 'partner';
+export type AppRole = 'admin' | 'employer' | 'worker' | 'partner' | 'interviewer';
 
 interface Profile {
   id: string;
