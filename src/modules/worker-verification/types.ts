@@ -9,6 +9,8 @@ export type VerificationStage =
   | 'medical'
   | 'tests'
   | 'bond'
+  | 'pdot'
+  | 'deployment'
   | 'gcc_ready';
 
 export interface WorkerVerification {
@@ -45,6 +47,39 @@ export interface WorkerVerification {
   razorpay_order_id: string | null;
   bond_status: string | null;
   gcc_ready_at: string | null;
+  kyc_status: string | null;
+  kyc_verified_at: string | null;
+  kyc_rejection_reason: string | null;
+  interview_scheduled_at: string | null;
+  interview_meeting_url: string | null;
+  interviewer_user_id: string | null;
+  interview_status: string | null;
+  interview_attempts: number | null;
+  trade_test_scheduled_at: string | null;
+  trade_test_place: string | null;
+  trade_test_instructions: string | null;
+  medical_scheduled_at: string | null;
+  medical_place: string | null;
+  medical_instructions: string | null;
+  bond_template_id: string | null;
+  bond_courier_tracking: string | null;
+  bond_couriered_at: string | null;
+  bond_received_at: string | null;
+  pdot_status: string | null;
+  pdot_provider: string | null;
+  pdot_batch: string | null;
+  pdot_training_url: string | null;
+  pdot_scheduled_at: string | null;
+  pdot_completed_at: string | null;
+  pdot_proof_url: string | null;
+  deploy_offer_status: string | null;
+  deploy_contract_status: string | null;
+  deploy_emigration_status: string | null;
+  deploy_visa_status: string | null;
+  deploy_insurance_status: string | null;
+  deploy_ticket_status: string | null;
+  deployed_at: string | null;
+  deployment_notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -58,4 +93,41 @@ export interface SkillQuizItem {
   image_url: string | null;
   expected_answer: boolean;
   sort_order: number;
+  region?: string | null;
+  active?: boolean | null;
+}
+
+export interface BondTemplate {
+  id: string;
+  version: string;
+  title: string;
+  file_url: string;
+  courier_address: string;
+  instructions: string | null;
+  active: boolean;
+}
+
+export interface SkillQuizConfig {
+  id: string;
+  skill_code: string;
+  region: string | null;
+  questions_to_show: number;
+  selection_mode: 'random_active' | 'explicit_ids';
+  selected_ids: string[];
+  pass_score: number;
+  active: boolean;
+}
+
+export interface InterviewerAssignment {
+  interview_id: string;
+  worker_user_id: string;
+  full_name: string | null;
+  primary_skill: string | null;
+  state: string | null;
+  quiz_score: number | null;
+  scheduled_at: string | null;
+  meeting_url: string | null;
+  status: string | null;
+  decision: string | null;
+  attempt_no: number | null;
 }
