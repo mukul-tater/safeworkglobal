@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Phone } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -24,7 +24,7 @@ export default function HomeFooterCTA() {
             ? "Browse verified jobs and apply in minutes."
             : "Join 100+ workers already on SafeWork Global. Sign up free — no agent fees."}
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button
             size="lg"
             className="h-12 px-8 rounded-xl gap-2 font-semibold bg-white text-primary hover:bg-white/90"
@@ -41,13 +41,6 @@ export default function HomeFooterCTA() {
             View All Jobs
           </Button>
         </div>
-        <a
-          href="tel:+919950085843"
-          className="inline-flex items-center gap-2 text-sm text-white/75 hover:text-white transition-colors"
-        >
-          <Phone className="h-4 w-4" />
-          Questions? Call us: +91-99500-85843
-        </a>
       </div>
     </section>
   );
