@@ -96,11 +96,47 @@ serve(async (req) => {
 
   const action = body.action || "create_order";
 
+  const rzpAuth = razorpayAuthHeader(keyId, keySecret);
+
+  async function rzpGet(path: string): Promise<{ ok: boolean; json: any }> {
+    const res = await fetch(`https://api.razorpay.com/v1${path}`, {
+      headers: { Authorization: rzpAuth },
+    });
+    const json = await res.json().catch(() => ({}));
+    return { ok: res.ok, json };
+  }
+
+  /** Find a captured/authorized payment on an order. */
+  async function findSettledPayment(
+    orderId: string,
+  ): Promise<{ payment: RazorpayPayment | null; error?: string }> {
+    const { ok, json } = await rzpGet(`/orders/${orderId}/payments`);
+    if (!ok) {
+      return {
+        payment: null,
+        error: json?.error?.description || "Could not read Razorpay order payments",
+      };
+    }
+    const items: RazorpayPayment[] = Array.isArray(json?.items) ? json.items : [];
+    return { payment: items.find((p) => isSettled(p.status)) || null };
+  }
+
+  async function completePayment(paymentId: string, orderId: string) {
+    const { data, error } = await admin.rpc("complete_assessment_payment_razorpay", {
+      p_user_id: user.id,
+      p_payment_id: paymentId,
+      p_order_id: orderId,
+      p_amount: ASSESSMENT_FEE_INR,
+    });
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
   try {
     if (action === "create_order") {
       const { data: row, error: rowErr } = await admin
         .from("worker_verification")
-        .select("id, stage, payment_status, user_id")
+        .select("id, stage, payment_status, user_id, razorpay_order_id")
         .eq("user_id", user.id)
         .maybeSingle();
       if (rowErr) throw new Error(rowErr.message);
@@ -110,6 +146,18 @@ serve(async (req) => {
       }
       if (row.payment_status === "paid") {
         return json(400, { error: "Assessment already paid" });
+      }
+
+      // Recovery: an earlier order may already be paid but never verified.
+      if (row.razorpay_order_id) {
+        const { payment, error: findErr } = await findSettledPayment(row.razorpay_order_id);
+        if (findErr && /authenticat/i.test(findErr)) {
+          return json(502, { error: findErr });
+        }
+        if (payment) {
+          const verification = await completePayment(payment.id, row.razorpay_order_id);
+          return json(200, { recovered: true, verification, already_paid: true });
+        }
       }
 
       const amountPaise = ASSESSMENT_FEE_INR * 100;
@@ -163,13 +211,8 @@ serve(async (req) => {
       const paymentId = String(body.razorpay_payment_id || "").trim();
       const orderId = String(body.razorpay_order_id || "").trim();
       const signature = String(body.razorpay_signature || "").trim();
-      if (!paymentId || !orderId || !signature) {
+      if (!paymentId || !orderId) {
         return json(400, { error: "Missing payment verification fields" });
-      }
-
-      const expected = await hmacSha256Hex(keySecret, `${orderId}|${paymentId}`);
-      if (expected !== signature) {
-        return json(400, { error: "Invalid payment signature" });
       }
 
       const { data: row, error: rowErr } = await admin
@@ -189,18 +232,73 @@ serve(async (req) => {
         return json(400, { error: "Order does not match this assessment" });
       }
 
-      const { data: completed, error: rpcErr } = await admin.rpc(
-        "complete_assessment_payment_razorpay",
-        {
-          p_user_id: user.id,
-          p_payment_id: paymentId,
-          p_order_id: orderId,
-          p_amount: ASSESSMENT_FEE_INR,
-        },
-      );
-      if (rpcErr) throw new Error(rpcErr.message);
+      const expected = signature
+        ? await hmacSha256Hex(keySecret, `${orderId}|${paymentId}`)
+        : "";
+      let verifiedBy = "signature";
 
-      return json(200, { verification: completed, already_paid: false });
+      if (!signature || expected !== signature) {
+        // Signature missing/mismatched — confirm the real capture with Razorpay.
+        const { ok, json: payment } = await rzpGet(`/payments/${paymentId}`);
+        if (!ok) {
+          return json(400, {
+            error:
+              payment?.error?.description ||
+              "Invalid payment signature and payment could not be confirmed",
+          });
+        }
+        if (!isSettled(payment?.status) || String(payment?.order_id || "") !== orderId) {
+          return json(400, { error: "Payment is not captured for this order" });
+        }
+        verifiedBy = "razorpay_api";
+      }
+
+      const completed = await completePayment(paymentId, orderId);
+      return json(200, { verification: completed, already_paid: false, verified_by: verifiedBy });
+    }
+
+    if (action === "recover_payment") {
+      const orderId = String(body.razorpay_order_id || "").trim();
+      let paymentId = String(body.razorpay_payment_id || "").trim();
+
+      const { data: row, error: rowErr } = await admin
+        .from("worker_verification")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (rowErr) throw new Error(rowErr.message);
+      if (!row) return json(404, { error: "Verification row not found" });
+      if (row.payment_status === "paid") {
+        return json(200, { verification: row, already_paid: true });
+      }
+
+      const targetOrder = orderId || String(row.razorpay_order_id || "");
+      if (!targetOrder && !paymentId) {
+        return json(400, { error: "No Razorpay order or payment to recover" });
+      }
+
+      if (!paymentId) {
+        const { payment, error: findErr } = await findSettledPayment(targetOrder);
+        if (!payment) {
+          return json(400, {
+            error: findErr || "No captured payment found on this order",
+          });
+        }
+        paymentId = payment.id;
+      } else {
+        const { ok, json: payment } = await rzpGet(`/payments/${paymentId}`);
+        if (!ok || !isSettled(payment?.status)) {
+          return json(400, {
+            error: payment?.error?.description || "Payment is not captured",
+          });
+        }
+        if (targetOrder && String(payment?.order_id || "") !== targetOrder) {
+          return json(400, { error: "Payment does not belong to this order" });
+        }
+      }
+
+      const verification = await completePayment(paymentId, targetOrder);
+      return json(200, { verification, recovered: true });
     }
 
     return json(400, { error: `Unknown action: ${action}` });
