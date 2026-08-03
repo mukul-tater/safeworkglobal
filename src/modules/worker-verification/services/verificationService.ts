@@ -599,6 +599,105 @@ export async function waiveAssessmentPaymentPilot(userId: string): Promise<Worke
 /**
  * Create Razorpay order → Checkout → verify signature via edge function → advance stage.
  */
+const RZP_FN_URL = `${String(
+  import.meta.env.VITE_SUPABASE_URL || 'https://etpiadoqryvtlpmiuxia.supabase.co',
+).replace(/\/$/, '')}/functions/v1/razorpay-assessment`;
+const RZP_PENDING_KEY = 'safework.razorpay.pending';
+
+type RazorpayFnResponse = {
+  error?: string;
+  order_id?: string;
+  amount_inr?: number;
+  key_id?: string;
+  verification?: WorkerVerification;
+  already_paid?: boolean;
+  recovered?: boolean;
+};
+
+/** Call the edge function with fetch so the real { error } body surfaces. */
+async function callRazorpayFn(body: Record<string, unknown>): Promise<RazorpayFnResponse> {
+  await supabase.auth.refreshSession().catch(() => null);
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('Your session expired. Please sign in again.');
+
+  const res = await fetch(RZP_FN_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  let json: RazorpayFnResponse = {};
+  try {
+    json = (await res.json()) as RazorpayFnResponse;
+  } catch {
+    json = {};
+  }
+  if (!res.ok || json?.error) {
+    throw new Error(json?.error || `Payment service error (${res.status})`);
+  }
+  return json;
+}
+
+function storePendingCheckout(payload: {
+  razorpay_payment_id?: string;
+  razorpay_order_id?: string;
+  razorpay_signature?: string;
+}) {
+  try {
+    sessionStorage.setItem(RZP_PENDING_KEY, JSON.stringify(payload));
+  } catch {
+    /* ignore */
+  }
+}
+
+function readPendingCheckout(): {
+  razorpay_payment_id?: string;
+  razorpay_order_id?: string;
+  razorpay_signature?: string;
+} | null {
+  try {
+    const raw = sessionStorage.getItem(RZP_PENDING_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingCheckout() {
+  try {
+    sessionStorage.removeItem(RZP_PENDING_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+async function currentVerification(): Promise<WorkerVerification> {
+  const uid = (await supabase.auth.getUser()).data.user?.id;
+  if (!uid) throw new Error('Not signed in');
+  return getOrCreateVerification(uid);
+}
+
+function normalized(next: WorkerVerification): WorkerVerification {
+  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
+}
+
+/**
+ * Manual/automatic recovery: confirm a real Razorpay capture and unlock the journey.
+ */
+export async function syncAssessmentPaymentAfterCheckout(): Promise<WorkerVerification> {
+  const pending = readPendingCheckout();
+  const res = await callRazorpayFn({
+    action: 'recover_payment',
+    razorpay_order_id: pending?.razorpay_order_id,
+    razorpay_payment_id: pending?.razorpay_payment_id,
+  });
+  clearPendingCheckout();
+  return normalized(res.verification || (await currentVerification()));
+}
+
 export async function payAssessmentFeeWithRazorpay(opts?: {
   name?: string | null;
   email?: string | null;
@@ -606,18 +705,13 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
 }): Promise<WorkerVerification> {
   const { openRazorpayCheckout } = await import('../lib/razorpayCheckout');
 
-  const { data: orderData, error: orderErr } = await supabase.functions.invoke(
-    'razorpay-assessment',
-    { body: { action: 'create_order' } },
-  );
-  if (orderErr) {
-    const detail =
-      (orderData as { error?: string } | null)?.error ||
-      orderErr.message ||
-      'Could not start payment';
-    throw new Error(detail);
+  const orderData = await callRazorpayFn({ action: 'create_order' });
+
+  // Already paid on an earlier attempt — no double charge.
+  if (orderData.recovered && orderData.verification) {
+    clearPendingCheckout();
+    return normalized(orderData.verification);
   }
-  if (orderData?.error) throw new Error(String(orderData.error));
 
   const orderId = String(orderData?.order_id || '');
   const amountInr = Number(orderData?.amount_inr || ASSESSMENT_FEE_INR);
@@ -639,30 +733,29 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
     keyId,
   });
 
-  const { data: verifyData, error: verifyErr } = await supabase.functions.invoke(
-    'razorpay-assessment',
-    {
-      body: {
-        action: 'verify_payment',
-        razorpay_payment_id: checkout.razorpay_payment_id,
-        razorpay_order_id: checkout.razorpay_order_id || orderId,
-        razorpay_signature: checkout.razorpay_signature,
-      },
-    },
-  );
-  if (verifyErr) {
-    const detail =
-      (verifyData as { error?: string } | null)?.error ||
-      verifyErr.message ||
-      'Payment verification failed';
-    throw new Error(detail);
-  }
-  if (verifyData?.error) throw new Error(String(verifyData.error));
+  storePendingCheckout({
+    razorpay_payment_id: checkout.razorpay_payment_id,
+    razorpay_order_id: checkout.razorpay_order_id || orderId,
+    razorpay_signature: checkout.razorpay_signature,
+  });
 
-  const next = (verifyData?.verification || (await getOrCreateVerification(
-    (await supabase.auth.getUser()).data.user!.id,
-  ))) as WorkerVerification;
-  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
+  try {
+    const verifyData = await callRazorpayFn({
+      action: 'verify_payment',
+      razorpay_payment_id: checkout.razorpay_payment_id,
+      razorpay_order_id: checkout.razorpay_order_id || orderId,
+      razorpay_signature: checkout.razorpay_signature,
+    });
+    clearPendingCheckout();
+    return normalized(verifyData.verification || (await currentVerification()));
+  } catch (verifyError) {
+    // Charged but verification failed — try recovery before surfacing the error.
+    try {
+      return await syncAssessmentPaymentAfterCheckout();
+    } catch {
+      throw verifyError instanceof Error ? verifyError : new Error('Payment verification failed');
+    }
+  }
 }
 
 /**
