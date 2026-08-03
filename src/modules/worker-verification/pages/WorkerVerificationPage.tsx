@@ -51,6 +51,7 @@ import {
   submitQuiz,
   bookTradeTestCenter,
   payAssessmentFeeWithRazorpay,
+  syncAssessmentPaymentAfterCheckout,
   submitTradeTestResult,
   waiveAssessmentInterviewPilot,
   waiveAssessmentPaymentPilot,
