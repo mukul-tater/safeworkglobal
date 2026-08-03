@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { lovable } from '@/integrations/lovable';
+import { signInWithGoogle } from '@/lib/googleAuth';
 import type { AppRole } from '@/contexts/AuthContext';
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
   onBeforeOAuth?: () => void;
 }
 
-/** Lovable Google OAuth — same flow as /auth and QuickWorkerSignup. */
+/** Google OAuth — Lovable broker on hosted apps; Supabase OAuth on local Vite. */
 export default function GoogleAuthButton({
   label = 'Continue with Google',
   role = 'worker',
@@ -26,17 +26,20 @@ export default function GoogleAuthButton({
     try {
       onBeforeOAuth?.();
       sessionStorage.setItem('pending_oauth_role', role);
-      const result = await lovable.auth.signInWithOAuth('google', {
+      const result = await signInWithGoogle('google', {
         redirect_uri: `${window.location.origin}/auth`,
       });
       if (result.error) {
         sessionStorage.removeItem('pending_oauth_role');
-        toast.error('Google sign-in failed');
+        toast.error(result.error.message || 'Google sign-in failed');
         setLoading(false);
+        return;
       }
-    } catch {
+      if (result.redirected) return;
+      setLoading(false);
+    } catch (err) {
       sessionStorage.removeItem('pending_oauth_role');
-      toast.error('Google sign-in failed');
+      toast.error(err instanceof Error ? err.message : 'Google sign-in failed');
       setLoading(false);
     }
   };
@@ -45,7 +48,7 @@ export default function GoogleAuthButton({
     <Button
       type="button"
       variant="outline"
-      className="w-full h-11 gap-2 font-medium"
+      className="h-11 w-full gap-2 font-medium"
       onClick={handleGoogle}
       disabled={loading}
     >
@@ -71,7 +74,7 @@ export function AuthDivider() {
         <span className="w-full border-t border-border" />
       </div>
       <div className="relative flex justify-center text-xs">
-        <span className="bg-card px-2 text-muted-foreground">OR</span>
+        <span className="bg-background px-2 text-muted-foreground">OR</span>
       </div>
     </div>
   );

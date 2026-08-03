@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Eye, EyeOff, Loader2, Briefcase, HardHat, Users, ArrowLeft, Mail, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable/index';
+import { signInWithGoogle } from '@/lib/googleAuth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { passwordValidation } from '@/components/ValidatedInput';
@@ -159,16 +159,17 @@ export default function Auth() {
     setError('');
     try {
       sessionStorage.setItem('pending_oauth_role', chosenRole);
-      const result = await lovable.auth.signInWithOAuth('google', {
+      const result = await signInWithGoogle('google', {
         redirect_uri: `${window.location.origin}/auth`,
       });
       if (result.error) {
         sessionStorage.removeItem('pending_oauth_role');
-        setError(result.error instanceof Error ? result.error.message : 'Google sign-in failed');
+        setError(result.error.message || 'Google sign-in failed');
         setGoogleLoading(false);
         return;
       }
       if (result.redirected) return; // Browser will navigate to Google
+      setGoogleLoading(false);
     } catch {
       sessionStorage.removeItem('pending_oauth_role');
       setError('Google sign-in failed. Please try again.');

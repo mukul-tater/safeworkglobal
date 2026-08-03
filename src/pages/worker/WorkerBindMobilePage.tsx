@@ -149,8 +149,9 @@ export default function WorkerBindMobilePage() {
         onConflict: 'user_id',
       });
 
-      markMobileVerified(digits);
+      markMobileVerified(digits, user.id);
       await refreshProfile();
+      markMobileVerified(digits, user.id);
       toast.success('Mobile verified — welcome!');
       navigate('/worker/journey', { replace: true });
     } catch (err: unknown) {

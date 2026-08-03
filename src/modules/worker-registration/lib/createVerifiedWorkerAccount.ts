@@ -12,6 +12,8 @@ export type WorkerSource =
 export type CreateVerifiedWorkerInput = {
   fullName: string;
   mobile: string;
+  /** Real contact + Auth email. Required for organic signup; optional for emitra (falls back to synthetic). */
+  email?: string;
   password: string;
   country?: string;
   source?: WorkerSource;
@@ -42,8 +44,20 @@ export async function createVerifiedWorkerAccount(
   input: CreateVerifiedWorkerInput,
 ): Promise<CreateVerifiedWorkerResult> {
   const digits = input.mobile.replace(/\D/g, '').slice(-10);
-  const authEmail = workerAuthEmailFromMobile(digits);
+  const contactEmail = (input.email || '').trim().toLowerCase();
   const source = input.source ?? { type: 'organic' as const };
+
+  // Organic signup uses real email for Auth. Emitra kiosk may still use synthetic.
+  let authEmail = contactEmail;
+  if (!authEmail) {
+    if (source.type === 'organic') {
+      throw new Error('Email is required to create a worker account.');
+    }
+    authEmail = workerAuthEmailFromMobile(digits);
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authEmail)) {
+    throw new Error('Enter a valid email address.');
+  }
+
   const country = input.country || 'India';
 
   let callerSession: { access_token: string; refresh_token: string } | null = null;
@@ -68,6 +82,8 @@ export async function createVerifiedWorkerAccount(
           full_name: input.fullName.trim(),
           phone: digits,
           role: 'worker',
+          // OTP already verified — handle_new_user + AuthContext honor this.
+          mobile_verified: true,
           terms_version: WORKER_TERMS_VERSION,
         },
       },
@@ -75,7 +91,7 @@ export async function createVerifiedWorkerAccount(
 
     if (signupErr) {
       if (/already registered|already exists/i.test(signupErr.message)) {
-        throw new Error('This mobile number is already registered. The worker can sign in instead.');
+        throw new Error('This email or mobile is already registered. Sign in instead.');
       }
       throw new Error(signupErr.message);
     }
@@ -144,17 +160,79 @@ export async function createVerifiedWorkerAccount(
       } as any);
     }
 
-    // Clear synthetic auth email copied by handle_new_user — contact email is collected later.
-    const { error: profileErr } = await supabase
+    // Profiles are created by handle_new_user (SECURITY DEFINER). Clients only
+    // have UPDATE RLS — upsert INSERT fails with "violates row-level security".
+    const profilePatch = {
+      full_name: input.fullName.trim(),
+      phone: digits,
+      mobile_verified: true,
+      email: authEmail,
+    };
+
+    let profileReady = false;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const { data: existing, error: selectErr } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (selectErr) throw new Error(selectErr.message);
+      if (existing?.id) {
+        const { error: profileErr } = await supabase
+          .from('profiles')
+          .update(profilePatch)
+          .eq('id', user.id);
+        if (profileErr) throw new Error(profileErr.message);
+        profileReady = true;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+    }
+    if (!profileReady) {
+      throw new Error('Profile was not ready yet. Please try again in a moment.');
+    }
+
+    // Confirm the flag stuck (guards against RLS/trigger oddities).
+    const { data: verifiedRow, error: verifiedErr } = await supabase
       .from('profiles')
-      .update({
-        full_name: input.fullName.trim(),
-        phone: digits,
-        mobile_verified: true,
-        email: null,
-      })
-      .eq('id', user.id);
-    if (profileErr) throw new Error(profileErr.message);
+      .select('mobile_verified')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (verifiedErr) throw new Error(verifiedErr.message);
+    if (!verifiedRow?.mobile_verified) {
+      const { error: forceErr } = await supabase
+        .from('profiles')
+        .update({ mobile_verified: true, phone: digits })
+        .eq('id', user.id);
+      if (forceErr) throw new Error(forceErr.message);
+
+      const { data: again } = await supabase
+        .from('profiles')
+        .select('mobile_verified')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (!again?.mobile_verified) {
+        throw new Error(
+          'Could not save mobile verification. Please refresh and try signing in again.',
+        );
+      }
+    }
+
+    // Keep metadata in sync so AuthContext metaVerified works after reload.
+    try {
+      await supabase.auth.updateUser({
+        data: { phone: digits, mobile_verified: true },
+      });
+    } catch {
+      /* non-fatal */
+    }
+
+    // Sync session flag before React navigates (survives ProtectedRoute race).
+    try {
+      sessionStorage.setItem(`swg_mobile_verified_${user.id}`, '1');
+    } catch {
+      /* ignore */
+    }
 
     try {
       await acceptTerms(user.id);

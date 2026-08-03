@@ -273,20 +273,34 @@ export async function submitQuiz(
   const correct = answers.filter((a) => a.answer === a.expected).length;
   const score = answers.length ? Math.round((correct / answers.length) * 1000) / 10 : 0;
   const passed = score >= QUIZ_PASS_SCORE;
+  const now = new Date().toISOString();
 
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
       quiz_score: score,
-      quiz_completed_at: passed ? new Date().toISOString() : null,
+      quiz_completed_at: passed ? now : null,
       stage: passed ? 'media' : 'quiz',
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     })
     .eq('id', row.id)
     .select('*')
     .single();
 
   if (error) throw new Error(error.message);
+
+  // If score passed but stage stuck on quiz, force stage once more.
+  if (data && data.stage === 'quiz' && data.quiz_completed_at) {
+    const { data: forced, error: forceErr } = await supabase
+      .from('worker_verification')
+      .update({ stage: 'media', updated_at: new Date().toISOString() })
+      .eq('id', row.id)
+      .select('*')
+      .single();
+    if (forceErr) throw new Error(forceErr.message);
+    return forced as WorkerVerification;
+  }
+
   return data as WorkerVerification;
 }
 

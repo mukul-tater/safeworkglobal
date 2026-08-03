@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { lovable } from '@/integrations/lovable/index';
+import { signInWithGoogle } from '@/lib/googleAuth';
 
 export default function EmployerLoginPage() {
   const navigate = useNavigate();
@@ -62,13 +62,14 @@ export default function EmployerLoginPage() {
     setGoogleLoading(true);
     try {
       sessionStorage.setItem('pending_oauth_role', 'employer');
-      const result = await lovable.auth.signInWithOAuth('google', {
+      const result = await signInWithGoogle('google', {
         redirect_uri: `${window.location.origin}/auth`,
       });
       if (result.error) {
         sessionStorage.removeItem('pending_oauth_role');
-        setError(result.error instanceof Error ? result.error.message : 'Google sign-in failed');
+        setError(result.error.message || 'Google sign-in failed');
       }
+      if (result.redirected) return;
     } catch {
       sessionStorage.removeItem('pending_oauth_role');
       setError('Google sign-in failed. Please try again.');

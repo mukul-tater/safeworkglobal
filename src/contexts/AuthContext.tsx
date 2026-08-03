@@ -42,9 +42,9 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   /**
    * Optimistically mark mobile as verified in-session (after signup/bind OTP).
-   * Prevents a second "Verify your mobile" bounce before profile refresh lands.
+   * Pass userId when React auth context may not have caught up yet after signIn.
    */
-  markMobileVerified: (phone?: string) => void;
+  markMobileVerified: (phone?: string, userId?: string) => void;
   /** Reload role from user_roles after admin promotion. */
   refreshRole: () => Promise<void>;
   /** Assign a role to the current user (used after OAuth sign-in when role is missing). */
@@ -82,6 +82,35 @@ function sanitizeProfileEmail<T extends { email?: string | null }>(row: T): T {
   return { ...row, email: displayableEmail(row.email) || '' };
 }
 
+const mobileVerifiedStorageKey = (userId: string) => `swg_mobile_verified_${userId}`;
+
+function readMobileVerifiedSession(userId: string | null | undefined): boolean {
+  if (!userId || typeof sessionStorage === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(mobileVerifiedStorageKey(userId)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeMobileVerifiedSession(userId: string | null | undefined) {
+  if (!userId || typeof sessionStorage === 'undefined') return;
+  try {
+    sessionStorage.setItem(mobileVerifiedStorageKey(userId), '1');
+  } catch {
+    /* private mode / quota */
+  }
+}
+
+function clearMobileVerifiedSession(userId: string | null | undefined) {
+  if (!userId || typeof sessionStorage === 'undefined') return;
+  try {
+    sessionStorage.removeItem(mobileVerifiedStorageKey(userId));
+  } catch {
+    /* ignore */
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -90,6 +119,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [hasResolvedRole, setHasResolvedRole] = useState(false);
+  /** Survives brief profile races right after signup OTP (must not bounce to bind-mobile). */
+  const [mobileVerifiedOverride, setMobileVerifiedOverride] = useState(false);
+  const mobileVerifiedOverrideRef = useRef(false);
   /** Prevents tab-focus / token events from re-fetching and remounting the whole app. */
   const loadedUserIdRef = useRef<string | null>(null);
   const loadGenerationRef = useRef(0);
@@ -130,27 +162,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (isStale()) return;
 
+    const preserveVerified =
+      mobileVerifiedOverrideRef.current || readMobileVerifiedSession(currentUser.id);
+    const metaMv = (currentUser.user_metadata as Record<string, unknown> | undefined)
+      ?.mobile_verified;
+    const metaVerified = metaMv === true || metaMv === 'true';
+
     if (data && !error) {
-      // Drop synthetic mobile-auth emails from UI state (and clear them in DB once).
-      const email = displayableEmail(data.email) || '';
-      if (data.email && !email) {
-        void supabase.from('profiles').update({ email: null }).eq('id', currentUser.id);
-      }
-      setProfile(sanitizeProfileEmail({ ...data, email }));
+      // Keep synthetic mobile-auth emails in DB (profiles.email is NOT NULL).
+      // Only hide them in UI via sanitizeProfileEmail / displayableEmail.
+      const verified = !!(data.mobile_verified || preserveVerified || metaVerified);
+      if (verified) writeMobileVerifiedSession(currentUser.id);
+      setProfile(
+        sanitizeProfileEmail({
+          ...data,
+          mobile_verified: verified,
+        }),
+      );
       return;
     }
 
     // No profile row yet — synthesize one from auth metadata and upsert.
     const derived = deriveProfileFromUser(currentUser);
+    // Never write null email — column is NOT NULL. Prefer auth email (may be synthetic).
+    const profileEmail =
+      (currentUser.email || '').trim() ||
+      (derived.email || '').trim() ||
+      `user-${currentUser.id.replace(/-/g, '').slice(0, 12)}@workers.safeworkglobal.app`;
+    const initialVerified = preserveVerified || metaVerified;
     const { data: upserted, error: upsertError } = await supabase
       .from('profiles')
       .upsert(
         {
           id: derived.id,
-          email: derived.email || null,
+          email: profileEmail,
           full_name: derived.full_name,
           phone: derived.phone,
           avatar_url: derived.avatar_url,
+          // Do not invent false — OTP signup sets metadata / session flag.
+          ...(initialVerified ? { mobile_verified: true } : {}),
         },
         { onConflict: 'id' }
       )
@@ -160,17 +210,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isStale()) return;
 
     if (upserted && !upsertError) {
-      setProfile(sanitizeProfileEmail(upserted));
+      const verified = !!(upserted.mobile_verified || initialVerified);
+      if (verified) writeMobileVerifiedSession(currentUser.id);
+      setProfile(
+        sanitizeProfileEmail({
+          ...upserted,
+          mobile_verified: verified,
+        }),
+      );
     } else {
       // Last-resort fallback: surface the derived profile in-memory so the UI
       // still renders a name and never displays "Unknown".
+      if (initialVerified) writeMobileVerifiedSession(currentUser.id);
       setProfile({
         id: derived.id,
         email: derived.email,
         full_name: derived.full_name,
         phone: derived.phone,
         avatar_url: derived.avatar_url,
-        mobile_verified: false,
+        mobile_verified: initialVerified,
       });
     }
   };
@@ -217,7 +275,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // storage races) as sign-out — that blanks the homepage and remounts
         // protected routes.
         if (event === 'SIGNED_OUT') {
+          clearMobileVerifiedSession(loadedUserIdRef.current);
           loadedUserIdRef.current = null;
+          mobileVerifiedOverrideRef.current = false;
+          setMobileVerifiedOverride(false);
           setSession(null);
           setUser(null);
           setRole(null);
@@ -234,6 +295,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setSession(nextSession);
         setUser(nextSession.user);
+
+        // Re-hydrate OTP-verified flag after remount / new tab of same session.
+        if (readMobileVerifiedSession(nextSession.user.id)) {
+          mobileVerifiedOverrideRef.current = true;
+          setMobileVerifiedOverride(true);
+        }
 
         const sameUser = loadedUserIdRef.current === nextSession.user.id;
         // Same user after tab focus / INITIAL_SESSION / SIGNED_IN recovery.
@@ -254,6 +321,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(existing?.user ?? null);
 
       if (existing?.user) {
+        if (readMobileVerifiedSession(existing.user.id)) {
+          mobileVerifiedOverrideRef.current = true;
+          setMobileVerifiedOverride(true);
+        }
         setTimeout(() => {
           void loadUserData(existing.user);
         }, 0);
@@ -310,8 +381,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    const uid = user?.id || loadedUserIdRef.current;
     await supabase.auth.signOut();
+    clearMobileVerifiedSession(uid);
     loadedUserIdRef.current = null;
+    mobileVerifiedOverrideRef.current = false;
+    setMobileVerifiedOverride(false);
     setUser(null);
     setSession(null);
     setProfile(null);
@@ -332,26 +407,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (currentUser) await fetchOrCreateProfile(currentUser, generation);
   };
 
-  const markMobileVerified = (phone?: string) => {
+  const markMobileVerified = (phone?: string, userId?: string) => {
     // Invalidate in-flight profile loads so they cannot clobber this.
     ++loadGenerationRef.current;
-    setProfile((prev) => {
-      if (!prev) {
-        if (!user) return prev;
+    mobileVerifiedOverrideRef.current = true;
+    setMobileVerifiedOverride(true);
+
+    const applyVerifiedProfile = (uid: string) => {
+      writeMobileVerifiedSession(uid);
+      setProfile((prev) => {
+        if (prev && prev.id !== uid) {
+          return {
+            ...prev,
+            id: uid,
+            mobile_verified: true,
+            phone: phone ?? prev.phone,
+          };
+        }
+        if (!prev) {
+          return {
+            id: uid,
+            email: displayableEmail(user?.email) || '',
+            full_name: (user?.user_metadata?.full_name as string) ?? null,
+            phone: phone ?? (user?.user_metadata?.phone as string) ?? null,
+            avatar_url: null,
+            mobile_verified: true,
+          };
+        }
         return {
-          id: user.id,
-          email: displayableEmail(user.email) || '',
-          full_name: (user.user_metadata?.full_name as string) ?? null,
-          phone: phone ?? (user.user_metadata?.phone as string) ?? null,
-          avatar_url: null,
+          ...prev,
           mobile_verified: true,
+          phone: phone ?? prev.phone,
         };
-      }
-      return {
-        ...prev,
-        mobile_verified: true,
-        phone: phone ?? prev.phone,
-      };
+      });
+    };
+
+    const uid = userId || profile?.id || user?.id;
+    if (uid) {
+      applyVerifiedProfile(uid);
+      return;
+    }
+
+    // Auth React state may lag behind signInWithPassword — resolve id, then apply.
+    void supabase.auth.getUser().then(({ data }) => {
+      const id = data.user?.id;
+      if (!id) return;
+      applyVerifiedProfile(id);
     });
   };
 
@@ -388,7 +489,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isEmailVerified = !!user?.email_confirmed_at;
-  const isMobileVerified = !!profile?.mobile_verified;
+  const sessionVerified =
+    readMobileVerifiedSession(user?.id || profile?.id) || mobileVerifiedOverrideRef.current;
+  const isMobileVerified =
+    !!profile?.mobile_verified || mobileVerifiedOverride || sessionVerified;
   const needsRoleSelection = !!user && hasResolvedRole && !role;
 
   return (

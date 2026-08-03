@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Building2, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
-import { lovable } from "@/integrations/lovable/index";
+import { signInWithGoogle } from "@/lib/googleAuth";
 import { validateSchema } from "@/lib/validations/common";
 import { quickEmployerSignupSchema } from "@/lib/validations/onboarding";
 
@@ -98,15 +98,13 @@ export default function QuickEmployerSignup() {
       if (fullName.trim()) {
         sessionStorage.setItem("pending_employer_full_name", fullName.trim());
       }
-      const result = await lovable.auth.signInWithOAuth("google", {
+      const result = await signInWithGoogle("google", {
         redirect_uri: `${window.location.origin}/auth`,
       });
       if (result.error) {
         sessionStorage.removeItem("pending_oauth_role");
         sessionStorage.removeItem("pending_employer_full_name");
-        toast.error(
-          result.error instanceof Error ? result.error.message : "Google sign-in failed"
-        );
+        toast.error(result.error.message || "Google sign-in failed");
         setLoading(false);
         return;
       }

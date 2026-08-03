@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, HardHat, Lock, Mail, Phone } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -17,14 +14,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import {
   workerAuthEmailFromIdentifier,
-  workerAuthEmailFromMobile,
 } from '@/lib/workerAuthEmail';
 import { getEmitraReviewBlockMessage, isWorkerGccReady } from '@/lib/workerPortalAccess';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
 import {
   WORKER_TERMS_FULL,
-  WORKER_TERMS_SUMMARY,
 } from '@/modules/worker-verification/constants';
+import TermsAgreeRow from '@/components/TermsAgreeRow';
 
 type LoginMethod = 'mobile' | 'email';
 
@@ -74,7 +70,12 @@ export default function WorkerLoginPage() {
         setError('Enter a valid 10-digit Indian mobile number');
         return;
       }
-      authEmail = workerAuthEmailFromMobile(mobile);
+      const resolved = await resolveAuthEmail(mobile);
+      if (!resolved) {
+        setError('No worker account found for this mobile number');
+        return;
+      }
+      authEmail = resolved;
     } else {
       if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
         setError('Please enter a valid email');
@@ -143,57 +144,123 @@ export default function WorkerLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="fixed inset-0 pointer-events-none" style={{ background: 'var(--gradient-mesh)' }} />
-      <div className="w-full max-w-[440px] relative z-10">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-success/10 mb-4">
-            <HardHat className="h-7 w-7 text-success" />
+    <div className="min-h-dvh lg:h-dvh lg:overflow-hidden bg-background">
+      <div className="flex min-h-dvh flex-col lg:h-full lg:flex-row">
+        {/* Brand panel — side on desktop, compact header on mobile */}
+        <aside className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-primary via-primary to-success px-6 py-8 text-primary-foreground lg:w-[46%] lg:px-12 lg:py-14">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-40"
+            style={{
+              background:
+                'radial-gradient(ellipse at 20% 20%, hsl(0 0% 100% / 0.25), transparent 55%), radial-gradient(ellipse at 80% 80%, hsl(192 95% 48% / 0.35), transparent 50%)',
+            }}
+          />
+          <div className="relative z-10">
+            <Link to="/" className="inline-flex items-center gap-2.5">
+              <img
+                src="/safework-global-logo.png"
+                alt=""
+                className="h-9 w-9 rounded-lg bg-white/95 object-contain p-0.5"
+              />
+              <span className="font-heading text-lg font-bold tracking-tight sm:text-xl">
+                SafeWork Global
+              </span>
+            </Link>
           </div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">Worker Sign In</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Choose mobile or email, enter your password, and continue.
+
+          <div className="relative z-10 mt-8 max-w-md lg:mt-0">
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm lg:mb-6 lg:h-14 lg:w-14">
+              <HardHat className="h-6 w-6 lg:h-7 lg:w-7" />
+            </div>
+            <h1 className="font-heading text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-[2.75rem]">
+              Worker sign in
+            </h1>
+            <p className="mt-3 text-base text-primary-foreground/90 sm:text-lg">
+              Verified GCC jobs. No agent fees.
+            </p>
+            <ul className="mt-6 hidden space-y-2.5 text-sm text-primary-foreground/85 lg:block">
+              <li className="flex items-start gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/90" />
+                Mobile or email — one password
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/90" />
+                Continue your verification journey anytime
+              </li>
+            </ul>
+          </div>
+
+          <p className="relative z-10 mt-8 hidden text-xs text-primary-foreground/70 lg:mt-0 lg:block">
+            Fair recruitment for skilled workers from India to the GCC.
           </p>
-        </div>
+        </aside>
 
-        <div className="mb-4 mx-auto w-fit flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
-          <HardHat className="h-3.5 w-3.5" />
-          Signing in as a Worker
-        </div>
+        {/* Form panel */}
+        <main className="relative flex flex-1 flex-col justify-center px-4 py-8 sm:px-8 lg:overflow-y-auto lg:px-12 lg:py-10">
+          <div className="mx-auto w-full max-w-[400px]">
+            <div className="mb-6 lg:mb-8">
+              <p className="text-sm font-medium text-muted-foreground lg:hidden">Welcome back</p>
+              <h2 className="font-heading text-xl font-bold text-foreground sm:text-2xl">
+                Sign in to continue
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Choose mobile or email, then enter your password.
+              </p>
+            </div>
 
-        <Card className="shadow-lg border-border/60 overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-success via-success/80 to-primary" />
-          <CardContent className="p-6">
             {error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription className="text-sm">{error}</AlertDescription>
               </Alert>
             )}
 
-            <Tabs
-              value={method}
-              onValueChange={(v) => {
-                setMethod(v as LoginMethod);
-                setError('');
-              }}
-              className="mb-4"
+            <div
+              role="tablist"
+              aria-label="Sign-in method"
+              className="mb-4 grid h-11 w-full grid-cols-2 gap-1 rounded-lg bg-muted p-1"
             >
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="mobile" className="gap-1.5">
-                  <Phone className="h-3.5 w-3.5" /> Mobile
-                </TabsTrigger>
-                <TabsTrigger value="email" className="gap-1.5">
-                  <Mail className="h-3.5 w-3.5" /> Email
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={method === 'mobile'}
+                data-inline
+                onClick={() => {
+                  setMethod('mobile');
+                  setError('');
+                }}
+                className={`inline-flex h-full min-h-0 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors ${
+                  method === 'mobile'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Phone className="h-3.5 w-3.5" /> Mobile
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={method === 'email'}
+                data-inline
+                onClick={() => {
+                  setMethod('email');
+                  setError('');
+                }}
+                className={`inline-flex h-full min-h-0 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors ${
+                  method === 'email'
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Mail className="h-3.5 w-3.5" /> Email
+              </button>
+            </div>
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               {method === 'mobile' ? (
                 <div className="space-y-1.5">
                   <Label htmlFor="worker-mobile">Mobile Number</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="worker-mobile"
                       type="tel"
@@ -210,7 +277,7 @@ export default function WorkerLoginPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="worker-email">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="worker-email"
                       type="email"
@@ -228,7 +295,7 @@ export default function WorkerLoginPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="worker-password">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="worker-password"
                     type={showPassword ? 'text' : 'password'}
@@ -242,6 +309,7 @@ export default function WorkerLoginPage() {
                   />
                   <button
                     type="button"
+                    data-inline
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
@@ -251,37 +319,16 @@ export default function WorkerLoginPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
-                <p className="text-xs text-muted-foreground leading-relaxed">{WORKER_TERMS_SUMMARY}</p>
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <Checkbox
-                    checked={acceptedTerms}
-                    onCheckedChange={(v) => {
-                      const on = !!v;
-                      setAcceptedTerms(on);
-                      if (on) setTermsOpen(true);
-                    }}
-                    className="mt-0.5"
-                  />
-                  <span className="text-sm text-foreground leading-snug">
-                    I agree to the{' '}
-                    <button
-                      type="button"
-                      className="text-primary font-medium underline-offset-2 hover:underline"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setTermsOpen(true);
-                      }}
-                    >
-                      terms &amp; declarations
-                    </button>
-                  </span>
-                </label>
-              </div>
+              <TermsAgreeRow
+                id="worker-login-terms"
+                checked={acceptedTerms}
+                onCheckedChange={setAcceptedTerms}
+                onOpenTerms={() => setTermsOpen(true)}
+              />
 
               <Button
                 type="submit"
-                className="w-full h-11 font-medium"
+                className="h-11 w-full font-medium"
                 disabled={loading || !acceptedTerms}
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -289,32 +336,36 @@ export default function WorkerLoginPage() {
               </Button>
             </form>
 
-            <p className="text-sm text-center text-muted-foreground pt-4 mt-4 border-t border-border">
+            <p className="mt-5 border-t border-border pt-4 text-center text-sm text-muted-foreground">
               New worker?{' '}
-              <Link to="/worker/quick-signup" className="text-primary font-medium hover:underline">
+              <Link to="/worker/quick-signup" className="font-medium text-primary hover:underline">
                 Create your profile
               </Link>
             </p>
-          </CardContent>
-        </Card>
 
-        <p className="text-xs text-center text-muted-foreground mt-6">
-          Hiring workers?{' '}
-          <Link to="/employer/login" className="text-primary hover:underline">Employer sign in</Link>
-          {' · '}
-          <Link to="/emitra/login" className="text-primary hover:underline">Partner sign in</Link>
-        </p>
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Hiring workers?{' '}
+              <Link to="/employer/login" className="text-primary hover:underline">
+                Employer sign in
+              </Link>
+              {' · '}
+              <Link to="/emitra/login" className="text-primary hover:underline">
+                Partner sign in
+              </Link>
+            </p>
+          </div>
+        </main>
       </div>
 
       <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Worker terms &amp; declarations</DialogTitle>
             <DialogDescription>
               Please review these terms before signing in.
             </DialogDescription>
           </DialogHeader>
-          <pre className="whitespace-pre-wrap text-xs text-muted-foreground font-sans leading-relaxed">
+          <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground">
             {WORKER_TERMS_FULL}
           </pre>
           <DialogFooter className="gap-2 sm:gap-0">

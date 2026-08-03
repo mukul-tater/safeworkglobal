@@ -246,9 +246,12 @@ export default function WorkerVerificationPage() {
   const rawStage: VerificationStage = row
     ? normalizeVerificationStage(row.stage, row.trade_test_required)
     : 'essentials';
+  // Recovery: quiz scored but stage not advanced (guard/lag) → show skill proof.
+  const recoveredFromQuiz: VerificationStage =
+    rawStage === 'quiz' && row?.quiz_completed_at ? 'media' : rawStage;
   // If KYC is done but stage stuck on identity (constraint lag), treat as interview.
   const effectiveRaw: VerificationStage =
-    kycDone && rawStage === 'identity' ? 'awaiting_interview' : rawStage;
+    kycDone && recoveredFromQuiz === 'identity' ? 'awaiting_interview' : recoveredFromQuiz;
   const stage: VerificationStage = forceIdentity ? 'identity' : effectiveRaw;
   const tradeNeeded = row?.trade_test_required ?? skillRequiresTradeTest(row?.primary_skill);
   const navId = navStepForStage(stage);
@@ -435,10 +438,62 @@ export default function WorkerVerificationPage() {
         expected: item.expected_answer,
       }));
       const next = await submitQuiz(user.id, answers);
-      setRow(next);
+      const normalized = normalizeVerificationStage(
+        // Prefer media if quiz finished even when DB stage lagged.
+        next.quiz_completed_at && next.stage === 'quiz' ? 'media' : next.stage,
+        next.trade_test_required,
+      );
+      // Drop ?journey=test1 so we don't show the "completed step" card instead of skill proof.
+      clearJourneyQuery();
+      setRow({ ...next, stage: normalized });
+      setQuizIndex(0);
       notifyVerificationUpdated();
-      toast.success(`Test 1 complete — score ${next.quiz_score}%. Next: upload your skill proof.`);
-      await load();
+      toast.success(
+        `Test 1 complete — score ${next.quiz_score}%. Next: upload your skill proof.`,
+      );
+      // Soft reload — avoid full-page loading flash that can feel like a stuck quiz.
+      try {
+        const vRaw = await getOrCreateVerification(user.id);
+        const vStage = normalizeVerificationStage(
+          vRaw.quiz_completed_at && vRaw.stage === 'quiz' ? 'media' : vRaw.stage,
+          vRaw.trade_test_required,
+        );
+        setRow({ ...vRaw, stage: vStage });
+        if (vRaw.primary_skill) {
+          const { data: skill } = await supabase
+            .from('worker_skills')
+            .select('id')
+            .eq('worker_id', user.id)
+            .eq('skill_name', vRaw.primary_skill)
+            .maybeSingle();
+          if (skill?.id) {
+            setSkillId(skill.id);
+            const { data: media } = await supabase
+              .from('worker_skill_media')
+              .select('media_type')
+              .eq('skill_id', skill.id);
+            setPhotoCount((media || []).filter((m) => m.media_type === 'photo').length);
+            setVideoCount((media || []).filter((m) => m.media_type === 'video').length);
+          } else {
+            // Essentials should have created this — create now so uploads work.
+            const { data: inserted } = await supabase
+              .from('worker_skills')
+              .insert({
+                worker_id: user.id,
+                skill_name: vRaw.primary_skill,
+                proficiency_level: 'intermediate',
+                years_of_experience: 0,
+              } as any)
+              .select('id')
+              .maybeSingle();
+            if (inserted?.id) setSkillId(inserted.id);
+          }
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {
+        /* row already set from submit */
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Quiz submit failed');
     } finally {
@@ -702,7 +757,7 @@ export default function WorkerVerificationPage() {
               <div>
                 <h2 className="font-semibold">Major details</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Name and mobile are already saved. Add your email, location, education, and one primary skill.
+                  Name and mobile are already saved. Confirm your email, then add location, education, and one primary skill.
                 </p>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">

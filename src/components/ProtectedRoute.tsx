@@ -81,14 +81,27 @@ export default function ProtectedRoute({
     return <AccessDenied />;
   }
 
-  // Google (and any) workers without mobile_verified must bind + OTP once.
-  if (
-    requireMobileVerified &&
-    role === 'worker' &&
-    !profileLoading &&
-    !isMobileVerified
-  ) {
-    return <Navigate to="/worker/bind-mobile" replace />;
+  // Workers without mobile_verified must bind + OTP once (Google path).
+  // Wait until profile has resolved — never bounce during signup race when
+  // profile is still null / loading after OTP account create.
+  if (requireMobileVerified && role === 'worker') {
+    if (profileLoading || !user?.id) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+        </div>
+      );
+    }
+    // Session flag from signup OTP (survives brief DB/profile lag).
+    let sessionFlag = false;
+    try {
+      sessionFlag = sessionStorage.getItem(`swg_mobile_verified_${user.id}`) === '1';
+    } catch {
+      /* ignore */
+    }
+    if (!isMobileVerified && !sessionFlag) {
+      return <Navigate to="/worker/bind-mobile" replace />;
+    }
   }
 
   if (role === 'worker' && emitraBlock === undefined) {
