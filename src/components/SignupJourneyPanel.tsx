@@ -6,7 +6,9 @@ import {
   FileUp,
   HeartPulse,
   HelpCircle,
+  GraduationCap,
   Plane,
+  Rocket,
   ScrollText,
   Video,
   Wrench,
@@ -28,7 +30,9 @@ const JOURNEY_ICONS: Record<GccNavStepId, LucideIcon> = {
   test3: Wrench,
   medical: HeartPulse,
   bond: ScrollText,
+  pdot: GraduationCap,
   gcc_ready: Plane,
+  deployment: Rocket,
 };
 
 const PHASES: {
