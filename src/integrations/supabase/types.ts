@@ -4794,7 +4794,6 @@ export type Database = {
           wallet_pending: number
         }[]
       }
-      ensure_whitelisted_admin: { Args: never; Returns: boolean }
       generate_partner_code: { Args: never; Returns: string }
       get_employer_company_names: {
         Args: { p_employer_ids: string[] }
@@ -4861,10 +4860,6 @@ export type Database = {
           p_score?: number
         }
         Returns: undefined
-      }
-      is_whitelisted_admin_email: {
-        Args: { p_email: string }
-        Returns: boolean
       }
       issue_lsp_launch_params: {
         Args: {
