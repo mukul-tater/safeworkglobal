@@ -1258,6 +1258,29 @@ export default function WorkerVerificationPage() {
               Pay ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')} with Razorpay
             </Button>
             <Button
+              variant="outline"
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  const next = await syncAssessmentPaymentAfterCheckout();
+                  setRow({
+                    ...next,
+                    stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                  });
+                  notifyVerificationUpdated();
+                  toast.success('Payment synced — journey unlocked');
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : 'No completed payment found yet');
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Sync payment
+            </Button>
+            <Button
               variant="ghost"
               size="sm"
               className="text-muted-foreground"
