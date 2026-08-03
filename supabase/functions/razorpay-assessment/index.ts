@@ -21,6 +21,17 @@ function razorpayAuthHeader(keyId: string, keySecret: string): string {
   return `Basic ${btoa(`${keyId}:${keySecret}`)}`;
 }
 
+type RazorpayPayment = {
+  id: string;
+  status?: string;
+  order_id?: string;
+  amount?: number;
+};
+
+function isSettled(status?: string): boolean {
+  return status === "captured" || status === "authorized";
+}
+
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
