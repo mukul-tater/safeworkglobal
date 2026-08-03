@@ -29,16 +29,8 @@ export async function ensureAdminAccess(): Promise<{ ok: true } | { ok: false; e
     return { ok: false, error: 'Authentication failed.' };
   }
 
-  if (!isWhitelistedAdminEmail(user.email ?? '')) {
-    return { ok: false, error: 'This account is not an administrator.' };
-  }
-
-  const { data: ensured, error } = await supabase.rpc('ensure_whitelisted_admin');
-
-  if (!error && ensured) {
-    return { ok: true };
-  }
-
+  // Admin privileges are never derived from an email allow-list. The only source of
+  // truth is an explicit `admin` row in user_roles, granted manually by an existing admin.
   if (await hasAdminRole(user.id)) {
     return { ok: true };
   }
