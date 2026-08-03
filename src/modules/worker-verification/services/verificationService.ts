@@ -556,15 +556,27 @@ export async function recordInterviewScore(
 
 /**
  * Pilot path — skip waiting for admin video-interview score.
- * Advances awaiting_interview → awaiting_payment.
+ * Advances awaiting_interview (or identity after KYC) → awaiting_payment.
  */
 export async function waiveAssessmentInterviewPilot(userId: string): Promise<WorkerVerification> {
+  // If DB still on identity after KYC submit, nudge stage before pilot waive.
+  const current = await getOrCreateVerification(userId);
+  if (current.stage === 'identity') {
+    const { error: nudgeErr } = await supabase
+      .from('worker_verification')
+      .update({ stage: 'awaiting_interview', updated_at: new Date().toISOString() })
+      .eq('id', current.id);
+    if (nudgeErr) {
+      console.warn('Could not advance identity → interview before pilot waive:', nudgeErr.message);
+    }
+  }
+
   const { data, error } = await supabase.rpc('waive_assessment_interview_pilot');
   if (error) {
     const msg = error.message || 'Could not skip interview';
     if (/could not find the function|schema cache|PGRST202/i.test(msg)) {
       throw new Error(
-        'Interview pilot RPC missing. Run supabase/migrations/20260731192000_waive_interview_pilot.sql in Lovable SQL, then retry.',
+        'Interview pilot RPC missing. Run supabase/migrations/20260731192000_waive_interview_pilot.sql (and 20260803120000_waive_interview_accept_identity.sql) in Lovable SQL, then retry.',
       );
     }
     throw new Error(msg);
