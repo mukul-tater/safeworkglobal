@@ -160,7 +160,7 @@ export default function Auth() {
     try {
       sessionStorage.setItem('pending_oauth_role', chosenRole);
       const result = await signInWithGoogle('google', {
-        redirect_uri: `${window.location.origin}/auth`,
+        next: '/auth',
       });
       if (result.error) {
         sessionStorage.removeItem('pending_oauth_role');

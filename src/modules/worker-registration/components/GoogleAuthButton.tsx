@@ -27,7 +27,7 @@ export default function GoogleAuthButton({
       onBeforeOAuth?.();
       sessionStorage.setItem('pending_oauth_role', role);
       const result = await signInWithGoogle('google', {
-        redirect_uri: `${window.location.origin}/auth`,
+        next: '/auth',
       });
       if (result.error) {
         sessionStorage.removeItem('pending_oauth_role');
