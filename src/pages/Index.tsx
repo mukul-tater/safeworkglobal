@@ -15,10 +15,23 @@ import EmployerHomeSections from "@/components/EmployerHomeSections";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ScrollReveal from "@/components/ScrollReveal";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { consumePendingOAuthRedirect } from "@/lib/oauthRedirect";
 
 const Index = () => {
   const { loading, profileLoading, role, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  // After Google OAuth the broker returns to the app origin ("/"). Once a session
+  // exists, continue to the destination stored before the redirect.
+  useEffect(() => {
+    if (loading || !isAuthenticated) return;
+    const next = consumePendingOAuthRedirect();
+    if (next) navigate(next, { replace: true });
+  }, [loading, isAuthenticated, navigate]);
+
   // Wait for role only on cold start. If role is already known, never blank
   // the page when profileLoading flickers (tab focus / token refresh).
   const waitingForRole = isAuthenticated && !role && (loading || profileLoading);
