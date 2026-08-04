@@ -1,5 +1,6 @@
 import { lovable } from '@/integrations/lovable';
 import { supabase } from '@/integrations/supabase/client';
+import { clearPendingOAuthRedirect, setPendingOAuthRedirect } from '@/lib/oauthRedirect';
 
 type OAuthProvider = 'google' | 'apple' | 'microsoft';
 
@@ -23,23 +24,33 @@ function shouldUseLovableOAuthBroker(): boolean {
   return true;
 }
 
-/** Google OAuth for worker/employer signup & login. */
+/**
+ * Google OAuth for worker/employer signup & login.
+ *
+ * The Lovable OAuth broker only allows the app **origin** as a redirect target —
+ * sending a path (e.g. `https://safeworkglobal.com/auth`) fails with
+ * "redirect_uri is not allowed". So we always hand the broker the bare origin and
+ * remember the intended path separately (see `@/lib/oauthRedirect`).
+ */
 export async function signInWithGoogle(
   provider: OAuthProvider = 'google',
-  opts?: { redirect_uri?: string },
+  opts?: { redirect_uri?: string; next?: string },
 ): Promise<GoogleAuthResult> {
-  const redirectTo = opts?.redirect_uri ?? `${window.location.origin}/auth`;
-
   if (provider !== 'google') {
     return { error: new Error(`Provider "${provider}" is not supported yet`) };
   }
 
+  const origin = window.location.origin;
+  const intended = opts?.next ?? opts?.redirect_uri ?? '/auth';
+  setPendingOAuthRedirect(intended);
+
   if (shouldUseLovableOAuthBroker()) {
     const result = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: redirectTo,
+      redirect_uri: origin,
     });
 
     if (result.error) {
+      clearPendingOAuthRedirect();
       const err =
         result.error instanceof Error ? result.error : new Error(String(result.error));
       return { error: err };
@@ -53,7 +64,7 @@ export async function signInWithGoogle(
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo,
+      redirectTo: origin,
       queryParams: {
         access_type: 'offline',
         prompt: 'select_account',
@@ -62,6 +73,7 @@ export async function signInWithGoogle(
   });
 
   if (error) {
+    clearPendingOAuthRedirect();
     return { error: new Error(error.message) };
   }
 

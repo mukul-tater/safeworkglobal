@@ -99,7 +99,7 @@ export default function QuickEmployerSignup() {
         sessionStorage.setItem("pending_employer_full_name", fullName.trim());
       }
       const result = await signInWithGoogle("google", {
-        redirect_uri: `${window.location.origin}/auth`,
+        next: '/auth',
       });
       if (result.error) {
         sessionStorage.removeItem("pending_oauth_role");
