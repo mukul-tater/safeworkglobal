@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { signInWithGoogle } from '@/lib/googleAuth';
+import { clearPendingOAuthRole, setPendingOAuthRole } from '@/lib/oauthRedirect';
 import type { AppRole } from '@/contexts/AuthContext';
 
 interface Props {
@@ -25,12 +26,12 @@ export default function GoogleAuthButton({
     setLoading(true);
     try {
       onBeforeOAuth?.();
-      sessionStorage.setItem('pending_oauth_role', role);
+      setPendingOAuthRole(role);
       const result = await signInWithGoogle('google', {
         next: '/auth',
       });
       if (result.error) {
-        sessionStorage.removeItem('pending_oauth_role');
+        clearPendingOAuthRole();
         toast.error(result.error.message || 'Google sign-in failed');
         setLoading(false);
         return;
@@ -38,7 +39,7 @@ export default function GoogleAuthButton({
       if (result.redirected) return;
       setLoading(false);
     } catch (err) {
-      sessionStorage.removeItem('pending_oauth_role');
+      clearPendingOAuthRole();
       toast.error(err instanceof Error ? err.message : 'Google sign-in failed');
       setLoading(false);
     }

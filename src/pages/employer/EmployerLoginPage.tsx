@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { signInWithGoogle } from '@/lib/googleAuth';
+import { clearPendingOAuthRole, setPendingOAuthRole } from '@/lib/oauthRedirect';
 
 export default function EmployerLoginPage() {
   const navigate = useNavigate();
@@ -61,17 +62,17 @@ export default function EmployerLoginPage() {
     setError('');
     setGoogleLoading(true);
     try {
-      sessionStorage.setItem('pending_oauth_role', 'employer');
+      setPendingOAuthRole('employer');
       const result = await signInWithGoogle('google', {
         next: '/auth',
       });
       if (result.error) {
-        sessionStorage.removeItem('pending_oauth_role');
+        clearPendingOAuthRole();
         setError(result.error.message || 'Google sign-in failed');
       }
       if (result.redirected) return;
     } catch {
-      sessionStorage.removeItem('pending_oauth_role');
+      clearPendingOAuthRole();
       setError('Google sign-in failed. Please try again.');
     } finally {
       setGoogleLoading(false);

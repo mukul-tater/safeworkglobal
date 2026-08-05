@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Building2, ArrowRight, ShieldCheck, Loader2 } from "lucide-react";
 import { signInWithGoogle } from "@/lib/googleAuth";
+import { clearPendingOAuthRole, setPendingOAuthRole } from "@/lib/oauthRedirect";
 import { validateSchema } from "@/lib/validations/common";
 import { quickEmployerSignupSchema } from "@/lib/validations/onboarding";
 
@@ -94,7 +95,7 @@ export default function QuickEmployerSignup() {
     try {
       // Pre-select the Employer role so the OAuth callback can auto-assign it
       // without showing the role chooser again on /auth.
-      sessionStorage.setItem("pending_oauth_role", "employer");
+      setPendingOAuthRole("employer");
       if (fullName.trim()) {
         sessionStorage.setItem("pending_employer_full_name", fullName.trim());
       }
@@ -102,7 +103,7 @@ export default function QuickEmployerSignup() {
         next: '/auth',
       });
       if (result.error) {
-        sessionStorage.removeItem("pending_oauth_role");
+        clearPendingOAuthRole();
         sessionStorage.removeItem("pending_employer_full_name");
         toast.error(result.error.message || "Google sign-in failed");
         setLoading(false);
@@ -110,7 +111,7 @@ export default function QuickEmployerSignup() {
       }
       if (result.redirected) return; // Browser will redirect to Google
     } catch (err: any) {
-      sessionStorage.removeItem("pending_oauth_role");
+      clearPendingOAuthRole();
       sessionStorage.removeItem("pending_employer_full_name");
       toast.error(err?.message || "Google sign-in failed");
       setLoading(false);
