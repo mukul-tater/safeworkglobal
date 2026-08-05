@@ -34,6 +34,7 @@ export type CreateVerifiedWorkerResult = {
   userId: string;
   authEmail: string;
   mobile: string;
+  requiresEmailConfirmation: boolean;
 };
 
 /**
@@ -73,7 +74,7 @@ export async function createVerifiedWorkerAccount(
   }
 
   try {
-    const { error: signupErr } = await supabase.auth.signUp({
+    const { data: signupData, error: signupErr } = await supabase.auth.signUp({
       email: authEmail,
       password: input.password,
       options: {
@@ -96,11 +97,25 @@ export async function createVerifiedWorkerAccount(
       throw new Error(signupErr.message);
     }
 
-    const { error: signInErr } = await supabase.auth.signInWithPassword({
-      email: authEmail,
-      password: input.password,
-    });
-    if (signInErr) throw new Error(signInErr.message);
+    // Email confirmation is enabled in production. In that configuration the
+    // account is created successfully but signUp intentionally returns no
+    // session. Do not immediately call signInWithPassword (it can only return
+    // "Email not confirmed") or continue with authenticated profile writes.
+    if (!signupData.session) {
+      const userId = signupData.user?.id;
+      if (!userId) {
+        throw new Error('Account was created, but confirmation status could not be read.');
+      }
+      return {
+        userId,
+        authEmail,
+        mobile: digits,
+        requiresEmailConfirmation: true,
+      };
+    }
+
+    // signUp already established the session when confirmation is not
+    // required. Avoid a second auth request and the races it causes on mobile.
     switchedAwayFromCaller = true;
 
     const {
@@ -240,7 +255,12 @@ export async function createVerifiedWorkerAccount(
       /* migration may not be applied yet */
     }
 
-    const result = { userId: user.id, authEmail, mobile: digits };
+    const result = {
+      userId: user.id,
+      authEmail,
+      mobile: digits,
+      requiresEmailConfirmation: false,
+    };
 
     if (input.preserveCallerSession && switchedAwayFromCaller) {
       await supabase.auth.signOut();

@@ -26,7 +26,19 @@ function writeBoth(key: string, value: string) {
 }
 
 function readBoth(key: string): string | null {
-  for (const store of [localStorage, sessionStorage]) {
+  const stores: Storage[] = [];
+  try {
+    stores.push(localStorage);
+  } catch {
+    /* blocked by private mode / embedded browser */
+  }
+  try {
+    stores.push(sessionStorage);
+  } catch {
+    /* blocked by private mode / embedded browser */
+  }
+
+  for (const store of stores) {
     let raw: string | null = null;
     try {
       raw = store.getItem(key);

@@ -151,6 +151,11 @@ export default function QuickWorkerSignup() {
         country,
         source: { type: 'organic' },
       });
+      if (created.requiresEmailConfirmation) {
+        toast.success('Account created. Check your email to confirm your account, then sign in.');
+        navigate('/worker/login', { replace: true });
+        return;
+      }
       // Persist flag BEFORE navigation so ProtectedRoute does not bounce to
       // /worker/bind-mobile (signup OTP already verified this number).
       // Pass userId — AuthContext user may not be set yet after signIn.
