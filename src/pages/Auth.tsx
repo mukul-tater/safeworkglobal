@@ -11,6 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Eye, EyeOff, Loader2, Briefcase, HardHat, Users, ArrowLeft, Mail, Phone } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { signInWithGoogle } from '@/lib/googleAuth';
+import {
+  clearPendingOAuthRole,
+  peekPendingOAuthRole,
+  setPendingOAuthRole,
+} from '@/lib/oauthRedirect';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { passwordValidation } from '@/components/ValidatedInput';
@@ -89,9 +94,9 @@ export default function Auth() {
 
     // If the user picked a role BEFORE clicking "Sign in with Google",
     // auto-assign it now so they never see the role-select screen again.
-    const pending = sessionStorage.getItem('pending_oauth_role') as AppRole | null;
+    const pending = peekPendingOAuthRole() as AppRole | null;
     if (pending && (pending === 'worker' || pending === 'employer' || pending === 'partner')) {
-      sessionStorage.removeItem('pending_oauth_role');
+      clearPendingOAuthRole();
       handleRoleSelect(pending);
       return;
     }
@@ -104,9 +109,9 @@ export default function Auth() {
   // their account, sign them out and show a clear mismatch error.
   useEffect(() => {
     if (!isAuthenticated || !role) return;
-    const pending = sessionStorage.getItem('pending_oauth_role') as AppRole | null;
+    const pending = peekPendingOAuthRole() as AppRole | null;
     if (!pending) return;
-    sessionStorage.removeItem('pending_oauth_role');
+    clearPendingOAuthRole();
     if (pending !== role) {
       const labelMap: Record<AppRole, string> = {
         worker: 'Worker', employer: 'Employer', partner: 'Partner (e-Mitra)', admin: 'Admin',
@@ -158,12 +163,12 @@ export default function Auth() {
     setGoogleLoading(true);
     setError('');
     try {
-      sessionStorage.setItem('pending_oauth_role', chosenRole);
+      setPendingOAuthRole(chosenRole);
       const result = await signInWithGoogle('google', {
         next: '/auth',
       });
       if (result.error) {
-        sessionStorage.removeItem('pending_oauth_role');
+        clearPendingOAuthRole();
         setError(result.error.message || 'Google sign-in failed');
         setGoogleLoading(false);
         return;
@@ -171,7 +176,7 @@ export default function Auth() {
       if (result.redirected) return; // Browser will navigate to Google
       setGoogleLoading(false);
     } catch {
-      sessionStorage.removeItem('pending_oauth_role');
+      clearPendingOAuthRole();
       setError('Google sign-in failed. Please try again.');
       setGoogleLoading(false);
     }
