@@ -125,6 +125,43 @@ function formatWhen(iso: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('en-IN');
 }
 
+/** Read-only recap of a completed step, keyed by nav step id. */
+function completedStepSummary(
+  stepId: GccNavStepId | null,
+  row: WorkerVerification,
+  photoCount: number,
+  videoCount: number,
+): { label: string; value: string }[] {
+  const items: { label: string; value: string }[] = [];
+  const push = (label: string, value: string | null | undefined) => {
+    if (value) items.push({ label, value });
+  };
+  switch (stepId) {
+    case 'essentials':
+      push('Email', displayableEmail(row.email));
+      push('Location', [row.city, row.state].filter(Boolean).join(', '));
+      push('Education', row.education_level);
+      push('Primary skill', row.primary_skill);
+      break;
+    case 'test1':
+      if (row.quiz_score != null) push('Score', `${row.quiz_score}% — Passed`);
+      break;
+    case 'skill_proof':
+      push('Uploaded', `${photoCount} photos · ${videoCount} videos`);
+      break;
+    case 'identity':
+      push('KYC status', row.kyc_status === 'verified' ? 'Verified' : 'Submitted');
+      break;
+    case 'payment':
+      if (row.paid_at) push('Paid on', new Date(row.paid_at).toLocaleDateString('en-IN'));
+      if (row.payment_amount != null) push('Amount', `₹${row.payment_amount.toLocaleString('en-IN')}`);
+      break;
+    default:
+      break;
+  }
+  return items;
+}
+
 /**
  * Full worker verification wizard:
  * essentials → quiz → media → interview → payment → tests → bond → GCC ready
@@ -719,21 +756,60 @@ export default function WorkerVerificationPage() {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
           <div className="min-w-0 space-y-5">
         {viewingCompletedStep && viewingStepMeta && (
-          <Card>
-            <CardContent className="p-5 sm:p-6 space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-success/10 text-success">
-                  <CheckCircle2 className="h-5 w-5" />
+          <Card className="overflow-hidden shadow-sm">
+            <CardContent className="space-y-4 p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-success/10 p-2.5 text-success">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-success">
+                      Completed step
+                    </p>
+                    <h2 className="font-heading text-lg font-semibold leading-tight">
+                      {viewingStepMeta.label}
+                    </h2>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-semibold">{viewingStepMeta.label}</h2>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    This step is done. Continue with your current step: {VERIFICATION_STAGE_LABELS[stage]}.
-                  </p>
-                </div>
+                <Badge variant="secondary" className="shrink-0 gap-1 bg-success/10 text-success">
+                  <CheckCircle2 className="h-3 w-3" /> Done
+                </Badge>
               </div>
-              <Button type="button" onClick={clearJourneyQuery}>
-                Back to current step
+
+              {(() => {
+                const items = completedStepSummary(viewingJourney, row, photoCount, videoCount);
+                if (items.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground">
+                      You've finished this step. Nothing more to do here.
+                    </p>
+                  );
+                }
+                return (
+                  <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                    {items.map((item) => (
+                      <div key={item.label} className="min-w-0">
+                        <dt className="text-xs text-muted-foreground">{item.label}</dt>
+                        <dd className="mt-0.5 truncate text-sm font-medium text-foreground">
+                          {item.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                );
+              })()}
+
+              <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5">
+                <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
+                <p className="text-sm text-foreground">
+                  Your current step is <span className="font-medium">{VERIFICATION_STAGE_LABELS[stage]}</span>.
+                </p>
+              </div>
+
+              <Button type="button" className="w-full sm:w-auto" onClick={clearJourneyQuery}>
+                Go to current step
+                <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
