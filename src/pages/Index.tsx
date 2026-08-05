@@ -2,8 +2,8 @@ import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import HomeSearchBar from "@/components/HomeSearchBar";
 import WhySafeWork from "@/components/WhySafeWork";
+import HomeHowWeWork from "@/components/HomeHowWeWork";
 import WorkerJourneyDemo from "@/components/WorkerJourneyDemo";
-import HomeSuccessStories from "@/components/HomeSuccessStories";
 import HomeOpportunityExplorer from "@/components/HomeOpportunityExplorer";
 import ProcessTimeline from "@/components/ProcessTimeline";
 import FeaturedJobs from "@/components/FeaturedJobs";
@@ -49,11 +49,11 @@ const Index = () => {
           </ScrollReveal>
 
           <ScrollReveal>
-            <WorkerJourneyDemo />
+            <HomeHowWeWork />
           </ScrollReveal>
 
           <ScrollReveal>
-            <HomeSuccessStories />
+            <WorkerJourneyDemo />
           </ScrollReveal>
 
           <ScrollReveal>

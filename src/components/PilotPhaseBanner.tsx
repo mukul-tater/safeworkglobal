@@ -6,8 +6,7 @@ const STORAGE_KEY = "swg_pilot_banner_dismissed_v1";
 /**
  * Slim site-wide banner that signals SafeWork Global is in pilot phase.
  * Sets honest expectations for the first wave of workers/employers:
- * - Core hire flow (jobs, applications, interviews, offers) is live
- * - Escrow payments, insurance and remittance are coming soon
+ * verification and hiring are live, coverage is still expanding.
  * Dismissible per-browser.
  */
 export default function PilotPhaseBanner() {
@@ -30,8 +29,8 @@ export default function PilotPhaseBanner() {
         <Sparkles className="h-3.5 w-3.5 shrink-0" />
         <p className="text-center">
           <span className="font-semibold">Pilot phase:</span>{" "}
-          Hiring, applications &amp; interviews are live. Escrow payments, insurance
-          and remittance are rolling out soon. Full Functionality in sometime
+          Worker verification, applications &amp; interviews are live. More destinations and
+          partner agencies are being added.
         </p>
         <button
           onClick={dismiss}

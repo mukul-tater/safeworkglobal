@@ -10,9 +10,9 @@ const ProcessTimeline = () => {
     { number: 1, title: "Register Free", description: "Create your profile and search verified jobs", icon: UserPlus, bgColor: "bg-primary", iconGradient: "bg-gradient-to-br from-primary to-primary/70" },
     { number: 2, title: "Apply to Jobs", description: "Submit your application to verified listings", icon: FileText, bgColor: "bg-secondary", iconGradient: "bg-gradient-to-br from-secondary to-secondary/70" },
     { number: 3, title: "Get Selected", description: "Employer reviews and shortlists you", icon: CheckCircle, bgColor: "bg-success", iconGradient: "bg-gradient-to-br from-success to-success/70" },
-    { number: 4, title: "Sign Safe Contract", description: "Digital contract with salary held securely", icon: FileSignature, bgColor: "bg-warning", iconGradient: "bg-gradient-to-br from-warning to-warning/70" },
-    { number: 5, title: "Visa & Travel", description: "POE clearance and travel arrangements", icon: Plane, bgColor: "bg-info", iconGradient: "bg-gradient-to-br from-info to-info/70" },
-    { number: 6, title: "Support Abroad", description: "Insurance and ongoing help after you arrive", icon: HeartHandshake, bgColor: "bg-gradient-to-r from-primary to-info", iconGradient: "bg-gradient-to-br from-primary to-info" }
+    { number: 4, title: "Sign Your Contract", description: "Salary and job terms in writing before you agree", icon: FileSignature, bgColor: "bg-warning", iconGradient: "bg-gradient-to-br from-warning to-warning/70" },
+    { number: 5, title: "Visa & Travel", description: "Emigration and travel through a licensed partner", icon: Plane, bgColor: "bg-info", iconGradient: "bg-gradient-to-br from-info to-info/70" },
+    { number: 6, title: "Support Abroad", description: "Ongoing help after you reach your destination", icon: HeartHandshake, bgColor: "bg-gradient-to-r from-primary to-info", iconGradient: "bg-gradient-to-br from-primary to-info" }
   ];
 
   const employerSteps = [
@@ -21,7 +21,7 @@ const ProcessTimeline = () => {
     { number: 3, title: "Shortlist", description: "Save top candidates to your shortlist", icon: CheckCircle, bgColor: "bg-success", iconGradient: "bg-gradient-to-br from-success to-success/70" },
     { number: 4, title: "Interview", description: "Schedule video interviews in one click", icon: Video, bgColor: "bg-warning", iconGradient: "bg-gradient-to-br from-warning to-warning/70" },
     { number: 5, title: "Send Offer", description: "Issue offer letter and sign contract", icon: FileSignature, bgColor: "bg-info", iconGradient: "bg-gradient-to-br from-info to-info/70" },
-    { number: 6, title: "Hire & Pay", description: "Escrow-secured payment after onboarding", icon: Wallet, bgColor: "bg-gradient-to-r from-primary to-info", iconGradient: "bg-gradient-to-br from-primary to-info" }
+    { number: 6, title: "Hire & Deploy", description: "Licensed partner handles visa and deployment", icon: Wallet, bgColor: "bg-gradient-to-r from-primary to-info", iconGradient: "bg-gradient-to-br from-primary to-info" }
   ];
 
   // While auth resolves, default to the worker (public) steps to avoid layout

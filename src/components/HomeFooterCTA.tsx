@@ -22,7 +22,7 @@ export default function HomeFooterCTA() {
         <p className="text-white/85 mb-8 max-w-lg mx-auto text-base sm:text-lg">
           {isAuthenticated
             ? "Browse verified jobs and apply in minutes."
-            : "Join 100+ workers already on SafeWork Global. Sign up free — no agent fees."}
+            : "Create your profile free and get verified for overseas openings."}
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button

@@ -1,13 +1,6 @@
-import { Shield, BadgeCheck, FileCheck, Ban } from "lucide-react";
+import { BadgeCheck, FileCheck, Landmark, Wrench } from "lucide-react";
 
 const trustPoints = [
-  {
-    icon: Ban,
-    title: "No agent fees",
-    description: "Sign up and apply without paying recruitment agents. Standard government visa & emigration fees still apply.",
-    iconBg: "bg-success/10",
-    iconColor: "text-success",
-  },
   {
     icon: BadgeCheck,
     title: "Verified jobs only",
@@ -16,16 +9,23 @@ const trustPoints = [
     iconColor: "text-primary",
   },
   {
-    icon: Shield,
-    title: "Salary protected",
-    description: "Employer deposits your salary into a protected account before you start work.",
+    icon: Wrench,
+    title: "Your skills, proven",
+    description: "Skill test, trade test, and medical checks build a profile employers can trust before they interview you.",
+    iconBg: "bg-success/10",
+    iconColor: "text-success",
+  },
+  {
+    icon: Landmark,
+    title: "Licensed partner deployment",
+    description: "Visa, emigration, and travel are handled by licensed recruitment partners, following Indian emigration rules.",
     iconBg: "bg-info/10",
     iconColor: "text-info",
   },
   {
     icon: FileCheck,
-    title: "Compliance support",
-    description: "ECR/ECNR checks, digital contracts, PDOT training, and visa guidance.",
+    title: "Everything in writing",
+    description: "You see your job terms, salary, and deductions in a written contract before you agree to travel.",
     iconBg: "bg-secondary/10",
     iconColor: "text-secondary",
   },
@@ -47,8 +47,8 @@ export default function WhySafeWork() {
             <p className="text-muted-foreground leading-relaxed mb-4">
               Every year, Indian workers lose lakhs to fake overseas job agents — paying
               ₹50,000 to ₹2,00,000 upfront for jobs that never exist. SafeWork Global
-              connects you directly with verified employers, with your salary protected
-              and your contract in writing.
+              verifies both sides before anyone commits: your documents and skills, and
+              the employer offering the job.
             </p>
             <p className="text-muted-foreground leading-relaxed">
               We are building the trusted infrastructure for safe, ethical migrant

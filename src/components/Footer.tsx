@@ -111,8 +111,8 @@ const Footer = () => {
               </ul>
               <div className="rounded-lg border border-background/10 bg-background/5 p-3">
                 <p className="text-[11px] sm:text-xs text-background/70 leading-relaxed">
-                  <span className="font-semibold text-background">Pay only after you hire.</span>
-                  Funds held securely in escrow and released once the worker joins.
+                  <span className="font-semibold text-background">Pay only after you hire.</span>{" "}
+                  No large upfront recruiter commission to get started.
                 </p>
               </div>
             </div>

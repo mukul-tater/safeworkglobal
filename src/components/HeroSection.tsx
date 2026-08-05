@@ -69,20 +69,20 @@ const HeroSection = () => {
             {isEmployer ? (
               <>
                 Hire verified workers.
-                <span className="block mt-1 text-white/90">Pay only when you hire.</span>
+                <span className="block mt-1 text-white/90">Ready to deploy.</span>
               </>
             ) : (
               <>
                 Verified jobs abroad.
-                <span className="block mt-1 text-white/90">Salary protected.</span>
+                <span className="block mt-1 text-white/90">Clear contracts.</span>
               </>
             )}
           </h1>
 
           <p className="text-base sm:text-lg text-white/80 mb-8 max-w-xl leading-relaxed">
             {isEmployer
-              ? "Pre-verified workers. Escrow-secured payments. Compliance workflows for GCC, Japan & EU."
-              : "No agent fees. Only standard government visa & emigration charges apply."}
+              ? "Skill-tested, document-verified Indian workers — deployed through licensed recruitment partners."
+              : "We verify your documents and skills, then connect you to overseas employers through licensed recruitment partners."}
           </p>
 
           {!authResolving && (
@@ -120,8 +120,8 @@ const HeroSection = () => {
           {/* Quiet trust line — plain text, no floating chips on the photo */}
           <p className="text-sm text-white/65 font-medium tracking-wide">
             {isEmployer
-              ? "Verified workers · Escrow-secured · No upfront fees"
-              : "No agent fees · Verified employers · Salary protected"}
+              ? "Verified workers · Skill & trade tested · Licensed partner deployment"
+              : "Verified employers · Skill-tested profile · Licensed partner deployment"}
           </p>
         </div>
       </div>

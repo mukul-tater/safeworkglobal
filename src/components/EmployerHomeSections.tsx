@@ -60,17 +60,17 @@ export default function EmployerHomeSections() {
     {
       to: "/employer/escrow",
       icon: ShieldCheck,
-      title: "Escrow & payments",
-      desc: "Secure payments — released only after work is delivered.",
-      cta: "View escrow",
+      title: "Payments",
+      desc: "Track hiring payments and invoices in one place.",
+      cta: "View payments",
     },
   ];
 
   const valueProps = [
     {
       icon: TrendingDown,
-      title: "Save 95%+ vs traditional agents",
-      desc: "No upfront recruiter fees — only pay after you hire.",
+      title: "Lower cost than traditional agents",
+      desc: "No large upfront recruiter commission — you pay only once you hire.",
     },
     {
       icon: ShieldCheck,
@@ -79,13 +79,13 @@ export default function EmployerHomeSections() {
     },
     {
       icon: Clock,
-      title: "Shortlist in 7–10 days",
-      desc: "Pre-vetted candidates delivered fast — not in months.",
+      title: "Trade-tested candidates",
+      desc: "Skill and trade tests completed before a profile reaches you.",
     },
     {
       icon: CheckCircle2,
-      title: "Escrow-secured payments",
-      desc: "Funds held safely. Released after work completion.",
+      title: "Licensed partner deployment",
+      desc: "Visa and emigration handled by licensed recruitment partners.",
     },
   ];
 
