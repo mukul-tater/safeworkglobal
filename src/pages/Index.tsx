@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
+import HomeSearchBar from "@/components/HomeSearchBar";
 import HomePlatformStats from "@/components/HomePlatformStats";
 import WhySafeWork from "@/components/WhySafeWork";
 import AgentComparison from "@/components/AgentComparison";
@@ -35,6 +36,7 @@ const Index = () => {
 
       {isEmployer ? (
         <>
+          <HomeSearchBar />
           <HomePlatformStats />
           <ScrollReveal>
             <ProcessTimeline />
@@ -45,6 +47,7 @@ const Index = () => {
         </>
       ) : showDefaultHome ? (
         <>
+          <HomeSearchBar />
           <HomePlatformStats />
 
           <ScrollReveal>
