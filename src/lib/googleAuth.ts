@@ -1,6 +1,10 @@
 import { lovable } from '@/integrations/lovable';
 import { supabase } from '@/integrations/supabase/client';
-import { clearPendingOAuthRedirect, setPendingOAuthRedirect } from '@/lib/oauthRedirect';
+import {
+  clearPendingOAuthRedirect,
+  clearPendingOAuthRole,
+  setPendingOAuthRedirect,
+} from '@/lib/oauthRedirect';
 
 type OAuthProvider = 'google' | 'apple' | 'microsoft';
 
@@ -24,6 +28,24 @@ function shouldUseLovableOAuthBroker(): boolean {
   return true;
 }
 
+/** Full-page Google redirect through Supabase — works in every browser. */
+async function signInViaSupabaseRedirect(): Promise<GoogleAuthResult> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin,
+      queryParams: { prompt: 'select_account' },
+    },
+  });
+
+  if (error) {
+    clearPendingOAuthRedirect();
+    clearPendingOAuthRole();
+    return { error: new Error(error.message) };
+  }
+  return { error: null, redirected: true };
+}
+
 /**
  * Google OAuth for worker/employer signup & login.
  *
@@ -45,37 +67,33 @@ export async function signInWithGoogle(
   setPendingOAuthRedirect(intended);
 
   if (shouldUseLovableOAuthBroker()) {
-    const result = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: origin,
-    });
+    // The broker opens a popup when the app runs inside an iframe (Lovable
+    // preview) and some browsers / in-app webviews block or immediately close
+    // it — that is why Google sign-in "works on some devices only". Whenever
+    // the popup path fails to produce a session, fall back to the universal
+    // full-page Supabase redirect instead of surfacing a dead end.
+    try {
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: origin,
+      });
 
-    if (result.error) {
-      clearPendingOAuthRedirect();
-      const err =
-        result.error instanceof Error ? result.error : new Error(String(result.error));
-      return { error: err };
+      if (result.redirected) {
+        return { error: null, redirected: true };
+      }
+
+      if (result.error) {
+        return signInViaSupabaseRedirect();
+      }
+
+      // No error and no redirect: the wrapper already called setSession().
+      const { data } = await supabase.auth.getSession();
+      if (data.session) return { error: null };
+
+      return signInViaSupabaseRedirect();
+    } catch {
+      return signInViaSupabaseRedirect();
     }
-    if (result.redirected) {
-      return { error: null, redirected: true };
-    }
-    return { error: null };
   }
 
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: origin,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'select_account',
-      },
-    },
-  });
-
-  if (error) {
-    clearPendingOAuthRedirect();
-    return { error: new Error(error.message) };
-  }
-
-  return { error: null, redirected: true };
+  return signInViaSupabaseRedirect();
 }
