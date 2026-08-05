@@ -129,6 +129,7 @@ function AppShell() {
 
   return (
     <>
+      <OAuthLandingHandler />
       {!isActiveModule && <PilotPhaseBanner />}
       <PageTransition>
         <Routes>
