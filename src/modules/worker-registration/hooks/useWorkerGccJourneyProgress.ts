@@ -166,7 +166,8 @@ export function useWorkerGccJourneyProgress() {
           id: step.id,
           path: "/worker/journey",
           icon: STEP_ICONS[step.id],
-          label: step.label,
+          label: step.navLabel,
+          title: step.label,
           statusLabel: statusLabel(statuses[step.id]),
           statusTone: tone,
           // Locked stepper: cannot jump ahead. Done steps stay viewable.

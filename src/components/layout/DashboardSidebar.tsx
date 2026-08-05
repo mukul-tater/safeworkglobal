@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu, LucideIcon, ChevronDown } from "lucide-react";
@@ -10,6 +9,8 @@ export interface NavItem {
   path: string;
   icon: LucideIcon;
   label: string;
+  /** Full name shown on hover when `label` is abbreviated. */
+  title?: string;
   /** Unique id so shared paths don't all highlight as active. */
   id?: string;
   /** Optional status line under label (e.g. journey steps). */
@@ -71,7 +72,7 @@ function NavLinkRow({
   const content = (
     <>
       <Icon className={cn("h-4 w-4 shrink-0", !isActive && "opacity-70")} />
-      <span className="min-w-0 flex-1">
+      <span className="min-w-0 flex-1 overflow-hidden">
         <span className="block truncate">{item.label}</span>
         {item.statusLabel && (
           <span
@@ -97,8 +98,8 @@ function NavLinkRow({
     return (
       <div
         aria-disabled="true"
-        title="Complete the previous step first"
-        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/50 cursor-not-allowed select-none"
+        title={item.title ? `${item.title} — complete the previous step first` : "Complete the previous step first"}
+        className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/50 cursor-not-allowed select-none"
       >
         {content}
       </div>
@@ -109,8 +110,9 @@ function NavLinkRow({
     <Link
       to={to}
       onClick={onNavigate}
+      title={item.title ?? item.label}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
+        "flex w-full items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
         isActive
           ? "bg-primary text-primary-foreground shadow-sm"
           : "hover:bg-muted text-muted-foreground hover:text-foreground",
@@ -203,7 +205,7 @@ function SidebarBody({
           {portalLabel}
         </span>
       </div>
-      <ScrollArea className="flex-1 -mx-1 px-1">
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
         {navGroups ? (
           <div className="pb-4">
             {navGroups.map((group) => (
@@ -228,13 +230,13 @@ function SidebarBody({
                   )}
                 >
                   <Icon className={cn("h-4 w-4 shrink-0", !isActive && "opacity-70")} />
-                  <span className="truncate">{item.label}</span>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
         ) : null}
-      </ScrollArea>
+      </div>
     </div>
   );
 }
@@ -279,7 +281,7 @@ export default function DashboardSidebar({
   }
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-card border-r min-h-screen p-4 lg:p-5 shrink-0">
+    <aside className="hidden md:flex flex-col w-64 shrink-0 bg-card border-r h-screen sticky top-0 p-4 lg:p-5">
       {body}
     </aside>
   );

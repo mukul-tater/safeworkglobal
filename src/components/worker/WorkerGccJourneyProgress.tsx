@@ -4,6 +4,7 @@ import {
   GCC_JOURNEY_NAV_STEPS,
   type GccNavStepId,
 } from "@/modules/worker-verification/constants";
+import { JOURNEY_PHASES } from "@/modules/worker-verification/journey/phases";
 import type { GccStepStatus } from "@/modules/worker-registration/hooks/useWorkerGccJourneyProgress";
 
 interface Props {
@@ -11,13 +12,19 @@ interface Props {
   className?: string;
 }
 
+function stepMeta(id: GccNavStepId) {
+  return GCC_JOURNEY_NAV_STEPS.find((s) => s.id === id);
+}
+
 /**
- * Home tracker: Essentials → Test 1 → Skill proof → Identity → Test 2 → Payment → Test 3 → Medical → Bond → Ready.
+ * Home progress tracker, grouped into the four journey phases
+ * (Profile, Verify, Assess, Deploy) so 12 steps read as four short chapters.
  */
 export default function WorkerGccJourneyProgress({ statuses, className }: Props) {
+  const total = GCC_JOURNEY_NAV_STEPS.length;
   const completed = GCC_JOURNEY_NAV_STEPS.filter((s) => statuses[s.id] === "completed").length;
   const current = GCC_JOURNEY_NAV_STEPS.find((s) => statuses[s.id] === "current");
-  const total = GCC_JOURNEY_NAV_STEPS.length;
+  const percent = Math.round((completed / total) * 100);
 
   return (
     <section
@@ -26,50 +33,106 @@ export default function WorkerGccJourneyProgress({ statuses, className }: Props)
         className,
       )}
     >
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 mb-5">
-        <div>
-          <h2 className="text-base sm:text-lg font-semibold font-heading text-foreground">
+      <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="font-heading text-base font-semibold text-foreground sm:text-lg">
             Your progress
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="mt-0.5 truncate text-sm text-muted-foreground">
             {current ? `Next: ${current.label}` : "All set — verification complete."}
           </p>
         </div>
-        <p className="text-sm font-medium text-foreground tabular-nums shrink-0">
+        <p className="shrink-0 text-sm font-medium tabular-nums text-foreground">
           <span className="text-primary">{completed}</span>
           <span className="text-muted-foreground"> of {total} complete</span>
         </p>
       </div>
 
-      <ol className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-x-2 gap-y-6">
-        {GCC_JOURNEY_NAV_STEPS.map((step, index) => {
-          const status = statuses[step.id];
-          const done = status === "completed";
-          const isCurrent = status === "current";
+      <div
+        className="mb-5 h-2 w-full overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className="h-full rounded-full bg-primary transition-[width] duration-500"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {JOURNEY_PHASES.map((phase, phaseIdx) => {
+          const doneCount = phase.steps.filter((id) => statuses[id] === "completed").length;
+          const allDone = doneCount === phase.steps.length;
+          const isCurrent = phase.steps.some((id) => statuses[id] === "current");
 
           return (
-            <li key={step.id} className="flex flex-col items-center text-center min-w-0">
-              <span
-                title={step.label}
-                className={cn(
-                  "relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full text-sm font-semibold tabular-nums transition-colors",
-                  done && "bg-emerald-600 text-white",
-                  isCurrent && "bg-primary text-primary-foreground ring-4 ring-primary/20 scale-105",
-                  !done && !isCurrent && "bg-muted text-muted-foreground border border-border",
+            <li
+              key={phase.id}
+              className={cn(
+                "rounded-xl border p-3 transition-colors",
+                allDone && "border-success/30 bg-success/5",
+                !allDone && isCurrent && "border-primary/40 bg-primary/5",
+                !allDone && !isCurrent && "border-border bg-muted/20",
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p
+                  className={cn(
+                    "text-[11px] font-semibold uppercase tracking-wide",
+                    allDone && "text-success",
+                    !allDone && isCurrent && "text-primary",
+                    !allDone && !isCurrent && "text-muted-foreground",
+                  )}
+                >
+                  {phaseIdx + 1}. {phase.label}
+                </p>
+                {allDone ? (
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-success text-success-foreground">
+                    <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                  </span>
+                ) : (
+                  <span className="shrink-0 text-[11px] font-medium tabular-nums text-muted-foreground">
+                    {doneCount}/{phase.steps.length}
+                  </span>
                 )}
-              >
-                {done ? <Check className="h-4 w-4" strokeWidth={2.5} /> : index + 1}
-              </span>
-              <span
-                className={cn(
-                  "mt-2 text-[10px] sm:text-[11px] leading-tight font-medium px-0.5",
-                  done && "text-emerald-700 dark:text-emerald-400",
-                  isCurrent && "text-primary",
-                  !done && !isCurrent && "text-muted-foreground",
-                )}
-              >
-                {step.shortLabel}
-              </span>
+              </div>
+
+              <ul className="mt-2.5 space-y-1.5">
+                {phase.steps.map((id) => {
+                  const meta = stepMeta(id);
+                  const status = statuses[id];
+                  return (
+                    <li key={id} className="flex items-center gap-2">
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full",
+                          status === "completed" && "bg-success text-success-foreground",
+                          status === "current" && "bg-primary ring-2 ring-primary/25",
+                          status === "waiting" && "border border-border bg-background",
+                        )}
+                      >
+                        {status === "completed" ? (
+                          <Check className="h-2 w-2" strokeWidth={3.5} />
+                        ) : null}
+                      </span>
+                      <span
+                        className={cn(
+                          "min-w-0 truncate text-xs",
+                          status === "completed" && "text-foreground",
+                          status === "current" && "font-medium text-foreground",
+                          status === "waiting" && "text-muted-foreground",
+                        )}
+                        title={meta?.label}
+                      >
+                        {meta?.shortLabel ?? id}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </li>
           );
         })}

@@ -137,64 +137,87 @@ export const GCC_JOURNEY_NAV_STEPS: {
   id: GccNavStepId;
   label: string;
   shortLabel: string;
+  /** Medium-length label for the sidebar — descriptive but fits a 16rem rail. */
+  navLabel: string;
   /** DB stages that count as this nav step. */
   stages: VerificationStage[];
 }[] = [
-  { id: 'essentials', label: 'Essentials', shortLabel: 'Essentials', stages: ['essentials'] },
+  {
+    id: 'essentials',
+    label: 'Essentials',
+    shortLabel: 'Essentials',
+    navLabel: 'Essentials',
+    stages: ['essentials'],
+  },
   {
     id: 'test1',
     label: 'Test 1 — Know this work?',
     shortLabel: 'Test 1',
+    navLabel: 'Test 1 — Work quiz',
     stages: ['quiz'],
   },
   {
     id: 'skill_proof',
     label: 'Skill proof upload',
     shortLabel: 'Skill proof',
+    navLabel: 'Skill proof',
     stages: ['media'],
   },
   {
     id: 'identity',
     label: 'Identity (KYC)',
     shortLabel: 'Identity',
+    navLabel: 'Identity (KYC)',
     stages: ['identity'],
   },
   {
     id: 'test2',
     label: 'Test 2 — Video interview',
     shortLabel: 'Test 2',
+    navLabel: 'Test 2 — Interview',
     stages: ['awaiting_interview'],
   },
   {
     id: 'payment',
     label: 'Payment',
     shortLabel: 'Payment',
+    navLabel: 'Payment',
     stages: ['awaiting_payment'],
   },
   {
     id: 'test3',
     label: 'Test 3 — Physical trade test',
     shortLabel: 'Test 3',
+    navLabel: 'Test 3 — Trade test',
     stages: ['trade_test', 'tests'],
   },
   {
     id: 'medical',
     label: 'Medical',
     shortLabel: 'Medical',
+    navLabel: 'Medical',
     stages: ['medical'],
   },
-  { id: 'bond', label: 'Bond', shortLabel: 'Bond', stages: ['bond'] },
+  { id: 'bond', label: 'Bond', shortLabel: 'Bond', navLabel: 'Bond', stages: ['bond'] },
   {
     id: 'pdot',
     label: 'PDOT training',
     shortLabel: 'PDOT',
+    navLabel: 'PDOT training',
     stages: ['pdot'],
   },
-  { id: 'gcc_ready', label: 'GCC ready', shortLabel: 'GCC ready', stages: ['gcc_ready'] },
+  {
+    id: 'gcc_ready',
+    label: 'GCC ready',
+    shortLabel: 'GCC ready',
+    navLabel: 'GCC ready',
+    stages: ['gcc_ready'],
+  },
   {
     id: 'deployment',
     label: 'Deployment',
     shortLabel: 'Deployment',
+    navLabel: 'Deployment',
     stages: ['deployment'],
   },
 ];
