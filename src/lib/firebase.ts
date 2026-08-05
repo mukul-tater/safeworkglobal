@@ -56,11 +56,18 @@ export function getFirebaseAuth(): Auth {
  * (auth/invalid-app-credential) even when "localhost" is authorized.
  * Same app on 127.0.0.1 works. Returns true if a redirect was started.
  */
-export function redirectLocalhostForPhoneAuth(): boolean {
+export function redirectToPhoneAuthHost(): boolean {
   if (typeof window === 'undefined') return false;
-  if (window.location.hostname !== 'localhost') return false;
+  const host = window.location.hostname.toLowerCase();
+  const canonicalHost =
+    host === 'localhost'
+      ? '127.0.0.1'
+      : host === 'www.safeworkglobal.com'
+        ? 'safeworkglobal.com'
+        : null;
+  if (!canonicalHost) return false;
   const url = new URL(window.location.href);
-  url.hostname = '127.0.0.1';
+  url.hostname = canonicalHost;
   window.location.replace(url.toString());
   return true;
 }
