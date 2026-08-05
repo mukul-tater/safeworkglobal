@@ -4,7 +4,7 @@ import {
   signInWithPhoneNumber,
   type ConfirmationResult,
 } from 'firebase/auth';
-import { getFirebaseAuth, isFirebaseConfigured, redirectLocalhostForPhoneAuth } from '@/lib/firebase';
+import { getFirebaseAuth, isFirebaseConfigured, redirectToPhoneAuthHost } from '@/lib/firebase';
 
 function mapFirebaseAuthError(err: unknown): string {
   const code = (err as { code?: string })?.code;
@@ -23,7 +23,7 @@ function mapFirebaseAuthError(err: unknown): string {
       if (host === 'localhost') {
         return 'Open this page as http://127.0.0.1:8080 (not localhost). Firebase Phone Auth reCAPTCHA fails on the hostname "localhost".';
       }
-      return `SMS verification blocked for this site (${host || 'unknown host'}). Add this exact domain under Firebase Console → Authentication → Settings → Authorized domains. Also confirm Settings → SMS region policy allows India (+91).`;
+      return 'SMS verification could not start. Please refresh the page and try again in Chrome or Safari.';
     case 'auth/unauthorized-domain':
       return `Domain "${host}" is not authorized. Add it in Firebase Console → Authentication → Settings → Authorized domains.`;
     case 'auth/code-expired':
@@ -116,8 +116,10 @@ export function useFirebasePhoneOtp() {
         throw new Error('Firebase is not configured');
       }
 
-      // Phone Auth reCAPTCHA breaks on hostname "localhost" — switch to 127.0.0.1
-      if (redirectLocalhostForPhoneAuth()) return;
+      // Keep phone verification on one authorized canonical hostname. In
+      // particular, mobile links may open the www alias while Firebase is
+      // configured for the apex domain, producing auth/invalid-app-credential.
+      if (redirectToPhoneAuthHost()) return;
 
       // Always recreate so a failed attempt does not leave a dead verifier
       clearVerifierOnly();
