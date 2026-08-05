@@ -36,6 +36,7 @@ credentials.json
 secrets.json
 .secrets
 docs/admin-login-credentials.md
+docs/DEMO_LOGIN_CREDENTIALS.md
 **/local-credentials*.md
 
 # Cursor MCP (may contain client IDs / local paths)
