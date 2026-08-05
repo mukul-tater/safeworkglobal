@@ -19,7 +19,7 @@ import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
-import { getFirebaseAuth, isFirebaseConfigured, redirectLocalhostForPhoneAuth } from '@/lib/firebase';
+import { getFirebaseAuth, isFirebaseConfigured, redirectToPhoneAuthHost } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import {
   WORKER_TERMS_FULL,
@@ -61,7 +61,7 @@ export default function QuickWorkerSignup() {
   // before mobile_verified is written, and bouncing to bind-mobile causes a
   // second "Verify your mobile" screen right after signup OTP.
   useEffect(() => {
-    redirectLocalhostForPhoneAuth();
+    redirectToPhoneAuthHost();
   }, []);
 
   useEffect(() => {
