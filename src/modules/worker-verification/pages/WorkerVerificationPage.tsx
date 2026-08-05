@@ -6,7 +6,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -15,8 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
-  Calendar, CreditCard, Stethoscope, FileSignature, Flag, RotateCcw, ShieldCheck, Wrench,
-  GraduationCap, Plane, Download, Truck,
+  Calendar, CreditCard, Stethoscope, FileSignature, RotateCcw, ShieldCheck, Wrench,
+  GraduationCap, Plane, Download, Truck, Lock, AlertTriangle,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -65,6 +64,10 @@ import { getWorkerActiveAssessment } from '@/modules/trade-test/services/assessm
 import type { AssessmentRow } from '@/modules/trade-test/types';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import JourneyHero from '@/modules/worker-verification/components/journey/JourneyHero';
+import StageWaitingShell from '@/modules/worker-verification/components/journey/StageWaitingShell';
+import StageResultShell from '@/modules/worker-verification/components/journey/StageResultShell';
+import { phaseForStage } from '@/modules/worker-verification/journey/phases';
 
 function tradeTestAssignmentLabel(a: AssessmentRow): string {
   if (a.status === 'completed') {
@@ -94,8 +97,30 @@ const PHOTO_TARGET_MAX = 10;
 const VIDEO_TARGET_MIN = 4;
 const VIDEO_TARGET_MAX = 5;
 
+/** Short, phase-oriented line shown under the hero heading. */
+const HERO_SUBHEADINGS: Record<string, string> = {
+  profile: 'Build a strong profile so employers pick you first.',
+  verify: 'Verify your identity and skills to unlock the next steps.',
+  assess: 'Complete your assessments to become GCC-ready.',
+  deploy: 'Final steps before your overseas deployment.',
+};
+
 function notifyVerificationUpdated() {
   window.dispatchEvent(new Event('swg-verification-updated'));
+}
+
+function gccReadyDate(iso: string | null): string {
+  if (!iso) return 'Today';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? 'Today'
+    : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
+function formatWhen(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('en-IN');
 }
 
 /**
@@ -256,7 +281,7 @@ export default function WorkerVerificationPage() {
   const stage: VerificationStage = forceIdentity ? 'identity' : effectiveRaw;
   const tradeNeeded = row?.trade_test_required ?? skillRequiresTradeTest(row?.primary_skill);
   const navId = navStepForStage(stage);
-  const progress = ((navStepIndex(navId) + 1) / GCC_JOURNEY_NAV_STEPS.length) * 100;
+  const heroSubheading = HERO_SUBHEADINGS[phaseForStage(stage)];
 
   const journeyParam = searchParams.get('journey') as GccNavStepId | null;
   const validJourneyIds = GCC_JOURNEY_NAV_STEPS.map((s) => s.id);
@@ -648,23 +673,29 @@ export default function WorkerVerificationPage() {
   if (rawStage === 'gcc_ready' && !forceIdentity) {
     return (
       <WorkerPortalLayout>
-        <Card className="max-w-lg mx-auto">
-          <CardContent className="p-8 text-center space-y-4">
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
-              <Flag className="h-7 w-7 text-emerald-600" />
-            </div>
-            <h1 className="text-2xl font-bold font-heading">Profile complete</h1>
-            <p className="text-sm text-muted-foreground">
-              Your profile is ready for employers. Browse jobs and apply with priority visibility.
-            </p>
+        <div className="mx-auto max-w-lg">
+          <StageResultShell
+            tone="success"
+            title="You're GCC ready"
+            body="Your profile is verified and ready for employers. Apply to overseas jobs with priority visibility."
+            stats={[
+              { label: 'Ready since', value: gccReadyDate(row.gcc_ready_at) },
+              { label: 'Skill', value: row.primary_skill || '—' },
+              { label: 'Status', value: 'Verified' },
+            ]}
+          >
             <Button asChild className="rounded-xl">
-              <Link to="/jobs">Go to Job Search</Link>
+              <Link to="/jobs">Browse & apply to jobs</Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link to="/worker/dashboard">Go to dashboard</Link>
             </Button>
             {showDevReset && (
               <Button
                 type="button"
-                variant="outline"
-                className="w-full border-dashed border-amber-500/50 text-amber-700"
+                variant="ghost"
+                size="sm"
+                className="border border-dashed border-amber-500/50 text-amber-700"
                 disabled={resetting}
                 onClick={() => void onDevResetJourney()}
               >
@@ -672,8 +703,8 @@ export default function WorkerVerificationPage() {
                 Dev: reset journey
               </Button>
             )}
-          </CardContent>
-        </Card>
+          </StageResultShell>
+        </div>
       </WorkerPortalLayout>
     );
   }
@@ -700,36 +731,7 @@ export default function WorkerVerificationPage() {
           </div>
         )}
 
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">
-            Step {navStepIndex(navId) + 1} of {GCC_JOURNEY_NAV_STEPS.length} — {VERIFICATION_STAGE_LABELS[stage]}
-          </p>
-          <h1 className="text-2xl font-bold font-heading">Create profile</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Create your profile as best as possible so employers can select you on priority.
-          </p>
-          <Progress value={progress} className="h-2 mt-3" />
-          <div className="flex flex-wrap gap-1.5 mt-3" aria-label="Journey progress">
-            {GCC_JOURNEY_NAV_STEPS.map((s) => {
-              const done = navStepIndex(s.id) < navStepIndex(navId);
-              const current = s.id === navId;
-              const locked = navStepIndex(s.id) > navStepIndex(navId);
-              return (
-                <Badge
-                  key={s.id}
-                  variant={current ? 'default' : done ? 'secondary' : 'outline'}
-                  className={cn(
-                    'text-[10px]',
-                    locked && 'opacity-40 cursor-not-allowed',
-                  )}
-                  title={locked ? 'Complete the previous step first' : s.label}
-                >
-                  {s.shortLabel}
-                </Badge>
-              );
-            })}
-          </div>
-        </div>
+        <JourneyHero stage={stage} subheading={heroSubheading} />
 
         {viewingCompletedStep && viewingStepMeta && (
           <Card>
@@ -1043,10 +1045,17 @@ export default function WorkerVerificationPage() {
         )}
 
         {!viewingCompletedStep && stage === 'identity' && kycDone && (
-          <WaitingCard
+          <StageWaitingShell
             icon={ShieldCheck}
-            title="Identity under review"
-            body="Your PAN, Aadhaar and passport documents are submitted. SafeWork is verifying them — your video interview is scheduled right after approval."
+            title="We're verifying your identity"
+            body="Your PAN, Aadhaar and passport are submitted. SafeWork reviews them before scheduling your video interview."
+            expected="Usually within a few hours"
+            notifyNote="You'll get an SMS and an app notification the moment verification is done — no need to keep this page open."
+            timeline={[
+              { label: 'Identity documents submitted', detail: 'PAN, Aadhaar & Passport uploaded', status: 'done' },
+              { label: 'SafeWork verifying your documents', status: 'current' },
+              { label: 'Video interview scheduled', status: 'pending' },
+            ]}
           />
         )}
 
@@ -1064,6 +1073,20 @@ export default function WorkerVerificationPage() {
                   </p>
                 </div>
               </div>
+
+              {row.kyc_status === 'rejected' && (
+                <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                  <div className="text-xs text-foreground">
+                    <p className="font-semibold text-destructive">Your documents need to be re-submitted</p>
+                    <p className="mt-0.5">
+                      {row.kyc_rejection_reason
+                        ? row.kyc_rejection_reason
+                        : 'Some details did not match. Please re-check your PAN, Aadhaar and passport, then upload clear photos again.'}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {kycUploading && (
                 <div
@@ -1168,16 +1191,27 @@ export default function WorkerVerificationPage() {
         )}
 
         {!viewingCompletedStep && stage === 'awaiting_interview' && (
-          <WaitingCard
+          <StageWaitingShell
             icon={Calendar}
             title="Test 2 — Video interview"
             body={
               row.interview_scheduled_at
-                ? `Your video interview is scheduled for ${new Date(row.interview_scheduled_at).toLocaleString('en-IN')}. Join on time from a quiet place with good network.`
+                ? `Your video interview is scheduled for ${formatWhen(row.interview_scheduled_at)}. Join on time from a quiet place with a good network.`
                 : row.interview_status === 'rejected'
-                  ? 'Your last interview was not approved. SafeWork will reschedule a new interview — you will see the new date here.'
+                  ? 'Your last interview was not approved. SafeWork will reschedule a new interview — the new date will appear here.'
                   : 'SafeWork will schedule your video interview and assign an interviewer. The date, time and joining link appear here.'
             }
+            expected={row.interview_scheduled_at ? undefined : 'Usually scheduled within 1–2 days'}
+            notifyNote="We'll SMS you the date and joining link as soon as your interview is scheduled."
+            timeline={[
+              { label: 'Identity verified', status: 'done' },
+              {
+                label: row.interview_scheduled_at ? 'Interview scheduled' : 'SafeWork assigning an interviewer',
+                detail: row.interview_scheduled_at ? formatWhen(row.interview_scheduled_at) : undefined,
+                status: 'current',
+              },
+              { label: 'Attend the video interview', status: 'pending' },
+            ]}
           >
             {row.interview_meeting_url && (
               <Button asChild>
@@ -1213,100 +1247,168 @@ export default function WorkerVerificationPage() {
               Continue (pilot — interview skipped)
             </Button>
             )}
-          </WaitingCard>
+          </StageWaitingShell>
         )}
 
         {!viewingCompletedStep && stage === 'awaiting_payment' && (
-          <WaitingCard
-            icon={CreditCard}
-            title="Payment"
-            body={`Assessment fee: ₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')}. Pay securely with Razorpay (UPI, card, or netbanking). After payment succeeds you continue to the next GCC step.`}
-          >
-            <Button
-              disabled={saving}
-              onClick={async () => {
-                if (!user?.id) return;
-                setSaving(true);
-                try {
-                  const next = await payAssessmentFeeWithRazorpay({
-                    name: profile?.full_name,
-                    email: displayableEmail(row?.email) || displayableEmail(profile?.email),
-                    contact: profile?.phone,
-                  });
-                  setRow({
-                    ...next,
-                    stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                  });
-                  notifyVerificationUpdated();
-                  toast.success(
-                    next.trade_test_required
-                      ? 'Payment successful — continue to trade test'
-                      : 'Payment successful — continue to medical',
-                  );
-                } catch (e) {
-                  const msg = e instanceof Error ? e.message : 'Payment failed';
-                  if (/cancelled/i.test(msg)) {
-                    toast.message('Payment cancelled');
-                  } else {
-                    toast.error(msg);
+          <Card className="overflow-hidden border-l-4 border-l-secondary">
+            <CardContent className="space-y-4 p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-secondary/10 p-2.5 text-secondary">
+                  <CreditCard className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold font-heading leading-tight">Assessment fee</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    A one-time fee for your skill assessment and GCC processing. Pay securely — you continue automatically once it succeeds.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border p-4">
+                <p className="text-3xl font-bold font-heading tabular-nums text-foreground">
+                  ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Assessment fee for your overseas job application
+                </p>
+                <div className="mt-3 border-t border-border pt-3 text-sm">
+                  <div className="flex items-center justify-between py-0.5">
+                    <span className="text-muted-foreground">Skill assessment &amp; processing</span>
+                    <span className="tabular-nums">₹{Math.round(ASSESSMENT_FEE_INR / 1.18).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex items-center justify-between py-0.5">
+                    <span className="text-muted-foreground">GST (18%)</span>
+                    <span className="tabular-nums">
+                      ₹{(ASSESSMENT_FEE_INR - Math.round(ASSESSMENT_FEE_INR / 1.18)).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between border-t border-border pt-2 font-semibold">
+                    <span>Total</span>
+                    <span className="tabular-nums">₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-success/30 bg-success/5 p-3">
+                <p className="flex items-center gap-1.5 text-sm font-medium text-success">
+                  <ShieldCheck className="h-4 w-4" /> Safe, secure &amp; trusted
+                </p>
+                <ul className="mt-2 space-y-1 text-xs text-foreground">
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Payment is encrypted and PCI-DSS compliant
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" /> You get an official receipt with an ID
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Processed by Razorpay — UPI, card or netbanking
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                <p className="text-xs text-foreground">
+                  <span className="font-semibold">Never pay any agent or person.</span> All official payments happen only on this screen. Report anyone asking for cash to SafeWork.
+                </p>
+              </div>
+
+              <Button
+                className="w-full"
+                disabled={saving}
+                onClick={async () => {
+                  if (!user?.id) return;
+                  setSaving(true);
+                  try {
+                    const next = await payAssessmentFeeWithRazorpay({
+                      name: profile?.full_name,
+                      email: displayableEmail(row?.email) || displayableEmail(profile?.email),
+                      contact: profile?.phone,
+                    });
+                    setRow({
+                      ...next,
+                      stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                    });
+                    notifyVerificationUpdated();
+                    toast.success(
+                      next.trade_test_required
+                        ? 'Payment successful — continue to trade test'
+                        : 'Payment successful — continue to medical',
+                    );
+                  } catch (e) {
+                    const msg = e instanceof Error ? e.message : 'Payment failed';
+                    if (/cancelled/i.test(msg)) {
+                      toast.message('Payment cancelled');
+                    } else {
+                      toast.error(msg);
+                    }
+                  } finally {
+                    setSaving(false);
                   }
-                } finally {
-                  setSaving(false);
-                }
-              }}
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CreditCard className="h-4 w-4 mr-1" />}
-              Pay ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')} with Razorpay
-            </Button>
-            <Button
-              variant="outline"
-              disabled={saving}
-              onClick={async () => {
-                setSaving(true);
-                try {
-                  const next = await syncAssessmentPaymentAfterCheckout();
-                  setRow({
-                    ...next,
-                    stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                  });
-                  notifyVerificationUpdated();
-                  toast.success('Payment synced — journey unlocked');
-                } catch (e) {
-                  toast.error(e instanceof Error ? e.message : 'No completed payment found yet');
-                } finally {
-                  setSaving(false);
-                }
-              }}
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Sync payment
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground"
-              disabled={saving}
-              onClick={async () => {
-                if (!user?.id) return;
-                setSaving(true);
-                try {
-                  const next = await waiveAssessmentPaymentPilot(user.id);
-                  setRow({
-                    ...next,
-                    stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                  });
-                  notifyVerificationUpdated();
-                  toast.success('Fee waived for pilot');
-                } catch (e) {
-                  toast.error(e instanceof Error ? e.message : 'Could not continue');
-                } finally {
-                  setSaving(false);
-                }
-              }}
-            >
-              Continue without payment (pilot)
-            </Button>
-          </WaitingCard>
+                }}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Lock className="h-4 w-4 mr-1.5" />}
+                Pay ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')} securely
+              </Button>
+              <p className="text-center text-[11px] text-muted-foreground">
+                By proceeding you agree to SafeWork Global's terms &amp; conditions.
+              </p>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true);
+                  try {
+                    const next = await syncAssessmentPaymentAfterCheckout();
+                    setRow({
+                      ...next,
+                      stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                    });
+                    notifyVerificationUpdated();
+                    toast.success('Payment synced — journey unlocked');
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : 'No completed payment found yet');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
+                Already paid? Sync payment
+              </Button>
+
+              {showDevReset && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full border border-dashed border-amber-500/40 text-muted-foreground"
+                  disabled={saving}
+                  onClick={async () => {
+                    if (!user?.id) return;
+                    setSaving(true);
+                    try {
+                      const next = await waiveAssessmentPaymentPilot(user.id);
+                      setRow({
+                        ...next,
+                        stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+                      });
+                      notifyVerificationUpdated();
+                      toast.success('Fee waived for pilot (dev)');
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : 'Could not continue');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  Dev: continue without payment
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {!viewingCompletedStep && (stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (() => {
@@ -1785,14 +1887,25 @@ export default function WorkerVerificationPage() {
         )}
 
         {!viewingCompletedStep && stage === 'pdot' && (
-          <WaitingCard
+          <StageWaitingShell
             icon={GraduationCap}
             title="PDOT — Pre-departure orientation training"
             body={
               row.pdot_scheduled_at
-                ? `Your PDOT training is scheduled for ${new Date(row.pdot_scheduled_at).toLocaleString('en-IN')}${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Attend fully — SafeWork marks you GCC ready after completion.`
+                ? `Your PDOT training is scheduled for ${formatWhen(row.pdot_scheduled_at)}${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Attend fully — SafeWork marks you GCC ready after completion.`
                 : `SafeWork will confirm your PDOT training batch${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Details appear here.`
             }
+            expected={row.pdot_scheduled_at ? undefined : 'Batch usually confirmed within a few days'}
+            notifyNote="We'll notify you by SMS once your PDOT batch and schedule are confirmed."
+            timeline={[
+              { label: 'Bond received by SafeWork', status: 'done' },
+              {
+                label: row.pdot_scheduled_at ? 'PDOT training scheduled' : 'Confirming your PDOT batch',
+                detail: row.pdot_scheduled_at ? formatWhen(row.pdot_scheduled_at) : undefined,
+                status: 'current',
+              },
+              { label: 'GCC ready', status: 'pending' },
+            ]}
           >
             {row.pdot_training_url && (
               <Button asChild variant="outline">
@@ -1802,7 +1915,7 @@ export default function WorkerVerificationPage() {
                 </a>
               </Button>
             )}
-          </WaitingCard>
+          </StageWaitingShell>
         )}
 
         {!viewingCompletedStep && stage === 'deployment' && (
@@ -1849,34 +1962,5 @@ export default function WorkerVerificationPage() {
         )}
       </div>
     </WorkerPortalLayout>
-  );
-}
-
-function WaitingCard({
-  icon: Icon,
-  title,
-  body,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  body: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <Card>
-      <CardContent className="p-5 sm:p-6 space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-semibold">{title}</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">{body}</p>
-          </div>
-        </div>
-        {children}
-      </CardContent>
-    </Card>
   );
 }
