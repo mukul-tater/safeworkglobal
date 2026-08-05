@@ -69,6 +69,11 @@ import StageActionShell from '@/modules/worker-verification/components/journey/S
 import StageWaitingShell from '@/modules/worker-verification/components/journey/StageWaitingShell';
 import StageResultShell from '@/modules/worker-verification/components/journey/StageResultShell';
 import JourneySupportPanel from '@/modules/worker-verification/components/journey/JourneySupportPanel';
+import CompletedStepReview, {
+  KycRecordSummary,
+  type AssessmentPaymentRecord,
+  type KycDocument,
+} from '@/modules/worker-verification/components/journey/CompletedStepReview';
 import { phaseForStage } from '@/modules/worker-verification/journey/phases';
 
 function tradeTestAssignmentLabel(a: AssessmentRow): string {
@@ -125,43 +130,6 @@ function formatWhen(iso: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('en-IN');
 }
 
-/** Read-only recap of a completed step, keyed by nav step id. */
-function completedStepSummary(
-  stepId: GccNavStepId | null,
-  row: WorkerVerification,
-  photoCount: number,
-  videoCount: number,
-): { label: string; value: string }[] {
-  const items: { label: string; value: string }[] = [];
-  const push = (label: string, value: string | null | undefined) => {
-    if (value) items.push({ label, value });
-  };
-  switch (stepId) {
-    case 'essentials':
-      push('Email', displayableEmail(row.email));
-      push('Location', [row.city, row.state].filter(Boolean).join(', '));
-      push('Education', row.education_level);
-      push('Primary skill', row.primary_skill);
-      break;
-    case 'test1':
-      if (row.quiz_score != null) push('Score', `${row.quiz_score}% — Passed`);
-      break;
-    case 'skill_proof':
-      push('Uploaded', `${photoCount} photos · ${videoCount} videos`);
-      break;
-    case 'identity':
-      push('KYC status', row.kyc_status === 'verified' ? 'Verified' : 'Submitted');
-      break;
-    case 'payment':
-      if (row.paid_at) push('Paid on', new Date(row.paid_at).toLocaleDateString('en-IN'));
-      if (row.payment_amount != null) push('Amount', `₹${row.payment_amount.toLocaleString('en-IN')}`);
-      break;
-    default:
-      break;
-  }
-  return items;
-}
-
 /**
  * Full worker verification wizard:
  * essentials → quiz → media → interview → payment → tests → bond → GCC ready
@@ -210,6 +178,9 @@ export default function WorkerVerificationPage() {
   const [kycConsent, setKycConsent] = useState(false);
   const [forceIdentity, setForceIdentity] = useState(false);
   const [kycDone, setKycDone] = useState(false);
+  const [kycStatusValue, setKycStatusValue] = useState('not_started');
+  const [kycDocs, setKycDocs] = useState<KycDocument[]>([]);
+  const [paymentRecord, setPaymentRecord] = useState<AssessmentPaymentRecord | null>(null);
   const [kycUploading, setKycUploading] = useState(false);
   const [tradeResultFile, setTradeResultFile] = useState<File | null>(null);
   const [selectedTradeCenterId, setSelectedTradeCenterId] = useState('');
@@ -253,9 +224,39 @@ export default function WorkerVerificationPage() {
       const kycStatus = String((wp as any)?.kyc_status || 'not_started');
       const kycOk = kycStatus === 'submitted' || kycStatus === 'verified';
       setKycDone(kycOk);
+      setKycStatusValue(kycStatus);
+
+      if (kycOk || kycStatus === 'rejected') {
+        const { data: docs } = await supabase
+          .from('worker_documents')
+          .select('document_name, document_type, file_url, verification_status, uploaded_at')
+          .eq('worker_id', user.id)
+          .in('document_type', ['pan', 'aadhaar', 'passport', 'id_proof'])
+          .order('uploaded_at', { ascending: false });
+        // A rejected re-upload keeps the old row, so show only the newest per document.
+        const latest = new Map<string, KycDocument>();
+        for (const doc of (docs || []) as KycDocument[]) {
+          if (!latest.has(doc.document_name)) latest.set(doc.document_name, doc);
+        }
+        setKycDocs([...latest.values()]);
+      } else {
+        setKycDocs([]);
+      }
       if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
       if ((wp as any)?.aadhaar_last4) setAadhaarOnFile(String((wp as any).aadhaar_last4));
       if ((wp as any)?.passport_number) setPassportNumber(String((wp as any).passport_number));
+      if (v.payment_status === 'paid' || v.paid_at) {
+        const { data: pay } = await supabase
+          .from('worker_assessment_payments')
+          .select('id, amount, currency, provider, provider_ref, status, paid_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        setPaymentRecord(((pay || [])[0] as AssessmentPaymentRecord) || null);
+      } else {
+        setPaymentRecord(null);
+      }
+
       if (v.bond_courier_tracking) setBondTracking(String(v.bond_courier_tracking));
       if (v.stage === 'bond') {
         try {
@@ -756,63 +757,82 @@ export default function WorkerVerificationPage() {
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
           <div className="min-w-0 space-y-5">
         {viewingCompletedStep && viewingStepMeta && (
-          <Card className="overflow-hidden shadow-sm">
-            <CardContent className="space-y-4 p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-4">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-xl bg-success/10 p-2.5 text-success">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-success">
-                      Completed step
-                    </p>
-                    <h2 className="font-heading text-lg font-semibold leading-tight">
-                      {viewingStepMeta.label}
-                    </h2>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="shrink-0 gap-1 bg-success/10 text-success">
-                  <CheckCircle2 className="h-3 w-3" /> Done
-                </Badge>
-              </div>
-
-              {(() => {
-                const items = completedStepSummary(viewingJourney, row, photoCount, videoCount);
-                if (items.length === 0) {
-                  return (
-                    <p className="text-sm text-muted-foreground">
-                      You've finished this step. Nothing more to do here.
-                    </p>
-                  );
-                }
-                return (
-                  <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-                    {items.map((item) => (
-                      <div key={item.label} className="min-w-0">
-                        <dt className="text-xs text-muted-foreground">{item.label}</dt>
-                        <dd className="mt-0.5 truncate text-sm font-medium text-foreground">
-                          {item.value}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                );
-              })()}
-
-              <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2.5">
-                <ArrowRight className="h-4 w-4 shrink-0 text-primary" />
-                <p className="text-sm text-foreground">
-                  Your current step is <span className="font-medium">{VERIFICATION_STAGE_LABELS[stage]}</span>.
+          <CompletedStepReview
+            stepId={viewingJourney}
+            stepLabel={viewingStepMeta.label}
+            currentStepLabel={VERIFICATION_STAGE_LABELS[stage]}
+            row={row}
+            photoCount={photoCount}
+            videoCount={videoCount}
+            kycStatus={kycStatusValue}
+            kycDocs={kycDocs}
+            paymentRecord={paymentRecord}
+            identity={{ pan: panNumber, aadhaarLast4: aadhaarOnFile, passport: passportNumber }}
+            onGoToCurrent={clearJourneyQuery}
+          >
+            {viewingJourney === 'skill_proof' && (
+              <div className="rounded-xl border border-dashed border-border p-4">
+                <p className="text-sm font-medium">Add more work proof</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Stronger portfolios get picked faster. You can keep adding photos and videos any
+                  time — employers see the latest.
                 </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <input
+                    ref={photoRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={!!uploadingKind}
+                    onChange={(e) => void uploadMediaFiles(e.target.files, 'photo')}
+                  />
+                  <input
+                    ref={videoRef}
+                    type="file"
+                    accept="video/*"
+                    multiple
+                    className="hidden"
+                    disabled={!!uploadingKind}
+                    onChange={(e) => void uploadMediaFiles(e.target.files, 'video')}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!!uploadingKind}
+                    onClick={() => photoRef.current?.click()}
+                  >
+                    {uploadingKind === 'photo' ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    Add photos
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!!uploadingKind}
+                    onClick={() => videoRef.current?.click()}
+                  >
+                    {uploadingKind === 'video' ? (
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Video className="mr-1.5 h-3.5 w-3.5" />
+                    )}
+                    Add videos
+                  </Button>
+                  {uploadingKind && uploadProgress && (
+                    <span className="text-xs text-muted-foreground" role="status" aria-live="polite">
+                      Uploading {uploadProgress.current} of {uploadProgress.total}…
+                    </span>
+                  )}
+                </div>
               </div>
-
-              <Button type="button" className="w-full sm:w-auto" onClick={clearJourneyQuery}>
-                Go to current step
-                <ArrowRight className="ml-1.5 h-4 w-4" />
-              </Button>
-            </CardContent>
-          </Card>
+            )}
+          </CompletedStepReview>
         )}
 
         {!viewingCompletedStep && stage === 'essentials' && (
@@ -1116,7 +1136,26 @@ export default function WorkerVerificationPage() {
               { label: 'SafeWork verifying your documents', status: 'current' },
               { label: 'Video interview scheduled', status: 'pending' },
             ]}
-          />
+          >
+            <div className="w-full space-y-4 rounded-xl border border-border bg-muted/20 p-4 text-left">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                What you submitted
+              </p>
+              <KycRecordSummary
+                identity={{ pan: panNumber, aadhaarLast4: aadhaarOnFile, passport: passportNumber }}
+                kycDocs={kycDocs}
+                submittedOn={row.kyc_verified_at || row.updated_at}
+                verified={kycStatusValue === 'verified'}
+              />
+              <div className="flex items-start gap-2 border-t border-border pt-3">
+                <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">
+                  These records are locked during review. If verification fails, you'll be able to
+                  correct and re-upload them here.
+                </p>
+              </div>
+            </div>
+          </StageWaitingShell>
         )}
 
         {!viewingCompletedStep && stage === 'identity' && !kycDone && (
@@ -1132,17 +1171,32 @@ export default function WorkerVerificationPage() {
               </Button>
             }
           >
-              {row.kyc_status === 'rejected' && (
-                <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                  <div className="text-xs text-foreground">
-                    <p className="font-semibold text-destructive">Your documents need to be re-submitted</p>
-                    <p className="mt-0.5">
-                      {row.kyc_rejection_reason
-                        ? row.kyc_rejection_reason
-                        : 'Some details did not match. Please re-check your PAN, Aadhaar and passport, then upload clear photos again.'}
-                    </p>
+              {(kycStatusValue === 'rejected' || row.kyc_status === 'rejected') && (
+                <div className="space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                    <div className="text-xs text-foreground">
+                      <p className="font-semibold text-destructive">Your documents need to be re-submitted</p>
+                      <p className="mt-0.5">
+                        {row.kyc_rejection_reason
+                          ? row.kyc_rejection_reason
+                          : 'Some details did not match. Please re-check your PAN, Aadhaar and passport, then upload clear photos again.'}
+                      </p>
+                    </div>
                   </div>
+                  {kycDocs.length > 0 && (
+                    <div className="border-t border-destructive/20 pt-3">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Previously submitted — review before re-uploading
+                      </p>
+                      <KycRecordSummary
+                        identity={{ pan: panNumber, aadhaarLast4: aadhaarOnFile, passport: passportNumber }}
+                        kycDocs={kycDocs}
+                        submittedOn={row.updated_at}
+                        verified={false}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
