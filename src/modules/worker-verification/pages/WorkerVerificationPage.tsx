@@ -68,6 +68,7 @@ import JourneyHero from '@/modules/worker-verification/components/journey/Journe
 import StageActionShell from '@/modules/worker-verification/components/journey/StageActionShell';
 import StageWaitingShell from '@/modules/worker-verification/components/journey/StageWaitingShell';
 import StageResultShell from '@/modules/worker-verification/components/journey/StageResultShell';
+import JourneySupportPanel from '@/modules/worker-verification/components/journey/JourneySupportPanel';
 import { phaseForStage } from '@/modules/worker-verification/journey/phases';
 
 function tradeTestAssignmentLabel(a: AssessmentRow): string {
@@ -712,28 +713,11 @@ export default function WorkerVerificationPage() {
 
   return (
     <WorkerPortalLayout>
-      <div className="max-w-2xl mx-auto space-y-5">
-        {showDevReset && (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 px-3 py-2">
-            <p className="text-[11px] text-amber-800 dark:text-amber-200">
-              Dev / preview only — not shown on safeworkglobal.com
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-8 shrink-0 border-amber-500/40 text-amber-800"
-              disabled={resetting}
-              onClick={() => void onDevResetJourney()}
-            >
-              {resetting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <RotateCcw className="h-3.5 w-3.5 mr-1.5" />}
-              Reset journey
-            </Button>
-          </div>
-        )}
-
+      <div className="mx-auto max-w-5xl space-y-5">
         <JourneyHero stage={stage} subheading={heroSubheading} />
 
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+          <div className="min-w-0 space-y-5">
         {viewingCompletedStep && viewingStepMeta && (
           <Card>
             <CardContent className="p-5 sm:p-6 space-y-3">
@@ -1244,10 +1228,10 @@ export default function WorkerVerificationPage() {
         )}
 
         {!viewingCompletedStep && stage === 'awaiting_payment' && (
-          <Card className="overflow-hidden border-l-4 border-l-secondary">
+          <Card className="overflow-hidden shadow-sm">
             <CardContent className="space-y-4 p-5 sm:p-6">
-              <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-secondary/10 p-2.5 text-secondary">
+              <div className="flex items-start gap-3 border-b border-border/60 pb-4">
+                <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
                   <CreditCard className="h-5 w-5" />
                 </div>
                 <div>
@@ -1411,10 +1395,10 @@ export default function WorkerVerificationPage() {
             Boolean(tradeAssessment) && tradeAssessment?.status !== 'centre_rejected';
           const showLegacyPilot = !hasPartnerAssignment;
           return (
-          <Card className="overflow-hidden border-l-4 border-l-secondary">
+          <Card className="overflow-hidden shadow-sm">
             <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-secondary/10 text-secondary">
+              <div className="flex items-start gap-3 border-b border-border/60 pb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
                   <Wrench className="h-5 w-5" />
                 </div>
                 <div>
@@ -1621,10 +1605,10 @@ export default function WorkerVerificationPage() {
         })()}
 
         {!viewingCompletedStep && stage === 'medical' && (
-          <Card className="overflow-hidden border-l-4 border-l-secondary">
+          <Card className="overflow-hidden shadow-sm">
             <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-secondary/10 text-secondary">
+              <div className="flex items-start gap-3 border-b border-border/60 pb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
                   <Stethoscope className="h-5 w-5" />
                 </div>
                 <div>
@@ -1700,10 +1684,10 @@ export default function WorkerVerificationPage() {
         )}
 
         {!viewingCompletedStep && stage === 'bond' && (
-          <Card className="overflow-hidden border-l-4 border-l-secondary">
+          <Card className="overflow-hidden shadow-sm">
             <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-secondary/10 text-secondary">
+              <div className="flex items-start gap-3 border-b border-border/60 pb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
                   <FileSignature className="h-5 w-5" />
                 </div>
                 <div>
@@ -1953,6 +1937,34 @@ export default function WorkerVerificationPage() {
             </CardContent>
           </Card>
         )}
+          </div>
+
+          <aside className="space-y-4 lg:sticky lg:top-6">
+            <JourneySupportPanel stage={stage} />
+            {showDevReset && (
+              <div className="rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 p-3">
+                <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                  Dev / preview only — hidden on safeworkglobal.com
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="mt-2 h-8 w-full border-amber-500/40 text-amber-700 dark:text-amber-300"
+                  disabled={resetting}
+                  onClick={() => void onDevResetJourney()}
+                >
+                  {resetting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                  ) : (
+                    <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                  )}
+                  Reset journey
+                </Button>
+              </div>
+            )}
+          </aside>
+        </div>
       </div>
     </WorkerPortalLayout>
   );

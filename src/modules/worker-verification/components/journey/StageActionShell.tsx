@@ -27,10 +27,10 @@ export default function StageActionShell({
   footer,
 }: Props) {
   return (
-    <Card className="overflow-hidden border-l-4 border-l-secondary">
+    <Card className="overflow-hidden shadow-sm">
       <CardContent className="space-y-5 p-5 sm:p-6">
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-secondary/10 p-2.5 text-secondary">
+        <div className="flex items-start gap-3 border-b border-border/60 pb-4">
+          <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
@@ -51,7 +51,9 @@ export default function StageActionShell({
 
         <div className="space-y-4">{children}</div>
 
-        {footer ? <div className="flex flex-col gap-2 pt-1 sm:flex-row">{footer}</div> : null}
+        {footer ? (
+          <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row">{footer}</div>
+        ) : null}
       </CardContent>
     </Card>
   );

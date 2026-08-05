@@ -99,7 +99,7 @@ function NavLinkRow({
       <div
         aria-disabled="true"
         title={item.title ? `${item.title} — complete the previous step first` : "Complete the previous step first"}
-        className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/50 cursor-not-allowed select-none"
+        className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/70 cursor-not-allowed select-none"
       >
         {content}
       </div>
@@ -115,7 +115,7 @@ function NavLinkRow({
         "flex w-full items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm",
         isActive
           ? "bg-primary text-primary-foreground shadow-sm"
-          : "hover:bg-muted text-muted-foreground hover:text-foreground",
+          : "text-foreground/75 hover:bg-muted hover:text-foreground",
       )}
     >
       {content}
