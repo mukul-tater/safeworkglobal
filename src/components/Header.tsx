@@ -64,7 +64,7 @@ const Header = () => {
   return (
     <>
       <header 
-        className={`${location.pathname === "/" ? "fixed" : "sticky"} top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`sticky top-0 z-50 transition-all duration-300 ${
           overlaysHomeHero
             ? "bg-transparent border-b border-white/10"
             : "bg-card/95 backdrop-blur-md shadow-sm border-b border-border"

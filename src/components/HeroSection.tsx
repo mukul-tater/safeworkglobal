@@ -44,7 +44,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-[88vh] overflow-hidden flex items-end sm:items-center">
+    <section className="relative -mt-16 lg:-mt-[72px] min-h-[88vh] overflow-hidden flex items-end sm:items-center">
       {/* Full-bleed photographic background — Design A */}
       <div className="absolute inset-0">
         <img
@@ -58,7 +58,7 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-primary/20 mix-blend-multiply" />
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 relative z-10 py-16 sm:py-20 lg:py-28 w-full">
+      <div className="container mx-auto px-4 sm:px-6 relative z-10 pt-28 pb-16 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-28 w-full">
         <div className="max-w-2xl text-left">
           {/* Brand as hero-level signal */}
           <p className="font-heading text-sm sm:text-base font-semibold tracking-[0.18em] uppercase text-white/80 mb-5">

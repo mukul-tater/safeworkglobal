@@ -10,7 +10,6 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -115,15 +114,6 @@ export default function HomeOpportunityExplorer() {
             </div>
           </TabsContent>
         </Tabs>
-
-        <Button
-          variant="outline"
-          size="lg"
-          className="mt-8 rounded-xl gap-2"
-          onClick={() => navigate("/jobs")}
-        >
-          Browse all verified jobs <ArrowRight className="h-4 w-4" />
-        </Button>
       </div>
     </section>
   );

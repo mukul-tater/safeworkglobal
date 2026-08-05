@@ -1,10 +1,9 @@
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import HomeSearchBar from "@/components/HomeSearchBar";
-import HomePlatformStats from "@/components/HomePlatformStats";
 import WhySafeWork from "@/components/WhySafeWork";
 import WorkerJourneyDemo from "@/components/WorkerJourneyDemo";
-import SalaryProtectionSection from "@/components/SalaryProtectionSection";
+import HomeSuccessStories from "@/components/HomeSuccessStories";
 import HomeOpportunityExplorer from "@/components/HomeOpportunityExplorer";
 import ProcessTimeline from "@/components/ProcessTimeline";
 import FeaturedJobs from "@/components/FeaturedJobs";
@@ -34,7 +33,6 @@ const Index = () => {
       {isEmployer ? (
         <>
           <HomeSearchBar />
-          <HomePlatformStats />
           <ScrollReveal>
             <ProcessTimeline />
           </ScrollReveal>
@@ -45,7 +43,6 @@ const Index = () => {
       ) : showDefaultHome ? (
         <>
           <HomeSearchBar />
-          <HomePlatformStats />
 
           <ScrollReveal>
             <WhySafeWork />
@@ -56,7 +53,7 @@ const Index = () => {
           </ScrollReveal>
 
           <ScrollReveal>
-            <SalaryProtectionSection />
+            <HomeSuccessStories />
           </ScrollReveal>
 
           <ScrollReveal>
