@@ -42,10 +42,10 @@ const HomeSearchBar = () => {
 
   return (
     <>
-      <section className="border-b border-border/60 bg-card/60">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="max-w-4xl mx-auto">
-            <p className="text-xs font-medium text-muted-foreground mb-3">
+      <section className="relative z-20 -mt-8 sm:-mt-10">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="max-w-5xl mx-auto rounded-2xl border border-border/70 bg-card/95 p-4 sm:p-5 shadow-xl backdrop-blur-md">
+            <p className="text-xs font-semibold text-muted-foreground mb-3">
               {isEmployer ? "Search verified workers" : "Search verified jobs abroad"}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -107,7 +107,7 @@ const HomeSearchBar = () => {
       </section>
 
       {isSticky && !isEmployer && (
-        <div className="md:hidden fixed top-16 left-0 right-0 z-40 glass-strong border-b border-border/50">
+        <div className="md:hidden fixed top-16 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-b border-border/50 shadow-sm">
           <div className="container mx-auto px-4 py-3">
             <div className="flex gap-2">
               <div className="relative flex-1">

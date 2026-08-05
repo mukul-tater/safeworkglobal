@@ -3,14 +3,11 @@ import HeroSection from "@/components/HeroSection";
 import HomeSearchBar from "@/components/HomeSearchBar";
 import HomePlatformStats from "@/components/HomePlatformStats";
 import WhySafeWork from "@/components/WhySafeWork";
-import AgentComparison from "@/components/AgentComparison";
 import WorkerJourneyDemo from "@/components/WorkerJourneyDemo";
 import SalaryProtectionSection from "@/components/SalaryProtectionSection";
-import GlobalDestinations from "@/components/GlobalDestinations";
-import HomeJobCategories from "@/components/HomeJobCategories";
+import HomeOpportunityExplorer from "@/components/HomeOpportunityExplorer";
 import ProcessTimeline from "@/components/ProcessTimeline";
 import FeaturedJobs from "@/components/FeaturedJobs";
-import PlatformFeatures from "@/components/PlatformFeatures";
 import HomeFooterCTA from "@/components/HomeFooterCTA";
 import EmployerHomeSections from "@/components/EmployerHomeSections";
 import Footer from "@/components/Footer";
@@ -55,10 +52,6 @@ const Index = () => {
           </ScrollReveal>
 
           <ScrollReveal>
-            <AgentComparison />
-          </ScrollReveal>
-
-          <ScrollReveal>
             <WorkerJourneyDemo />
           </ScrollReveal>
 
@@ -67,23 +60,11 @@ const Index = () => {
           </ScrollReveal>
 
           <ScrollReveal>
-            <GlobalDestinations />
-          </ScrollReveal>
-
-          <ScrollReveal>
-            <HomeJobCategories />
-          </ScrollReveal>
-
-          <ScrollReveal>
-            <ProcessTimeline />
+            <HomeOpportunityExplorer />
           </ScrollReveal>
 
           <ScrollReveal>
             <FeaturedJobs />
-          </ScrollReveal>
-
-          <ScrollReveal>
-            <PlatformFeatures />
           </ScrollReveal>
 
           <ScrollReveal>

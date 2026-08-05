@@ -59,14 +59,15 @@ const Header = () => {
     { to: "/about", label: "About Us", icon: Globe },
     { to: "/contact", label: "Contact", icon: Bell },
   ];
+  const overlaysHomeHero = location.pathname === "/" && !isScrolled && !isMobileMenuOpen;
 
   return (
     <>
       <header 
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          isScrolled 
-            ? 'bg-card/95 backdrop-blur-md shadow-sm border-b border-border' 
-            : 'bg-card border-b border-border'
+        className={`${location.pathname === "/" ? "fixed" : "sticky"} top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          overlaysHomeHero
+            ? "bg-transparent border-b border-white/10"
+            : "bg-card/95 backdrop-blur-md shadow-sm border-b border-border"
         }`}
       >
         <div className="container mx-auto px-4 lg:px-6">
@@ -79,9 +80,9 @@ const Header = () => {
               <img 
                 src="/safework-global-logo.png" 
                 alt="SafeWorkGlobal" 
-                className="h-9 w-9 transition-transform group-hover:scale-105" 
+                className={`h-9 w-9 transition-transform group-hover:scale-105 ${overlaysHomeHero ? "drop-shadow-sm" : ""}`}
               />
-              <span className="text-xl font-bold font-heading text-foreground tracking-tight">
+              <span className={`text-xl font-bold font-heading tracking-tight transition-colors ${overlaysHomeHero ? "text-white" : "text-foreground"}`}>
                 SafeWorkGlobal
               </span>
             </Link>
@@ -94,8 +95,12 @@ const Header = () => {
                   to={link.to} 
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActiveLink(link.to)
-                      ? 'text-primary bg-primary/5'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                      ? overlaysHomeHero
+                        ? "text-white bg-white/15"
+                        : "text-primary bg-primary/5"
+                      : overlaysHomeHero
+                        ? "text-white/80 hover:text-white hover:bg-white/10"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }`}
                 >
                   {link.label}
@@ -104,12 +109,15 @@ const Header = () => {
             </nav>
 
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className={`hidden md:flex items-center gap-3 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
               <ThemeToggle />
               {isAuthenticated ? (
                 <>
                   <Link to="/dashboard">
-                    <Button variant="outline" className="flex items-center gap-2.5 pr-3">
+                    <Button
+                      variant="outline"
+                      className={`flex items-center gap-2.5 pr-3 ${overlaysHomeHero ? "border-white/30 bg-white/10 hover:text-white" : ""}`}
+                    >
                       <Avatar className="h-7 w-7 border border-border">
                         <AvatarImage src={profile?.avatar_url || undefined} />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
@@ -203,7 +211,7 @@ const Header = () => {
             </div>
 
             {/* Mobile Actions */}
-            <div className="flex items-center gap-1 md:hidden">
+            <div className={`flex items-center gap-1 md:hidden ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
               <ThemeToggle />
             {/* Mobile Menu Toggle */}
             <Button 

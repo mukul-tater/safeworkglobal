@@ -35,6 +35,25 @@ function hasSalary(job: FeaturedJob): boolean {
   return Boolean(job.salary_display || job.salary_min != null || job.salary_max != null);
 }
 
+function countryFlag(country: string): string {
+  const codeByCountry: Record<string, string> = {
+    "United Arab Emirates": "AE",
+    UAE: "AE",
+    Oman: "OM",
+    "Saudi Arabia": "SA",
+    Qatar: "QA",
+    Kuwait: "KW",
+    Bahrain: "BH",
+    Japan: "JP",
+    Germany: "DE",
+    Australia: "AU",
+  };
+  const code = codeByCountry[country];
+  return code
+    ? String.fromCodePoint(...code.split("").map((letter) => 127397 + letter.charCodeAt(0)))
+    : "🌍";
+}
+
 export default function FeaturedJobs() {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -154,7 +173,7 @@ export default function FeaturedJobs() {
         <div className="text-center mb-10 lg:mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-primary/10 text-primary mb-4">
             <Sparkles className="h-3.5 w-3.5" />
-            Open Positions
+            Latest verified openings
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-heading text-foreground mb-3 tracking-tight">
             Verified Jobs <span className="text-gradient">Abroad</span>
@@ -169,12 +188,16 @@ export default function FeaturedJobs() {
             <p className="text-muted-foreground mb-4">
               New jobs are being added regularly. Sign up free to get notified when openings match your skills.
             </p>
-            <Link to="/worker/quick-signup">
-              <Button size="lg" className="rounded-xl gap-2">
-                Sign Up Free
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <Link to="/jobs">
+                <Button size="lg" className="rounded-xl gap-2">
+                  Browse All Jobs <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/worker/quick-signup">
+                <Button size="lg" variant="outline" className="rounded-xl">Get Job Alerts</Button>
+              </Link>
+            </div>
           </div>
         ) : (
           <>
@@ -209,6 +232,7 @@ export default function FeaturedJobs() {
 
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
                       <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      <span aria-hidden>{countryFlag(job.country)}</span>
                       <span className="truncate">{job.location}, {job.country}</span>
                     </div>
 
