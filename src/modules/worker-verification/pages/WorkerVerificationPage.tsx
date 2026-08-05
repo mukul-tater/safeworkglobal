@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
   Calendar, CreditCard, Stethoscope, FileSignature, RotateCcw, ShieldCheck, Wrench,
-  GraduationCap, Plane, Download, Truck, Lock, AlertTriangle,
+  GraduationCap, Plane, Download, Truck, Lock, AlertTriangle, UserRound, ClipboardList,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -65,6 +65,7 @@ import type { AssessmentRow } from '@/modules/trade-test/types';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import JourneyHero from '@/modules/worker-verification/components/journey/JourneyHero';
+import StageActionShell from '@/modules/worker-verification/components/journey/StageActionShell';
 import StageWaitingShell from '@/modules/worker-verification/components/journey/StageWaitingShell';
 import StageResultShell from '@/modules/worker-verification/components/journey/StageResultShell';
 import { phaseForStage } from '@/modules/worker-verification/journey/phases';
@@ -755,14 +756,18 @@ export default function WorkerVerificationPage() {
         )}
 
         {!viewingCompletedStep && stage === 'essentials' && (
-          <Card>
-            <CardContent className="p-5 sm:p-6 space-y-4">
-              <div>
-                <h2 className="font-semibold">Major details</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Name and mobile are already saved. Confirm your email, then add location, education, and one primary skill.
-                </p>
-              </div>
+          <StageActionShell
+            icon={UserRound}
+            title="Your major details"
+            description="Name and mobile are already saved. Confirm your email, then add your location, education, and one primary skill."
+            timeEstimate="Takes 2–3 minutes"
+            footer={
+              <Button className="w-full sm:w-auto" onClick={() => void onSaveEssentials()} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                Continue to Test 1 <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            }
+          >
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>Name</Label>
@@ -823,27 +828,28 @@ export default function WorkerVerificationPage() {
                   <p className="text-[11px] text-muted-foreground">You can add secondary skills later on your profile.</p>
                 </div>
               </div>
-              <Button className="w-full sm:w-auto" onClick={() => void onSaveEssentials()} disabled={saving}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                Continue to Test 1 <ArrowRight className="h-4 w-4 ml-1" />
-              </Button>
-            </CardContent>
-          </Card>
+          </StageActionShell>
         )}
 
         {!viewingCompletedStep && stage === 'quiz' && currentQuiz && (
-          <Card>
-            <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Test 1 — Do you know this type of work?</span>
-                <span>{quizIndex + 1} / {quizItems.length}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Watch / view the example for{' '}
-                <span className="font-medium text-foreground">{row.primary_skill || 'your skill'}</span>
-                , then answer Yes or No. You upload your own photos and videos in the next step.
-              </p>
-
+          <StageActionShell
+            icon={ClipboardList}
+            title="Test 1 — Do you know this work?"
+            description={
+              <>
+                Watch the example for{' '}
+                <span className="font-medium text-foreground">{row.primary_skill || 'your skill'}</span>, then
+                answer Yes or No. You upload your own photos and videos in the next step. Question {quizIndex + 1} of{' '}
+                {quizItems.length}.
+              </>
+            }
+            footer={
+              <Button onClick={() => void onQuizContinue()} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                {quizIndex < quizItems.length - 1 ? 'Next example' : 'Finish Test 1'}
+              </Button>
+            }
+          >
               {(() => {
                 const embed = youtubeEmbedUrl(currentQuiz.youtube_url);
                 if (embed) {
@@ -914,33 +920,32 @@ export default function WorkerVerificationPage() {
                   <RadioGroupItem value="no" /> No
                 </label>
               </RadioGroup>
-              <Button onClick={() => void onQuizContinue()} disabled={saving}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                {quizIndex < quizItems.length - 1 ? 'Next example' : 'Finish Test 1'}
-              </Button>
-            </CardContent>
-          </Card>
+          </StageActionShell>
         )}
 
         {!viewingCompletedStep && stage === 'media' && (
-          <Card>
-            <CardContent className="p-5 sm:p-6 space-y-4">
-              <div>
-                <h2 className="font-semibold">Skill proof upload</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Profile completion after Test 1 — upload photos and short videos of your work as{' '}
-                  <span className="font-medium text-foreground">{row.primary_skill}</span>
-                  {' '}before Test 2 (video interview).
-                </p>
-                <p className="text-sm text-foreground mt-2 leading-snug" lang="hi">
+          <StageActionShell
+            icon={ImagePlus}
+            title="Skill proof upload"
+            description={
+              <>
+                Upload photos and short videos of your work as{' '}
+                <span className="font-medium text-foreground">{row.primary_skill}</span> before Test 2 (video
+                interview).
+                <span className="mt-2 block text-foreground" lang="hi">
                   अपने काम करते हुए <span className="font-medium">8 से 10 photos</span> और{' '}
                   <span className="font-medium">4–5 videos</span> डालिए, जिनमें आप साफ दिखें — काम करते हुए।
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Tip: select multiple files at once. You should be clearly visible while working.
-                </p>
-              </div>
-
+                </span>
+              </>
+            }
+            timeEstimate="Takes 5–10 minutes"
+            footer={
+              <Button onClick={() => void onCompleteMedia()} disabled={saving || !!uploadingKind}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                Save &amp; continue to Identity
+              </Button>
+            }
+          >
               {uploadingKind && (
                 <div
                   role="status"
@@ -1036,12 +1041,7 @@ export default function WorkerVerificationPage() {
                   </Button>
                 </div>
               </div>
-              <Button onClick={() => void onCompleteMedia()} disabled={saving || !!uploadingKind}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                Save & continue to Identity
-              </Button>
-            </CardContent>
-          </Card>
+          </StageActionShell>
         )}
 
         {!viewingCompletedStep && stage === 'identity' && kycDone && (
@@ -1060,20 +1060,18 @@ export default function WorkerVerificationPage() {
         )}
 
         {!viewingCompletedStep && stage === 'identity' && !kycDone && (
-          <Card>
-            <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="font-semibold">Identity (KYC)</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                     Required before applying to jobs. Enter PAN, your full Aadhaar number, and Passport number, and upload a photo of each. SafeWork verifies these before your video interview is scheduled.
-                  </p>
-                </div>
-              </div>
-
+          <StageActionShell
+            icon={ShieldCheck}
+            title="Identity (KYC)"
+            description="Required before applying to jobs. Enter your PAN, full Aadhaar and Passport number, and upload a photo of each. SafeWork verifies these before your video interview is scheduled."
+            timeEstimate="Takes 5–7 minutes"
+            footer={
+              <Button onClick={() => void onSubmitIdentity()} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                Submit identity &amp; continue
+              </Button>
+            }
+          >
               {row.kyc_status === 'rejected' && (
                 <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
@@ -1182,12 +1180,7 @@ export default function WorkerVerificationPage() {
                   I consent to SafeWork Global verifying my identity documents for job placement. The information is accurate.
                 </span>
               </label>
-              <Button onClick={() => void onSubmitIdentity()} disabled={saving}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                Submit identity & continue
-              </Button>
-            </CardContent>
-          </Card>
+          </StageActionShell>
         )}
 
         {!viewingCompletedStep && stage === 'awaiting_interview' && (
@@ -1418,10 +1411,10 @@ export default function WorkerVerificationPage() {
             Boolean(tradeAssessment) && tradeAssessment?.status !== 'centre_rejected';
           const showLegacyPilot = !hasPartnerAssignment;
           return (
-          <Card>
+          <Card className="overflow-hidden border-l-4 border-l-secondary">
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <div className="p-2.5 rounded-xl bg-secondary/10 text-secondary">
                   <Wrench className="h-5 w-5" />
                 </div>
                 <div>
@@ -1628,10 +1621,10 @@ export default function WorkerVerificationPage() {
         })()}
 
         {!viewingCompletedStep && stage === 'medical' && (
-          <Card>
+          <Card className="overflow-hidden border-l-4 border-l-secondary">
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <div className="p-2.5 rounded-xl bg-secondary/10 text-secondary">
                   <Stethoscope className="h-5 w-5" />
                 </div>
                 <div>
@@ -1707,10 +1700,10 @@ export default function WorkerVerificationPage() {
         )}
 
         {!viewingCompletedStep && stage === 'bond' && (
-          <Card>
+          <Card className="overflow-hidden border-l-4 border-l-secondary">
             <CardContent className="p-5 sm:p-6 space-y-4">
               <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <div className="p-2.5 rounded-xl bg-secondary/10 text-secondary">
                   <FileSignature className="h-5 w-5" />
                 </div>
                 <div>
