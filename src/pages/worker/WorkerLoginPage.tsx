@@ -17,6 +17,7 @@ import { getOrCreateVerification } from '@/modules/worker-verification/services/
 import TermsAgreeRow from '@/components/TermsAgreeRow';
 import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 import SignupJourneyPanel from '@/components/SignupJourneyPanel';
+import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 
 type LoginMethod = 'mobile' | 'email';
 
@@ -152,7 +153,7 @@ export default function WorkerLoginPage() {
                   Sign in to continue
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Choose mobile or email, then enter your password.
+                  Sign in with Google, or use mobile / email and your password.
                 </p>
               </div>
 
@@ -161,6 +162,18 @@ export default function WorkerLoginPage() {
                   <AlertDescription className="text-sm">{error}</AlertDescription>
                 </Alert>
               )}
+
+              <div className="mb-4 space-y-3">
+                <GoogleAuthButton label="Sign in with Google" role="worker" />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-card px-2 text-muted-foreground">or continue with mobile / email</span>
+                  </div>
+                </div>
+              </div>
 
               <div
                 role="tablist"
