@@ -33,8 +33,8 @@ export default function AboutUs() {
 
   const team = [
     { name: "Mukul Tater", role: "Founder & CEO", initials: "MT" },
-    { name: "Kailash Gayari", role: "Head of Platform/Tech", initials: "KG" },
-    { name: "Deependra Gadwal", role: "Operations- Migration Advisor and Legal", initials: "DG" },
+    { name: "Kailash Gayari", role: "Head of Platform / Tech", initials: "KG" },
+    { name: "Deependra Gadwal", role: "Operations & Legal Advisor", initials: "DG" },
   ];
 
   return (
@@ -118,17 +118,22 @@ export default function AboutUs() {
             {/* Team */}
             <ScrollReveal>
               <div className="mt-16 md:mt-24 text-center">
-                <h2 className="text-2xl sm:text-3xl font-bold font-heading mb-8">Leadership Team</h2>
-                <div className="grid sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+                <h2 className="text-2xl sm:text-3xl font-bold font-heading mb-3">Leadership Team</h2>
+                <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto mb-10">
+                  The people building safer pathways for global work.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 max-w-3xl mx-auto items-stretch">
                   {team.map((member, i) => (
-                    <ScrollReveal key={member.name} delay={i * 0.08}>
-                      <Card className="border-border/50">
-                        <CardContent className="pt-6 pb-5 text-center">
-                          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                    <ScrollReveal key={member.name} delay={i * 0.08} className="h-full">
+                      <Card className="h-full border-border/50 bg-card/80 hover:border-primary/30 transition-colors">
+                        <CardContent className="pt-7 pb-6 px-5 h-full flex flex-col items-center text-center">
+                          <div className="w-16 h-16 rounded-full bg-primary/10 ring-1 ring-primary/15 flex items-center justify-center mb-4 shrink-0">
                             <span className="text-lg font-bold text-primary">{member.initials}</span>
                           </div>
-                          <h4 className="font-semibold text-foreground">{member.name}</h4>
-                          <p className="text-sm text-muted-foreground">{member.role}</p>
+                          <h4 className="font-semibold text-foreground leading-snug">{member.name}</h4>
+                          <p className="text-sm text-muted-foreground mt-1.5 min-h-[2.5rem] flex items-start justify-center leading-snug">
+                            {member.role}
+                          </p>
                         </CardContent>
                       </Card>
                     </ScrollReveal>
