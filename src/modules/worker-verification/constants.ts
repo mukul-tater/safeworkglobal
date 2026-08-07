@@ -7,31 +7,57 @@ export const WORKER_TERMS_SUMMARY = [
   'I understand skill checks, interviews, and document verification are part of becoming GCC-ready.',
 ].join(' ');
 
-/** Full terms body for the agree popup. */
-export const WORKER_TERMS_FULL = `
-SafeWork Global — Worker Terms & Declarations
+export type WorkerTermsSection = {
+  id: string;
+  title: string;
+  body: string;
+};
 
-1. Platform terms
-By creating an account you agree to SafeWork Global’s Terms of Service and Privacy Policy. SafeWork connects verified workers with overseas employers and partners. We do not guarantee a job offer.
+/** Structured sections for the agree dialog UI. */
+export const WORKER_TERMS_SECTIONS: WorkerTermsSection[] = [
+  {
+    id: 'platform',
+    title: 'Platform terms',
+    body: 'By creating an account you agree to SafeWork Global’s Terms of Service and Privacy Policy. SafeWork connects verified workers with overseas employers and partners. We do not guarantee a job offer.',
+  },
+  {
+    id: 'medical',
+    title: 'Medical fitness',
+    body: 'You declare that you are medically fit to travel and work abroad in your trade, subject to formal medical examination when required. You will disclose known conditions that may affect fitness for work.',
+  },
+  {
+    id: 'truthful',
+    title: 'Truthful information',
+    body: 'All details you provide (identity, skills, experience, documents, media) must be accurate. False information may lead to rejection or removal from the platform.',
+  },
+  {
+    id: 'fees',
+    title: 'No unauthorized fees',
+    body: 'You will not pay any agent or person unauthorized fees for jobs, visas, or placement. Report any such demand to SafeWork immediately. Official assessment or process fees are only those shown inside this portal.',
+  },
+  {
+    id: 'skills',
+    title: 'Skill verification',
+    body: 'You agree to complete skill checks (quiz, media, video interview) and, if required, physical trade tests and medical tests arranged through SafeWork or approved partners (including E-Mitra).',
+  },
+  {
+    id: 'bond',
+    title: 'Bond & compliance',
+    body: 'When selected for placement you may be required to execute a bond (stamp paper / eStamp / E-Mitra assisted) with video proof, and to follow Ministry of External Affairs recruitment guidelines.',
+  },
+  {
+    id: 'contact',
+    title: 'Contact',
+    body: 'For questions, use in-app support or Contact Us on safeworkglobal.com.',
+  },
+];
 
-2. Medical fitness
-You declare that you are medically fit to travel and work abroad in your trade, subject to formal medical examination when required. You will disclose known conditions that may affect fitness for work.
-
-3. Truthful information
-All details you provide (identity, skills, experience, documents, media) must be accurate. False information may lead to rejection or removal from the platform.
-
-4. No unauthorized fees
-You will not pay any agent or person unauthorized fees for jobs, visas, or placement. Report any such demand to SafeWork immediately. Official assessment or process fees are only those shown inside this portal.
-
-5. Skill verification
-You agree to complete skill checks (quiz, media, video interview) and, if required, physical trade tests and medical tests arranged through SafeWork or approved partners (including E-Mitra).
-
-6. Bond & compliance
-When selected for placement you may be required to execute a bond (stamp paper / eStamp / E-Mitra assisted) with video proof, and to follow Ministry of External Affairs recruitment guidelines.
-
-7. Contact
-For questions, use in-app support or Contact Us on safeworkglobal.com.
-`.trim();
+/** Full terms body (plain text) for archives / fallbacks. */
+export const WORKER_TERMS_FULL = [
+  'SafeWork Global — Worker Terms & Declarations',
+  '',
+  ...WORKER_TERMS_SECTIONS.map((s, i) => `${i + 1}. ${s.title}\n${s.body}`),
+].join('\n\n');
 
 export const EDUCATION_LEVELS = [
   'Below 10th',

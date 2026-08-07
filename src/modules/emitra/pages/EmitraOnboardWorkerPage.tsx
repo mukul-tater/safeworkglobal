@@ -10,9 +10,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog';
 import { Loader2, Phone, ShieldCheck, UserPlus, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ApprovedPartnerGate, { useApprovedPartner } from '../components/ApprovedPartnerGate';
@@ -26,10 +23,8 @@ import {
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
-import {
-  WORKER_TERMS_FULL,
-  WORKER_TERMS_SUMMARY,
-} from '@/modules/worker-verification/constants';
+import { WORKER_TERMS_SUMMARY } from '@/modules/worker-verification/constants';
+import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 
 type Step = 'form' | 'otp' | 'done';
 
@@ -425,33 +420,13 @@ function Inner() {
         </CardContent>
       </Card>
 
-      <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Worker terms & declarations</DialogTitle>
-            <DialogDescription>
-              Confirm the worker has agreed before continuing.
-            </DialogDescription>
-          </DialogHeader>
-          <pre className="whitespace-pre-wrap text-xs text-muted-foreground font-sans leading-relaxed">
-            {WORKER_TERMS_FULL}
-          </pre>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setTermsOpen(false)}>
-              Close
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setAcceptedTerms(true);
-                setTermsOpen(false);
-              }}
-            >
-              Worker agrees
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WorkerTermsDialog
+        open={termsOpen}
+        onOpenChange={setTermsOpen}
+        onAgree={() => setAcceptedTerms(true)}
+        description="Confirm the worker has agreed before continuing."
+        agreeLabel="Worker agrees"
+      />
     </DashboardLayout>
   );
 }

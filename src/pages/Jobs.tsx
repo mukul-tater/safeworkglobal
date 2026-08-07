@@ -1,274 +1,421 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import SEOHead from '@/components/SEOHead';
 import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
 import WorkerJobsGate from '@/modules/worker-registration/components/WorkerJobsGate';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { MapPin, Briefcase, Clock, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
-import JobSearchFilters, { type JobFilters } from '@/components/search/JobSearchFilters';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Link, useSearchParams } from 'react-router-dom';
+import { BookmarkCheck, ChevronLeft, ChevronRight, Save, SlidersHorizontal, X } from 'lucide-react';
+import JobSearchFilters, {
+  ANY_CATEGORY,
+  ANY_COUNTRY,
+  ANY_EXPERIENCE,
+  EMPTY_JOB_FILTERS,
+  JOB_EXPERIENCE_OPTIONS,
+  countActiveFilters,
+  isSalaryFilterActive,
+  type JobFilters,
+} from '@/components/search/JobSearchFilters';
 import SavedSearchDialog from '@/components/search/SavedSearchDialog';
+import JobSearchHero from '@/components/jobs/JobSearchHero';
+import JobResultCard, { type JobListItem } from '@/components/jobs/JobResultCard';
+import JobsEmptyState, { type JobFacet } from '@/components/jobs/JobsEmptyState';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import JobSalaryText from '@/components/JobSalaryText';
+import { useDebounce } from '@/hooks/use-debounce';
+import { JOB_CATEGORIES } from '@/lib/constants';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
+import { formatINRAmount } from '@/lib/utils';
 
-const JOBS_PER_PAGE = 24;
+const JOBS_PER_PAGE = 20;
+const QUICK_CATEGORIES = ['Welding', 'Construction', 'Electrical', 'Plumbing', 'HVAC'];
+const SUGGESTED_CATEGORIES = ['Construction', 'Welding', 'Electrical', 'Plumbing', 'HVAC', 'Manufacturing'];
+const SUGGESTED_COUNTRIES = ['UAE', 'Saudi Arabia', 'Qatar', 'Japan', 'Germany', 'Australia'];
 
-interface Job {
-  id: string;
-  slug: string;
-  title: string;
-  company: string;
-  location: string;
-  country: string;
-  salaryDisplay: string | null;
-  rawSalaryMin: number | null;
-  rawSalaryMax: number | null;
-  currency: string;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  type: string;
-  category: string;
-  visaSponsorship: boolean;
-  postedDate: string;
-  postedAt: Date;
-  description: string;
-  skills: string[];
+const SORT_OPTIONS = [
+  { value: 'recent', label: 'Newest first' },
+  { value: 'salary-high', label: 'Salary: high to low' },
+  { value: 'salary-low', label: 'Salary: low to high' },
+  { value: 'country-asc', label: 'Country: A–Z' },
+] as const;
+
+type SortOption = (typeof SORT_OPTIONS)[number]['value'];
+
+const KNOWN_CATEGORIES = JOB_CATEGORIES.filter((c) => c !== ANY_CATEGORY);
+
+/** Best-effort category inference, since jobs have no category column. */
+function inferCategory(title: string, description: string): string {
+  const haystack = `${title} ${description}`.toLowerCase();
+  return KNOWN_CATEGORIES.find((category) => haystack.includes(category.toLowerCase())) ?? 'Other';
 }
 
-type SortOption = 'recent' | 'salary-high' | 'salary-low' | 'country-asc' | 'country-desc';
+function experienceLabel(value: string): string {
+  return JOB_EXPERIENCE_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
+function filterJobs(jobs: JobListItem[], filters: JobFilters): JobListItem[] {
+  const keyword = filters.keyword.trim().toLowerCase();
+  const location = filters.location.trim().toLowerCase();
+
+  return jobs.filter((job) => {
+    if (keyword) {
+      const matches =
+        job.title.toLowerCase().includes(keyword) ||
+        job.company.toLowerCase().includes(keyword) ||
+        job.description.toLowerCase().includes(keyword) ||
+        job.skills.some((skill) => skill.toLowerCase().includes(keyword));
+      if (!matches) return false;
+    }
+
+    if (location && !job.location.toLowerCase().includes(location)) return false;
+
+    if (filters.country !== ANY_COUNTRY && job.country.toLowerCase() !== filters.country.toLowerCase()) {
+      return false;
+    }
+
+    if (filters.jobCategory !== ANY_CATEGORY && job.category !== filters.jobCategory) return false;
+
+    if (filters.experienceLevel !== ANY_EXPERIENCE && job.experienceLevel !== filters.experienceLevel) {
+      return false;
+    }
+
+    if (filters.visaSponsorship && !job.visaSponsorship) return false;
+
+    if (filters.skills.length > 0) {
+      const hasSkill = filters.skills.some((skill) =>
+        job.skills.some((jobSkill) => jobSkill.toLowerCase().includes(skill.toLowerCase())),
+      );
+      if (!hasSkill) return false;
+    }
+
+    if (isSalaryFilterActive(filters)) {
+      if (job.salaryMin == null && job.salaryMax == null) return false;
+      const jobMin = job.salaryMin ?? 0;
+      const jobMax = job.salaryMax ?? jobMin;
+      if (jobMax < filters.salaryMin || jobMin > filters.salaryMax) return false;
+    }
+
+    return true;
+  });
+}
+
+function sortJobs(jobs: JobListItem[], sort: SortOption): JobListItem[] {
+  const sorted = [...jobs];
+  switch (sort) {
+    case 'salary-high':
+      return sorted.sort((a, b) => (b.salaryMax ?? 0) - (a.salaryMax ?? 0));
+    case 'salary-low':
+      return sorted.sort((a, b) => (a.salaryMin ?? 0) - (b.salaryMin ?? 0));
+    case 'country-asc':
+      return sorted.sort((a, b) => a.country.localeCompare(b.country));
+    default:
+      return sorted.sort((a, b) => b.postedAt.getTime() - a.postedAt.getTime());
+  }
+}
+
+function topFacets(jobs: JobListItem[], key: 'category' | 'country', limit: number): JobFacet[] {
+  const counts = new Map<string, number>();
+  jobs.forEach((job) => {
+    const value = job[key];
+    if (!value || value === 'Other') return;
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  });
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([label, count]) => ({ label, count }));
+}
 
 export default function Jobs() {
   const { user, isAuthenticated, role } = useAuth();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [filters, setFilters] = useState<JobFilters>({
-    keyword: '',
-    location: '',
-    country: 'All Countries',
-    jobCategory: 'All Categories',
-    salaryMin: SALARY_FILTER_MIN,
-    salaryMax: SALARY_FILTER_MAX,
-    visaSponsorship: false,
-    skills: [],
-    experienceLevel: 'All Levels'
-  });
+
+  const [filters, setFilters] = useState<JobFilters>(EMPTY_JOB_FILTERS);
+  const [keywordInput, setKeywordInput] = useState('');
   const [loading, setLoading] = useState(true);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [allJobs, setAllJobs] = useState<Job[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [allJobs, setAllJobs] = useState<JobListItem[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>('recent');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
+  const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
+  const [savePendingId, setSavePendingId] = useState<string | null>(null);
 
-  const paginatedJobs = useMemo(() => {
-    const start = (currentPage - 1) * JOBS_PER_PAGE;
-    return jobs.slice(start, start + JOBS_PER_PAGE);
-  }, [jobs, currentPage]);
+  const debouncedKeyword = useDebounce(keywordInput, 400);
 
-  const totalPages = Math.ceil(jobs.length / JOBS_PER_PAGE);
+  useEffect(() => {
+    setFilters((prev) => (prev.keyword === debouncedKeyword ? prev : { ...prev, keyword: debouncedKeyword }));
+  }, [debouncedKeyword]);
 
-  // Load jobs on mount and when search params change
+  // Seed filters from homepage search links.
   useEffect(() => {
     const keyword = searchParams.get('keyword') || '';
-    const country = searchParams.get('location') || 'All Countries'; // 'location' from homepage is actually country
-    const category = searchParams.get('category') || 'All Categories';
-    
-    const newFilters: JobFilters = {
-      ...filters,
-      keyword,
-      country,
-      jobCategory: category
-    };
-    
-    setFilters(newFilters);
-    fetchJobsWithFilters(newFilters);
+    const country = searchParams.get('location') || ANY_COUNTRY;
+    const category = searchParams.get('category') || ANY_CATEGORY;
+
+    setKeywordInput(keyword);
+    setFilters((prev) => ({ ...prev, keyword, country, jobCategory: category }));
   }, [searchParams]);
 
-  // Re-apply filters when filters change (reactive filtering)
   useEffect(() => {
-    if (allJobs.length > 0) {
-      applyFiltersToJobs(allJobs, filters);
+    let cancelled = false;
+
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('jobs')
+          .select('*, job_skills (skill_name)')
+          .eq('status', 'ACTIVE')
+          .order('posted_at', { ascending: false });
+
+        if (error) throw error;
+
+        const employerIds = [...new Set((data || []).map((job: any) => job.employer_id).filter(Boolean))];
+        const companyMap = new Map<string, { name: string; logoUrl: string | null }>();
+
+        if (employerIds.length > 0) {
+          const { data: companies } = await supabase
+            .from('employer_company_info' as any)
+            .select('user_id, company_name, company_logo_url')
+            .in('user_id', employerIds);
+
+          (companies || []).forEach((company: any) => {
+            companyMap.set(company.user_id, {
+              name: company.company_name,
+              logoUrl: company.company_logo_url ?? null,
+            });
+          });
+        }
+
+        const formatted: JobListItem[] = (data || []).map((job: any) => {
+          const company = companyMap.get(job.employer_id);
+          const description: string = job.description ?? '';
+
+          return {
+            id: job.id,
+            slug: job.slug || job.id,
+            title: job.title,
+            company: company?.name || 'Verified employer',
+            companyLogoUrl: company?.logoUrl ?? null,
+            location: `${job.location}, ${job.country}`,
+            country: job.country,
+            salaryDisplay: job.salary_display ?? null,
+            rawSalaryMin: job.salary_min ?? null,
+            rawSalaryMax: job.salary_max ?? null,
+            currency: job.currency || 'INR',
+            salaryMin: job.salary_min == null ? null : convertSalaryToINR(job.salary_min, job.currency),
+            salaryMax: job.salary_max == null ? null : convertSalaryToINR(job.salary_max, job.currency),
+            type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
+            category: inferCategory(job.title, description),
+            experienceLevel: job.experience_level ?? '',
+            visaSponsorship: job.visa_sponsorship || false,
+            postedAt: new Date(job.posted_at),
+            description: description.length > 180 ? `${description.slice(0, 180).trimEnd()}…` : description,
+            skills: job.job_skills?.map((s: any) => s.skill_name) || [],
+          };
+        });
+
+        if (!cancelled) setAllJobs(formatted);
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+        if (!cancelled) {
+          toast.error('Failed to load jobs');
+          setAllJobs([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchJobs();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setSavedJobIds(new Set());
+      return;
     }
+
+    let cancelled = false;
+    supabase
+      .from('saved_jobs')
+      .select('job_id')
+      .eq('user_id', user.id)
+      .then(({ data }) => {
+        if (!cancelled && data) setSavedJobIds(new Set(data.map((row: any) => row.job_id)));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const jobs = useMemo(() => sortJobs(filterJobs(allJobs, filters), sortOption), [allJobs, filters, sortOption]);
+
+  useEffect(() => {
+    setCurrentPage(1);
   }, [filters, sortOption]);
 
-  const fetchJobsWithFilters = async (currentFilters: JobFilters) => {
+  const totalPages = Math.max(1, Math.ceil(jobs.length / JOBS_PER_PAGE));
+  const paginatedJobs = useMemo(
+    () => jobs.slice((currentPage - 1) * JOBS_PER_PAGE, currentPage * JOBS_PER_PAGE),
+    [jobs, currentPage],
+  );
+
+  const activeFilterCount = countActiveFilters(filters);
+
+  const activeChips = useMemo(() => {
+    const chips: { label: string; clear: () => void }[] = [];
+
+    if (filters.country !== ANY_COUNTRY) {
+      chips.push({ label: filters.country, clear: () => setFilters((f) => ({ ...f, country: ANY_COUNTRY })) });
+    }
+    if (filters.location.trim()) {
+      chips.push({ label: filters.location, clear: () => setFilters((f) => ({ ...f, location: '' })) });
+    }
+    if (filters.jobCategory !== ANY_CATEGORY) {
+      chips.push({ label: filters.jobCategory, clear: () => setFilters((f) => ({ ...f, jobCategory: ANY_CATEGORY })) });
+    }
+    if (filters.experienceLevel !== ANY_EXPERIENCE) {
+      chips.push({
+        label: experienceLabel(filters.experienceLevel),
+        clear: () => setFilters((f) => ({ ...f, experienceLevel: ANY_EXPERIENCE })),
+      });
+    }
+    if (filters.visaSponsorship) {
+      chips.push({ label: 'Visa sponsored', clear: () => setFilters((f) => ({ ...f, visaSponsorship: false })) });
+    }
+    if (isSalaryFilterActive(filters)) {
+      chips.push({
+        label: `${formatINRAmount(filters.salaryMin)} – ${formatINRAmount(filters.salaryMax)}`,
+        clear: () => setFilters((f) => ({ ...f, salaryMin: SALARY_FILTER_MIN, salaryMax: SALARY_FILTER_MAX })),
+      });
+    }
+    filters.skills.forEach((skill) => {
+      chips.push({
+        label: skill,
+        clear: () => setFilters((f) => ({ ...f, skills: f.skills.filter((s) => s !== skill) })),
+      });
+    });
+
+    return chips;
+  }, [filters]);
+
+  /** Names the filters whose removal would surface the most results. */
+  const restrictiveFilters = useMemo(() => {
+    if (allJobs.length === 0) return [];
+
+    const candidates: { name: string; relaxed: JobFilters }[] = [];
+    if (isSalaryFilterActive(filters)) {
+      candidates.push({
+        name: 'salary',
+        relaxed: { ...filters, salaryMin: SALARY_FILTER_MIN, salaryMax: SALARY_FILTER_MAX },
+      });
+    }
+    if (filters.visaSponsorship) {
+      candidates.push({ name: 'visa', relaxed: { ...filters, visaSponsorship: false } });
+    }
+    if (filters.country !== ANY_COUNTRY) {
+      candidates.push({ name: 'country', relaxed: { ...filters, country: ANY_COUNTRY } });
+    }
+    if (filters.jobCategory !== ANY_CATEGORY) {
+      candidates.push({ name: 'category', relaxed: { ...filters, jobCategory: ANY_CATEGORY } });
+    }
+    if (filters.experienceLevel !== ANY_EXPERIENCE) {
+      candidates.push({ name: 'experience', relaxed: { ...filters, experienceLevel: ANY_EXPERIENCE } });
+    }
+    if (filters.skills.length > 0) {
+      candidates.push({ name: 'skills', relaxed: { ...filters, skills: [] } });
+    }
+
+    return candidates
+      .map((candidate) => ({ name: candidate.name, unlocked: filterJobs(allJobs, candidate.relaxed).length }))
+      .filter((candidate) => candidate.unlocked > 0)
+      .sort((a, b) => b.unlocked - a.unlocked)
+      .slice(0, 2)
+      .map((candidate) => candidate.name);
+  }, [allJobs, filters]);
+
+  // Falls back to static suggestions so the empty state stays useful before any jobs are live.
+  const categoryFacets = useMemo(() => {
+    const facets = topFacets(allJobs, 'category', 6);
+    return facets.length > 0 ? facets : SUGGESTED_CATEGORIES.map((label) => ({ label }));
+  }, [allJobs]);
+
+  const countryFacets = useMemo(() => {
+    const facets = topFacets(allJobs, 'country', 6);
+    return facets.length > 0 ? facets : SUGGESTED_COUNTRIES.map((label) => ({ label }));
+  }, [allJobs]);
+
+  const resetFilters = useCallback(() => {
+    setKeywordInput('');
+    setFilters(EMPTY_JOB_FILTERS);
+  }, []);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleToggleSave = async (job: JobListItem) => {
+    if (!user) {
+      toast.error('Sign in to save jobs');
+      return;
+    }
+
+    const alreadySaved = savedJobIds.has(job.id);
+    setSavePendingId(job.id);
+
     try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('jobs')
-        .select(`
-          *,
-          job_skills (skill_name)
-        `)
-        .eq('status', 'ACTIVE')
-        .order('posted_at', { ascending: false });
-
-      if (error) throw error;
-
-      const employerIds = Array.from(new Set((data || []).map((j: any) => j.employer_id).filter(Boolean)));
-      let companyMap: Record<string, string> = {};
-      if (employerIds.length > 0) {
-        const { data: companies } = await supabase
-          .from('employer_company_info' as any)
-          .select('user_id, company_name')
-          .in('user_id', employerIds);
-        companyMap = Object.fromEntries((companies || []).map((c: any) => [c.user_id, c.company_name]));
+      if (alreadySaved) {
+        const { error } = await supabase.from('saved_jobs').delete().eq('user_id', user.id).eq('job_id', job.id);
+        if (error) throw error;
+        setSavedJobIds((prev) => {
+          const next = new Set(prev);
+          next.delete(job.id);
+          return next;
+        });
+        toast.success('Removed from saved jobs');
+      } else {
+        const { error } = await supabase.from('saved_jobs').insert({ user_id: user.id, job_id: job.id });
+        if (error) throw error;
+        setSavedJobIds((prev) => new Set(prev).add(job.id));
+        toast.success('Saved for later');
       }
-
-      const formattedJobs: Job[] = (data || []).map((job: any) => {
-        const salaryMinVal = job.salary_min == null ? null : convertSalaryToINR(job.salary_min, job.currency);
-        const salaryMaxVal = job.salary_max == null ? null : convertSalaryToINR(job.salary_max, job.currency);
-        
-        return {
-          id: job.id,
-          slug: job.slug || job.id,
-          title: job.title,
-          company: companyMap[job.employer_id] || 'Company',
-          location: `${job.location}, ${job.country}`,
-          country: job.country,
-          salaryDisplay: job.salary_display ?? null,
-          rawSalaryMin: job.salary_min ?? null,
-          rawSalaryMax: job.salary_max ?? null,
-          currency: job.currency || 'INR',
-          salaryMin: salaryMinVal,
-          salaryMax: salaryMaxVal,
-          type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
-          category: job.title.includes(' - ')
-          ? job.title.split(' - ').slice(-1)[0]
-          : job.title.split(' ')[0],
-          visaSponsorship: job.visa_sponsorship || false,
-          postedDate: new Date(job.posted_at).toLocaleDateString(),
-          postedAt: new Date(job.posted_at),
-          description: job.description.substring(0, 150) + '...',
-          skills: job.job_skills?.map((s: any) => s.skill_name) || []
-        };
-      });
-
-      setAllJobs(formattedJobs);
-      applyFiltersToJobs(formattedJobs, currentFilters);
     } catch (error) {
-      console.error('Error fetching jobs:', error);
-      toast.error('Failed to load jobs');
-      setAllJobs([]);
-      setJobs([]);
+      console.error('Error toggling saved job:', error);
+      toast.error('Could not update saved jobs');
     } finally {
-      setLoading(false);
+      setSavePendingId(null);
     }
-  };
-
-  const sortJobs = (jobsToSort: Job[], sort: SortOption): Job[] => {
-    const sorted = [...jobsToSort];
-    switch (sort) {
-      case 'recent':
-        return sorted.sort((a, b) => b.postedAt.getTime() - a.postedAt.getTime());
-      case 'salary-high':
-        return sorted.sort((a, b) => (b.salaryMax ?? 0) - (a.salaryMax ?? 0));
-      case 'salary-low':
-        return sorted.sort((a, b) => (a.salaryMin ?? 0) - (b.salaryMin ?? 0));
-      case 'country-asc':
-        return sorted.sort((a, b) => a.country.localeCompare(b.country));
-      case 'country-desc':
-        return sorted.sort((a, b) => b.country.localeCompare(a.country));
-      default:
-        return sorted;
-    }
-  };
-
-  const applyFiltersToJobs = (jobsToFilter: Job[], currentFilters: JobFilters, sort: SortOption = sortOption) => {
-    let filtered = [...jobsToFilter];
-    
-    if (currentFilters.keyword) {
-      filtered = filtered.filter(job => 
-        job.title.toLowerCase().includes(currentFilters.keyword.toLowerCase()) ||
-        job.description.toLowerCase().includes(currentFilters.keyword.toLowerCase()) ||
-        job.company.toLowerCase().includes(currentFilters.keyword.toLowerCase())
-      );
-    }
-
-    if (currentFilters.location) {
-      filtered = filtered.filter(job =>
-        job.location.toLowerCase().includes(currentFilters.location.toLowerCase())
-      );
-    }
-
-    if (currentFilters.country && currentFilters.country !== 'All Countries') {
-      filtered = filtered.filter(job =>
-        job.country.toLowerCase().includes(currentFilters.country.toLowerCase())
-      );
-    }
-
-    if (currentFilters.jobCategory && currentFilters.jobCategory !== 'All Categories') {
-      filtered = filtered.filter(job =>
-        job.category?.toLowerCase().includes(currentFilters.jobCategory.toLowerCase()) ||
-        job.title.toLowerCase().includes(currentFilters.jobCategory.toLowerCase()) ||
-        job.description.toLowerCase().includes(currentFilters.jobCategory.toLowerCase())
-      );
-    }
-
-    if (currentFilters.visaSponsorship) {
-      filtered = filtered.filter(job => job.visaSponsorship);
-    }
-
-    if (currentFilters.skills.length > 0) {
-      filtered = filtered.filter(job =>
-        currentFilters.skills.some(skill =>
-          job.skills.some(jobSkill => 
-            jobSkill.toLowerCase().includes(skill.toLowerCase())
-          )
-        )
-      );
-    }
-
-    const isSalaryFilterActive =
-      currentFilters.salaryMin > SALARY_FILTER_MIN ||
-      currentFilters.salaryMax < SALARY_FILTER_MAX;
-
-    if (isSalaryFilterActive) {
-      filtered = filtered.filter(job => {
-        if (job.salaryMin == null && job.salaryMax == null) return false;
-        const jobMin = job.salaryMin ?? 0;
-        const jobMax = job.salaryMax ?? jobMin;
-        return jobMax >= currentFilters.salaryMin && jobMin <= currentFilters.salaryMax;
-      });
-    }
-
-    // Apply sorting
-    const sortedJobs = sortJobs(filtered, sort);
-    setJobs(sortedJobs);
-    setCurrentPage(1);
-  };
-
-  const handleSortChange = (newSort: SortOption) => {
-    setSortOption(newSort);
-  };
-
-  const handleSearch = () => {
-    fetchJobsWithFilters(filters);
   };
 
   const handleSaveSearch = async (name: string, alertsEnabled: boolean, alertFrequency: string) => {
     if (!user) {
-      toast.error('Please login to save searches');
+      toast.error('Please sign in to save searches');
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('saved_searches')
-        .insert({
-          user_id: user.id,
-          search_type: 'jobs',
-          name,
-          filters: filters as any,
-          alerts_enabled: alertsEnabled,
-          alert_frequency: alertFrequency
-        } as any);
+      const { error } = await supabase.from('saved_searches').insert({
+        user_id: user.id,
+        search_type: 'jobs',
+        name,
+        filters: filters as any,
+        alerts_enabled: alertsEnabled,
+        alert_frequency: alertFrequency,
+      } as any);
 
       if (error) throw error;
-      toast.success('Search saved successfully!');
+      toast.success('Search saved');
     } catch (error) {
       console.error('Error saving search:', error);
       toast.error('Failed to save search');
@@ -276,157 +423,163 @@ export default function Jobs() {
     }
   };
 
-  // Job Card Component for reuse
-  const JobCard = ({ job }: { job: Job }) => (
-    <Card 
-      className="p-4 md:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer border-border/50 hover:border-primary/30"
-      onClick={() => navigate(`/jobs/${job.slug}`)}
-    >
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-1 line-clamp-1">{job.title}</h3>
-          <p className="text-muted-foreground text-sm">{job.company}</p>
-        </div>
-        {job.visaSponsorship && (
-          <Badge className="bg-success/10 text-success border-success/20 self-start shrink-0 text-xs">
-            <Globe className="h-3 w-3 mr-1" />
-            <span className="hidden xs:inline sm:hidden md:inline">Visa Sponsorship</span>
-            <span className="xs:hidden sm:inline md:hidden">Visa</span>
-          </Badge>
-        )}
-      </div>
-
-      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mb-3 text-xs sm:text-sm text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate max-w-[140px] sm:max-w-[200px]">{job.location}</span>
-        </span>
-        <span className="flex items-center gap-1 font-medium text-foreground">
-          {job.salaryDisplay ? (
-            <span>{job.salaryDisplay}</span>
-          ) : (
-            <JobSalaryText
-              min={job.rawSalaryMin}
-              max={job.rawSalaryMax}
-              currency={job.currency}
-            />
-          )}
-        </span>
-        <span className="flex items-center gap-1">
-          <Briefcase className="h-3.5 w-3.5" />
-          {job.type}
-        </span>
-        <span className="flex items-center gap-1">
-          <Clock className="h-3.5 w-3.5" />
-          {job.postedDate}
-        </span>
-      </div>
-
-      <p className="text-muted-foreground mb-3 text-sm line-clamp-2">{job.description}</p>
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-1.5">
-          {job.skills.slice(0, 3).map(skill => (
-            <Badge key={skill} variant="outline" className="text-xs">{skill}</Badge>
-          ))}
-          {job.skills.length > 3 && (
-            <Badge variant="outline" className="text-xs">+{job.skills.length - 3}</Badge>
-          )}
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button 
-            className="flex-1 sm:flex-none h-9 text-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/jobs/${job.slug}`);
-            }}
-          >
-            View & Apply
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
-
   const jobsContent = (
     <>
-      <header className="mb-5 md:mb-8">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 md:mb-2">Find Your Next Global Opportunity</h1>
-        <p className="text-sm md:text-base text-muted-foreground">
-          Browse thousands of international job opportunities with visa sponsorship
-        </p>
-      </header>
+      <JobSearchHero
+        keyword={keywordInput}
+        country={filters.country}
+        loading={loading}
+        quickCategories={QUICK_CATEGORIES}
+        onKeywordChange={setKeywordInput}
+        onCountryChange={(country) => setFilters((f) => ({ ...f, country }))}
+        onSelectCategory={(category) => setFilters((f) => ({ ...f, jobCategory: category }))}
+        onSearch={() => setFilters((f) => ({ ...f, keyword: keywordInput }))}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[340px_1fr] gap-4 lg:gap-6">
-        <aside className="order-2 lg:order-1">
-          <JobSearchFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            onSearch={handleSearch}
-            onSaveSearch={() => setShowSaveDialog(true)}
-            loading={loading}
-          />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[288px_1fr] xl:grid-cols-[312px_1fr]">
+        <aside className="hidden self-start lg:sticky lg:top-24 lg:block">
+          <JobSearchFilters filters={filters} onFiltersChange={setFilters} />
 
           {isAuthenticated && role === 'worker' && (
-            <Card className="mt-4 p-4 hidden lg:block">
+            <Button variant="outline" asChild className="mt-3 w-full gap-2">
               <Link to="/worker/saved-searches">
-                <Button variant="outline" className="w-full">
-                  View Saved Searches
-                </Button>
+                <BookmarkCheck className="h-4 w-4" />
+                Saved searches
               </Link>
-            </Card>
+            </Button>
           )}
         </aside>
 
-        <div className="space-y-3 md:space-y-4 order-1 lg:order-2">
-          <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2">
-            <h2 className="text-base sm:text-lg md:text-xl font-semibold">
-              {loading ? 'Searching...' : `${jobs.length} Jobs Found`}
-            </h2>
-            <select
-              className="border rounded-lg px-3 py-2 text-sm bg-card w-full xs:w-auto"
-              value={sortOption}
-              onChange={(e) => handleSortChange(e.target.value as SortOption)}
-            >
-              <option value="recent">Most Recent</option>
-              <option value="salary-high">Salary (High to Low)</option>
-              <option value="salary-low">Salary (Low to High)</option>
-              <option value="country-asc">Country (A-Z)</option>
-              <option value="country-desc">Country (Z-A)</option>
-            </select>
+        <div className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium">
+              {loading ? 'Searching…' : `${jobs.length} ${jobs.length === 1 ? 'job' : 'jobs'} found`}
+            </p>
+
+            <div className="flex items-center gap-2">
+              <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 lg:hidden">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filters
+                    {activeFilterCount > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full overflow-y-auto p-0 sm:max-w-sm">
+                  <SheetHeader className="border-b border-border/60 px-5 py-4">
+                    <SheetTitle className="text-base">Filters</SheetTitle>
+                  </SheetHeader>
+                  <JobSearchFilters filters={filters} onFiltersChange={setFilters} className="rounded-none border-0" />
+                  <div className="sticky bottom-0 border-t border-border/60 bg-card p-4">
+                    <Button className="w-full" onClick={() => setFiltersSheetOpen(false)}>
+                      Show {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
+              <Button variant="ghost" size="sm" className="hidden gap-2 sm:inline-flex" onClick={() => setShowSaveDialog(true)}>
+                <Save className="h-4 w-4" />
+                Save search
+              </Button>
+
+              <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
+                <SelectTrigger className="h-9 w-[168px] text-sm" aria-label="Sort jobs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-50 bg-card">
+                  {SORT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
+          {activeChips.length > 0 && (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              {activeChips.map((chip) => (
+                <Badge key={chip.label} variant="secondary" className="gap-1.5 py-1 pl-3 pr-2 font-normal">
+                  {chip.label}
+                  <button type="button" aria-label={`Remove ${chip.label} filter`} onClick={chip.clear}>
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={resetFilters}>
+                Clear all
+              </Button>
+            </div>
+          )}
+
           {loading ? (
-            <Card className="p-8 md:p-12 text-center">
-              <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground text-sm md:text-base">Loading jobs...</p>
-            </Card>
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="rounded-xl border border-border/60 bg-card p-5">
+                  <div className="flex gap-4">
+                    <Skeleton className="h-12 w-12 rounded-lg" />
+                    <div className="flex-1 space-y-2.5">
+                      <Skeleton className="h-5 w-2/5" />
+                      <Skeleton className="h-4 w-1/4" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : jobs.length === 0 ? (
+            <JobsEmptyState
+              restrictiveFilters={restrictiveFilters}
+              categories={categoryFacets}
+              countries={countryFacets}
+              onClearFilters={resetFilters}
+              onCreateAlert={() => setShowSaveDialog(true)}
+              onSelectCategory={(category) => setFilters({ ...EMPTY_JOB_FILTERS, jobCategory: category })}
+              onSelectCountry={(country) => setFilters({ ...EMPTY_JOB_FILTERS, country })}
+            />
           ) : (
             <>
-              {paginatedJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
-              ))}
-
-              {jobs.length === 0 && (
-                <Card className="p-8 md:p-12 text-center">
-                  <Briefcase className="h-12 w-12 md:h-16 md:w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg md:text-xl font-semibold mb-2">No jobs found</h3>
-                  <p className="text-muted-foreground text-sm md:text-base">
-                    Try adjusting your filters or search criteria
-                  </p>
-                </Card>
-              )}
+              <div className="space-y-3">
+                {paginatedJobs.map((job) => (
+                  <JobResultCard
+                    key={job.id}
+                    job={job}
+                    saved={savedJobIds.has(job.id)}
+                    savePending={savePendingId === job.id}
+                    onToggleSave={handleToggleSave}
+                  />
+                ))}
+              </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-4">
-                  <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                    <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === 1}
+                    onClick={() => goToPage(currentPage - 1)}
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Previous
                   </Button>
-                  <span className="text-sm text-muted-foreground px-3">
+                  <span className="px-3 text-sm text-muted-foreground">
                     Page {currentPage} of {totalPages}
                   </span>
-                  <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                    Next <ChevronRight className="h-4 w-4 ml-1" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => goToPage(currentPage + 1)}
+                  >
+                    Next
+                    <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 </div>
               )}
@@ -435,39 +588,28 @@ export default function Jobs() {
         </div>
       </div>
 
-      <SavedSearchDialog
-        open={showSaveDialog}
-        onOpenChange={setShowSaveDialog}
-        onSave={handleSaveSearch}
-      />
+      <SavedSearchDialog open={showSaveDialog} onOpenChange={setShowSaveDialog} onSave={handleSaveSearch} />
     </>
   );
 
-  // Structured data for job listings (public SEO only)
   const jobListingStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    "name": "International Jobs - SafeWorkGlobal",
-    "description": "Browse thousands of international job opportunities with visa sponsorship",
-    "numberOfItems": jobs.length,
-    "itemListElement": jobs.slice(0, 10).map((job, index) => ({
-      "@type": "ListItem",
-      "position": index + 1,
-      "item": {
-        "@type": "JobPosting",
-        "title": job.title,
-        "description": job.description,
-        "hiringOrganization": {
-          "@type": "Organization",
-          "name": job.company
-        },
-        "jobLocation": {
-          "@type": "Place",
-          "address": job.location
-        },
-        "employmentType": job.type
-      }
-    }))
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'International Jobs - SafeWorkGlobal',
+    description: 'Browse international job opportunities with visa sponsorship',
+    numberOfItems: jobs.length,
+    itemListElement: jobs.slice(0, 10).map((job, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'JobPosting',
+        title: job.title,
+        description: job.description,
+        hiringOrganization: { '@type': 'Organization', name: job.company },
+        jobLocation: { '@type': 'Place', address: job.location },
+        employmentType: job.type,
+      },
+    })),
   };
 
   return (
@@ -476,7 +618,7 @@ export default function Jobs() {
       publicHead={
         <SEOHead
           title="International Jobs | Find Global Opportunities | SafeWorkGlobal"
-          description="Browse 900+ international job opportunities for skilled workers in construction, electrical, welding, and more. Visa sponsorship available across 40+ countries."
+          description="Browse international job opportunities for skilled workers in construction, electrical, welding and more. Visa sponsorship available across 40+ countries."
           keywords="international jobs, overseas jobs, visa sponsorship jobs, construction jobs abroad, welding jobs overseas, skilled worker jobs, gulf jobs, middle east jobs"
           canonicalUrl={`${window.location.origin}/jobs`}
           ogType="website"

@@ -1,17 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Card } from '@/components/ui/card';
+import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Search, Save, X, MapPin, IndianRupee, Briefcase, Globe, Loader2 } from 'lucide-react';
-import { DESTINATION_COUNTRIES, JOB_CATEGORIES, EXPERIENCE_LEVELS, POPULAR_SKILLS } from '@/lib/constants';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, Plus, X } from 'lucide-react';
+import { DESTINATION_COUNTRIES, JOB_CATEGORIES, POPULAR_SKILLS } from '@/lib/constants';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, SALARY_FILTER_STEP } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
+import { cn } from '@/lib/utils';
 
 export interface JobFilters {
   keyword: string;
@@ -25,311 +26,282 @@ export interface JobFilters {
   experienceLevel: string;
 }
 
+export const ANY_COUNTRY = 'All Countries';
+export const ANY_CATEGORY = 'All Categories';
+export const ANY_EXPERIENCE = 'All Levels';
+
+/** Values match the `experience_level` codes stored on the jobs table. */
+export const JOB_EXPERIENCE_OPTIONS = [
+  { value: ANY_EXPERIENCE, label: 'All levels' },
+  { value: 'ENTRY', label: 'Entry level' },
+  { value: 'INTERMEDIATE', label: 'Intermediate' },
+  { value: 'SENIOR', label: 'Senior' },
+  { value: 'EXPERT', label: 'Expert' },
+];
+
+export const EMPTY_JOB_FILTERS: JobFilters = {
+  keyword: '',
+  location: '',
+  country: ANY_COUNTRY,
+  jobCategory: ANY_CATEGORY,
+  salaryMin: SALARY_FILTER_MIN,
+  salaryMax: SALARY_FILTER_MAX,
+  visaSponsorship: false,
+  skills: [],
+  experienceLevel: ANY_EXPERIENCE,
+};
+
+export function isSalaryFilterActive(filters: JobFilters): boolean {
+  return filters.salaryMin > SALARY_FILTER_MIN || filters.salaryMax < SALARY_FILTER_MAX;
+}
+
+/** Counts only the filters shown in this panel, so the mobile badge matches it. */
+export function countActiveFilters(filters: JobFilters): number {
+  let count = 0;
+  if (filters.location.trim()) count += 1;
+  if (filters.jobCategory !== ANY_CATEGORY) count += 1;
+  if (filters.experienceLevel !== ANY_EXPERIENCE) count += 1;
+  if (filters.visaSponsorship) count += 1;
+  if (isSalaryFilterActive(filters)) count += 1;
+  count += filters.skills.length;
+  return count;
+}
+
+interface FilterSectionProps {
+  label: string;
+  children: React.ReactNode;
+}
+
+function FilterSection({ label, children }: FilterSectionProps) {
+  return (
+    <div className="border-t border-border/60 px-5 py-4 first:border-t-0">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+interface CollapsibleSectionProps extends FilterSectionProps {
+  defaultOpen?: boolean;
+  summary?: string;
+}
+
+function CollapsibleSection({ label, summary, defaultOpen = false, children }: CollapsibleSectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="border-t border-border/60 px-5 py-4">
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 text-left">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+        <span className="flex items-center gap-2">
+          {!open && summary && <span className="text-xs text-muted-foreground">{summary}</span>}
+          <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+        </span>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-4">{children}</CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 interface JobSearchFiltersProps {
   filters: JobFilters;
   onFiltersChange: (filters: JobFilters) => void;
-  onSearch: () => void;
-  onSaveSearch: () => void;
-  loading?: boolean;
+  className?: string;
 }
 
-export default function JobSearchFilters({
-  filters,
-  onFiltersChange,
-  onSearch,
-  onSaveSearch,
-  loading = false
-}: JobSearchFiltersProps) {
+export default function JobSearchFilters({ filters, onFiltersChange, className }: JobSearchFiltersProps) {
   const [skillInput, setSkillInput] = useState('');
-  const [localKeyword, setLocalKeyword] = useState(filters.keyword);
   const [localLocation, setLocalLocation] = useState(filters.location);
-  
-  // Debounce keyword and location for auto-search
-  const debouncedKeyword = useDebounce(localKeyword, 400);
   const debouncedLocation = useDebounce(localLocation, 400);
-  
-  // Sync debounced values back to filters and trigger search
+
   useEffect(() => {
-    if (debouncedKeyword !== filters.keyword || debouncedLocation !== filters.location) {
-      onFiltersChange({ 
-        ...filters, 
-        keyword: debouncedKeyword,
-        location: debouncedLocation 
-      });
+    if (debouncedLocation !== filters.location) {
+      onFiltersChange({ ...filters, location: debouncedLocation });
     }
-  }, [debouncedKeyword, debouncedLocation]);
+  }, [debouncedLocation]);
+
+  useEffect(() => {
+    if (filters.location !== localLocation && filters.location !== debouncedLocation) {
+      setLocalLocation(filters.location);
+    }
+  }, [filters.location]);
+
+  const activeCount = countActiveFilters(filters);
 
   const handleAddSkill = (skill: string) => {
-    if (skill && !filters.skills.includes(skill)) {
-      onFiltersChange({
-        ...filters,
-        skills: [...filters.skills, skill]
-      });
+    const value = skill.trim();
+    if (value && !filters.skills.includes(value)) {
+      onFiltersChange({ ...filters, skills: [...filters.skills, value] });
     }
     setSkillInput('');
   };
 
   const handleRemoveSkill = (skill: string) => {
-    onFiltersChange({
-      ...filters,
-      skills: filters.skills.filter(s => s !== skill)
-    });
+    onFiltersChange({ ...filters, skills: filters.skills.filter((s) => s !== skill) });
   };
 
+  const salarySummary = isSalaryFilterActive(filters)
+    ? `${formatINRAmount(filters.salaryMin)} – ${formatINRAmount(filters.salaryMax)}`
+    : 'Any';
+
   return (
-    <Card className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Advanced Filters</h2>
-        <Button variant="ghost" size="sm" onClick={onSaveSearch}>
-          <Save className="h-4 w-4 mr-2" />
-          Save Search
-        </Button>
+    <div className={cn('rounded-xl border border-border/60 bg-card', className)}>
+      <div className="flex items-center justify-between gap-2 px-5 py-4">
+        <h2 className="text-sm font-semibold">Filters</h2>
+        {activeCount > 0 && (
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs"
+            onClick={() => onFiltersChange({ ...EMPTY_JOB_FILTERS, keyword: filters.keyword, country: filters.country })}
+          >
+            Clear all
+          </Button>
+        )}
       </div>
 
-      {/* Keyword Search */}
-      <div className="space-y-2">
-        <Label htmlFor="keyword">
-          <Search className="h-4 w-4 inline mr-2" />
-          Job Title or Keywords
+      <FilterSection label="City or region">
+        <Input
+          id="location"
+          placeholder="e.g. Dubai, Riyadh"
+          value={localLocation}
+          onChange={(e) => setLocalLocation(e.target.value)}
+        />
+      </FilterSection>
+
+      <FilterSection label="Job category">
+        <Select
+          value={filters.jobCategory}
+          onValueChange={(value) => onFiltersChange({ ...filters, jobCategory: value })}
+        >
+          <SelectTrigger id="category">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="z-50 max-h-72 bg-card">
+            {JOB_CATEGORIES.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category === ANY_CATEGORY ? 'All categories' : category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterSection>
+
+      <FilterSection label="Experience level">
+        <Select
+          value={filters.experienceLevel}
+          onValueChange={(value) => onFiltersChange({ ...filters, experienceLevel: value })}
+        >
+          <SelectTrigger id="experience">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="z-50 bg-card">
+            {JOB_EXPERIENCE_OPTIONS.map((level) => (
+              <SelectItem key={level.value} value={level.value}>
+                {level.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterSection>
+
+      <div className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-4">
+        <Label htmlFor="visa" className="cursor-pointer text-sm font-medium">
+          Visa sponsored only
+          <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+            Employer supports your work visa
+          </span>
         </Label>
-        <div className="relative">
-          <Input
-            id="keyword"
-            placeholder="e.g., Welding Engineer, Construction Supervisor"
-            value={localKeyword}
-            onChange={(e) => setLocalKeyword(e.target.value)}
-            className="pr-8"
-          />
-          {loading && localKeyword && (
-            <Loader2 className="h-4 w-4 absolute right-3 top-3 animate-spin text-muted-foreground" />
-          )}
-        </div>
+        <Switch
+          id="visa"
+          checked={filters.visaSponsorship}
+          onCheckedChange={(checked) => onFiltersChange({ ...filters, visaSponsorship: checked })}
+        />
       </div>
 
-      {/* Location & Country */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="country">
-            <Globe className="h-4 w-4 inline mr-2" />
-            Country
-          </Label>
-          <Select
-            value={filters.country}
-            onValueChange={(value) => onFiltersChange({ ...filters, country: value })}
-          >
-            <SelectTrigger id="country">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-card z-50 max-h-64">
-              {DESTINATION_COUNTRIES.map(country => (
-                <SelectItem key={country} value={country}>{country}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="location">
-            <MapPin className="h-4 w-4 inline mr-2" />
-            City/Region
-          </Label>
-          <Input
-            id="location"
-            placeholder="e.g., Dubai, Riyadh"
-            value={localLocation}
-            onChange={(e) => setLocalLocation(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Job Category & Experience */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="category">
-            <Briefcase className="h-4 w-4 inline mr-2" />
-            Job Category
-          </Label>
-          <Select
-            value={filters.jobCategory}
-            onValueChange={(value) => onFiltersChange({ ...filters, jobCategory: value })}
-          >
-            <SelectTrigger id="category">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-card z-50">
-              {JOB_CATEGORIES.map(category => (
-                <SelectItem key={category} value={category}>{category}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="experience">Experience Level</Label>
-          <Select
-            value={filters.experienceLevel}
-            onValueChange={(value) => onFiltersChange({ ...filters, experienceLevel: value })}
-          >
-            <SelectTrigger id="experience">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-card z-50">
-              {EXPERIENCE_LEVELS.map(level => (
-                <SelectItem key={level} value={level}>{level}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Salary Range */}
-      <div className="space-y-4">
-        <Label>
-          <IndianRupee className="h-4 w-4 inline mr-2" />
-          Expected Salary Range (₹/month)
-        </Label>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm tabular-nums">
+      <CollapsibleSection label="Salary range" summary={salarySummary} defaultOpen>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between text-sm font-medium tabular-nums">
             <span>{formatINRAmount(filters.salaryMin)}</span>
-            <span>{formatINRAmount(filters.salaryMax)}</span>
+            <span>
+              {formatINRAmount(filters.salaryMax)}
+              {filters.salaryMax >= SALARY_FILTER_MAX ? '+' : ''}
+            </span>
           </div>
           <Slider
             min={SALARY_FILTER_MIN}
             max={SALARY_FILTER_MAX}
             step={SALARY_FILTER_STEP}
             value={[filters.salaryMin, filters.salaryMax]}
-            onValueChange={([min, max]) => 
-              onFiltersChange({ ...filters, salaryMin: min, salaryMax: max })
-            }
-            className="w-full"
+            onValueChange={([min, max]) => onFiltersChange({ ...filters, salaryMin: min, salaryMax: max })}
           />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              type="number"
-              placeholder="Min (₹)"
-              min={SALARY_FILTER_MIN}
-              max={SALARY_FILTER_MAX}
-              value={filters.salaryMin}
-              onChange={(e) => onFiltersChange({ 
-                ...filters, 
-                salaryMin: Math.min(parseInt(e.target.value) || 0, filters.salaryMax)
-              })}
-            />
-            <Input
-              type="number"
-              placeholder="Max (₹)"
-              min={SALARY_FILTER_MIN}
-              max={SALARY_FILTER_MAX}
-              value={filters.salaryMax}
-              onChange={(e) => onFiltersChange({ 
-                ...filters, 
-                salaryMax: Math.max(parseInt(e.target.value) || SALARY_FILTER_MAX, filters.salaryMin)
-              })}
-            />
-          </div>
+          <p className="text-xs text-muted-foreground">Monthly, in Indian rupees</p>
         </div>
-      </div>
+      </CollapsibleSection>
 
-      {/* Visa Sponsorship */}
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="visa"
-          checked={filters.visaSponsorship}
-          onCheckedChange={(checked) => 
-            onFiltersChange({ ...filters, visaSponsorship: checked as boolean })
-          }
-        />
-        <Label htmlFor="visa" className="cursor-pointer">
-          Visa Sponsorship Available
-        </Label>
-      </div>
-
-      {/* Skills */}
-      <div className="space-y-2">
-        <Label>Required Skills</Label>
-        <div className="space-y-2">
+      <CollapsibleSection
+        label="Skills"
+        summary={filters.skills.length > 0 ? `${filters.skills.length} selected` : 'Any'}
+        defaultOpen={filters.skills.length > 0}
+      >
+        <div className="space-y-3">
           <div className="flex gap-2">
             <Input
-              placeholder="Add skill (e.g., Welding)"
+              placeholder="Add a skill"
               value={skillInput}
               onChange={(e) => setSkillInput(e.target.value)}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
                   handleAddSkill(skillInput);
                 }
               }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleAddSkill(skillInput)}
-            >
+            <Button type="button" variant="outline" onClick={() => handleAddSkill(skillInput)}>
               Add
             </Button>
           </div>
-          
-          {/* Selected Skills */}
+
           {filters.skills.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {filters.skills.map(skill => (
-                <Badge key={skill} variant="secondary" className="gap-1">
+            <div className="flex flex-wrap gap-1.5">
+              {filters.skills.map((skill) => (
+                <Badge key={skill} variant="secondary" className="gap-1 font-normal">
                   {skill}
-                  <X
-                    className="h-3 w-3 cursor-pointer"
+                  <button
+                    type="button"
+                    aria-label={`Remove ${skill}`}
                     onClick={() => handleRemoveSkill(skill)}
-                  />
+                    className="rounded-full hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </Badge>
               ))}
             </div>
           )}
 
-          {/* Popular Skills Quick Add */}
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Popular Skills:</p>
-            <div className="flex flex-wrap gap-2">
-              {POPULAR_SKILLS.filter(s => !filters.skills.includes(s)).map(skill => (
-                <Badge
-                  key={skill}
-                  variant="outline"
-                  className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                  onClick={() => handleAddSkill(skill)}
-                >
-                  + {skill}
-                </Badge>
-              ))}
+            <p className="mb-2 text-xs text-muted-foreground">Popular</p>
+            <div className="flex flex-wrap gap-1.5">
+              {POPULAR_SKILLS.filter((s) => !filters.skills.includes(s))
+                .slice(0, 10)
+                .map((skill) => (
+                  <button
+                    key={skill}
+                    type="button"
+                    onClick={() => handleAddSkill(skill)}
+                    className="inline-flex items-center gap-1 rounded-full border border-border/70 px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+                  >
+                    <Plus className="h-3 w-3" />
+                    {skill}
+                  </button>
+                ))}
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-3 pt-4">
-        <Button
-          onClick={onSearch}
-          disabled={loading}
-          className="flex-1"
-        >
-          <Search className="h-4 w-4 mr-2" />
-          {loading ? 'Searching...' : 'Search Jobs'}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => onFiltersChange({
-            keyword: '',
-            location: '',
-            country: 'All Countries',
-            jobCategory: 'All Categories',
-            salaryMin: SALARY_FILTER_MIN,
-            salaryMax: SALARY_FILTER_MAX,
-            visaSponsorship: false,
-            skills: [],
-            experienceLevel: 'All Levels'
-          })}
-        >
-          Clear All
-        </Button>
-      </div>
-    </Card>
+      </CollapsibleSection>
+    </div>
   );
 }
+
+export { DESTINATION_COUNTRIES };

@@ -4,9 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -21,12 +18,10 @@ import {
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { getFirebaseAuth, isFirebaseConfigured, redirectToPhoneAuthHost } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
-import {
-  WORKER_TERMS_FULL,
-} from '@/modules/worker-verification/constants';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
-import GoogleAuthButton, { AuthDivider } from '@/modules/worker-registration/components/GoogleAuthButton';
+import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 import TermsAgreeRow from '@/components/TermsAgreeRow';
+import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 import SignupJourneyPanel from '@/components/SignupJourneyPanel';
 
 type Step = 'form' | 'otp';
@@ -45,6 +40,7 @@ export default function QuickWorkerSignup() {
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
 
@@ -188,247 +184,257 @@ export default function QuickWorkerSignup() {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-background">
+    <div className="fixed inset-0 overflow-hidden bg-muted/40">
       <div className="flex h-full flex-col md:flex-row">
         <SignupJourneyPanel />
 
-        <main className="relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-4 sm:justify-center sm:px-8 md:overflow-hidden md:px-8 lg:px-12">
-          <div className="mx-auto w-full max-w-[400px] py-1 md:py-0">
-            <div className="mb-3 md:mb-4">
-              <h2 className="font-heading text-lg font-bold text-foreground sm:text-xl">
-                {step === 'form' ? 'Create your worker profile' : 'Verify your mobile'}
-              </h2>
-              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-                {step === 'form'
-                  ? 'Name · Email · Mobile OTP · Password'
-                  : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
-              </p>
-            </div>
-
-            {error && (
-              <Alert variant="destructive" className="mb-3 py-2">
-                <AlertDescription className="text-sm">{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {step === 'form' && (
-              <div className="mb-3 space-y-1.5">
-                <GoogleAuthButton label="Sign up with Google" role="worker" />
-                <AuthDivider />
-              </div>
-            )}
-
-            {step === 'form' && (
-              <form onSubmit={handleRequestOtp} className="space-y-2.5" noValidate>
-                <div className="space-y-1">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="Your full name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="h-10"
-                    autoComplete="name"
+        <main className="relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:px-8 md:px-8 lg:px-12">
+          <div className="mx-auto w-full max-w-[420px]">
+            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5 sm:p-7">
+              <div className="mb-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <span
+                    className={`h-1.5 w-6 rounded-full ${step === 'form' ? 'bg-primary' : 'bg-primary/30'}`}
                   />
+                  <span
+                    className={`h-1.5 w-6 rounded-full ${step === 'otp' ? 'bg-primary' : 'bg-muted-foreground/25'}`}
+                  />
+                  <span className="ml-1 text-[11px] font-medium text-muted-foreground">
+                    Step {step === 'form' ? '1' : '2'} of 2
+                  </span>
                 </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="h-10 pl-10"
-                      autoComplete="email"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <Label htmlFor="mobile">Mobile Number</Label>
-                  <div className="relative">
-                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="mobile"
-                      type="tel"
-                      placeholder="10-digit mobile (+91 SMS)"
-                      value={mobile}
-                      onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      required
-                      className="h-10 pl-10"
-                      autoComplete="tel"
-                    />
-                  </div>
-                  {!firebaseOtp.isAvailable && (
-                    <p className="text-xs text-warning">
-                      SMS OTP needs Firebase Phone Auth keys before signup can continue.
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="space-y-1">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Min 6 chars"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="h-10 pl-10 pr-9"
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        data-inline
-                        onClick={() => setShowPassword((v) => !v)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="confirmPassword">Confirm</Label>
-                    <div className="relative">
-                      <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="confirmPassword"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Re-enter"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        className="h-10 pl-10"
-                        autoComplete="new-password"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <TermsAgreeRow
-                  id="worker-signup-terms"
-                  checked={acceptedTerms}
-                  onCheckedChange={setAcceptedTerms}
-                  onOpenTerms={() => setTermsOpen(true)}
-                />
-
-                <Button
-                  id={WORKER_OTP_RECAPTCHA_BTN_ID}
-                  type="submit"
-                  className="h-10 w-full font-semibold"
-                  disabled={formLoading}
-                >
-                  {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Send SMS code
-                </Button>
-
-                <p className="text-center text-xs text-muted-foreground">
-                  Already have an account?{' '}
-                  <Link to="/worker/login" className="font-medium text-primary hover:underline">
-                    Sign in
-                  </Link>
+                <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
+                  {step === 'form' ? 'Create your worker profile' : 'Verify your mobile'}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {step === 'form'
+                    ? 'Takes about 2 minutes. We’ll SMS a code to confirm your number.'
+                    : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>
-              </form>
-            )}
+              </div>
 
-            {step === 'otp' && (
-              <form onSubmit={handleVerifyAndCreate} className="space-y-4">
-                <div className="flex justify-center">
-                  <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
+              {error && (
+                <Alert variant="destructive" className="mb-4 py-2">
+                  <AlertDescription className="text-sm">{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {step === 'form' && (
+                <div className="mb-4 space-y-3">
+                  <GoogleAuthButton label="Sign up with Google" role="worker" />
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                <p className="text-center text-xs text-muted-foreground">
-                  Didn&apos;t get the code?{' '}
-                  <button
+              {step === 'form' && (
+                <form onSubmit={handleRequestOtp} className="space-y-3.5" noValidate>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name">Full name</Label>
+                    <Input
+                      id="name"
+                      placeholder="Your full name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                      className="h-11"
+                      autoComplete="name"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="h-11 pl-10"
+                        autoComplete="email"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="mobile">Mobile number</Label>
+                    <div className="flex h-11 overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                      <span className="inline-flex shrink-0 items-center gap-1.5 border-r border-input bg-muted/40 px-3 text-sm font-medium text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5" />
+                        +91
+                      </span>
+                      <Input
+                        id="mobile"
+                        type="tel"
+                        placeholder="10-digit mobile"
+                        value={mobile}
+                        onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                        required
+                        className="h-full border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                        autoComplete="tel"
+                      />
+                    </div>
+                    {!firebaseOtp.isAvailable && (
+                      <p className="text-xs text-warning">
+                        SMS OTP needs Firebase Phone Auth keys before signup can continue.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="password">Password</Label>
+                      <div className="relative">
+                        <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Min 6 chars"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          minLength={6}
+                          className="h-11 pl-10 pr-9"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          data-inline
+                          onClick={() => setShowPassword((v) => !v)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="confirmPassword">Confirm</Label>
+                      <div className="relative">
+                        <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="Re-enter"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          minLength={6}
+                          className="h-11 pl-10 pr-9"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          data-inline
+                          onClick={() => setShowConfirmPassword((v) => !v)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <TermsAgreeRow
+                    id="worker-signup-terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={setAcceptedTerms}
+                    onOpenTerms={() => setTermsOpen(true)}
+                  />
+
+                  <Button
                     id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                    type="submit"
+                    className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+                    disabled={formLoading}
+                  >
+                    {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Send SMS code
+                  </Button>
+
+                  <p className="pt-1 text-center text-sm text-muted-foreground">
+                    Already have an account?{' '}
+                    <Link to="/worker/login" className="font-medium text-primary hover:underline">
+                      Sign in
+                    </Link>
+                  </p>
+                </form>
+              )}
+
+              {step === 'otp' && (
+                <form onSubmit={handleVerifyAndCreate} className="space-y-5">
+                  <div className="flex justify-center py-1">
+                    <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    Didn&apos;t get the code?{' '}
+                    <button
+                      id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                      type="button"
+                      data-inline
+                      onClick={handleResendOtp}
+                      disabled={formLoading}
+                      className="font-medium text-primary hover:underline disabled:opacity-50"
+                    >
+                      Resend SMS
+                    </button>
+                  </p>
+
+                  <Button
+                    type="submit"
+                    className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+                    disabled={formLoading || otp.length !== 6}
+                  >
+                    {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Verify & create account
+                  </Button>
+
+                  <button
                     type="button"
                     data-inline
-                    onClick={handleResendOtp}
-                    disabled={formLoading}
-                    className="font-medium text-primary hover:underline disabled:opacity-50"
+                    onClick={() => {
+                      setStep('form');
+                      setOtp('');
+                      setError('');
+                      firebaseOtp.resetRecaptcha();
+                    }}
+                    className="w-full text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    Resend SMS
+                    ← Change details
                   </button>
-                </p>
-
-                <Button
-                  type="submit"
-                  className="h-10 w-full font-semibold"
-                  disabled={formLoading || otp.length !== 6}
-                >
-                  {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Verify & create account
-                </Button>
-
-                <button
-                  type="button"
-                  data-inline
-                  onClick={() => {
-                    setStep('form');
-                    setOtp('');
-                    setError('');
-                    firebaseOtp.resetRecaptcha();
-                  }}
-                  className="w-full text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  ← Change details
-                </button>
-              </form>
-            )}
+                </form>
+              )}
+            </div>
           </div>
         </main>
       </div>
 
-      <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
-        <DialogContent className="max-h-[80vh] max-w-lg overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Worker terms &amp; declarations</DialogTitle>
-            <DialogDescription>
-              Please read carefully. Agreeing confirms medical fitness and platform rules.
-            </DialogDescription>
-          </DialogHeader>
-          <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground">
-            {WORKER_TERMS_FULL}
-          </pre>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setTermsOpen(false)}>
-              Close
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setAcceptedTerms(true);
-                setTermsOpen(false);
-              }}
-            >
-              I agree
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <WorkerTermsDialog
+        open={termsOpen}
+        onOpenChange={setTermsOpen}
+        onAgree={() => setAcceptedTerms(true)}
+      />
     </div>
   );
 }

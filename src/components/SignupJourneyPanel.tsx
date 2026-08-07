@@ -1,215 +1,137 @@
 import { Link } from 'react-router-dom';
-import {
-  BadgeCheck,
-  ClipboardList,
-  CreditCard,
-  FileUp,
-  HeartPulse,
-  HelpCircle,
-  GraduationCap,
-  Plane,
-  Rocket,
-  ScrollText,
-  Video,
-  Wrench,
-  type LucideIcon,
-} from 'lucide-react';
-import { type GccNavStepId } from '@/modules/worker-verification/constants';
-import heroWorkers from '@/assets/hero-workers.jpg';
-import constructionIcon from '@/assets/construction-icon.png';
-import electricianIcon from '@/assets/electrician-icon.png';
-import welderIcon from '@/assets/welder-icon.png';
+import { BadgeCheck, LogIn, ShieldCheck, UserPlus, Wallet } from 'lucide-react';
 
-const JOURNEY_ICONS: Record<GccNavStepId, LucideIcon> = {
-  essentials: ClipboardList,
-  test1: HelpCircle,
-  skill_proof: FileUp,
-  identity: BadgeCheck,
-  test2: Video,
-  payment: CreditCard,
-  test3: Wrench,
-  medical: HeartPulse,
-  bond: ScrollText,
-  pdot: GraduationCap,
-  gcc_ready: Plane,
-  deployment: Rocket,
-};
-
-const PHASES: {
-  title: string;
-  short: string;
-  subtitle: string;
-  stepIds: GccNavStepId[];
-  labels: string[];
-}[] = [
-  {
-    title: '1 · Build profile',
-    short: 'Build',
-    subtitle: 'Basics, quiz, proof & ID',
-    stepIds: ['essentials', 'test1', 'skill_proof', 'identity'],
-    labels: ['Essentials', 'Test 1', 'Skill proof', 'Identity'],
-  },
-  {
-    title: '2 · Prove skill',
-    short: 'Prove',
-    subtitle: 'Interview, fee & trade test',
-    stepIds: ['test2', 'payment', 'test3'],
-    labels: ['Interview', 'Payment', 'Trade test'],
-  },
-  {
-    title: '3 · Go GCC ready',
-    short: 'GCC',
-    subtitle: 'Medical, bond & placement',
-    stepIds: ['medical', 'bond', 'gcc_ready'],
-    labels: ['Medical', 'Bond', 'GCC ready'],
-  },
-];
-
-const TRADES = [
-  { src: constructionIcon, label: 'Construction' },
-  { src: electricianIcon, label: 'Electrical' },
-  { src: welderIcon, label: 'Welding' },
+const TRUST = [
+  { icon: ShieldCheck, label: 'Verified employers' },
+  { icon: Wallet, label: 'Escrow pay' },
+  { icon: BadgeCheck, label: 'Free to start' },
 ] as const;
 
-/** Left / top journey panel — mobile strip, tablet+ side panel. */
-export default function SignupJourneyPanel() {
+const COPY = {
+  signup: {
+    badge: 'Worker signup',
+    BadgeIcon: UserPlus,
+    headline: 'Start your overseas career the safe way',
+    body: 'Create a free profile, verify your skills, and get matched with verified Gulf employers — no large upfront agent commission.',
+    steps: [
+      { n: '1', title: 'Create account', detail: 'Name, email, mobile OTP & password' },
+      { n: '2', title: 'Verify skills', detail: 'Profile, proofs & trade checks' },
+      { n: '3', title: 'Get matched', detail: 'Verified Gulf employers, escrow pay' },
+    ],
+  },
+  login: {
+    badge: 'Worker sign in',
+    BadgeIcon: LogIn,
+    headline: 'Welcome back — continue the safe way',
+    body: 'Sign in to pick up your verification journey and access verified Gulf opportunities — no agent fees.',
+    steps: [
+      { n: '1', title: 'Sign in', detail: 'Mobile or email + password' },
+      { n: '2', title: 'Continue journey', detail: 'Pick up where you left off' },
+      { n: '3', title: 'Get matched', detail: 'Verified Gulf employers, escrow pay' },
+    ],
+  },
+} as const;
+
+type Variant = keyof typeof COPY;
+
+/** Left / top trust panel for worker auth — Option A split layout. */
+export default function SignupJourneyPanel({ variant = 'signup' }: { variant?: Variant }) {
+  const copy = COPY[variant];
+  const BadgeIcon = copy.BadgeIcon;
+
   return (
-    <aside className="relative flex shrink-0 flex-col border-b border-border bg-background md:h-full md:w-[42%] md:border-b-0 md:border-r lg:w-[46%]">
-      {/* —— Mobile only: compact header + 3 stage chips —— */}
-      <div className="md:hidden">
-        <div className="relative h-24 overflow-hidden">
-          <img
-            src={heroWorkers}
-            alt=""
-            className="h-full w-full object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/20" />
-          <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 pt-3">
-            <Link to="/" className="inline-flex items-center gap-2 rounded-md bg-background/90 px-2 py-1">
-              <img src="/safework-global-logo.png" alt="" className="h-6 w-6 rounded object-contain" />
-              <span className="font-heading text-sm font-bold text-foreground">SafeWork Global</span>
-            </Link>
-            <span className="rounded bg-background/90 px-2 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
-              Worker
-            </span>
-          </div>
-          <div className="absolute inset-x-0 bottom-0 px-4 pb-2">
-            <p className="font-heading text-base font-bold text-foreground">Your path to GCC ready</p>
-          </div>
-        </div>
+    <aside className="relative flex shrink-0 flex-col overflow-hidden bg-[hsl(230_25%_10%)] text-white md:h-full md:w-[44%] lg:w-[46%]">
+      <div
+        className="pointer-events-none absolute inset-0"
+        aria-hidden
+        style={{
+          background:
+            'radial-gradient(ellipse at 20% 0%, hsl(230 85% 55% / 0.28), transparent 55%), radial-gradient(ellipse at 90% 85%, hsl(192 95% 48% / 0.14), transparent 50%)',
+        }}
+      />
 
-        <div className="grid grid-cols-3 gap-1.5 px-3 py-2.5">
-          {PHASES.map((phase, i) => {
-            const FirstIcon = JOURNEY_ICONS[phase.stepIds[0]];
-            return (
-              <div
-                key={phase.short}
-                className={`rounded-lg border px-2 py-2 text-center ${
-                  i === 0 ? 'border-primary/40 bg-primary/[0.07]' : 'border-border bg-muted/25'
-                }`}
-              >
-                <FirstIcon className="mx-auto mb-1 h-3.5 w-3.5 text-primary" />
-                <p className="text-[10px] font-bold leading-tight text-foreground">{phase.short}</p>
-                <p className="mt-0.5 text-[9px] leading-tight text-muted-foreground">
-                  {i === 0 ? 'Start' : `Stage ${i + 1}`}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* —— Tablet & desktop: full side panel —— */}
-      <div className="hidden h-full min-h-0 flex-col md:flex">
-        <div className="relative h-[28%] min-h-[7.5rem] shrink-0 overflow-hidden lg:h-[32%]">
-          <img
-            src={heroWorkers}
-            alt="Skilled workers preparing for overseas jobs"
-            className="h-full w-full object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-          <div className="absolute inset-x-0 top-0 flex items-center justify-between gap-2 px-5 py-3 lg:px-8 lg:py-4">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 rounded-lg bg-background/90 px-2 py-1 backdrop-blur-sm"
-            >
-              <img src="/safework-global-logo.png" alt="" className="h-7 w-7 rounded object-contain" />
-              <span className="font-heading text-sm font-bold tracking-tight text-foreground lg:text-base">
-                SafeWork Global
-              </span>
-            </Link>
-            <span className="rounded-md bg-background/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur-sm">
-              Worker
-            </span>
-          </div>
-          <div className="absolute inset-x-0 bottom-0 px-5 pb-3 lg:px-8 lg:pb-4">
-            <h1 className="font-heading text-xl font-bold tracking-tight text-foreground lg:text-2xl">
-              Your path to GCC ready
-            </h1>
-            <p className="mt-0.5 text-xs text-muted-foreground lg:text-sm">
-              Verified Gulf jobs · No agent fees
-            </p>
-          </div>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-3 border-y border-border bg-muted/25 px-5 py-2 lg:gap-4 lg:px-8">
-          {TRADES.map((t) => (
-            <div key={t.label} className="inline-flex items-center gap-1.5">
-              <img src={t.src} alt="" className="h-6 w-6 rounded object-contain" />
-              <span className="text-[11px] font-medium text-foreground">{t.label}</span>
+      {/* Mobile: compact brand strip */}
+      <div className="relative z-10 md:hidden">
+        <div className="flex items-center justify-between gap-3 px-4 pt-4">
+          <Link to="/" className="inline-flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-info">
+              <img src="/safework-global-logo.png" alt="" className="h-4 w-4" />
             </div>
-          ))}
-          <span className="ml-auto hidden text-[11px] font-medium text-muted-foreground xl:inline">
-            UAE · Saudi · Qatar · Kuwait · Oman
+            <span className="font-heading text-sm font-bold tracking-tight">SafeWorkGlobal</span>
+          </Link>
+          <span className="rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">
+            Worker
           </span>
         </div>
-
-        <div className="flex min-h-0 flex-1 flex-col justify-center gap-2 overflow-hidden px-5 py-3 lg:gap-2.5 lg:px-8 lg:py-4">
-          <div className="flex items-baseline justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
-              After you sign up
-            </p>
-            <p className="text-[11px] text-muted-foreground">3 stages</p>
-          </div>
-
-          <div className="grid min-h-0 flex-1 grid-rows-3 gap-2">
-            {PHASES.map((phase, phaseIdx) => (
+        <div className="px-4 pb-3 pt-3">
+          <p className="font-heading text-base font-bold leading-snug">{copy.headline}</p>
+          <div className="mt-3 grid grid-cols-3 gap-1.5">
+            {copy.steps.map((step, i) => (
               <div
-                key={phase.title}
-                className={`flex min-h-0 flex-col justify-center rounded-xl border px-3 py-2.5 ${
-                  phaseIdx === 0
-                    ? 'border-primary/35 bg-primary/[0.06]'
-                    : 'border-border bg-muted/20'
+                key={step.n}
+                className={`rounded-lg border px-2 py-2 text-center ${
+                  i === 0 ? 'border-primary/50 bg-primary/20' : 'border-white/10 bg-white/5'
                 }`}
               >
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-foreground">{phase.title}</p>
-                    <p className="text-[11px] text-muted-foreground">{phase.subtitle}</p>
-                  </div>
-                  {phaseIdx === 0 && (
-                    <span className="shrink-0 rounded bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground">
-                      Start
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {phase.stepIds.map((id, i) => {
-                    const Icon = JOURNEY_ICONS[id];
-                    return (
-                      <span
-                        key={id}
-                        className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-background px-1.5 py-1 text-[11px] font-medium text-foreground"
-                      >
-                        <Icon className="h-3 w-3 text-primary" />
-                        {phase.labels[i]}
-                      </span>
-                    );
-                  })}
-                </div>
+                <p className="text-[10px] font-bold text-white">{step.title}</p>
+                <p className="mt-0.5 text-[9px] text-white/50">Step {step.n}</p>
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Desktop / tablet: full trust panel */}
+      <div className="relative z-10 hidden h-full min-h-0 flex-col px-8 py-8 md:flex lg:px-10 lg:py-10">
+        <Link to="/" className="inline-flex items-center gap-2.5 self-start">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-info">
+            <img src="/safework-global-logo.png" alt="" className="h-5 w-5" />
+          </div>
+          <span className="font-heading text-base font-bold tracking-tight lg:text-lg">
+            SafeWorkGlobal
+          </span>
+        </Link>
+
+        <div className="mt-10 flex min-h-0 flex-1 flex-col justify-center lg:mt-12">
+          <div className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-white/70">
+            <BadgeIcon className="h-3.5 w-3.5 text-primary" />
+            {copy.badge}
+          </div>
+          <h1 className="font-heading text-2xl font-bold leading-tight tracking-tight lg:text-3xl xl:text-[2.1rem]">
+            {copy.headline}
+          </h1>
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/60 lg:text-[15px]">
+            {copy.body}
+          </p>
+
+          <ol className="mt-8 space-y-4 lg:mt-10 lg:space-y-5">
+            {copy.steps.map((step, i) => (
+              <li key={step.n} className="flex gap-3.5">
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                    i === 0
+                      ? 'bg-gradient-to-br from-primary to-info text-white shadow-[0_0_24px_hsl(230_85%_55%/0.35)]'
+                      : 'border border-white/15 bg-white/5 text-white/70'
+                  }`}
+                >
+                  {step.n}
+                </span>
+                <div className="min-w-0 pt-0.5">
+                  <p className="text-sm font-semibold text-white lg:text-[15px]">{step.title}</p>
+                  <p className="mt-0.5 text-xs text-white/50 lg:text-sm">{step.detail}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-x-4 gap-y-2 border-t border-white/10 pt-5 text-xs text-white/55 lg:gap-x-5">
+          {TRUST.map(({ icon: Icon, label }) => (
+            <span key={label} className="inline-flex items-center gap-1.5">
+              <Icon className="h-3.5 w-3.5 text-primary" />
+              {label}
+            </span>
+          ))}
         </div>
       </div>
     </aside>

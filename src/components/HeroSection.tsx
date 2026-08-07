@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import heroImage from "@/assets/hero-trust-journey.jpg";
+import heroImage from "@/assets/hero-indian-workers.jpg";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -49,8 +49,8 @@ const HeroSection = () => {
       <div className="absolute inset-0">
         <img
           src={heroImage}
-          alt="Workers preparing for verified overseas employment"
-          className="absolute inset-0 w-full h-full object-cover object-[center_30%]"
+          alt="Indian skilled workers departing for verified overseas employment"
+          className="absolute inset-0 w-full h-full object-cover object-[center_35%]"
         />
         {/* Theme-aligned readability overlays (primary indigo, not a new palette) */}
         <div className="absolute inset-0 bg-gradient-to-r from-foreground/90 via-foreground/70 to-foreground/25" />
