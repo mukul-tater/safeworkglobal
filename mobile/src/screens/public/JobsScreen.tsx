@@ -33,6 +33,8 @@ export default function JobsScreen({ navigation }: Props) {
   const [country, setCountry] = useState(route.params?.country ?? '');
   const [sort, setSort] = useState<SortOption>('recent');
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     if (route.params?.keyword) setKeyword(route.params.keyword);
     if (route.params?.country) setCountry(route.params.country);
@@ -40,7 +42,8 @@ export default function JobsScreen({ navigation }: Props) {
 
   const fetchJobs = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      setError(null);
+      const { data, error: fetchError } = await supabase
         .from('jobs')
         .select(
           'id, slug, title, location, country, salary_min, salary_max, currency, experience_level, job_type, created_at',
@@ -49,10 +52,11 @@ export default function JobsScreen({ navigation }: Props) {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setJobs(data ?? []);
-    } catch {
+    } catch (e) {
       setJobs([]);
+      setError(e instanceof Error ? e.message : 'Failed to load jobs');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -113,6 +117,7 @@ export default function JobsScreen({ navigation }: Props) {
             <Text style={styles.pageSubtitle}>
               Browse verified international jobs with salary protection
             </Text>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <Card elevated style={styles.searchCard}>
               <Input
@@ -215,6 +220,11 @@ const styles = StyleSheet.create({
   pageSubtitle: {
     ...typography.bodySm,
     marginBottom: spacing.lg,
+  },
+  errorText: {
+    ...typography.bodySm,
+    color: colors.destructive,
+    marginBottom: spacing.md,
   },
   searchCard: {
     marginBottom: spacing.lg,

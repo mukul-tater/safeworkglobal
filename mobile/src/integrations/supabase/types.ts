@@ -50,7 +50,7 @@ export type Database = {
       application_status_history: {
         Row: {
           application_id: string
-          changed_by: string
+          changed_by: string | null
           created_at: string | null
           id: string
           notes: string | null
@@ -58,7 +58,7 @@ export type Database = {
         }
         Insert: {
           application_id: string
-          changed_by: string
+          changed_by?: string | null
           created_at?: string | null
           id?: string
           notes?: string | null
@@ -66,7 +66,7 @@ export type Database = {
         }
         Update: {
           application_id?: string
-          changed_by?: string
+          changed_by?: string | null
           created_at?: string | null
           id?: string
           notes?: string | null
@@ -78,6 +78,266 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_media: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string | null
+          media_type: string
+          storage_path: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          media_type: string
+          storage_path: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string | null
+          media_type?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_media_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_scores: {
+        Row: {
+          accuracy: number
+          assessment_id: string
+          assessor_name: string
+          created_at: string
+          id: string
+          practical_skills: number
+          productivity: number
+          quality: number
+          remarks: string | null
+          safety_ppe: number
+          submitted_at: string
+          time_taken: number
+          tool_identification: number
+          workplace_behaviour: number
+        }
+        Insert: {
+          accuracy?: number
+          assessment_id: string
+          assessor_name: string
+          created_at?: string
+          id?: string
+          practical_skills?: number
+          productivity?: number
+          quality?: number
+          remarks?: string | null
+          safety_ppe?: number
+          submitted_at?: string
+          time_taken?: number
+          tool_identification?: number
+          workplace_behaviour?: number
+        }
+        Update: {
+          accuracy?: number
+          assessment_id?: string
+          assessor_name?: string
+          created_at?: string
+          id?: string
+          practical_skills?: number
+          productivity?: number
+          quality?: number
+          remarks?: string | null
+          safety_ppe?: number
+          submitted_at?: string
+          time_taken?: number
+          tool_identification?: number
+          workplace_behaviour?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_scores_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: true
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessments: {
+        Row: {
+          aadhaar_verified: boolean
+          accepted_at: string | null
+          appointment_date: string | null
+          assessor_name: string | null
+          attendance_confirmed: boolean
+          centre_submitted_at: string | null
+          created_at: string
+          created_by: string | null
+          docs_experience_ok: boolean | null
+          docs_notes: string | null
+          docs_passport_ok: boolean | null
+          employer_id: string | null
+          end_time: string | null
+          equipment: Json
+          face_match_confirmed: boolean
+          id: string
+          job_id: string | null
+          kyc_completed_at: string | null
+          kyc_photo_path: string | null
+          kyc_video_path: string | null
+          location: string | null
+          media: Json
+          outcome: string | null
+          overall_score: number | null
+          partner_id: string | null
+          quality_notes: string | null
+          quality_reviewed_at: string | null
+          quality_reviewed_by: string | null
+          recommendation: string | null
+          reject_reason: string | null
+          rejected_at: string | null
+          remarks: string | null
+          reported_at: string | null
+          reporting_window: string | null
+          scheduled_at: string | null
+          scores: Json
+          start_time: string | null
+          status: Database["public"]["Enums"]["assessment_status"]
+          trade_id: string | null
+          trade_level: string | null
+          trade_test_center_id: string | null
+          updated_at: string
+          worker_id: string
+          worker_verification_id: string | null
+        }
+        Insert: {
+          aadhaar_verified?: boolean
+          accepted_at?: string | null
+          appointment_date?: string | null
+          assessor_name?: string | null
+          attendance_confirmed?: boolean
+          centre_submitted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          docs_experience_ok?: boolean | null
+          docs_notes?: string | null
+          docs_passport_ok?: boolean | null
+          employer_id?: string | null
+          end_time?: string | null
+          equipment?: Json
+          face_match_confirmed?: boolean
+          id?: string
+          job_id?: string | null
+          kyc_completed_at?: string | null
+          kyc_photo_path?: string | null
+          kyc_video_path?: string | null
+          location?: string | null
+          media?: Json
+          outcome?: string | null
+          overall_score?: number | null
+          partner_id?: string | null
+          quality_notes?: string | null
+          quality_reviewed_at?: string | null
+          quality_reviewed_by?: string | null
+          recommendation?: string | null
+          reject_reason?: string | null
+          rejected_at?: string | null
+          remarks?: string | null
+          reported_at?: string | null
+          reporting_window?: string | null
+          scheduled_at?: string | null
+          scores?: Json
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["assessment_status"]
+          trade_id?: string | null
+          trade_level?: string | null
+          trade_test_center_id?: string | null
+          updated_at?: string
+          worker_id: string
+          worker_verification_id?: string | null
+        }
+        Update: {
+          aadhaar_verified?: boolean
+          accepted_at?: string | null
+          appointment_date?: string | null
+          assessor_name?: string | null
+          attendance_confirmed?: boolean
+          centre_submitted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          docs_experience_ok?: boolean | null
+          docs_notes?: string | null
+          docs_passport_ok?: boolean | null
+          employer_id?: string | null
+          end_time?: string | null
+          equipment?: Json
+          face_match_confirmed?: boolean
+          id?: string
+          job_id?: string | null
+          kyc_completed_at?: string | null
+          kyc_photo_path?: string | null
+          kyc_video_path?: string | null
+          location?: string | null
+          media?: Json
+          outcome?: string | null
+          overall_score?: number | null
+          partner_id?: string | null
+          quality_notes?: string | null
+          quality_reviewed_at?: string | null
+          quality_reviewed_by?: string | null
+          recommendation?: string | null
+          reject_reason?: string | null
+          rejected_at?: string | null
+          remarks?: string | null
+          reported_at?: string | null
+          reporting_window?: string | null
+          scheduled_at?: string | null
+          scores?: Json
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["assessment_status"]
+          trade_id?: string | null
+          trade_level?: string | null
+          trade_test_center_id?: string | null
+          updated_at?: string
+          worker_id?: string
+          worker_verification_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_trade_id_fkey"
+            columns: ["trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_trade_test_center_id_fkey"
+            columns: ["trade_test_center_id"]
+            isOneToOne: false
+            referencedRelation: "trade_test_centers"
             referencedColumns: ["id"]
           },
         ]
@@ -127,6 +387,45 @@ export type Database = {
           verification_type?: string
           verified_by?: string | null
           worker_id?: string
+        }
+        Relationships: []
+      }
+      bond_templates: {
+        Row: {
+          active: boolean
+          courier_address: string
+          created_at: string
+          created_by: string | null
+          file_url: string
+          id: string
+          instructions: string | null
+          title: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          active?: boolean
+          courier_address?: string
+          created_at?: string
+          created_by?: string | null
+          file_url: string
+          id?: string
+          instructions?: string | null
+          title?: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          active?: boolean
+          courier_address?: string
+          created_at?: string
+          created_by?: string | null
+          file_url?: string
+          id?: string
+          instructions?: string | null
+          title?: string
+          updated_at?: string
+          version?: string
         }
         Relationships: []
       }
@@ -518,6 +817,30 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_rates: {
+        Row: {
+          currency_code: string
+          id: string
+          inr_per_unit: number
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          currency_code: string
+          id?: string
+          inr_per_unit: number
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          currency_code?: string
+          id?: string
+          inr_per_unit?: number
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interviews: {
         Row: {
           application_id: string
@@ -620,7 +943,15 @@ export type Database = {
           updated_at?: string | null
           worker_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       job_formalities: {
         Row: {
@@ -881,6 +1212,141 @@ export type Database = {
           },
         ]
       }
+      lsp_launch_logs: {
+        Row: {
+          created_at: string
+          id: string
+          lsp_code: string | null
+          lsp_id: string | null
+          reason: string | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lsp_code?: string | null
+          lsp_id?: string | null
+          reason?: string | null
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lsp_code?: string | null
+          lsp_id?: string | null
+          reason?: string | null
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lsp_launch_logs_lsp_id_fkey"
+            columns: ["lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lsp_launch_logs_lsp_id_fkey"
+            columns: ["lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lsp_launch_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          lsp_id: string
+          payload: Json
+          token_hash: string
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          lsp_id: string
+          payload?: Json
+          token_hash: string
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          lsp_id?: string
+          payload?: Json
+          token_hash?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lsp_launch_tokens_lsp_id_fkey"
+            columns: ["lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lsp_launch_tokens_lsp_id_fkey"
+            columns: ["lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lsp_partners: {
+        Row: {
+          allowed_origins: string[] | null
+          code: string
+          contact_email: string | null
+          contact_mobile: string | null
+          contact_name: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          name: string
+          state: string
+          status: string
+          token_secret: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_origins?: string[] | null
+          code: string
+          contact_email?: string | null
+          contact_mobile?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          name: string
+          state?: string
+          status?: string
+          token_secret: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_origins?: string[] | null
+          code?: string
+          contact_email?: string | null
+          contact_mobile?: string | null
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          name?: string
+          state?: string
+          status?: string
+          token_secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -1042,6 +1508,377 @@ export type Database = {
           },
         ]
       }
+      partner_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          partner_profile_id: string
+          title: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          partner_profile_id: string
+          title: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          partner_profile_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_activities_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          assignment_type: string
+          completed_at: string | null
+          id: string
+          metadata: Json
+          partner_id: string
+          status: string
+          subject_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_type: string
+          completed_at?: string | null
+          id?: string
+          metadata?: Json
+          partner_id: string
+          status?: string
+          subject_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_type?: string
+          completed_at?: string | null
+          id?: string
+          metadata?: Json
+          partner_id?: string
+          status?: string
+          subject_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_assignments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          file_url: string
+          id: string
+          notes: string | null
+          partner_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          file_url: string
+          id?: string
+          notes?: string | null
+          partner_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          file_url?: string
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_documents_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_incentives: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          incentive_type: Database["public"]["Enums"]["partner_incentive_type"]
+          partner_profile_id: string
+          worker_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          incentive_type: Database["public"]["Enums"]["partner_incentive_type"]
+          partner_profile_id: string
+          worker_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          incentive_type?: Database["public"]["Enums"]["partner_incentive_type"]
+          partner_profile_id?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_incentives_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_incentives_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "partner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_invoices: {
+        Row: {
+          created_at: string
+          currency: string
+          due_at: string | null
+          id: string
+          invoice_number: string
+          issued_at: string | null
+          line_items: Json
+          notes: string | null
+          paid_at: string | null
+          partner_id: string
+          period_end: string | null
+          period_start: string | null
+          status: Database["public"]["Enums"]["partner_invoice_status"]
+          subtotal: number
+          tax: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          due_at?: string | null
+          id?: string
+          invoice_number: string
+          issued_at?: string | null
+          line_items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          partner_id: string
+          period_end?: string | null
+          period_start?: string | null
+          status?: Database["public"]["Enums"]["partner_invoice_status"]
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          due_at?: string | null
+          id?: string
+          invoice_number?: string
+          issued_at?: string | null
+          line_items?: Json
+          notes?: string | null
+          paid_at?: string | null
+          partner_id?: string
+          period_end?: string | null
+          period_start?: string | null
+          status?: Database["public"]["Enums"]["partner_invoice_status"]
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invoices_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          partner_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          partner_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          partner_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_notifications_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_payout_requests: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          bank_details: Json
+          created_at: string
+          currency: string
+          id: string
+          method: string
+          partner_id: string
+          processed_at: string | null
+          processed_by: string | null
+          reference: string | null
+          rejection_reason: string | null
+          requested_at: string
+          status: Database["public"]["Enums"]["partner_payout_status"]
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          bank_details?: Json
+          created_at?: string
+          currency?: string
+          id?: string
+          method?: string
+          partner_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reference?: string | null
+          rejection_reason?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["partner_payout_status"]
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          bank_details?: Json
+          created_at?: string
+          currency?: string
+          id?: string
+          method?: string
+          partner_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reference?: string | null
+          rejection_reason?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["partner_payout_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_payout_requests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_permissions: {
+        Row: {
+          id: string
+          partner_id: string
+          permissions: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          partner_id: string
+          permissions?: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          partner_id?: string
+          permissions?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_permissions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_profiles: {
         Row: {
           aadhaar_back_url: string | null
@@ -1054,6 +1891,9 @@ export type Database = {
           address: string | null
           address_proof_url: string | null
           agency_name: string | null
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
           bio: string | null
           center_name: string | null
           commission_rate: number | null
@@ -1074,6 +1914,7 @@ export type Database = {
           info_request_message: string | null
           leaderboard_rank: number | null
           license_number: string | null
+          lsp_verified_at: string | null
           mobile: string | null
           mobile_verified: boolean | null
           monthly_footfall: number | null
@@ -1094,6 +1935,7 @@ export type Database = {
           reviewed_by: string | null
           services_offered: string[] | null
           shop_photo_url: string | null
+          source_lsp_id: string | null
           state: string | null
           status: Database["public"]["Enums"]["partner_status"]
           submitted_at: string | null
@@ -1121,6 +1963,9 @@ export type Database = {
           address?: string | null
           address_proof_url?: string | null
           agency_name?: string | null
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           bio?: string | null
           center_name?: string | null
           commission_rate?: number | null
@@ -1141,6 +1986,7 @@ export type Database = {
           info_request_message?: string | null
           leaderboard_rank?: number | null
           license_number?: string | null
+          lsp_verified_at?: string | null
           mobile?: string | null
           mobile_verified?: boolean | null
           monthly_footfall?: number | null
@@ -1161,6 +2007,7 @@ export type Database = {
           reviewed_by?: string | null
           services_offered?: string[] | null
           shop_photo_url?: string | null
+          source_lsp_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["partner_status"]
           submitted_at?: string | null
@@ -1188,6 +2035,9 @@ export type Database = {
           address?: string | null
           address_proof_url?: string | null
           agency_name?: string | null
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           bio?: string | null
           center_name?: string | null
           commission_rate?: number | null
@@ -1208,6 +2058,7 @@ export type Database = {
           info_request_message?: string | null
           leaderboard_rank?: number | null
           license_number?: string | null
+          lsp_verified_at?: string | null
           mobile?: string | null
           mobile_verified?: boolean | null
           monthly_footfall?: number | null
@@ -1228,6 +2079,7 @@ export type Database = {
           reviewed_by?: string | null
           services_offered?: string[] | null
           shop_photo_url?: string | null
+          source_lsp_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["partner_status"]
           submitted_at?: string | null
@@ -1244,7 +2096,630 @@ export type Database = {
           workers_registered?: number | null
           years_in_operation?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "partner_profiles_source_lsp_id_fkey"
+            columns: ["source_lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_profiles_source_lsp_id_fkey"
+            columns: ["source_lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_profiles_ext: {
+        Row: {
+          address: string | null
+          bank: Json
+          company_name: string
+          created_at: string
+          email: string | null
+          gst: string | null
+          id: string
+          metadata: Json
+          mobile: string | null
+          owner_name: string | null
+          pan: string | null
+          partner_id: string
+          pincode: string | null
+          updated_at: string
+          upi: string | null
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank?: Json
+          company_name: string
+          created_at?: string
+          email?: string | null
+          gst?: string | null
+          id?: string
+          metadata?: Json
+          mobile?: string | null
+          owner_name?: string | null
+          pan?: string | null
+          partner_id: string
+          pincode?: string | null
+          updated_at?: string
+          upi?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank?: Json
+          company_name?: string
+          created_at?: string
+          email?: string | null
+          gst?: string | null
+          id?: string
+          metadata?: Json
+          mobile?: string | null
+          owner_name?: string | null
+          pan?: string | null
+          partner_id?: string
+          pincode?: string | null
+          updated_at?: string
+          upi?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_profiles_ext_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_reward_config: {
+        Row: {
+          id: boolean
+          placement_reward_amount: number
+          updated_at: string
+          updated_by: string | null
+          worker_fee_amount: number
+        }
+        Insert: {
+          id?: boolean
+          placement_reward_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+          worker_fee_amount?: number
+        }
+        Update: {
+          id?: boolean
+          placement_reward_amount?: number
+          updated_at?: string
+          updated_by?: string | null
+          worker_fee_amount?: number
+        }
         Relationships: []
+      }
+      partner_support_messages: {
+        Row: {
+          attachments: Json
+          body: string
+          created_at: string
+          id: string
+          sender_id: string
+          sender_role: string
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: Json
+          body: string
+          created_at?: string
+          id?: string
+          sender_id: string
+          sender_role: string
+          ticket_id: string
+        }
+        Update: {
+          attachments?: Json
+          body?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+          sender_role?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "partner_support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_support_tickets: {
+        Row: {
+          assigned_admin: string | null
+          category: string | null
+          created_at: string
+          id: string
+          last_reply_at: string | null
+          partner_id: string
+          priority: Database["public"]["Enums"]["support_ticket_priority"]
+          status: Database["public"]["Enums"]["support_ticket_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_admin?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_reply_at?: string | null
+          partner_id: string
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_admin?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_reply_at?: string | null
+          partner_id?: string
+          priority?: Database["public"]["Enums"]["support_ticket_priority"]
+          status?: Database["public"]["Enums"]["support_ticket_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_support_tickets_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json
+          partner_id: string
+          reference_id: string | null
+          reference_type: string | null
+          status: string
+          txn_type: Database["public"]["Enums"]["partner_txn_type"]
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          partner_id: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          txn_type: Database["public"]["Enums"]["partner_txn_type"]
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          partner_id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          txn_type?: Database["public"]["Enums"]["partner_txn_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_transactions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_types: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          default_permissions: Json
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          default_permissions?: Json
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          default_permissions?: Json
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      partner_wallets: {
+        Row: {
+          available_balance: number
+          currency: string
+          id: string
+          partner_id: string
+          pending_balance: number
+          updated_at: string
+        }
+        Insert: {
+          available_balance?: number
+          currency?: string
+          id?: string
+          partner_id: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          available_balance?: number
+          currency?: string
+          id?: string
+          partner_id?: string
+          pending_balance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_wallets_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_worker_drafts: {
+        Row: {
+          created_at: string
+          current_step: number
+          draft_data: Json
+          id: string
+          partner_profile_id: string
+          photo_url: string | null
+          updated_at: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_step?: number
+          draft_data?: Json
+          id?: string
+          partner_profile_id: string
+          photo_url?: string | null
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_step?: number
+          draft_data?: Json
+          id?: string
+          partner_profile_id?: string
+          photo_url?: string | null
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_worker_drafts_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_worker_skill_tests: {
+        Row: {
+          created_at: string
+          evaluated_at: string | null
+          evaluated_by: string | null
+          fee_received: boolean
+          id: string
+          notes: string | null
+          partner_profile_id: string
+          partner_worker_id: string
+          stage: Database["public"]["Enums"]["partner_skill_test_stage"]
+          status: Database["public"]["Enums"]["partner_skill_test_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          fee_received?: boolean
+          id?: string
+          notes?: string | null
+          partner_profile_id: string
+          partner_worker_id: string
+          stage: Database["public"]["Enums"]["partner_skill_test_stage"]
+          status?: Database["public"]["Enums"]["partner_skill_test_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          fee_received?: boolean
+          id?: string
+          notes?: string | null
+          partner_profile_id?: string
+          partner_worker_id?: string
+          stage?: Database["public"]["Enums"]["partner_skill_test_stage"]
+          status?: Database["public"]["Enums"]["partner_skill_test_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_worker_skill_tests_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_worker_skill_tests_partner_worker_id_fkey"
+            columns: ["partner_worker_id"]
+            isOneToOne: false
+            referencedRelation: "partner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_worker_status_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["partner_worker_status"]
+          worker_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status: Database["public"]["Enums"]["partner_worker_status"]
+          worker_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["partner_worker_status"]
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_worker_status_history_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "partner_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_workers: {
+        Row: {
+          created_at: string
+          district: string | null
+          expected_salary: number | null
+          experience_level: string
+          family_consent: boolean | null
+          full_name: string
+          id: string
+          migration_category:
+            | Database["public"]["Enums"]["migration_readiness_category"]
+            | null
+          migration_readiness_score: number | null
+          mobile: string
+          operator_notes: string | null
+          partner_profile_id: string
+          passport_available: boolean | null
+          phase1_worker_id: number | null
+          photo_url: string | null
+          preferred_country: string | null
+          previous_gcc_experience: boolean | null
+          ready_to_relocate: boolean | null
+          registration_source: string
+          skill: string
+          skill_level: string | null
+          source_lsp_id: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["partner_worker_status"]
+          updated_at: string
+          video_url: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          district?: string | null
+          expected_salary?: number | null
+          experience_level: string
+          family_consent?: boolean | null
+          full_name: string
+          id?: string
+          migration_category?:
+            | Database["public"]["Enums"]["migration_readiness_category"]
+            | null
+          migration_readiness_score?: number | null
+          mobile: string
+          operator_notes?: string | null
+          partner_profile_id: string
+          passport_available?: boolean | null
+          phase1_worker_id?: number | null
+          photo_url?: string | null
+          preferred_country?: string | null
+          previous_gcc_experience?: boolean | null
+          ready_to_relocate?: boolean | null
+          registration_source?: string
+          skill: string
+          skill_level?: string | null
+          source_lsp_id?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_worker_status"]
+          updated_at?: string
+          video_url?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          district?: string | null
+          expected_salary?: number | null
+          experience_level?: string
+          family_consent?: boolean | null
+          full_name?: string
+          id?: string
+          migration_category?:
+            | Database["public"]["Enums"]["migration_readiness_category"]
+            | null
+          migration_readiness_score?: number | null
+          mobile?: string
+          operator_notes?: string | null
+          partner_profile_id?: string
+          passport_available?: boolean | null
+          phase1_worker_id?: number | null
+          photo_url?: string | null
+          preferred_country?: string | null
+          previous_gcc_experience?: boolean | null
+          ready_to_relocate?: boolean | null
+          registration_source?: string
+          skill?: string
+          skill_level?: string | null
+          source_lsp_id?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_worker_status"]
+          updated_at?: string
+          video_url?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_workers_partner_profile_id_fkey"
+            columns: ["partner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_workers_source_lsp_id_fkey"
+            columns: ["source_lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_workers_source_lsp_id_fkey"
+            columns: ["source_lsp_id"]
+            isOneToOne: false
+            referencedRelation: "lsp_partners_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partners: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          city: string | null
+          created_at: string
+          district: string | null
+          id: string
+          metadata: Json
+          partner_code: string | null
+          partner_type_id: string
+          rating: number | null
+          rejection_reason: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["partner_org_status"]
+          updated_at: string
+          user_id: string
+          verification_status: Database["public"]["Enums"]["partner_verification_status"]
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          city?: string | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          metadata?: Json
+          partner_code?: string | null
+          partner_type_id: string
+          rating?: number | null
+          rejection_reason?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_org_status"]
+          updated_at?: string
+          user_id: string
+          verification_status?: Database["public"]["Enums"]["partner_verification_status"]
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          city?: string | null
+          created_at?: string
+          district?: string | null
+          id?: string
+          metadata?: Json
+          partner_code?: string | null
+          partner_type_id?: string
+          rating?: number | null
+          rejection_reason?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["partner_org_status"]
+          updated_at?: string
+          user_id?: string
+          verification_status?: Database["public"]["Enums"]["partner_verification_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_partner_type_id_fkey"
+            columns: ["partner_type_id"]
+            isOneToOne: false
+            referencedRelation: "partner_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -1392,6 +2867,67 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_transactions: {
+        Row: {
+          amount: number
+          application_id: string | null
+          created_at: string
+          id: string
+          job_id: string | null
+          partner_id: string
+          status: string
+          updated_at: string
+          withdrawal_id: string | null
+          worker_id: string
+        }
+        Insert: {
+          amount: number
+          application_id?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          partner_id: string
+          status?: string
+          updated_at?: string
+          withdrawal_id?: string | null
+          worker_id: string
+        }
+        Update: {
+          amount?: number
+          application_id?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          partner_id?: string
+          status?: string
+          updated_at?: string
+          withdrawal_id?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_transactions_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_transactions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_transactions_withdrawal_fk"
+            columns: ["withdrawal_id"]
+            isOneToOne: false
+            referencedRelation: "withdrawal_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_jobs: {
         Row: {
           created_at: string
@@ -1460,6 +2996,134 @@ export type Database = {
         }
         Relationships: []
       }
+      sen_global_commissions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          earned_at: string | null
+          employer_id: string | null
+          id: string
+          job_id: string | null
+          lead_id: string | null
+          metadata: Json
+          paid_at: string | null
+          partner_id: string
+          reference: string | null
+          status: Database["public"]["Enums"]["sen_commission_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          earned_at?: string | null
+          employer_id?: string | null
+          id?: string
+          job_id?: string | null
+          lead_id?: string | null
+          metadata?: Json
+          paid_at?: string | null
+          partner_id: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["sen_commission_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          earned_at?: string | null
+          employer_id?: string | null
+          id?: string
+          job_id?: string | null
+          lead_id?: string | null
+          metadata?: Json
+          paid_at?: string | null
+          partner_id?: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["sen_commission_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sen_global_commissions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sen_global_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sen_global_commissions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sen_global_leads: {
+        Row: {
+          company_name: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          converted_employer_id: string | null
+          country: string | null
+          created_at: string
+          estimated_hires: number | null
+          id: string
+          industry: string | null
+          metadata: Json
+          notes: string | null
+          partner_id: string
+          status: Database["public"]["Enums"]["sen_lead_status"]
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          converted_employer_id?: string | null
+          country?: string | null
+          created_at?: string
+          estimated_hires?: number | null
+          id?: string
+          industry?: string | null
+          metadata?: Json
+          notes?: string | null
+          partner_id: string
+          status?: Database["public"]["Enums"]["sen_lead_status"]
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          converted_employer_id?: string | null
+          country?: string | null
+          created_at?: string
+          estimated_hires?: number | null
+          id?: string
+          industry?: string | null
+          metadata?: Json
+          notes?: string | null
+          partner_id?: string
+          status?: Database["public"]["Enums"]["sen_lead_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sen_global_leads_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shortlisted_workers: {
         Row: {
           created_at: string | null
@@ -1490,6 +3154,217 @@ export type Database = {
           rating?: number | null
           updated_at?: string | null
           worker_id?: string
+        }
+        Relationships: []
+      }
+      skill_quiz_configs: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          pass_score: number
+          questions_to_show: number
+          region: string | null
+          selected_ids: string[]
+          selection_mode: string
+          skill_code: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          pass_score?: number
+          questions_to_show?: number
+          region?: string | null
+          selected_ids?: string[]
+          selection_mode?: string
+          skill_code: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          pass_score?: number
+          questions_to_show?: number
+          region?: string | null
+          selected_ids?: string[]
+          selection_mode?: string
+          skill_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      srn_stage_documents: {
+        Row: {
+          doc_type: string
+          file_url: string
+          id: string
+          notes: string | null
+          partner_id: string
+          stage_id: string
+          status: string
+          uploaded_at: string
+        }
+        Insert: {
+          doc_type: string
+          file_url: string
+          id?: string
+          notes?: string | null
+          partner_id: string
+          stage_id: string
+          status?: string
+          uploaded_at?: string
+        }
+        Update: {
+          doc_type?: string
+          file_url?: string
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          stage_id?: string
+          status?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "srn_stage_documents_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "srn_stage_documents_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "srn_worker_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      srn_worker_stages: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          job_id: string | null
+          metadata: Json
+          notes: string | null
+          partner_id: string
+          scheduled_at: string | null
+          stage: Database["public"]["Enums"]["srn_stage_code"]
+          status: Database["public"]["Enums"]["srn_stage_status"]
+          updated_at: string
+          worker_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          metadata?: Json
+          notes?: string | null
+          partner_id: string
+          scheduled_at?: string | null
+          stage: Database["public"]["Enums"]["srn_stage_code"]
+          status?: Database["public"]["Enums"]["srn_stage_status"]
+          updated_at?: string
+          worker_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          metadata?: Json
+          notes?: string | null
+          partner_id?: string
+          scheduled_at?: string | null
+          stage?: Database["public"]["Enums"]["srn_stage_code"]
+          status?: Database["public"]["Enums"]["srn_stage_status"]
+          updated_at?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "srn_worker_stages_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trade_test_centers: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          partner_id: string | null
+          reporting_window: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id: string
+          is_active?: boolean
+          name: string
+          partner_id?: string | null
+          reporting_window?: string
+          state: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          partner_id?: string | null
+          reporting_window?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_test_centers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trades: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
         }
         Relationships: []
       }
@@ -1589,6 +3464,71 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          account_holder: string | null
+          account_number: string | null
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          id: string
+          ifsc: string | null
+          paid_at: string | null
+          partner_id: string
+          payment_reference: string | null
+          processed_at: string | null
+          processed_by: string | null
+          rejection_reason: string | null
+          status: string
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          account_holder?: string | null
+          account_number?: string | null
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          ifsc?: string | null
+          paid_at?: string | null
+          partner_id: string
+          payment_reference?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          account_holder?: string | null
+          account_number?: string | null
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          ifsc?: string | null
+          paid_at?: string | null
+          partner_id?: string
+          payment_reference?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_experience: {
         Row: {
           company_name: string
@@ -1635,6 +3575,78 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      worker_assessment_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          provider: string | null
+          provider_ref: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          provider?: string | null
+          provider_ref?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          provider?: string | null
+          provider_ref?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      worker_bonds: {
+        Row: {
+          created_at: string
+          id: string
+          method: string
+          notes: string | null
+          stamp_doc_url: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          video_proof_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          method: string
+          notes?: string | null
+          stamp_doc_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          video_proof_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          stamp_doc_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          video_proof_url?: string | null
+        }
+        Relationships: []
       }
       worker_certifications: {
         Row: {
@@ -1831,6 +3843,8 @@ export type Database = {
       }
       worker_profiles: {
         Row: {
+          aadhaar_last4: string | null
+          aadhaar_number: string | null
           availability: string | null
           bio: string | null
           country: string | null
@@ -1848,17 +3862,30 @@ export type Database = {
           has_passport: boolean | null
           has_visa: boolean | null
           id: string
+          kyc_consent_at: string | null
+          kyc_status: string
+          kyc_submitted_at: string | null
           languages: string[] | null
           nationality: string | null
+          onboarded_at: string | null
           onboarding_completed: boolean | null
           open_to_relocation: boolean | null
+          pan_number: string | null
+          passport_expiry: string | null
           passport_number: string | null
           preferred_shift: string | null
           preferred_work_city: string | null
+          primary_skill: string | null
           primary_work_type: string | null
           project_types_worked: string[] | null
+          review_notes: string | null
+          review_rejection_reason: string | null
+          review_status: string
           secondary_skills: string[] | null
           skill_level: string | null
+          source_partner_id: string | null
+          source_type: string
+          tenth_pass_confirmed: boolean
           updated_at: string | null
           user_id: string
           visa_countries: string[] | null
@@ -1866,6 +3893,8 @@ export type Database = {
           years_of_experience: number | null
         }
         Insert: {
+          aadhaar_last4?: string | null
+          aadhaar_number?: string | null
           availability?: string | null
           bio?: string | null
           country?: string | null
@@ -1883,17 +3912,30 @@ export type Database = {
           has_passport?: boolean | null
           has_visa?: boolean | null
           id?: string
+          kyc_consent_at?: string | null
+          kyc_status?: string
+          kyc_submitted_at?: string | null
           languages?: string[] | null
           nationality?: string | null
+          onboarded_at?: string | null
           onboarding_completed?: boolean | null
           open_to_relocation?: boolean | null
+          pan_number?: string | null
+          passport_expiry?: string | null
           passport_number?: string | null
           preferred_shift?: string | null
           preferred_work_city?: string | null
+          primary_skill?: string | null
           primary_work_type?: string | null
           project_types_worked?: string[] | null
+          review_notes?: string | null
+          review_rejection_reason?: string | null
+          review_status?: string
           secondary_skills?: string[] | null
           skill_level?: string | null
+          source_partner_id?: string | null
+          source_type?: string
+          tenth_pass_confirmed?: boolean
           updated_at?: string | null
           user_id: string
           visa_countries?: string[] | null
@@ -1901,6 +3943,8 @@ export type Database = {
           years_of_experience?: number | null
         }
         Update: {
+          aadhaar_last4?: string | null
+          aadhaar_number?: string | null
           availability?: string | null
           bio?: string | null
           country?: string | null
@@ -1918,24 +3962,170 @@ export type Database = {
           has_passport?: boolean | null
           has_visa?: boolean | null
           id?: string
+          kyc_consent_at?: string | null
+          kyc_status?: string
+          kyc_submitted_at?: string | null
           languages?: string[] | null
           nationality?: string | null
+          onboarded_at?: string | null
           onboarding_completed?: boolean | null
           open_to_relocation?: boolean | null
+          pan_number?: string | null
+          passport_expiry?: string | null
           passport_number?: string | null
           preferred_shift?: string | null
           preferred_work_city?: string | null
+          primary_skill?: string | null
           primary_work_type?: string | null
           project_types_worked?: string[] | null
+          review_notes?: string | null
+          review_rejection_reason?: string | null
+          review_status?: string
           secondary_skills?: string[] | null
           skill_level?: string | null
+          source_partner_id?: string | null
+          source_type?: string
+          tenth_pass_confirmed?: boolean
           updated_at?: string | null
           user_id?: string
           visa_countries?: string[] | null
           work_preference?: string | null
           years_of_experience?: number | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "worker_profiles_source_partner_id_fkey"
+            columns: ["source_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partner_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worker_skill_media: {
+        Row: {
+          created_at: string | null
+          file_path: string
+          id: string
+          media_type: string
+          skill_id: string
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_path: string
+          id?: string
+          media_type: string
+          skill_id: string
+          worker_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string
+          id?: string
+          media_type?: string
+          skill_id?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_skill_media_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "worker_skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_skill_media_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "worker_profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      worker_skill_quiz_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          expected_answer: boolean
+          id: string
+          image_url: string | null
+          options: Json | null
+          question: string
+          question_hi: string | null
+          region: string | null
+          skill_code: string
+          sort_order: number
+          updated_at: string
+          youtube_url: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          expected_answer?: boolean
+          id?: string
+          image_url?: string | null
+          options?: Json | null
+          question: string
+          question_hi?: string | null
+          region?: string | null
+          skill_code: string
+          sort_order?: number
+          updated_at?: string
+          youtube_url?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          expected_answer?: boolean
+          id?: string
+          image_url?: string | null
+          options?: Json | null
+          question?: string
+          question_hi?: string | null
+          region?: string | null
+          skill_code?: string
+          sort_order?: number
+          updated_at?: string
+          youtube_url?: string | null
+        }
         Relationships: []
+      }
+      worker_skill_quiz_responses: {
+        Row: {
+          answer: boolean
+          created_at: string
+          id: string
+          is_correct: boolean
+          quiz_item_id: string
+          user_id: string
+        }
+        Insert: {
+          answer: boolean
+          created_at?: string
+          id?: string
+          is_correct: boolean
+          quiz_item_id: string
+          user_id: string
+        }
+        Update: {
+          answer?: boolean
+          created_at?: string
+          id?: string
+          is_correct?: boolean
+          quiz_item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_skill_quiz_responses_quiz_item_id_fkey"
+            columns: ["quiz_item_id"]
+            isOneToOne: false
+            referencedRelation: "worker_skill_quiz_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       worker_skills: {
         Row: {
@@ -2019,6 +4209,294 @@ export type Database = {
           },
         ]
       }
+      worker_verification: {
+        Row: {
+          assessment_id: string | null
+          bond_courier_tracking: string | null
+          bond_couriered_at: string | null
+          bond_received_at: string | null
+          bond_status: string | null
+          bond_template_id: string | null
+          city: string | null
+          created_at: string
+          deploy_contract_status: string
+          deploy_emigration_status: string
+          deploy_insurance_status: string
+          deploy_offer_status: string
+          deploy_ticket_status: string
+          deploy_visa_status: string
+          deployed_at: string | null
+          deployment_notes: string | null
+          education_level: string | null
+          email: string | null
+          essentials_completed_at: string | null
+          gcc_ready_at: string | null
+          id: string
+          interview_attempts: number
+          interview_meeting_url: string | null
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_scheduled_at: string | null
+          interview_score: number | null
+          interview_status: string
+          interviewer_user_id: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
+          media_submitted_at: string | null
+          medical_instructions: string | null
+          medical_place: string | null
+          medical_result_url: string | null
+          medical_scheduled_at: string | null
+          medical_status: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_status: string | null
+          pdot_batch: string | null
+          pdot_completed_at: string | null
+          pdot_proof_url: string | null
+          pdot_provider: string | null
+          pdot_scheduled_at: string | null
+          pdot_status: string
+          pdot_training_url: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          stage: string
+          state: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
+          trade_test_reporting_window: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
+          trade_test_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assessment_id?: string | null
+          bond_courier_tracking?: string | null
+          bond_couriered_at?: string | null
+          bond_received_at?: string | null
+          bond_status?: string | null
+          bond_template_id?: string | null
+          city?: string | null
+          created_at?: string
+          deploy_contract_status?: string
+          deploy_emigration_status?: string
+          deploy_insurance_status?: string
+          deploy_offer_status?: string
+          deploy_ticket_status?: string
+          deploy_visa_status?: string
+          deployed_at?: string | null
+          deployment_notes?: string | null
+          education_level?: string | null
+          email?: string | null
+          essentials_completed_at?: string | null
+          gcc_ready_at?: string | null
+          id?: string
+          interview_attempts?: number
+          interview_meeting_url?: string | null
+          interview_notes?: string | null
+          interview_rated_at?: string | null
+          interview_scheduled_at?: string | null
+          interview_score?: number | null
+          interview_status?: string
+          interviewer_user_id?: string | null
+          kyc_rejection_reason?: string | null
+          kyc_status?: string
+          kyc_verified_at?: string | null
+          media_submitted_at?: string | null
+          medical_instructions?: string | null
+          medical_place?: string | null
+          medical_result_url?: string | null
+          medical_scheduled_at?: string | null
+          medical_status?: string | null
+          paid_at?: string | null
+          payment_amount?: number | null
+          payment_status?: string | null
+          pdot_batch?: string | null
+          pdot_completed_at?: string | null
+          pdot_proof_url?: string | null
+          pdot_provider?: string | null
+          pdot_scheduled_at?: string | null
+          pdot_status?: string
+          pdot_training_url?: string | null
+          primary_skill?: string | null
+          quiz_completed_at?: string | null
+          quiz_score?: number | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          stage?: string
+          state?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          trade_test_booked_at?: string | null
+          trade_test_center_id?: string | null
+          trade_test_center_name?: string | null
+          trade_test_instructions?: string | null
+          trade_test_place?: string | null
+          trade_test_reporting_window?: string | null
+          trade_test_required?: boolean | null
+          trade_test_result_url?: string | null
+          trade_test_scheduled_at?: string | null
+          trade_test_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assessment_id?: string | null
+          bond_courier_tracking?: string | null
+          bond_couriered_at?: string | null
+          bond_received_at?: string | null
+          bond_status?: string | null
+          bond_template_id?: string | null
+          city?: string | null
+          created_at?: string
+          deploy_contract_status?: string
+          deploy_emigration_status?: string
+          deploy_insurance_status?: string
+          deploy_offer_status?: string
+          deploy_ticket_status?: string
+          deploy_visa_status?: string
+          deployed_at?: string | null
+          deployment_notes?: string | null
+          education_level?: string | null
+          email?: string | null
+          essentials_completed_at?: string | null
+          gcc_ready_at?: string | null
+          id?: string
+          interview_attempts?: number
+          interview_meeting_url?: string | null
+          interview_notes?: string | null
+          interview_rated_at?: string | null
+          interview_scheduled_at?: string | null
+          interview_score?: number | null
+          interview_status?: string
+          interviewer_user_id?: string | null
+          kyc_rejection_reason?: string | null
+          kyc_status?: string
+          kyc_verified_at?: string | null
+          media_submitted_at?: string | null
+          medical_instructions?: string | null
+          medical_place?: string | null
+          medical_result_url?: string | null
+          medical_scheduled_at?: string | null
+          medical_status?: string | null
+          paid_at?: string | null
+          payment_amount?: number | null
+          payment_status?: string | null
+          pdot_batch?: string | null
+          pdot_completed_at?: string | null
+          pdot_proof_url?: string | null
+          pdot_provider?: string | null
+          pdot_scheduled_at?: string | null
+          pdot_status?: string
+          pdot_training_url?: string | null
+          primary_skill?: string | null
+          quiz_completed_at?: string | null
+          quiz_score?: number | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          stage?: string
+          state?: string | null
+          terms_accepted_at?: string | null
+          terms_version?: string | null
+          trade_test_booked_at?: string | null
+          trade_test_center_id?: string | null
+          trade_test_center_name?: string | null
+          trade_test_instructions?: string | null
+          trade_test_place?: string | null
+          trade_test_reporting_window?: string | null
+          trade_test_required?: boolean | null
+          trade_test_result_url?: string | null
+          trade_test_scheduled_at?: string | null
+          trade_test_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_verification_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_verification_bond_template_id_fkey"
+            columns: ["bond_template_id"]
+            isOneToOne: false
+            referencedRelation: "bond_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worker_verification_interviews: {
+        Row: {
+          attempt_no: number
+          created_at: string
+          decided_at: string | null
+          decision: string | null
+          decision_reason: string | null
+          id: string
+          interviewer_user_id: string | null
+          meeting_link: string | null
+          meeting_url: string | null
+          notes: string | null
+          rated_by: string | null
+          scheduled_at: string | null
+          score: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt_no?: number
+          created_at?: string
+          decided_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          id?: string
+          interviewer_user_id?: string | null
+          meeting_link?: string | null
+          meeting_url?: string | null
+          notes?: string | null
+          rated_by?: string | null
+          scheduled_at?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempt_no?: number
+          created_at?: string
+          decided_at?: string | null
+          decision?: string | null
+          decision_reason?: string | null
+          id?: string
+          interviewer_user_id?: string | null
+          meeting_link?: string | null
+          meeting_url?: string | null
+          notes?: string | null
+          rated_by?: string | null
+          scheduled_at?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       worker_videos: {
         Row: {
           created_at: string | null
@@ -2068,14 +4546,347 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      lsp_partners_public: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          id: string | null
+          name: string | null
+          state: string | null
+          status: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          state?: string | null
+          status?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          state?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_create_lsp: {
+        Args: {
+          p_code: string
+          p_contact_email?: string
+          p_contact_mobile?: string
+          p_contact_name?: string
+          p_name: string
+          p_state?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
+      admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
+      admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
+      admin_mark_bond_received: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      admin_mark_pdot_completed: {
+        Args: { p_proof_url?: string; p_user_id: string }
+        Returns: undefined
+      }
+      admin_mark_withdrawal_paid: {
+        Args: { p_payment_reference?: string; p_withdrawal_id: string }
+        Returns: undefined
+      }
+      admin_process_payout: {
+        Args: {
+          p_notes?: string
+          p_payout_id: string
+          p_reference?: string
+          p_rejection_reason?: string
+          p_status: Database["public"]["Enums"]["partner_payout_status"]
+        }
+        Returns: undefined
+      }
+      admin_rotate_lsp_secret: { Args: { p_lsp_id: string }; Returns: Json }
+      admin_schedule_worker_assessment: {
+        Args: {
+          p_instructions?: string
+          p_kind: string
+          p_place?: string
+          p_scheduled_at: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_schedule_worker_interview: {
+        Args: {
+          p_interviewer_user_id: string
+          p_meeting_url: string
+          p_scheduled_at: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      admin_set_lsp_status: {
+        Args: { p_lsp_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_set_partner_status: {
+        Args: {
+          p_partner_id: string
+          p_reason?: string
+          p_status: Database["public"]["Enums"]["partner_org_status"]
+        }
+        Returns: undefined
+      }
+      admin_set_pdot_plan: {
+        Args: {
+          p_batch?: string
+          p_provider?: string
+          p_scheduled_at?: string
+          p_training_url?: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_set_user_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      admin_update_deployment_checklist: {
+        Args: {
+          p_contract?: string
+          p_deployed?: boolean
+          p_emigration?: string
+          p_insurance?: string
+          p_notes?: string
+          p_offer?: string
+          p_ticket?: string
+          p_user_id: string
+          p_visa?: string
+        }
+        Returns: undefined
+      }
+      admin_verify_worker_kyc: {
+        Args: { p_approved: boolean; p_reason?: string; p_user_id: string }
+        Returns: undefined
+      }
       assign_initial_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: undefined
       }
-      ensure_whitelisted_admin: { Args: never; Returns: boolean }
+      bind_partner_to_lsp: {
+        Args: { p_emitra_id?: string; p_lsp_id: string }
+        Returns: Json
+      }
+      complete_assessment_payment_razorpay: {
+        Args: {
+          p_amount?: number
+          p_order_id: string
+          p_payment_id: string
+          p_user_id: string
+        }
+        Returns: {
+          assessment_id: string | null
+          bond_courier_tracking: string | null
+          bond_couriered_at: string | null
+          bond_received_at: string | null
+          bond_status: string | null
+          bond_template_id: string | null
+          city: string | null
+          created_at: string
+          deploy_contract_status: string
+          deploy_emigration_status: string
+          deploy_insurance_status: string
+          deploy_offer_status: string
+          deploy_ticket_status: string
+          deploy_visa_status: string
+          deployed_at: string | null
+          deployment_notes: string | null
+          education_level: string | null
+          email: string | null
+          essentials_completed_at: string | null
+          gcc_ready_at: string | null
+          id: string
+          interview_attempts: number
+          interview_meeting_url: string | null
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_scheduled_at: string | null
+          interview_score: number | null
+          interview_status: string
+          interviewer_user_id: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
+          media_submitted_at: string | null
+          medical_instructions: string | null
+          medical_place: string | null
+          medical_result_url: string | null
+          medical_scheduled_at: string | null
+          medical_status: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_status: string | null
+          pdot_batch: string | null
+          pdot_completed_at: string | null
+          pdot_proof_url: string | null
+          pdot_provider: string | null
+          pdot_scheduled_at: string | null
+          pdot_status: string
+          pdot_training_url: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          stage: string
+          state: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
+          trade_test_reporting_window: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
+          trade_test_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_verification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_assessment_payment_test: {
+        Args: never
+        Returns: {
+          assessment_id: string | null
+          bond_courier_tracking: string | null
+          bond_couriered_at: string | null
+          bond_received_at: string | null
+          bond_status: string | null
+          bond_template_id: string | null
+          city: string | null
+          created_at: string
+          deploy_contract_status: string
+          deploy_emigration_status: string
+          deploy_insurance_status: string
+          deploy_offer_status: string
+          deploy_ticket_status: string
+          deploy_visa_status: string
+          deployed_at: string | null
+          deployment_notes: string | null
+          education_level: string | null
+          email: string | null
+          essentials_completed_at: string | null
+          gcc_ready_at: string | null
+          id: string
+          interview_attempts: number
+          interview_meeting_url: string | null
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_scheduled_at: string | null
+          interview_score: number | null
+          interview_status: string
+          interviewer_user_id: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
+          media_submitted_at: string | null
+          medical_instructions: string | null
+          medical_place: string | null
+          medical_result_url: string | null
+          medical_scheduled_at: string | null
+          medical_status: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_status: string | null
+          pdot_batch: string | null
+          pdot_completed_at: string | null
+          pdot_proof_url: string | null
+          pdot_provider: string | null
+          pdot_scheduled_at: string | null
+          pdot_status: string
+          pdot_training_url: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          stage: string
+          state: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
+          trade_test_reporting_window: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
+          trade_test_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_verification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      compute_partner_tier: {
+        Args: { p_placements: number }
+        Returns: Database["public"]["Enums"]["partner_tier"]
+      }
+      confirm_emitra_placement_reward: {
+        Args: { p_reward_id: string }
+        Returns: undefined
+      }
+      consume_lsp_launch_token: { Args: { p_token: string }; Returns: Json }
+      current_partner: {
+        Args: never
+        Returns: {
+          city: string
+          company_name: string
+          district: string
+          id: string
+          partner_code: string
+          partner_type_code: string
+          partner_type_id: string
+          partner_type_name: string
+          rating: number
+          state: string
+          status: Database["public"]["Enums"]["partner_org_status"]
+          verification_status: Database["public"]["Enums"]["partner_verification_status"]
+          wallet_available: number
+          wallet_pending: number
+        }[]
+      }
+      generate_partner_code: { Args: never; Returns: string }
+      get_employer_company_names: {
+        Args: { p_employer_ids: string[] }
+        Returns: {
+          company_name: string
+          user_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -2110,6 +4921,49 @@ export type Database = {
         }
         Returns: boolean
       }
+      interviewer_list_assignments: {
+        Args: never
+        Returns: {
+          attempt_no: number
+          decision: string
+          full_name: string
+          interview_id: string
+          meeting_url: string
+          primary_skill: string
+          quiz_score: number
+          scheduled_at: string
+          state: string
+          status: string
+          worker_user_id: string
+        }[]
+      }
+      interviewer_record_decision: {
+        Args: {
+          p_approved: boolean
+          p_interview_id: string
+          p_reason?: string
+          p_score?: number
+        }
+        Returns: undefined
+      }
+      issue_lsp_launch_params: {
+        Args: {
+          p_emitra_id?: string
+          p_lsp_id: string
+          p_mobile?: string
+          p_ttl_seconds?: number
+        }
+        Returns: Json
+      }
+      issue_lsp_one_time_token: {
+        Args: {
+          p_emitra_id?: string
+          p_lsp_id: string
+          p_mobile?: string
+          p_ttl_seconds?: number
+        }
+        Returns: Json
+      }
       list_public_workers: {
         Args: { p_limit?: number }
         Returns: {
@@ -2135,10 +4989,260 @@ export type Database = {
           years_of_experience: number
         }[]
       }
+      lsp_hmac_hex: {
+        Args: { p_message: string; p_secret: string }
+        Returns: string
+      }
+      lsp_log_launch: {
+        Args: {
+          p_lsp_code: string
+          p_lsp_id: string
+          p_reason: string
+          p_success: boolean
+        }
+        Returns: undefined
+      }
+      partner_list_my_workers: {
+        Args: never
+        Returns: {
+          created_at: string
+          current_city: string
+          current_location: string
+          primary_work_type: string
+          review_notes: string
+          review_rejection_reason: string
+          review_status: string
+          source_partner_id: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
+      seed_officials_demo: { Args: never; Returns: Json }
+      verify_lsp_launch: {
+        Args: {
+          p_emitra_id?: string
+          p_exp: number
+          p_lsp: string
+          p_mobile?: string
+          p_nonce: string
+          p_sig: string
+        }
+        Returns: Json
+      }
+      waive_assessment_interview_pilot: {
+        Args: never
+        Returns: {
+          assessment_id: string | null
+          bond_courier_tracking: string | null
+          bond_couriered_at: string | null
+          bond_received_at: string | null
+          bond_status: string | null
+          bond_template_id: string | null
+          city: string | null
+          created_at: string
+          deploy_contract_status: string
+          deploy_emigration_status: string
+          deploy_insurance_status: string
+          deploy_offer_status: string
+          deploy_ticket_status: string
+          deploy_visa_status: string
+          deployed_at: string | null
+          deployment_notes: string | null
+          education_level: string | null
+          email: string | null
+          essentials_completed_at: string | null
+          gcc_ready_at: string | null
+          id: string
+          interview_attempts: number
+          interview_meeting_url: string | null
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_scheduled_at: string | null
+          interview_score: number | null
+          interview_status: string
+          interviewer_user_id: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
+          media_submitted_at: string | null
+          medical_instructions: string | null
+          medical_place: string | null
+          medical_result_url: string | null
+          medical_scheduled_at: string | null
+          medical_status: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_status: string | null
+          pdot_batch: string | null
+          pdot_completed_at: string | null
+          pdot_proof_url: string | null
+          pdot_provider: string | null
+          pdot_scheduled_at: string | null
+          pdot_status: string
+          pdot_training_url: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          stage: string
+          state: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
+          trade_test_reporting_window: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
+          trade_test_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_verification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      waive_assessment_payment_pilot: {
+        Args: never
+        Returns: {
+          assessment_id: string | null
+          bond_courier_tracking: string | null
+          bond_couriered_at: string | null
+          bond_received_at: string | null
+          bond_status: string | null
+          bond_template_id: string | null
+          city: string | null
+          created_at: string
+          deploy_contract_status: string
+          deploy_emigration_status: string
+          deploy_insurance_status: string
+          deploy_offer_status: string
+          deploy_ticket_status: string
+          deploy_visa_status: string
+          deployed_at: string | null
+          deployment_notes: string | null
+          education_level: string | null
+          email: string | null
+          essentials_completed_at: string | null
+          gcc_ready_at: string | null
+          id: string
+          interview_attempts: number
+          interview_meeting_url: string | null
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_scheduled_at: string | null
+          interview_score: number | null
+          interview_status: string
+          interviewer_user_id: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
+          media_submitted_at: string | null
+          medical_instructions: string | null
+          medical_place: string | null
+          medical_result_url: string | null
+          medical_scheduled_at: string | null
+          medical_status: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_status: string | null
+          pdot_batch: string | null
+          pdot_completed_at: string | null
+          pdot_proof_url: string | null
+          pdot_provider: string | null
+          pdot_scheduled_at: string | null
+          pdot_status: string
+          pdot_training_url: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          stage: string
+          state: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
+          trade_test_reporting_window: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
+          trade_test_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_verification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      worker_can_apply_to_jobs: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      worker_submit_bond_tracking: {
+        Args: { p_tracking: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "admin" | "employer" | "worker" | "agent" | "partner"
+      app_role:
+        | "admin"
+        | "employer"
+        | "worker"
+        | "agent"
+        | "partner"
+        | "interviewer"
+      assessment_status:
+        | "scheduled"
+        | "checked_in"
+        | "running"
+        | "completed"
+        | "employer_review"
+        | "approved"
+        | "rejected"
+        | "retest"
+        | "allocated"
+        | "accepted"
+        | "centre_rejected"
+        | "kyc_done"
+        | "centre_submitted"
+        | "under_review"
+      migration_readiness_category:
+        | "placement_ready"
+        | "needs_preparation"
+        | "not_ready"
+      partner_incentive_type: "verified" | "interview_qualified" | "placement"
+      partner_invoice_status:
+        | "draft"
+        | "issued"
+        | "paid"
+        | "overdue"
+        | "cancelled"
+      partner_org_status: "pending" | "approved" | "rejected" | "suspended"
+      partner_payout_status:
+        | "requested"
+        | "approved"
+        | "processing"
+        | "paid"
+        | "rejected"
+      partner_skill_test_stage: "partner" | "phone" | "physical"
+      partner_skill_test_status: "pending" | "passed" | "failed"
       partner_status:
         | "applied"
         | "under_review"
@@ -2147,6 +5251,55 @@ export type Database = {
         | "suspended"
         | "rejected"
       partner_tier: "bronze" | "silver" | "gold" | "platinum"
+      partner_txn_type: "credit" | "debit" | "withdrawal" | "fee" | "adjustment"
+      partner_verification_status:
+        | "unverified"
+        | "in_review"
+        | "verified"
+        | "rejected"
+      partner_worker_status:
+        | "registered"
+        | "verified"
+        | "shortlisted"
+        | "interview_scheduled"
+        | "interviewed"
+        | "selected"
+        | "placed"
+      sen_commission_status:
+        | "pending"
+        | "earned"
+        | "invoiced"
+        | "paid"
+        | "cancelled"
+      sen_lead_status:
+        | "new"
+        | "contacted"
+        | "qualified"
+        | "proposal"
+        | "negotiation"
+        | "won"
+        | "lost"
+      srn_stage_code:
+        | "medical"
+        | "visa"
+        | "offer_letter"
+        | "poe"
+        | "travel"
+        | "deployment"
+      srn_stage_status:
+        | "pending"
+        | "in_progress"
+        | "submitted"
+        | "approved"
+        | "rejected"
+        | "completed"
+      support_ticket_priority: "low" | "normal" | "high" | "urgent"
+      support_ticket_status:
+        | "open"
+        | "in_progress"
+        | "waiting"
+        | "resolved"
+        | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2274,7 +5427,53 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "employer", "worker", "agent", "partner"],
+      app_role: [
+        "admin",
+        "employer",
+        "worker",
+        "agent",
+        "partner",
+        "interviewer",
+      ],
+      assessment_status: [
+        "scheduled",
+        "checked_in",
+        "running",
+        "completed",
+        "employer_review",
+        "approved",
+        "rejected",
+        "retest",
+        "allocated",
+        "accepted",
+        "centre_rejected",
+        "kyc_done",
+        "centre_submitted",
+        "under_review",
+      ],
+      migration_readiness_category: [
+        "placement_ready",
+        "needs_preparation",
+        "not_ready",
+      ],
+      partner_incentive_type: ["verified", "interview_qualified", "placement"],
+      partner_invoice_status: [
+        "draft",
+        "issued",
+        "paid",
+        "overdue",
+        "cancelled",
+      ],
+      partner_org_status: ["pending", "approved", "rejected", "suspended"],
+      partner_payout_status: [
+        "requested",
+        "approved",
+        "processing",
+        "paid",
+        "rejected",
+      ],
+      partner_skill_test_stage: ["partner", "phone", "physical"],
+      partner_skill_test_status: ["pending", "passed", "failed"],
       partner_status: [
         "applied",
         "under_review",
@@ -2284,6 +5483,62 @@ export const Constants = {
         "rejected",
       ],
       partner_tier: ["bronze", "silver", "gold", "platinum"],
+      partner_txn_type: ["credit", "debit", "withdrawal", "fee", "adjustment"],
+      partner_verification_status: [
+        "unverified",
+        "in_review",
+        "verified",
+        "rejected",
+      ],
+      partner_worker_status: [
+        "registered",
+        "verified",
+        "shortlisted",
+        "interview_scheduled",
+        "interviewed",
+        "selected",
+        "placed",
+      ],
+      sen_commission_status: [
+        "pending",
+        "earned",
+        "invoiced",
+        "paid",
+        "cancelled",
+      ],
+      sen_lead_status: [
+        "new",
+        "contacted",
+        "qualified",
+        "proposal",
+        "negotiation",
+        "won",
+        "lost",
+      ],
+      srn_stage_code: [
+        "medical",
+        "visa",
+        "offer_letter",
+        "poe",
+        "travel",
+        "deployment",
+      ],
+      srn_stage_status: [
+        "pending",
+        "in_progress",
+        "submitted",
+        "approved",
+        "rejected",
+        "completed",
+      ],
+      support_ticket_priority: ["low", "normal", "high", "urgent"],
+      support_ticket_status: [
+        "open",
+        "in_progress",
+        "waiting",
+        "resolved",
+        "closed",
+      ],
     },
   },
 } as const

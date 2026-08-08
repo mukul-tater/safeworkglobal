@@ -63,10 +63,33 @@ export default function AuthScreen({ route }: Props) {
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<AppRole | null>(roleHint ?? null);
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  const handleForgotPassword = async () => {
+    setError('');
+    if (!email.trim() || !email.includes('@')) {
+      setError('Enter your account email to reset password.');
+      return;
+    }
+    setLoading(true);
+    const { supabase } = await import('../../integrations/supabase/client');
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim());
+    setLoading(false);
+    if (resetError) setError(resetError.message);
+    else setError('Password reset email sent (if the account exists).');
+  };
+
   const handleSubmit = async () => {
     setError('');
     if (!email || !password) {
-      setError('Email and password are required.');
+      setError(mode === 'login'
+        ? 'Email/mobile and password are required.'
+        : 'Email and password are required.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
       return;
     }
 
@@ -77,6 +100,16 @@ export default function AuthScreen({ route }: Props) {
     } else {
       if (!fullName || !phone || !role) {
         setError('Name, phone, and role are required for signup.');
+        setLoading(false);
+        return;
+      }
+      if (role === 'worker' && !acceptedTerms) {
+        setError('Accept the worker terms to continue.');
+        setLoading(false);
+        return;
+      }
+      if (!email.includes('@')) {
+        setError('Use a real email for signup. You can sign in later with mobile or email.');
         setLoading(false);
         return;
       }
@@ -174,6 +207,7 @@ export default function AuthScreen({ route }: Props) {
               onChangeText={setFullName}
               autoCapitalize="words"
               placeholder="Your full name"
+              accessibilityLabel="Full name"
             />
             <Input
               label="Phone"
@@ -181,25 +215,55 @@ export default function AuthScreen({ route }: Props) {
               onChangeText={setPhone}
               keyboardType="phone-pad"
               placeholder="+91 98765 43210"
+              accessibilityLabel="Phone number"
             />
+            {role === 'worker' ? (
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: acceptedTerms }}
+                onPress={() => setAcceptedTerms((v) => !v)}
+                style={styles.termsRow}
+              >
+                <View style={[styles.checkbox, acceptedTerms && styles.checkboxOn]}>
+                  {acceptedTerms ? <Check size={12} color="#fff" /> : null}
+                </View>
+                <Text style={styles.termsText}>
+                  I agree to SafeWork worker terms, privacy policy, and fair recruitment rules.
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
 
         <Input
-          label="Email"
+          label={mode === 'login' ? 'Email or mobile' : 'Email'}
           value={email}
           onChangeText={setEmail}
-          keyboardType="email-address"
+          keyboardType={mode === 'login' ? 'default' : 'email-address'}
           autoCapitalize="none"
-          placeholder="you@email.com"
+          placeholder={mode === 'login' ? 'email@example.com or 10-digit mobile' : 'you@email.com'}
+          accessibilityLabel={mode === 'login' ? 'Email or mobile' : 'Email'}
         />
         <Input
           label="Password"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
           placeholder="Min 6 characters"
+          accessibilityLabel="Password"
         />
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setShowPassword((v) => !v)}
+          style={styles.linkBtn}
+        >
+          <Text style={styles.linkText}>{showPassword ? 'Hide password' : 'Show password'}</Text>
+        </Pressable>
+        {mode === 'login' ? (
+          <Pressable accessibilityRole="button" onPress={handleForgotPassword} style={styles.linkBtn}>
+            <Text style={styles.linkText}>Forgot password?</Text>
+          </Pressable>
+        ) : null}
 
         <Button
           title={mode === 'login' ? 'Sign In' : 'Create Account'}
@@ -328,4 +392,19 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
+  linkBtn: { alignSelf: 'flex-end', marginBottom: spacing.sm },
+  linkText: { ...typography.bodySm, color: colors.primary, fontWeight: '600' },
+  termsRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start', marginBottom: spacing.md },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  checkboxOn: { backgroundColor: colors.worker, borderColor: colors.worker },
+  termsText: { ...typography.bodySm, flex: 1 },
 });

@@ -21,6 +21,21 @@ dist-ssr
 backend/.env
 backend/.env.*
 !backend/.env.example
+mobile/.env
+mobile/.env.*
+!mobile/.env.example
+
+# Mobile local SDK / build / release outputs
+mobile/android-sdk/
+mobile/.tools/
+mobile/android/local.properties
+mobile/android/app/build/
+mobile/android/build/
+mobile/ios/build/
+mobile/releases/
+mobile/**/*.apk
+mobile/**/*.aab
+mobile/**/*.ipa
 
 # Firebase / GCP service accounts
 firebase-service-account.json

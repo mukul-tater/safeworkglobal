@@ -100,6 +100,9 @@ export function Button({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: Boolean(disabled || loading), busy: Boolean(loading) }}
       style={({ pressed }) => [
         styles.btn,
         variantStyle,
@@ -301,7 +304,7 @@ const styles = StyleSheet.create({
   btnSm: { paddingVertical: 10, paddingHorizontal: spacing.md },
   btnLg: { paddingVertical: 15, paddingHorizontal: spacing.xl },
   btnFull: { alignSelf: 'stretch', width: '100%' },
-  btnPrimary: { backgroundColor: colors.primaryHover },
+  btnPrimary: { backgroundColor: colors.primary },
   btnSecondary: { backgroundColor: colors.muted, borderWidth: 1, borderColor: colors.border },
   btnOutline: {
     backgroundColor: colors.surface,

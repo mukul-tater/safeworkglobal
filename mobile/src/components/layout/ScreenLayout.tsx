@@ -18,7 +18,6 @@ import AppHeader from './AppHeader';
 
 type ScreenLayoutProps = {
   children: React.ReactNode;
-  /** Tab screens: top safe area + custom header. Stack screens: nav header handles top. */
   variant?: 'tab' | 'stack' | 'full' | 'modal';
   scrollable?: boolean;
   header?: boolean | { title?: string; subtitle?: string };
@@ -45,7 +44,7 @@ export default function ScreenLayout({
   const safeEdges: Edge[] =
     edges ??
     (variant === 'tab'
-      ? ['left', 'right']
+      ? ['top', 'left', 'right']
       : variant === 'stack'
         ? ['left', 'right', 'bottom']
         : variant === 'modal'

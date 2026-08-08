@@ -5,6 +5,7 @@ import { MapPin, Shield } from 'lucide-react-native';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import type { PublicStackParamList } from '../../navigation/types';
 import { useAuth } from '../../contexts/AuthContext';
+import { useWorkerJobAccess } from '../../hooks/useWorkerJobAccess';
 import { supabase } from '../../integrations/supabase/client';
 import { formatSalaryINR, formatSalaryLakh } from '../../lib/utils';
 import { colors } from '../../theme/colors';
@@ -15,37 +16,85 @@ import { Badge, Button, Card, LoadingView, SectionTitle } from '../../components
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'JobDetail'>;
 
-export default function JobDetailScreen({ route }: Props) {
+export default function JobDetailScreen({ route, navigation }: Props) {
   const { jobId } = route.params;
-  const { isAuthenticated, profile } = useAuth();
+  const { isAuthenticated, profile, role } = useAuth();
+  const { canApplyToJobs, isWorker, reviewBlockMessage, loading: accessLoading } = useWorkerJobAccess();
   const [job, setJob] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
-      .from('jobs')
-      .select('*')
-      .eq('id', jobId)
-      .single()
-      .then(({ data }) => {
-        setJob(data);
-        setLoading(false);
-      });
-  }, [jobId]);
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoadError(null);
+        const { data, error } = await supabase.from('jobs').select('*').eq('id', jobId).single();
+        if (error) throw error;
+        if (!cancelled) setJob(data);
+        if (profile?.id) {
+          const { data: existing } = await supabase
+            .from('job_applications')
+            .select('id')
+            .eq('job_id', jobId)
+            .eq('worker_id', profile.id)
+            .maybeSingle();
+          if (!cancelled) setHasApplied(!!existing);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setJob(null);
+          setLoadError(e instanceof Error ? e.message : 'Failed to load job');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId, profile?.id]);
 
   const handleApply = async () => {
     if (!isAuthenticated || !profile?.id) {
-      Alert.alert('Login required', 'Please sign in as a worker to apply for this job.');
+      Alert.alert('Login required', 'Please sign in as a worker to apply for this job.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign in', onPress: () => navigation.navigate('Auth', { mode: 'login', role: 'worker' }) },
+      ]);
+      return;
+    }
+
+    if (role !== 'worker') {
+      Alert.alert('Workers only', 'Switch to a worker account to apply for jobs.');
+      return;
+    }
+
+    if (reviewBlockMessage) {
+      Alert.alert('Application blocked', reviewBlockMessage);
+      return;
+    }
+
+    if (!canApplyToJobs) {
+      Alert.alert(
+        'Complete your GCC journey',
+        'You must reach GCC-ready status before applying. Open the Journey tab to continue verification.',
+      );
+      return;
+    }
+
+    const employerId = job?.employer_id;
+    if (!employerId || typeof employerId !== 'string') {
+      Alert.alert('Unavailable', 'This job is missing employer information and cannot accept applications.');
       return;
     }
 
     setApplying(true);
-    const { data: jobData } = await supabase.from('jobs').select('employer_id').eq('id', jobId).single();
     const { error } = await supabase.from('job_applications').insert({
       job_id: jobId,
       worker_id: profile.id,
-      employer_id: jobData?.employer_id ?? profile.id,
+      employer_id: employerId,
       status: 'PENDING',
     });
     setApplying(false);
@@ -54,17 +103,25 @@ export default function JobDetailScreen({ route }: Props) {
       Alert.alert('Application failed', error.message);
       return;
     }
+    setHasApplied(true);
     Alert.alert('Application submitted', 'Your application has been sent to the employer.');
   };
 
-  if (loading) return <LoadingView />;
+  if (loading || accessLoading) return <LoadingView />;
   if (!job) {
     return (
       <ScreenLayout variant="stack" scrollable>
-        <Text style={styles.error}>Job not found</Text>
+        <Text style={styles.error}>{loadError || 'Job not found'}</Text>
       </ScreenLayout>
     );
   }
+
+  const applyDisabled = hasApplied || (isWorker && !canApplyToJobs);
+  const applyTitle = hasApplied
+    ? 'Already applied'
+    : isWorker && !canApplyToJobs
+      ? 'Complete journey to apply'
+      : 'Apply Now';
 
   return (
     <ScreenLayout variant="stack" scrollable>
@@ -105,12 +162,27 @@ export default function JobDetailScreen({ route }: Props) {
         <Text style={styles.protectionText}>Salary protected · Verified employer</Text>
       </Card>
 
+      {isWorker && !canApplyToJobs ? (
+        <Card elevated={false} style={styles.gate}>
+          <Text style={styles.gateText}>
+            {reviewBlockMessage ||
+              'Finish your GCC journey (identity + assessments) before applying to jobs.'}
+          </Text>
+        </Card>
+      ) : null}
+
       <SectionTitle title="Job Description" />
       <Card>
         <Text style={styles.description}>{String(job.description ?? 'No description provided.')}</Text>
       </Card>
 
-      <Button title="Apply Now" onPress={handleApply} loading={applying} size="lg" />
+      <Button
+        title={applyTitle}
+        onPress={handleApply}
+        loading={applying}
+        disabled={applyDisabled}
+        size="lg"
+      />
     </ScreenLayout>
   );
 }
@@ -161,4 +233,6 @@ const styles = StyleSheet.create({
   protectionText: { ...typography.bodySm, color: colors.mutedForeground, fontWeight: '600' },
   description: { ...typography.body },
   error: { ...typography.body, color: colors.destructive },
+  gate: { backgroundColor: colors.warningLight, marginBottom: spacing.lg },
+  gateText: { ...typography.bodySm, color: colors.foreground },
 });

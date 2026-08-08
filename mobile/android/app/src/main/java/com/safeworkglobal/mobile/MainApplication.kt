@@ -1,4 +1,4 @@
-package com.gigbridgemobile
+package com.safeworkglobal.mobile
 
 import android.app.Application
 import com.facebook.react.PackageList

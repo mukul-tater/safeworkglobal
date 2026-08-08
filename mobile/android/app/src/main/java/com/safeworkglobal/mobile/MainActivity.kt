@@ -1,4 +1,4 @@
-package com.gigbridgemobile
+package com.safeworkglobal.mobile
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

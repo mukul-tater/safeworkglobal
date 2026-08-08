@@ -1,15 +1,19 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { assertEnvConfigured } from '../config/env';
 import { supabase } from '../integrations/supabase/client';
+import { displayableEmail, workerAuthEmailFromIdentifier } from '../lib/workerAuthEmail';
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner';
 
-interface Profile {
+export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  mobile_verified?: boolean | null;
 }
 
 interface AuthContextType {
@@ -19,10 +23,11 @@ interface AuthContextType {
   role: AppRole | null;
   isAuthenticated: boolean;
   isEmailVerified: boolean;
+  isMobileVerified: boolean;
   loading: boolean;
   profileLoading: boolean;
   needsRoleSelection: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (data: {
     email: string;
     password: string;
@@ -35,9 +40,29 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
   refreshRole: () => Promise<void>;
   assignRole: (role: AppRole) => Promise<{ success: boolean; error?: string }>;
+  markMobileVerified: (phone?: string, userId?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const mobileVerifiedStorageKey = (userId: string) => `swg_mobile_verified_${userId}`;
+
+async function readMobileVerifiedSession(userId?: string | null): Promise<boolean> {
+  if (!userId) return false;
+  try {
+    return (await AsyncStorage.getItem(mobileVerifiedStorageKey(userId))) === '1';
+  } catch {
+    return false;
+  }
+}
+
+async function writeMobileVerifiedSession(userId: string) {
+  try {
+    await AsyncStorage.setItem(mobileVerifiedStorageKey(userId), '1');
+  } catch {
+    // ignore
+  }
+}
 
 function deriveProfileFromUser(u: User): Profile {
   const meta = (u.user_metadata || {}) as Record<string, unknown>;
@@ -48,13 +73,15 @@ function deriveProfileFromUser(u: User): Profile {
     (u.email ? u.email.split('@')[0] : null);
   const avatarUrl = (meta.avatar_url as string) || (meta.picture as string) || null;
   const phone = (meta.phone as string) || u.phone || null;
+  const mobileVerified = Boolean(meta.mobile_verified);
 
   return {
     id: u.id,
-    email: u.email || '',
+    email: displayableEmail(u.email) || u.email || '',
     full_name: fullName,
     phone,
     avatar_url: avatarUrl,
+    mobile_verified: mobileVerified,
   };
 }
 
@@ -66,6 +93,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [hasResolvedRole, setHasResolvedRole] = useState(false);
+  const [mobileVerifiedOverride, setMobileVerifiedOverride] = useState(false);
+  const [sessionMobileVerified, setSessionMobileVerified] = useState(false);
+  const mobileVerifiedOverrideRef = useRef(false);
+  const loadGenerationRef = useRef(0);
+
+  useEffect(() => {
+    try {
+      assertEnvConfigured();
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   const fetchUserRole = async (userId: string) => {
     const { data, error } = await supabase
@@ -82,51 +121,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setHasResolvedRole(true);
   };
 
-  const fetchOrCreateProfile = async (currentUser: User) => {
+  const fetchOrCreateProfile = async (currentUser: User, generation: number) => {
+    const sessionFlag = await readMobileVerifiedSession(currentUser.id);
+    if (generation === loadGenerationRef.current) {
+      setSessionMobileVerified(sessionFlag);
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', currentUser.id)
       .maybeSingle();
 
+    if (generation !== loadGenerationRef.current) return;
+
     if (data && !error) {
-      setProfile(data);
+      const metaVerified = Boolean(
+        (currentUser.user_metadata as Record<string, unknown> | undefined)?.mobile_verified,
+      );
+      const verified = !!(data.mobile_verified || sessionFlag || mobileVerifiedOverrideRef.current || metaVerified);
+      setProfile({
+        ...data,
+        email: displayableEmail(data.email) || data.email || '',
+        mobile_verified: verified,
+      });
       return;
     }
 
     const derived = deriveProfileFromUser(currentUser);
+    const initialVerified = !!(derived.mobile_verified || sessionFlag || mobileVerifiedOverrideRef.current);
     const { data: upserted, error: upsertError } = await supabase
       .from('profiles')
       .upsert(
         {
           id: derived.id,
-          email: derived.email,
+          email: currentUser.email || derived.email,
           full_name: derived.full_name,
           phone: derived.phone,
           avatar_url: derived.avatar_url,
+          ...(initialVerified ? { mobile_verified: true } : {}),
         },
         { onConflict: 'id' },
       )
       .select()
       .maybeSingle();
 
+    if (generation !== loadGenerationRef.current) return;
+
     if (upserted && !upsertError) {
-      setProfile(upserted);
+      setProfile({
+        ...upserted,
+        email: displayableEmail(upserted.email) || upserted.email || '',
+        mobile_verified: !!(upserted.mobile_verified || initialVerified),
+      });
     } else {
-      setProfile(derived);
+      setProfile({ ...derived, mobile_verified: initialVerified });
     }
   };
 
   const loadUserData = async (currentUser: User) => {
+    const generation = ++loadGenerationRef.current;
     setProfileLoading(true);
     setHasResolvedRole(false);
     try {
       await Promise.all([
-        fetchOrCreateProfile(currentUser),
+        fetchOrCreateProfile(currentUser, generation),
         fetchUserRole(currentUser.id),
       ]);
     } finally {
-      setProfileLoading(false);
+      if (generation === loadGenerationRef.current) {
+        setProfileLoading(false);
+      }
     }
   };
 
@@ -143,6 +208,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setRole(null);
         setProfile(null);
         setHasResolvedRole(false);
+        setMobileVerifiedOverride(false);
+        mobileVerifiedOverrideRef.current = false;
+        setSessionMobileVerified(false);
       }
 
       setLoading(false);
@@ -162,8 +230,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (identifier: string, password: string) => {
     try {
+      const email = workerAuthEmailFromIdentifier(identifier);
+      if (!email) {
+        return { success: false, error: 'Enter a valid email or 10-digit mobile number.' };
+      }
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return { success: false, error: error.message };
       return { success: true };
@@ -211,12 +283,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
     setRole(null);
     setHasResolvedRole(false);
+    setMobileVerifiedOverride(false);
+    mobileVerifiedOverrideRef.current = false;
+    setSessionMobileVerified(false);
   };
 
   const hasRole = (checkRole: AppRole) => role === checkRole;
 
   const refreshProfile = async () => {
-    if (user) await fetchOrCreateProfile(user);
+    const generation = ++loadGenerationRef.current;
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+    if (currentUser) await fetchOrCreateProfile(currentUser, generation);
   };
 
   const refreshRole = async () => {
@@ -224,6 +303,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { user: currentUser },
     } = await supabase.auth.getUser();
     if (currentUser) await fetchUserRole(currentUser.id);
+  };
+
+  const markMobileVerified = (phone?: string, userId?: string) => {
+    ++loadGenerationRef.current;
+    mobileVerifiedOverrideRef.current = true;
+    setMobileVerifiedOverride(true);
+
+    const applyVerifiedProfile = (uid: string) => {
+      void writeMobileVerifiedSession(uid);
+      setSessionMobileVerified(true);
+      setProfile((prev) => {
+        if (!prev) {
+          return {
+            id: uid,
+            email: displayableEmail(user?.email) || '',
+            full_name: (user?.user_metadata?.full_name as string) ?? null,
+            phone: phone ?? (user?.user_metadata?.phone as string) ?? null,
+            avatar_url: null,
+            mobile_verified: true,
+          };
+        }
+        return {
+          ...prev,
+          id: uid,
+          mobile_verified: true,
+          phone: phone ?? prev.phone,
+        };
+      });
+    };
+
+    const uid = userId || profile?.id || user?.id;
+    if (uid) {
+      applyVerifiedProfile(uid);
+      return;
+    }
+
+    void supabase.auth.getUser().then(({ data }) => {
+      const id = data.user?.id;
+      if (!id) return;
+      applyVerifiedProfile(id);
+    });
   };
 
   const assignRole = async (newRole: AppRole) => {
@@ -248,6 +368,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isEmailVerified = !!user?.email_confirmed_at;
+  const isMobileVerified =
+    !!profile?.mobile_verified || mobileVerifiedOverride || sessionMobileVerified;
   const needsRoleSelection = !!user && hasResolvedRole && !role;
 
   return (
@@ -259,6 +381,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role,
         isAuthenticated: !!session,
         isEmailVerified,
+        isMobileVerified,
         loading,
         profileLoading,
         needsRoleSelection,
@@ -269,6 +392,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshProfile,
         refreshRole,
         assignRole,
+        markMobileVerified,
       }}
     >
       {children}

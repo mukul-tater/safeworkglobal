@@ -100,6 +100,14 @@ export type PartnerStackParamList = {
   PartnerRegister: undefined;
 };
 
+export type WorkerTabParamList = {
+  DashboardTab: undefined;
+  JobsTab: undefined;
+  JourneyTab: undefined;
+  ApplicationsTab: undefined;
+  MoreTab: undefined;
+};
+
 export type RootStackParamList = {
   Public: NavigatorScreenParams<PublicStackParamList>;
   WorkerApp: NavigatorScreenParams<WorkerStackParamList>;
@@ -107,6 +115,7 @@ export type RootStackParamList = {
   AdminApp: NavigatorScreenParams<AdminStackParamList>;
   PartnerApp: NavigatorScreenParams<PartnerStackParamList>;
   RoleSelect: undefined;
+  BindMobile: undefined;
 };
 
 declare global {

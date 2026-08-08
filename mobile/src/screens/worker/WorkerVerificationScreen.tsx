@@ -1,20 +1,285 @@
-import React from 'react';
-import { DataListScreen } from '../../components/DataListScreen';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  EDUCATION_LEVELS,
+  JOURNEY_STEPS,
+  PRIMARY_SKILLS,
+  acceptTerms,
+  getOrCreateVerification,
+  saveEssentials,
+  stageIndex,
+  submitIdentity,
+  type WorkerVerification,
+} from '../../services/verificationService';
+import { colors } from '../../theme/colors';
+import { radius, spacing } from '../../theme/spacing';
+import { typography } from '../../theme/typography';
+import ScreenLayout from '../../components/layout/ScreenLayout';
+import { Badge, Button, Card, Input, LoadingView, SectionTitle } from '../../components/ui';
 
 export default function WorkerVerificationScreen() {
+  const { profile, user } = useAuth();
+  const [row, setRow] = useState<WorkerVerification | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+
+  const [email, setEmail] = useState('');
+  const [city, setCity] = useState('');
+  const [stateName, setStateName] = useState('');
+  const [education, setEducation] = useState<string>(EDUCATION_LEVELS[2]);
+  const [skill, setSkill] = useState<string>(PRIMARY_SKILLS[0]);
+  const [pan, setPan] = useState('');
+  const [aadhaar, setAadhaar] = useState('');
+  const [passport, setPassport] = useState('');
+
+  const load = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      setError('');
+      const data = await getOrCreateVerification(user.id);
+      setRow(data);
+      setEmail(data.email || profile?.email || '');
+      setCity(data.city || '');
+      setStateName(data.state || '');
+      setEducation(data.education_level || EDUCATION_LEVELS[2]);
+      setSkill(data.primary_skill || PRIMARY_SKILLS[0]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load journey');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user?.id, profile?.email]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const currentIdx = stageIndex(row?.stage);
+
+  const onAcceptTerms = async () => {
+    if (!user?.id) return;
+    setSaving(true);
+    try {
+      await acceptTerms(user.id);
+      await load();
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not accept terms');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onSaveEssentials = async () => {
+    if (!user?.id) return;
+    setSaving(true);
+    try {
+      const updated = await saveEssentials(user.id, {
+        email,
+        city,
+        state: stateName,
+        education_level: education,
+        primary_skill: skill,
+      });
+      setRow(updated);
+      Alert.alert('Saved', 'Essentials saved. Continue to the next journey step.');
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onSubmitKyc = async () => {
+    if (!user?.id) return;
+    if (!pan && !aadhaar && !passport) {
+      Alert.alert('KYC required', 'Provide at least PAN, Aadhaar last 4, or passport number.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await submitIdentity(user.id, {
+        pan_number: pan.trim() || undefined,
+        aadhaar_last4: aadhaar.trim() || undefined,
+        passport_number: passport.trim() || undefined,
+      });
+      await load();
+      Alert.alert('Submitted', 'KYC submitted for review. Interview scheduling is next.');
+    } catch (e) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Could not submit KYC');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <LoadingView message="Loading GCC journey..." />;
+
   return (
-    <DataListScreen
-      title="Verification"
-      emptyTitle="No records yet"
-      emptySubtitle="Your verification will appear here."
-      query={{
-        table: 'worker_documents',
-        userColumn: 'worker_id',
-        orderBy: 'status',
-        titleKey: 'document_type',
-        subtitleKey: 'status',
-        statusKey: 'status',
-      }}
-    />
+    <ScreenLayout variant="tab" header={{ title: 'GCC Journey', subtitle: 'Become job-ready' }}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              load();
+            }}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+
+        <Card elevated={false} style={styles.progressCard}>
+          <Text style={styles.progressLabel}>Current stage</Text>
+          <Text style={styles.progressValue}>
+            {JOURNEY_STEPS[currentIdx]?.label ?? row?.stage ?? 'Essentials'}
+          </Text>
+          <View style={styles.dots}>
+            {JOURNEY_STEPS.map((step, idx) => (
+              <View
+                key={step.id}
+                style={[
+                  styles.dot,
+                  idx < currentIdx && styles.dotDone,
+                  idx === currentIdx && styles.dotCurrent,
+                ]}
+              />
+            ))}
+          </View>
+        </Card>
+
+        <SectionTitle title="Roadmap" subtitle="Complete each step to unlock job applications" />
+        {JOURNEY_STEPS.map((step, idx) => {
+          const status =
+            idx < currentIdx ? 'Done' : idx === currentIdx ? 'Current' : 'Upcoming';
+          const tone = status === 'Done' ? 'success' : status === 'Current' ? 'primary' : 'default';
+          return (
+            <Card key={step.id} elevated={false}>
+              <View style={styles.stepRow}>
+                <View style={styles.flex}>
+                  <Text style={styles.stepTitle}>{step.label}</Text>
+                  <Text style={styles.stepDesc}>{step.description}</Text>
+                </View>
+                <Badge label={status} tone={tone as any} />
+              </View>
+            </Card>
+          );
+        })}
+
+        {!row?.terms_accepted_at ? (
+          <Card>
+            <SectionTitle title="Accept terms" subtitle="Required before essentials" />
+            <Text style={styles.body}>
+              I confirm I am medically fit for overseas work, will provide truthful information, and
+              will not pay unauthorized placement fees.
+            </Text>
+            <Button title="Accept worker terms" onPress={onAcceptTerms} loading={saving} fullWidth />
+          </Card>
+        ) : null}
+
+        {(row?.stage === 'essentials' || !row?.primary_skill) && row?.terms_accepted_at ? (
+          <Card>
+            <SectionTitle title="Essentials" />
+            <Input label="Contact email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+            <Input label="City" value={city} onChangeText={setCity} />
+            <Input label="State" value={stateName} onChangeText={setStateName} />
+            <Text style={styles.chipLabel}>Education</Text>
+            <View style={styles.chips}>
+              {EDUCATION_LEVELS.map((level) => (
+                <Pressable
+                  key={level}
+                  onPress={() => setEducation(level)}
+                  style={[styles.chip, education === level && styles.chipActive]}
+                >
+                  <Text style={[styles.chipText, education === level && styles.chipTextActive]}>{level}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.chipLabel}>Primary skill</Text>
+            <View style={styles.chips}>
+              {PRIMARY_SKILLS.map((s) => (
+                <Pressable
+                  key={s}
+                  onPress={() => setSkill(s)}
+                  style={[styles.chip, skill === s && styles.chipActive]}
+                >
+                  <Text style={[styles.chipText, skill === s && styles.chipTextActive]}>{s}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Button title="Save essentials" onPress={onSaveEssentials} loading={saving} fullWidth />
+          </Card>
+        ) : null}
+
+        {row?.stage === 'identity' ? (
+          <Card>
+            <SectionTitle title="Identity (KYC)" subtitle="Submit for verification before interviews" />
+            <Input label="PAN" value={pan} onChangeText={setPan} autoCapitalize="characters" />
+            <Input label="Aadhaar last 4" value={aadhaar} onChangeText={setAadhaar} keyboardType="number-pad" maxLength={4} />
+            <Input label="Passport number" value={passport} onChangeText={setPassport} autoCapitalize="characters" />
+            <Button title="Submit KYC" onPress={onSubmitKyc} loading={saving} fullWidth />
+          </Card>
+        ) : null}
+
+        {row?.stage === 'gcc_ready' ? (
+          <Card>
+            <Text style={styles.readyTitle}>You are GCC ready</Text>
+            <Text style={styles.body}>You can apply to verified overseas jobs from the Jobs tab.</Text>
+          </Card>
+        ) : (
+          <Card elevated={false}>
+            <Text style={styles.body}>
+              Quiz, media upload, interview scheduling, Razorpay payment, trade test, medical, bond,
+              and PDOT continue on the web portal for steps that need desktop tools. Your progress
+              syncs here automatically.
+            </Text>
+          </Card>
+        )}
+      </ScrollView>
+    </ScreenLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  content: { padding: spacing.lg, paddingBottom: spacing.xxxl, gap: spacing.md },
+  error: { ...typography.bodySm, color: colors.destructive },
+  progressCard: { backgroundColor: colors.workerLight, borderColor: colors.successBorder ?? colors.border },
+  progressLabel: { ...typography.bodySm, color: colors.mutedForeground },
+  progressValue: { ...typography.h2, color: colors.worker, marginTop: 4 },
+  dots: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing.md },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.border },
+  dotDone: { backgroundColor: colors.success },
+  dotCurrent: { backgroundColor: colors.worker, transform: [{ scale: 1.2 }] },
+  stepRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  flex: { flex: 1 },
+  stepTitle: { ...typography.h3 },
+  stepDesc: { ...typography.bodySm, marginTop: 2 },
+  body: { ...typography.body, marginBottom: spacing.md },
+  chipLabel: { ...typography.bodySm, fontWeight: '600', marginBottom: spacing.xs, marginTop: spacing.sm },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
+  },
+  chipActive: { borderColor: colors.worker, backgroundColor: colors.workerLight },
+  chipText: { ...typography.bodySm, color: colors.foreground },
+  chipTextActive: { color: colors.worker, fontWeight: '700' },
+  readyTitle: { ...typography.h2, color: colors.success, marginBottom: spacing.sm },
+});

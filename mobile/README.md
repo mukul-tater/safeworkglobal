@@ -1,82 +1,61 @@
-# GigBridge Mobile (React Native CLI)
+# SafeWork Global Mobile (React Native CLI)
 
-Native iOS and Android app for **SafeWork Global / GigBridge**, mirroring the web app's portals:
+Native iOS and Android app for **SafeWork Global**, sharing the same Supabase backend as the web portal.
 
-- **Public** — Home, job search, job details, auth
-- **Worker** — Dashboard, applications, documents, contracts, payments, messaging, and more
-- **Employer** — Dashboard, post/manage jobs, applications, interviews, escrow, compliance
-- **Admin** — User management, verification, disputes, reports
-- **E-Mitra Partner** — Worker registration, compliance, notifications
+## What’s included
 
-Built with **React Native CLI** (not Expo), TypeScript, React Navigation, and Supabase.
+- **Public** — Home, job search, job details, auth (email or mobile login)
+- **Worker** — Bottom tabs (Home / Jobs / Journey / Applications / More), GCC journey essentials + KYC, profile editor, document upload, gated job apply, messaging inbox, bind-mobile OTP
+- **Employer** — Bottom tabs (Home / Jobs / Post / Hiring / More), enriched post-job form, messaging
+- **Admin / Partner** — Drawer portals with live list screens; partner register worker with OTP
 
 ## Prerequisites
 
 - Node.js 22+
-- Xcode (iOS)
-- Android Studio + SDK (Android)
+- Xcode (iOS) / Android Studio (Android)
 - CocoaPods (`gem install cocoapods`)
+- Backend API running if you need MSG91 OTP (`API_BASE_URL`)
 
 ## Setup
 
 ```sh
 cd mobile
 npm install
-
-# Copy Supabase credentials from the web app
 cp .env.example .env
-# Edit .env:
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_ANON_KEY=your-anon-key
+# Fill SUPABASE_URL, SUPABASE_ANON_KEY, optional API_BASE_URL
 
-# iOS native deps
 cd ios && bundle install && bundle exec pod install && cd ..
 ```
+
+**Never commit `.env`.** Rotate keys if they were previously committed.
 
 ## Run
 
 ```sh
-# Start Metro
 npm start
-
-# Android
-npm run android
-
-# iOS
-npm run ios
+npm run android   # or npm run ios
 ```
+
+## Deep links
+
+Custom scheme: `safeworkglobal://jobs/<jobId>`
+
+## Honest parity notes
+
+Mobile mirrors core worker/employer flows. Some web-only surfaces (full quiz CMS, Razorpay native checkout, SSVN/SRN/SEN partner networks, interviewer queue, admin journey-ops) still lean on the web portal; journey progress syncs via shared Supabase tables.
 
 ## Project structure
 
 ```
-mobile/
-├── src/
-│   ├── components/     # Shared UI + DataListScreen
-│   ├── config/         # Navigation menus per portal
-│   ├── contexts/       # AuthContext (Supabase)
-│   ├── integrations/   # Supabase client + types
-│   ├── lib/            # Utils (salary formatting, etc.)
-│   ├── navigation/     # Root, public tabs, portal drawers
-│   ├── screens/        # Feature screens by role
-│   └── theme/          # Colors
-├── android/            # React Native CLI Android project
-└── ios/                # React Native CLI iOS project
+mobile/src/
+  components/   UI + DataListScreen + ErrorBoundary
+  config/       env + navigation menus
+  contexts/     Auth + Network
+  hooks/        useWorkerJobAccess
+  integrations/ Supabase client + types
+  lib/          auth email helpers, OTP API, portal access
+  navigation/   root + role navigators (tabs + drawers)
+  screens/      public / worker / employer / admin / partner
+  services/     verificationService (GCC journey)
+  theme/        colors, spacing, typography
 ```
-
-## Feature parity
-
-| Portal | Screens |
-|--------|---------|
-| Public | Home, Jobs, Job Detail, Auth, About, Contact, Privacy, Terms |
-| Worker | 20+ screens (dashboard, profile, applications, contracts, travel, etc.) |
-| Employer | 18+ screens (dashboard, post job, manage jobs, applications, escrow, etc.) |
-| Admin | 19 screens (users, verification, disputes, compliance, etc.) |
-| Partner | 5 screens (dashboard, workers, register, notifications, compliance) |
-
-Screens load live data from the same Supabase tables as the web app. Dashboards and forms (job apply, post job, register worker) are fully interactive.
-
-## Notes
-
-- Uses the same Supabase backend as the Vite web app in the repo root.
-- Role-based navigation: after login, users are routed to Worker / Employer / Admin / Partner drawers.
-- New users without a role see the role selection screen.

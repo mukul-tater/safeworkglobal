@@ -1,7 +1,17 @@
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {
+  Briefcase,
+  ClipboardList,
+  Home,
+  Menu,
+  ShieldCheck,
+} from 'lucide-react-native';
+import type { WorkerStackParamList, WorkerTabParamList } from './types';
+import { colors } from '../theme/colors';
 import { createPortalDrawer } from './PortalDrawer';
 import { workerNavItems } from '../config/navigation';
-import type { WorkerStackParamList } from './types';
-import { colors } from '../theme/colors';
 
 import WorkerDashboardScreen from '../screens/worker/WorkerDashboardScreen';
 import WorkerProfileScreen from '../screens/worker/WorkerProfileScreen';
@@ -27,7 +37,10 @@ import WorkerNotificationsScreen from '../screens/worker/WorkerNotificationsScre
 import WorkerOnboardingScreen from '../screens/worker/WorkerOnboardingScreen';
 import WorkerTrustScreen from '../screens/worker/WorkerTrustScreen';
 
-const screens = {
+const Tab = createBottomTabNavigator<WorkerTabParamList>();
+const Stack = createNativeStackNavigator<WorkerStackParamList>();
+
+const moreScreens = {
   WorkerDashboard: WorkerDashboardScreen,
   WorkerProfile: WorkerProfileScreen,
   WorkerVerification: WorkerVerificationScreen,
@@ -53,10 +66,103 @@ const screens = {
   WorkerTrust: WorkerTrustScreen,
 };
 
-export default createPortalDrawer<WorkerStackParamList>(
-  screens,
+const MoreDrawer = createPortalDrawer<WorkerStackParamList>(
+  moreScreens,
   workerNavItems,
-  'WorkerDashboard',
+  'WorkerProfile',
   colors.worker,
   colors.workerLight,
 );
+
+function JobsStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen name="Jobs" component={JobsScreen} options={{ title: 'Jobs' }} />
+      <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: 'Job details' }} />
+    </Stack.Navigator>
+  );
+}
+
+function ApplicationsStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="WorkerApplications"
+        component={WorkerApplicationsScreen}
+        options={{ title: 'Applications' }}
+      />
+      <Stack.Screen
+        name="WorkerApplicationTracking"
+        component={WorkerApplicationTrackingScreen}
+        options={{ title: 'Track applications' }}
+      />
+      <Stack.Screen
+        name="WorkerInterviews"
+        component={WorkerInterviewsScreen}
+        options={{ title: 'Interviews' }}
+      />
+      <Stack.Screen
+        name="WorkerOffers"
+        component={WorkerOffersScreen}
+        options={{ title: 'Offers' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+export default function WorkerNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.worker,
+        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarStyle: {
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.border,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="DashboardTab"
+        component={WorkerDashboardScreen}
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="JobsTab"
+        component={JobsStack}
+        options={{
+          title: 'Jobs',
+          tabBarIcon: ({ color, size }) => <Briefcase color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="JourneyTab"
+        component={WorkerVerificationScreen}
+        options={{
+          title: 'Journey',
+          tabBarIcon: ({ color, size }) => <ShieldCheck color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="ApplicationsTab"
+        component={ApplicationsStack}
+        options={{
+          title: 'Apply',
+          tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="MoreTab"
+        component={MoreDrawer}
+        options={{
+          title: 'More',
+          tabBarIcon: ({ color, size }) => <Menu color={color} size={size} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
