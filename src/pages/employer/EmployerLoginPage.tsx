@@ -188,7 +188,7 @@ export default function EmployerLoginPage() {
           Looking for a job?{' '}
           <Link to="/worker/login" className="text-primary hover:underline">Worker sign in</Link>
           {' · '}
-          <Link to="/emitra/login" className="text-primary hover:underline">Partner sign in</Link>
+          <Link to="/partner/login" className="text-primary hover:underline">Partner sign in</Link>
         </p>
       </div>
     </div>

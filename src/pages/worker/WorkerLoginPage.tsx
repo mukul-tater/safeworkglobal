@@ -306,18 +306,21 @@ export default function WorkerLoginPage() {
                   Create your profile
                 </Link>
               </p>
-            </div>
 
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-              Hiring workers?{' '}
-              <Link to="/employer/login" className="text-primary hover:underline">
-                Employer sign in
-              </Link>
-              {' · '}
-              <Link to="/emitra/login" className="text-primary hover:underline">
-                Partner sign in
-              </Link>
-            </p>
+              <div className="mt-5 border-t border-border pt-4">
+                <p className="mb-2.5 text-center text-xs text-muted-foreground">
+                  Looking for a different portal?
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                    <Link to="/employer/login">Employer sign in</Link>
+                  </Button>
+                  <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                    <Link to="/partner/login">Partner sign in</Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>

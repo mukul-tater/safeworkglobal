@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, type AppRole } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,27 @@ const roles: { value: AppRole; label: string; description: string; icon: React.R
   { value: 'employer', label: 'Employer', description: 'Hire skilled workers globally', icon: <Briefcase className="h-6 w-6" />, color: 'bg-blue-50 text-blue-600 border-blue-200 hover:border-blue-400' },
   { value: 'partner', label: 'Partner (e-Mitra)', description: 'Register workers from your service center', icon: <Users className="h-6 w-6" />, color: 'bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-400' },
 ];
+
+function PortalSwitchLinks() {
+  return (
+    <div className="mt-4 border-t border-border pt-4">
+      <p className="mb-2.5 text-center text-xs text-muted-foreground">
+        Looking for a different portal?
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        <Button asChild variant="outline" className="h-10 text-sm font-medium">
+          <Link to="/worker/login">Worker sign in</Link>
+        </Button>
+        <Button asChild variant="outline" className="h-10 text-sm font-medium">
+          <Link to="/employer/login">Employer sign in</Link>
+        </Button>
+        <Button asChild variant="outline" className="h-10 text-sm font-medium col-span-2">
+          <Link to="/partner/login">Partner sign in</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -83,7 +104,7 @@ export default function Auth() {
     } else if (roleHint === 'employer') {
       navigate(modeHint === 'signup' ? '/employer/quick-signup' : '/employer/login', { replace: true });
     } else if (roleHint === 'partner') {
-      navigate(modeHint === 'signup' ? '/emitra/register' : '/emitra/login', { replace: true });
+      navigate(modeHint === 'signup' ? '/emitra/register' : '/partner/login', { replace: true });
     }
   }, [roleHint, modeHint, isAuthenticated, navigate]);
 
@@ -457,6 +478,7 @@ export default function Auth() {
                     Don't have an account?{' '}
                     <button type="button" onClick={() => { setError(''); setView('role-select'); }} className="text-primary font-medium hover:underline">Sign up</button>
                   </p>
+                  <PortalSwitchLinks />
                 </form>
               </div>
             )}
@@ -591,12 +613,12 @@ export default function Auth() {
 
         <p className="text-xs text-center text-muted-foreground mt-6">
           By continuing, you agree to our{' '}
-          <a href="/terms" className="underline">Terms of Service</a> and{' '}
-          <a href="/privacy" className="underline">Privacy Policy</a>.
+          <Link to="/terms" className="underline">Terms of Service</Link> and{' '}
+          <Link to="/privacy" className="underline">Privacy Policy</Link>.
         </p>
         <p className="text-xs text-center text-muted-foreground/60 mt-3">
           Platform staff?{' '}
-          <a href="/admin/login" className="underline hover:text-muted-foreground">Admin Portal</a>
+          <Link to="/admin/login" className="underline hover:text-muted-foreground">Admin Portal</Link>
         </p>
       </div>
 

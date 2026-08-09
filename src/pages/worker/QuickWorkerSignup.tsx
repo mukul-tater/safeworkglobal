@@ -369,6 +369,20 @@ export default function QuickWorkerSignup() {
                       Sign in
                     </Link>
                   </p>
+
+                  <div className="mt-4 border-t border-border pt-4">
+                    <p className="mb-2.5 text-center text-xs text-muted-foreground">
+                      Looking for a different portal?
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                        <Link to="/employer/login">Employer sign in</Link>
+                      </Button>
+                      <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                        <Link to="/partner/login">Partner sign in</Link>
+                      </Button>
+                    </div>
+                  </div>
                 </form>
               )}
 
