@@ -75,25 +75,20 @@ function formatInrEquivalentLine(
   return null;
 }
 
-/** Primary salary line plus optional INR equivalent for foreign currencies. */
+/** Primary salary line — always displayed in ₹ (INR). */
 export function getJobSalaryDisplay(
   min: number | null | undefined,
   max: number | null | undefined,
-  currency: string = 'INR',
+  _currency: string = 'INR',
   emptyLabel = 'Salary on application',
 ): JobSalaryDisplay {
   if (min == null && max == null) {
     return { primary: emptyLabel, inrLine: null };
   }
 
-  const primary =
-    currency === 'INR'
-      ? formatInrPrimaryLine(min, max, emptyLabel)
-      : formatJobSalaryNative(min, max, currency, emptyLabel);
-
   return {
-    primary,
-    inrLine: formatInrEquivalentLine(min, max, currency),
+    primary: formatInrPrimaryLine(min, max, emptyLabel),
+    inrLine: null,
   };
 }
 

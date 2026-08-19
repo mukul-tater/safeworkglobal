@@ -9,14 +9,13 @@ import {
   Coins,
   ArrowRight,
   Clock,
-  Phone,
+  Mail,
   TrendingDown,
   X,
   Check,
 } from "lucide-react";
 
-const SUPPORT_PHONE_DISPLAY = "+91-9950085843";
-const SUPPORT_PHONE_TEL = "+919950085843";
+const SUPPORT_EMAIL = "mukul@safeworkglobal.com";
 
 export default function EmployerTrust() {
   const navigate = useNavigate();
@@ -127,9 +126,9 @@ export default function EmployerTrust() {
               </p>
             </div>
             <Button asChild variant="outline" size="sm" className="gap-2 shrink-0">
-              <a href={`tel:${SUPPORT_PHONE_TEL}`}>
-                <Phone className="h-4 w-4" />
-                {SUPPORT_PHONE_DISPLAY}
+              <a href={`mailto:${SUPPORT_EMAIL}`}>
+                <Mail className="h-4 w-4" />
+                {SUPPORT_EMAIL}
               </a>
             </Button>
           </div>

@@ -1,11 +1,10 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Sparkles, ShieldCheck, ArrowRight, Wallet, Phone, Clock } from "lucide-react";
+import { CheckCircle2, Sparkles, ShieldCheck, ArrowRight, Wallet, Mail, Clock } from "lucide-react";
 import EmployerFlowStepper from "@/components/employer/EmployerFlowStepper";
 
-const SUPPORT_PHONE_DISPLAY = "+91-9950085843";
-const SUPPORT_PHONE_TEL = "+919950085843";
+const SUPPORT_EMAIL = "mukul@safeworkglobal.com";
 
 export default function PilotOffer() {
   const navigate = useNavigate();
@@ -82,11 +81,11 @@ export default function PilotOffer() {
 
           {/* Call support */}
           <a
-            href={`tel:${SUPPORT_PHONE_TEL}`}
+            href={`mailto:${SUPPORT_EMAIL}`}
             className="mt-3 flex items-center justify-center gap-2 w-full h-11 rounded-md border border-border bg-card text-sm font-medium hover:bg-accent transition-colors"
           >
-            <Phone className="h-4 w-4 text-success" />
-            Talk to us — {SUPPORT_PHONE_DISPLAY}
+            <Mail className="h-4 w-4 text-primary" />
+            Email us — {SUPPORT_EMAIL}
           </a>
 
           <button

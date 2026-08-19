@@ -29,6 +29,7 @@ import {
   displayableEmail,
   partnerAuthEmailFromMobile,
 } from '@/lib/workerAuthEmail';
+import VestaEmitraAgreement from '@/components/partner/VestaEmitraAgreement';
 import {
   emitraV2BasicSchema,
   emitraV2LocationSchema,
@@ -114,6 +115,10 @@ export default function EmitraOnboardingPage() {
   const [accountPasswordConfirm, setAccountPasswordConfirm] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [data, setData] = useState<FormData>({ ...DEFAULTS });
+  const [agreementOtpStep, setAgreementOtpStep] = useState(false);
+  const [agreementOtp, setAgreementOtp] = useState('');
+  const [agreementOtpBusy, setAgreementOtpBusy] = useState(false);
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
 
   const update = (patch: Partial<FormData>) => setData((d) => ({ ...d, ...patch }));
 
@@ -263,6 +268,52 @@ export default function EmitraOnboardingPage() {
     }
   };
 
+  const requestAgreementOtp = async () => {
+    const digits = (data.mobile || '').replace(/\D/g, '');
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      toast.error('Mobile number not verified — cannot send agreement OTP');
+      return;
+    }
+    if (!isFirebaseConfigured()) {
+      toast.error('SMS verification is not configured.');
+      return;
+    }
+    setAgreementOtpBusy(true);
+    try {
+      await firebaseOtp.sendOtp(digits);
+      setAgreementOtpStep(true);
+      setAgreementOtp('');
+      toast.success(`Agreement acceptance OTP sent to +91 ${digits}`);
+    } catch (err) {
+      firebaseOtp.resetRecaptcha();
+      toast.error(err instanceof Error ? err.message : 'Failed to send OTP');
+    } finally {
+      setAgreementOtpBusy(false);
+    }
+  };
+
+  const confirmAgreementOtp = async () => {
+    if (agreementOtp.length !== 6) {
+      toast.error('Enter the 6-digit OTP');
+      return;
+    }
+    setAgreementOtpBusy(true);
+    try {
+      await firebaseOtp.verifyOtp(agreementOtp);
+      try {
+        await firebaseSignOut(getFirebaseAuth());
+      } catch { /* ignore */ }
+      setAgreementAccepted(true);
+      setAgreementOtpStep(false);
+      setAgreementOtp('');
+      toast.success('Agreement accepted via OTP');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Invalid OTP');
+    } finally {
+      setAgreementOtpBusy(false);
+    }
+  };
+
   const ensureAccount = async (): Promise<string | null> => {
     if (user) return user.id;
     if (!mobileVerified) {
@@ -354,6 +405,8 @@ export default function EmitraOnboardingPage() {
       // Keep legacy declaration fields in sync where useful
       no_jobs_promise: !!data.agree_mea_guidelines,
       mobile_verified: mobileVerified,
+      agreement_accepted_via_otp: agreementAccepted,
+      ...(agreementAccepted ? { agreement_accepted_at: new Date().toISOString() } : {}),
       current_step: step,
       ...(sourceLspId ? { source_lsp_id: sourceLspId } : {}),
       ...overrides,
@@ -382,6 +435,10 @@ export default function EmitraOnboardingPage() {
 
   const handleSubmit = async () => {
     if (!validateStep()) return;
+    if (!agreementAccepted) {
+      toast.error('Please accept the SafeWork–Vesta–E-Mitra Agreement via OTP before submitting.');
+      return;
+    }
     setSaving(true);
     try {
       await persistProgress({
@@ -774,6 +831,76 @@ export default function EmitraOnboardingPage() {
                     onChange={(v) => update({ agree_confidentiality: v })}
                     label="I agree to maintain confidentiality of candidate data." />
                 </div>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground">
+                  SafeWork–Vesta–E-Mitra Agreement
+                </h3>
+                <VestaEmitraAgreement partnerName={data.owner_name || undefined} />
+
+                {agreementAccepted ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
+                    <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                    <span className="text-sm font-medium text-success">
+                      Agreement accepted via OTP on +91 {data.mobile}
+                    </span>
+                  </div>
+                ) : agreementOtpStep ? (
+                  <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <ShieldCheck className="h-4 w-4 text-primary" />
+                      Enter OTP sent to +91 {data.mobile} to accept the agreement
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <InputOTP maxLength={6} value={agreementOtp} onChange={setAgreementOtp}>
+                        <InputOTPGroup>
+                          {[0, 1, 2, 3, 4, 5].map((i) => (
+                            <InputOTPSlot key={i} index={i} />
+                          ))}
+                        </InputOTPGroup>
+                      </InputOTP>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-10"
+                        onClick={() => void confirmAgreementOtp()}
+                        disabled={agreementOtpBusy || agreementOtp.length !== 6}
+                      >
+                        {agreementOtpBusy ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                        Confirm & Accept
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Didn&apos;t get the code?{' '}
+                      <button
+                        type="button"
+                        className="text-primary font-medium hover:underline disabled:opacity-50"
+                        onClick={() => void requestAgreementOtp()}
+                        disabled={agreementOtpBusy}
+                      >
+                        Resend OTP
+                      </button>
+                    </p>
+                  </div>
+                ) : (
+                  <Button
+                    id="agreement-otp-btn"
+                    type="button"
+                    variant="outline"
+                    className="w-full h-11"
+                    onClick={() => void requestAgreementOtp()}
+                    disabled={agreementOtpBusy || !mobileVerified}
+                  >
+                    {agreementOtpBusy ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ShieldCheck className="h-4 w-4 mr-1" />}
+                    Accept Agreement via OTP
+                  </Button>
+                )}
+                {!mobileVerified && !agreementAccepted && (
+                  <p className="text-xs text-amber-600">
+                    Verify your mobile number in Step 1 before accepting the agreement.
+                  </p>
+                )}
               </section>
             </div>
           )}

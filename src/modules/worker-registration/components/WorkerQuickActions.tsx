@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Camera, MessageCircle, Search, User } from "lucide-react";
-import { getWorkerWhatsAppUrl } from "@/config/workerSupport";
+import { ArrowRight, Camera, Mail, Search, User } from "lucide-react";
+import { getWorkerSupportMailtoUrl } from "@/config/workerSupport";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
 
 interface Props {
@@ -21,7 +21,7 @@ export default function WorkerQuickActions({
     ? `/jobs?location=${encodeURIComponent(preferredGccCountry)}`
     : "/jobs";
 
-  const whatsappUrl = getWorkerWhatsAppUrl(t("whatsapp.message"));
+  const supportUrl = getWorkerSupportMailtoUrl();
 
   const actions = onboardingCompleted
     ? [
@@ -40,7 +40,7 @@ export default function WorkerQuickActions({
           icon: Camera,
         },
         {
-          href: whatsappUrl,
+          href: supportUrl,
           external: true,
           title: t("quickActions.needHelp"),
           desc: t("quickActions.needHelpDesc"),
@@ -63,11 +63,11 @@ export default function WorkerQuickActions({
           icon: User,
         },
         {
-          href: whatsappUrl,
+          href: supportUrl,
           external: true,
-          title: t("quickActions.whatsapp"),
+          title: t("quickActions.needHelp"),
           desc: t("quickActions.whatsappDesc"),
-          icon: MessageCircle,
+          icon: Mail,
         },
       ];
 

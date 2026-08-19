@@ -86,7 +86,7 @@ export default function PrivacyPolicy() {
               <li>Withdraw consent at any time</li>
               <li>Lodge a complaint with a data protection authority</li>
             </ul>
-            <p className="mt-2">To exercise these rights, contact us at <a href="mailto:mukultater@gmail.com" className="text-primary underline">mukultater@gmail.com</a>.</p>
+            <p className="mt-2">To exercise these rights, contact us at <a href="mailto:mukul@safeworkglobal.com" className="text-primary underline">mukul@safeworkglobal.com</a>.</p>
           </section>
 
           <section>
@@ -108,8 +108,7 @@ export default function PrivacyPolicy() {
             <h2 className="text-xl font-semibold font-heading text-foreground">11. Contact Us</h2>
             <p>If you have questions about this Privacy Policy, please contact us at:</p>
             <ul className="list-none space-y-1">
-              <li>Email: <a href="mailto:mukultater@gmail.com" className="text-primary underline">mukultater@gmail.com</a></li>
-              <li>Phone: +91-9950085843</li>
+              <li>Email: <a href="mailto:mukul@safeworkglobal.com" className="text-primary underline">mukul@safeworkglobal.com</a></li>
             </ul>
           </section>
         </div>

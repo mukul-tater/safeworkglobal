@@ -1,10 +1,6 @@
-/** Worker-facing support contact — used for WhatsApp FAB and help links. */
-export const WORKER_SUPPORT_PHONE_DISPLAY = "+91 99500 85843";
-export const WORKER_SUPPORT_PHONE_E164 = "919950085843";
+/** Worker-facing support contact — used for help links. */
+export const WORKER_SUPPORT_EMAIL = "mukul@safeworkglobal.com";
 
-const defaultWhatsAppMessage =
-  "Namaste, mujhe SafeWorkGlobal par madad chahiye.";
-
-export function getWorkerWhatsAppUrl(message = defaultWhatsAppMessage): string {
-  return `https://wa.me/${WORKER_SUPPORT_PHONE_E164}?text=${encodeURIComponent(message)}`;
+export function getWorkerSupportMailtoUrl(subject = "SafeWork Global – Worker Help"): string {
+  return `mailto:${WORKER_SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
 }

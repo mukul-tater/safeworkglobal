@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Loader2, Send } from "lucide-react";
+import { Mail, MapPin, Loader2, Send, ShieldCheck, Phone } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,8 +44,7 @@ export default function ContactUs() {
   };
 
   const contactInfo = [
-    { icon: Mail, title: "Email", value: "mukultater@gmail.com", href: "mailto:mukultater@gmail.com" },
-    { icon: Phone, title: "Phone", value: "+91-9950085843", href: "tel:+919950085843" },
+    { icon: Mail, title: "Email", value: "mukul@safeworkglobal.com", href: "mailto:mukul@safeworkglobal.com" },
     { icon: MapPin, title: "Office", value: "Udaipur, Rajasthan, IN", href: null },
   ];
 
@@ -146,6 +145,68 @@ export default function ContactUs() {
                 </ScrollReveal>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* MEA Helpline */}
+        <section className="py-12 md:py-16 bg-muted/30">
+          <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
+            <ScrollReveal>
+              <Card className="border-border/50 overflow-hidden">
+                <CardContent className="p-6 sm:p-8">
+                  <div className="flex items-start gap-4 mb-5">
+                    <div className="p-3 rounded-xl bg-amber-500/10 shrink-0">
+                      <ShieldCheck className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-bold font-heading">
+                        Ministry of External Affairs (MEA) — Emigrant Helpline
+                      </h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Government of India toll-free helpline for overseas workers
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-5 p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                    <Phone className="h-5 w-5 text-amber-600 shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Toll-free helpline (24×7)</p>
+                      <a href="tel:18001130090" className="text-lg font-bold text-foreground hover:text-primary transition-colors">
+                        1800-11-3090
+                      </a>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-3 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 font-bold mt-0.5">•</span>
+                      Report complaints against unlicensed or fraudulent recruiting agents.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 font-bold mt-0.5">•</span>
+                      Verify if a recruiting agent (RA) holds a valid MEA licence before accepting any job offer.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 font-bold mt-0.5">•</span>
+                      Get assistance with emigration clearance, PDOT registration, and passport-related queries.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 font-bold mt-0.5">•</span>
+                      Seek help if you face exploitation, contract violations, or non-payment of wages abroad.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 font-bold mt-0.5">•</span>
+                      No worker should ever pay more than the government-prescribed maximum recruitment charges.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 font-bold mt-0.5">•</span>
+                      MEA&apos;s e-Migrate portal (<a href="https://emigrate.gov.in" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">emigrate.gov.in</a>) provides online emigration services and RA verification.
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
           </div>
         </section>
       </main>

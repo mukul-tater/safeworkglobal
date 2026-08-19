@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Phone, Globe, Facebook, Twitter, Linkedin, Instagram, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Globe, Facebook, Twitter, Linkedin, Instagram, ArrowRight, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -167,18 +167,24 @@ const Footer = () => {
           </div>
         </div>
 
+        {/* RA Licensing */}
+        <div className="relative z-10 border-t border-white/10">
+          <div className="container mx-auto px-4 sm:px-6 py-4">
+            <p className="text-[11px] sm:text-xs text-white/40 text-center leading-relaxed">
+              Recruitment services provided under MEA-licensed Recruiting Agent <strong className="text-white/60">Vesta</strong>.
+              Workers are deployed through licensed, regulated channels in compliance with the Emigration Act.
+            </p>
+          </div>
+        </div>
+
         {/* Bottom Bar */}
         <div className="relative z-10 border-t border-white/10">
           <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 sm:gap-6 text-xs sm:text-sm">
-                <a href="mailto:mukultater@gmail.com" className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors">
+                <a href="mailto:mukul@safeworkglobal.com" className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors">
                   <Mail className="h-3.5 w-3.5" />
-                  <span>mukultater@gmail.com</span>
-                </a>
-                <a href="tel:+919950085843" className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors">
-                  <Phone className="h-3.5 w-3.5" />
-                  <span>+91-9950085843</span>
+                  <span>mukul@safeworkglobal.com</span>
                 </a>
                 <span className="flex items-center gap-1.5 text-white/50">
                   <Globe className="h-3.5 w-3.5" />

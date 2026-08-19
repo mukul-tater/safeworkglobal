@@ -113,8 +113,7 @@ export default function TermsOfService() {
             <h2 className="text-xl font-semibold font-heading text-foreground">13. Contact Us</h2>
             <p>For questions about these Terms, contact us at:</p>
             <ul className="list-none space-y-1">
-              <li>Email: <a href="mailto:mukultater@gmail.com" className="text-primary underline">mukultater@gmail.com</a></li>
-              <li>Phone: +91-9950085843</li>
+              <li>Email: <a href="mailto:mukul@safeworkglobal.com" className="text-primary underline">mukul@safeworkglobal.com</a></li>
             </ul>
           </section>
         </div>
