@@ -36,8 +36,9 @@ const en = {
 
   "hero.employerTitle1": "Hire verified workers.",
   "hero.employerTitle2": "Ready to deploy.",
-  "hero.workerTitle1": "Verified jobs abroad.",
-  "hero.workerTitle2": "Clear contracts.",
+  "hero.workerTitle1": "Indian Skills.",
+  "hero.workerTitle2": "Global Opportunities.",
+  "hero.values": "Safe • Verified • Transparent • Compliant",
   "hero.employerBody":
     "Skill-tested, document-verified Indian workers — deployed through licensed recruitment partners.",
   "hero.workerBody":
@@ -197,8 +198,9 @@ const hi: Record<AppMessageKey, string> = {
 
   "hero.employerTitle1": "सत्यापित श्रमिक भर्ती करें।",
   "hero.employerTitle2": "तैनाती के लिए तैयार।",
-  "hero.workerTitle1": "विदेश में सत्यापित नौकरियाँ।",
-  "hero.workerTitle2": "स्पष्ट अनुबंध।",
+  "hero.workerTitle1": "भारत का हुनर।",
+  "hero.workerTitle2": "दुनिया के रोज़गार।",
+  "hero.values": "सुरक्षित • सत्यापित • पारदर्शी • अनुपालन",
   "hero.employerBody":
     "कौशल-परीक्षित, दस्तावेज़-सत्यापित भारतीय श्रमिक — लाइसेंस्ड भर्ती साझेदारों के माध्यम से तैनात।",
   "hero.workerBody":

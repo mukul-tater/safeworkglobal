@@ -63,8 +63,11 @@ const HeroSection = () => {
       <div className="container mx-auto px-4 sm:px-6 relative z-10 pt-28 pb-16 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-28 w-full">
         <div className="max-w-2xl text-left">
           {/* Brand as hero-level signal */}
-          <p className="font-heading text-sm sm:text-base font-semibold tracking-[0.18em] uppercase text-white/80 mb-5">
+          <p className="font-heading text-sm sm:text-base font-semibold tracking-[0.18em] uppercase text-white/80 mb-3">
             SafeWork Global
+          </p>
+          <p className="text-sm sm:text-base font-medium tracking-wide text-white/75 mb-5">
+            {t("hero.values")}
           </p>
 
           <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold font-heading text-white mb-5 leading-[1.08] tracking-tight">
@@ -104,14 +107,7 @@ const HeroSection = () => {
                   >
                     {t("hero.browseJobs")} <ArrowRight className="h-5 w-5" />
                   </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="h-12 px-7 rounded-xl border-white/40 bg-white/5 text-white hover:bg-white/15 hover:text-white"
-                    onClick={handleEmployerCta}
-                  >
-                    {t("hero.imEmployer")}
-                  </Button>
+                  
                 </>
               )}
             </div>
