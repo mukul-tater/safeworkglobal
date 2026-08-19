@@ -30,7 +30,7 @@ export default function HomeTradesStrip() {
             Indian skilled workers
           </p>
           <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            The people we verify and place
+            The people we verify
           </h2>
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
             Construction, electrical, welding, and more — skill-checked before they meet an employer.
