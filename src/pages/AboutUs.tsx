@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -15,13 +15,10 @@ import {
   EMIGRATE_PORTAL_URL,
   MADAD_PORTAL_URL,
   MEA_PBSK,
-  RECRUITMENT_PARTNER,
   SAFEWORK_CONTACT,
-  getSafeworkMailtoUrl,
 } from "@/config/workerSupport";
 import {
   ArrowDown,
-  ArrowRight,
   BadgeCheck,
   Building2,
   Check,
@@ -31,15 +28,12 @@ import {
   Globe2,
   GraduationCap,
   Handshake,
-  HardHat,
   Landmark,
-  Mail,
   MapPin,
   Network,
   Phone,
   Scale,
   Shield,
-  ShieldCheck,
   Sparkles,
   Store,
   UserPlus,
@@ -93,35 +87,6 @@ function SectionEyebrow({ children }: { children: ReactNode }) {
     <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.16em] uppercase bg-primary/10 text-primary mb-4">
       {children}
     </span>
-  );
-}
-
-function FlowNode({
-  title,
-  subtitle,
-  description,
-  icon: Icon,
-}: {
-  title: string;
-  subtitle?: string;
-  description: string;
-  icon: ComponentType<{ className?: string }>;
-}) {
-  return (
-    <div className="relative flex-1 min-w-0">
-      <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5 h-full shadow-xs">
-        <div className="inline-flex p-2.5 rounded-xl bg-primary/10 mb-3">
-          <Icon className="h-5 w-5 text-primary" />
-        </div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
-        {subtitle && (
-          <p lang="hi" className="text-xs text-primary/80 mt-0.5">
-            {subtitle}
-          </p>
-        )}
-        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{description}</p>
-      </div>
-    </div>
   );
 }
 
@@ -181,16 +146,6 @@ export default function AboutUs() {
     { en: "Skill / Trade Test", hi: "कौशल / ट्रेड टेस्ट" },
     { en: "Digital Scorecard", hi: "डिजिटल स्कोरकार्ड" },
     { en: "Verified Profile", hi: "सत्यापित प्रोफ़ाइल" },
-  ];
-
-  const ecosystem = [
-    { icon: HardHat, title: "Workers", hi: "श्रमिक", desc: pick(locale, "India's skilled workforce", "भारत का कुशल कार्यबल") },
-    { icon: Store, title: "E-Mitra / CSC / ITI", hi: "प्रशिक्षण साझेदार", desc: pick(locale, "Local worker onboarding & facilitation; training & skill ecosystem", "स्थानीय पंजीकरण, सुविधा और कौशल प्रशिक्षण") },
-    { icon: Network, title: "SafeWork Platform", hi: "SafeWork प्लेटफ़ॉर्म", desc: pick(locale, "Technology, workflow & workforce mobility infrastructure", "तकनीक, वर्कफ़्लो और workforce mobility इंफ्रास्ट्रक्चर") },
-    { icon: ClipboardCheck, title: "Skill Verification", hi: "कौशल सत्यापन", desc: pick(locale, "Standardized assessment & digital verification", "मानकीकृत आकलन और डिजिटल सत्यापन") },
-    { icon: Building2, title: "Global Employers", hi: "वैश्विक नियोक्ता", desc: pick(locale, "International workforce demand", "अंतरराष्ट्रीय कार्यबल की माँग") },
-    { icon: Scale, title: "Licensed Recruitment", hi: "लाइसेंस्ड भर्ती", desc: pick(locale, "Regulated overseas recruitment", "नियमित विदेश भर्ती प्रक्रिया") },
-    { icon: Globe2, title: "International Deployment", hi: "तैनाती", desc: pick(locale, "International employment", "अंतरराष्ट्रीय रोजगार") },
   ];
 
   const indiaCards = [
@@ -525,74 +480,6 @@ export default function AboutUs() {
           </div>
         </section>
 
-        {/* Compliance */}
-        <section className="py-14 md:py-20">
-          <div className="container mx-auto px-4 sm:px-6">
-            <ScrollReveal>
-              <div className="max-w-3xl mx-auto rounded-3xl border border-amber-500/25 bg-amber-500/[0.06] p-6 sm:p-10 text-center">
-                <BilingualHeading en="Clear Roles. Transparent Process." hi="स्पष्ट भूमिका। पारदर्शी प्रक्रिया।" />
-                <div className="mt-8 space-y-4">
-                  <div className="rounded-2xl border border-border bg-card p-5">
-                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">SafeWork Global</p>
-                    <p className="font-heading font-semibold text-lg mt-1">
-                      {pick(locale, "Technology & Workforce Mobility Platform", "तकनीक और Workforce Mobility प्लेटफ़ॉर्म")}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {pick(
-                        locale,
-                        "SafeWork Global does not own a Recruitment Agent licence. Platform functions are technology, workflow and mobility infrastructure.",
-                        "SafeWork Global के पास Recruitment Agent लाइसेंस नहीं है। प्लेटफ़ॉर्म का काम तकनीक, वर्कफ़्लो और mobility इंफ्रास्ट्रक्चर है।",
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex justify-center text-primary/50" aria-hidden>
-                    <ArrowDown className="h-6 w-6" />
-                  </div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    {pick(locale, "Overseas recruitment process conducted through", "विदेश भर्ती प्रक्रिया इनके माध्यम से")}
-                  </p>
-                  <div className="rounded-2xl border border-border bg-card p-5">
-                    <p className="font-heading font-semibold text-lg">{RECRUITMENT_PARTNER.name}</p>
-                    <p className="text-sm text-muted-foreground">{RECRUITMENT_PARTNER.designation}</p>
-                    <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-left">
-                      <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">RC No.</p>
-                        <p className="text-sm font-semibold font-heading">{RECRUITMENT_PARTNER.rcNo}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
-        {/* Ecosystem */}
-        <section className="py-14 md:py-20 bg-muted/30">
-          <div className="container mx-auto px-4 sm:px-6">
-            <ScrollReveal>
-              <div className="text-center mb-10">
-                <BilingualHeading en="One Ecosystem. Multiple Partners." hi="एक नेटवर्क, अनेक साझेदार।" />
-              </div>
-            </ScrollReveal>
-            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
-              {ecosystem.map((node, i) => (
-                <ScrollReveal key={node.title} delay={i * 0.03}>
-                  <div className="flex flex-col h-full">
-                    <FlowNode title={node.title} subtitle={node.hi} description={node.desc} icon={node.icon} />
-                    {i < ecosystem.length - 1 && (
-                      <div className="flex justify-center py-1 text-primary/40 sm:hidden" aria-hidden>
-                        <ArrowDown className="h-4 w-4" />
-                      </div>
-                    )}
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* Built for India */}
         <section className="py-14 md:py-20">
           <div className="container mx-auto px-4 sm:px-6">
@@ -922,18 +809,7 @@ export default function AboutUs() {
         <section className="py-14 md:py-20">
           <div className="container mx-auto px-4 sm:px-6">
             <ScrollReveal>
-              <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-primary/[0.08] to-info/[0.06] p-6 sm:p-12 text-center">
-                <h2 className="text-2xl sm:text-3xl font-bold font-heading">Your Skills Can Travel Further.</h2>
-                <p lang="hi" className="text-lg text-primary/85 mt-1 mb-4">
-                  आपका कौशल और आगे जा सकता है।
-                </p>
-                <p className="text-muted-foreground max-w-xl mx-auto mb-8">
-                  {pick(
-                    locale,
-                    "Build your verified profile and explore global employment opportunities with SafeWork Global.",
-                    "अपनी सत्यापित प्रोफ़ाइल बनाएँ और SafeWork Global के साथ वैश्विक रोजगार के अवसर देखें।",
-                  )}
-                </p>
+              <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-primary/[0.08] to-info/[0.06] p-6 sm:p-10 text-center">
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button size="lg" className="h-12 rounded-xl" onClick={goFindJobs}>
                     Find Jobs | नौकरी खोजें
@@ -950,60 +826,6 @@ export default function AboutUs() {
           </div>
         </section>
 
-        {/* Contact */}
-        <section id="contact" className="py-14 md:py-20 bg-muted/30">
-          <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
-            <ScrollReveal>
-              <div className="text-center mb-8">
-                <BilingualHeading en="Contact Us" hi="संपर्क करें" />
-              </div>
-            </ScrollReveal>
-            <Card className="border-border/50">
-              <CardContent className="p-6 sm:p-8 space-y-5">
-                <div>
-                  <p className="font-heading text-xl font-bold">{SAFEWORK_CONTACT.brand}</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {pick(locale, "Operating Brand:", "संचालन ब्रांड:")}{" "}
-                    <span className="text-foreground font-medium">{SAFEWORK_CONTACT.operatingCompany}</span>
-                  </p>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                  <a href={SAFEWORK_CONTACT.websiteUrl} className="rounded-xl border border-border p-4 hover:border-primary/30">
-                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Website</p>
-                    <p className="font-semibold mt-1">{SAFEWORK_CONTACT.websiteDisplay}</p>
-                  </a>
-                  <div className="rounded-xl border border-border p-4">
-                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                      {SAFEWORK_CONTACT.founderTitle}
-                    </p>
-                    <p className="font-semibold mt-1">{SAFEWORK_CONTACT.founderName}</p>
-                  </div>
-                  <a href={getSafeworkMailtoUrl()} className="rounded-xl border border-border p-4 hover:border-primary/30 flex items-start gap-3">
-                    <Mail className="h-4 w-4 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Email</p>
-                      <p className="font-semibold mt-1 break-all">{SAFEWORK_CONTACT.email}</p>
-                    </div>
-                  </a>
-                </div>
-                <div className="rounded-xl bg-muted/50 border border-border p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    Overseas Recruitment Process Conducted Through:
-                  </p>
-                  <p className="font-heading font-semibold">{RECRUITMENT_PARTNER.name}</p>
-                  <p className="text-sm text-muted-foreground">{RECRUITMENT_PARTNER.designation}</p>
-                  <p className="text-sm font-semibold mt-1">RC No.: {RECRUITMENT_PARTNER.rcNo}</p>
-                </div>
-                <Button variant="outline" className="w-full h-11 rounded-xl" asChild>
-                  <Link to="/contact">
-                    {pick(locale, "Open full contact page", "पूरा संपर्क पेज खोलें")}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
       </main>
 
       <div className="md:hidden fixed bottom-16 inset-x-0 z-40 px-3 pb-[env(safe-area-inset-bottom)]">
