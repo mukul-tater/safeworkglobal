@@ -8,12 +8,15 @@ export type SsvnPartnerCheck = {
   companyName: string | null;
 };
 
-/** Load the SSVN partner org for a user (if any). */
-export async function getSsvnPartnerForUser(userId: string): Promise<SsvnPartnerCheck | null> {
+/** Load a partner org of a given type for a user (if any). */
+export async function getPartnerOrgForUser(
+  userId: string,
+  typeCode: string,
+): Promise<SsvnPartnerCheck | null> {
   const { data: types } = await supabase
     .from('partner_types')
     .select('id')
-    .eq('code', 'SSVN')
+    .eq('code', typeCode)
     .maybeSingle();
   if (!types?.id) return null;
 
@@ -32,6 +35,11 @@ export async function getSsvnPartnerForUser(userId: string): Promise<SsvnPartner
     status: data.status,
     companyName: data.partner_profiles_ext?.company_name ?? null,
   };
+}
+
+/** Load the SSVN partner org for a user (if any). */
+export async function getSsvnPartnerForUser(userId: string): Promise<SsvnPartnerCheck | null> {
+  return getPartnerOrgForUser(userId, 'SSVN');
 }
 
 export function isSsvnPartnerApproved(partner: SsvnPartnerCheck | null): boolean {

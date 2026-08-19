@@ -24,8 +24,7 @@ import {
 
 /**
  * Partner signup hub — choose a partner type.
- * E-Mitra is live (redirects to /emitra/register after confirm).
- * Other types are listed as coming soon for future expansion.
+ * Live types (E-Mitra, SSVN, ITI, Employer) redirect to their onboarding after confirm.
  */
 export default function PartnerRegister() {
   const navigate = useNavigate();

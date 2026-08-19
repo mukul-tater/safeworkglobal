@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Store, Building2, HeartPulse, Globe2 } from "lucide-react";
+import { Store, Building2, HeartPulse, Globe2, GraduationCap, Briefcase } from "lucide-react";
 
 export type PartnerSignupStatus = "live" | "coming_soon";
 
@@ -37,6 +37,24 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
     status: "live",
     registerPath: "/partner/register-ssvn",
     accentClass: "bg-violet-500/10 text-violet-700 dark:text-violet-400",
+  },
+  {
+    code: "ITI",
+    name: "ITI",
+    shortDescription: "Industrial Training Institutes — train and onboard skilled workers",
+    icon: GraduationCap,
+    status: "live",
+    registerPath: "/partner/register-iti",
+    accentClass: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
+  },
+  {
+    code: "EMPLOYER",
+    name: "Employer",
+    shortDescription: "Hire verified workers for overseas jobs",
+    icon: Briefcase,
+    status: "live",
+    registerPath: "/employer/quick-signup",
+    accentClass: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
   },
   {
     code: "SRN",

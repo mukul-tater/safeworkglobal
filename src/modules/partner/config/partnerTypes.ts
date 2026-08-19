@@ -71,6 +71,18 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
       { label: "Support", to: "/partner/support", icon: LifeBuoy },
     ],
   },
+  ITI: {
+    code: "ITI",
+    landing: "/partner/iti/dashboard",
+    navItems: [
+      { label: "Dashboard", to: "/partner/iti/dashboard", icon: LayoutDashboard },
+      { label: "Wallet", to: "/partner/wallet", icon: Wallet },
+      { label: "Invoices", to: "/partner/invoices", icon: Receipt },
+      { label: "Payouts", to: "/partner/payouts", icon: Banknote },
+      { label: "Tickets", to: "/partner/tickets", icon: Ticket },
+      { label: "Support", to: "/partner/support", icon: LifeBuoy },
+    ],
+  },
   SRN: {
     code: "SRN",
     landing: "/partner/srn/dashboard",

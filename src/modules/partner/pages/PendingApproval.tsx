@@ -72,6 +72,19 @@ export default function PendingApproval() {
             .
           </p>
         )}
+        {partner.partner_type_code === "ITI" && (
+          <p className="text-xs text-muted-foreground mb-4">
+            After approval, sign in at{" "}
+            <button
+              type="button"
+              className="text-primary underline"
+              onClick={() => navigate("/partner/iti/login")}
+            >
+              ITI partner login
+            </button>
+            .
+          </p>
+        )}
         <Button variant="outline" onClick={() => logout()}>Logout</Button>
       </Card>
     </div>

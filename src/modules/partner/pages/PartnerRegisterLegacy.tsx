@@ -1,9 +1,9 @@
 /**
- * SSVN / generic partner registration form.
- * Canonical SSVN path: /partner/register-ssvn
+ * SSVN / ITI / generic partner registration form.
+ * Canonical paths: /partner/register-ssvn, /partner/register-iti
  */
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card } from "@/components/ui/card";
@@ -32,7 +32,26 @@ interface PartnerType {
 export default function PartnerRegisterLegacy() {
   const { user, isAuthenticated, assignRole, signup, refreshProfile, refreshRole } = useAuth();
   const navigate = useNavigate();
-  const isSsvnPath = window.location.pathname.includes("register-ssvn");
+  const { pathname } = useLocation();
+  const lockedTypeCode = pathname.includes("register-ssvn")
+    ? "SSVN"
+    : pathname.includes("register-iti")
+      ? "ITI"
+      : null;
+  const loginPath = lockedTypeCode === "ITI" ? "/partner/iti/login" : "/partner/ssvn/login";
+  const heading =
+    lockedTypeCode === "SSVN"
+      ? "Trade Test Centre (SSVN) Registration"
+      : lockedTypeCode === "ITI"
+        ? "ITI Partner Registration"
+        : "Partner Registration";
+  const subtitle =
+    lockedTypeCode === "SSVN"
+      ? "Apply to operate a SafeWork trade test centre. After approval, sign in at SSVN login."
+      : lockedTypeCode === "ITI"
+        ? "Apply as an Industrial Training Institute. After approval, sign in at ITI login."
+        : "Join the SafeWork Global partner network";
+  const signInLabel = lockedTypeCode === "ITI" ? "ITI sign in" : "SSVN sign in";
   const [types, setTypes] = useState<PartnerType[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -64,16 +83,16 @@ export default function PartnerRegisterLegacy() {
       .order("sort_order")
       .then(({ data }: any) => {
         const list = (data ?? []) as PartnerType[];
-        const filtered = isSsvnPath
-          ? list.filter((t) => t.code === "SSVN")
+        const filtered = lockedTypeCode
+          ? list.filter((t) => t.code === lockedTypeCode)
           : list;
         setTypes(filtered.length ? filtered : list);
-        if (isSsvnPath) {
-          const ssvn = list.find((t) => t.code === "SSVN");
-          if (ssvn) setForm((f) => ({ ...f, partner_type_id: ssvn.id }));
+        if (lockedTypeCode) {
+          const locked = list.find((t) => t.code === lockedTypeCode);
+          if (locked) setForm((f) => ({ ...f, partner_type_id: locked.id }));
         }
       });
-  }, [isSsvnPath]);
+  }, [lockedTypeCode]);
 
   useEffect(() => {
     if (user?.email && !form.email) {
@@ -124,7 +143,7 @@ export default function PartnerRegisterLegacy() {
       });
       if (error) {
         throw new Error(
-          "Account created but sign-in failed. Confirm email if required, then sign in at /partner/ssvn/login and finish registration.",
+          "Account created but sign-in failed. Confirm email if required, then sign in and finish registration.",
         );
       }
     }
@@ -205,12 +224,10 @@ export default function PartnerRegisterLegacy() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold">
-            {isSsvnPath ? "Trade Test Centre (SSVN) Registration" : "Partner Registration"}
+            {heading}
           </h1>
           <p className="text-muted-foreground">
-            {isSsvnPath
-              ? "Apply to operate a SafeWork trade test centre. After approval, sign in at SSVN login."
-              : "Join the SafeWork Global partner network"}
+            {subtitle}
           </p>
         </div>
         <Card className="p-6 space-y-6">
@@ -219,7 +236,7 @@ export default function PartnerRegisterLegacy() {
             <Select
               value={form.partner_type_id}
               onValueChange={(v) => set("partner_type_id", v)}
-              disabled={isSsvnPath}
+              disabled={!!lockedTypeCode}
             >
               <SelectTrigger><SelectValue placeholder="Select partner type" /></SelectTrigger>
               <SelectContent>
@@ -242,8 +259,8 @@ export default function PartnerRegisterLegacy() {
               <h2 className="font-semibold">Create login</h2>
               <p className="text-xs text-muted-foreground">
                 Set a password now. After SafeWork approves you, sign in at{" "}
-                <Link to="/partner/ssvn/login" className="text-primary underline">
-                  /partner/ssvn/login
+                <Link to={loginPath} className="text-primary underline">
+                  {loginPath}
                 </Link>
                 .
               </p>
@@ -272,7 +289,7 @@ export default function PartnerRegisterLegacy() {
 
           <section className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label>Company / Center Name *</Label>
+              <Label>{lockedTypeCode === "ITI" ? "Institute Name *" : "Company / Center Name *"}</Label>
               <Input value={form.company_name} onChange={(e) => set("company_name", e.target.value)} />
             </div>
             <div>
@@ -360,8 +377,8 @@ export default function PartnerRegisterLegacy() {
           <div className="flex flex-col sm:flex-row justify-between gap-2">
             <p className="text-sm text-muted-foreground self-center">
               Already registered?{" "}
-              <Link to="/partner/ssvn/login" className="text-primary font-medium hover:underline">
-                SSVN sign in
+              <Link to={loginPath} className="text-primary font-medium hover:underline">
+                {signInLabel}
               </Link>
             </p>
             <div className="flex justify-end gap-2">

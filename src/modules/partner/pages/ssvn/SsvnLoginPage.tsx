@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Phone, Mail, Building2, Home } from 'lucide-react';
+import { Loader2, Phone, Mail, Building2, GraduationCap, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import {
@@ -21,7 +21,7 @@ import { partnerAuthEmailFromMobile, displayableEmail } from '@/lib/workerAuthEm
 import {
   assertUserIsPartnerRole,
   findUserIdByPartnerMobile,
-  getSsvnPartnerForUser,
+  getPartnerOrgForUser,
   isSsvnPartnerApproved,
 } from '../../services/ssvnAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -31,14 +31,20 @@ type Step = 'credentials' | 'otp';
 
 export default function SsvnLoginPage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
   const { login, isAuthenticated, role } = useAuth();
   const firebaseOtp = useFirebasePhoneOtp();
   const nextPath = searchParams.get('next') || '';
+  const isIti = pathname.includes('/partner/iti/');
+  const typeCode = isIti ? 'ITI' : 'SSVN';
+  const typeLabel = isIti ? 'ITI' : 'SSVN';
+  const defaultDashboard = isIti ? '/partner/iti/dashboard' : '/partner/ssvn/dashboard';
+  const registerPath = isIti ? '/partner/register-iti' : '/partner/register-ssvn';
 
   const afterLoginPath = () => {
     if (nextPath.startsWith('/') && !nextPath.startsWith('//')) return nextPath;
-    return '/partner/ssvn/dashboard';
+    return defaultDashboard;
   };
 
   const [method, setMethod] = useState<Method>('mobile');
@@ -54,15 +60,17 @@ export default function SsvnLoginPage() {
     const isPartner = await assertUserIsPartnerRole(userId);
     if (!isPartner) return 'This account is not a SafeWork partner account.';
 
-    const ssvn = await getSsvnPartnerForUser(userId);
-    if (!ssvn) {
-      return 'No trade test centre (SSVN) registration found for this account. Apply first.';
+    const org = await getPartnerOrgForUser(userId, typeCode);
+    if (!org) {
+      return isIti
+        ? 'No ITI partner registration found for this account. Apply first.'
+        : 'No trade test centre (SSVN) registration found for this account. Apply first.';
     }
-    if (!isSsvnPartnerApproved(ssvn)) {
-      if (ssvn.status === 'pending') {
-        return 'Your SSVN application is pending SafeWork approval.';
+    if (!isSsvnPartnerApproved(org)) {
+      if (org.status === 'pending') {
+        return `Your ${typeLabel} application is pending SafeWork approval.`;
       }
-      return `Your SSVN partner account is ${ssvn.status}. Contact SafeWork support.`;
+      return `Your ${typeLabel} partner account is ${org.status}. Contact SafeWork support.`;
     }
     return null;
   };
@@ -115,7 +123,7 @@ export default function SsvnLoginPage() {
     try {
       const userId = await findUserIdByPartnerMobile(digits);
       if (!userId) {
-        setError('No trade test centre account found with this mobile. Please apply first.');
+        setError('No partner account found with this mobile. Please apply first.');
         return;
       }
 
@@ -145,7 +153,7 @@ export default function SsvnLoginPage() {
       return;
     }
     if (password.length < 6) {
-      setError('Enter the password you set during SSVN registration');
+      setError(`Enter the password you set during ${typeLabel} registration`);
       return;
     }
 
@@ -257,12 +265,16 @@ export default function SsvnLoginPage() {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-4">
           <div className="text-center space-y-2 mb-2">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500/10 text-violet-700 dark:text-violet-400">
-              <Building2 className="h-6 w-6" />
+            <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${isIti ? 'bg-teal-500/10 text-teal-700 dark:text-teal-400' : 'bg-violet-500/10 text-violet-700 dark:text-violet-400'}`}>
+              {isIti ? <GraduationCap className="h-6 w-6" /> : <Building2 className="h-6 w-6" />}
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Trade Test Centre Sign In</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {isIti ? 'ITI Partner Sign In' : 'Trade Test Centre Sign In'}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              SSVN partners — run assessments for SafeWork-allocated candidates.
+              {isIti
+                ? 'ITI partners — train and onboard skilled workers for SafeWork.'
+                : 'SSVN partners — run assessments for SafeWork-allocated candidates.'}
             </p>
           </div>
 
@@ -308,7 +320,7 @@ export default function SsvnLoginPage() {
                         onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Use the mobile from your SSVN registration. SMS via Firebase (+91).
+                        Use the mobile from your {typeLabel} registration. SMS via Firebase (+91).
                       </p>
                     </div>
                     <Button
@@ -403,12 +415,12 @@ export default function SsvnLoginPage() {
 
               <div className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border space-y-2">
                 <p>
-                  New trade test centre?{' '}
+                  New {isIti ? 'ITI' : 'trade test centre'}?{' '}
                   <Link
-                    to="/partner/register-ssvn"
+                    to={registerPath}
                     className="text-primary font-medium hover:underline"
                   >
-                    Apply as SSVN partner
+                    Apply as {typeLabel} partner
                   </Link>
                 </p>
                 <p>

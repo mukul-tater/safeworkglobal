@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Store, ArrowRight, Home } from 'lucide-react';
+import { Building2, Store, GraduationCap, Briefcase, ArrowRight, Home } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 const OPTIONS = [
@@ -11,6 +11,7 @@ const OPTIONS = [
     description: 'Accept allocations, run Aadhaar KYC + practical tests, submit for SafeWork review.',
     to: '/partner/ssvn/login',
     accent: 'bg-violet-500/10 text-violet-700 dark:text-violet-400',
+    Icon: Building2,
   },
   {
     code: 'SEN',
@@ -18,6 +19,23 @@ const OPTIONS = [
     description: 'Register and manage workers from your CSC / E-Mitra centre.',
     to: '/emitra/login',
     accent: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+    Icon: Store,
+  },
+  {
+    code: 'ITI',
+    title: 'ITI Partner',
+    description: 'Industrial Training Institutes — train and onboard skilled workers.',
+    to: '/partner/iti/login',
+    accent: 'bg-teal-500/10 text-teal-700 dark:text-teal-400',
+    Icon: GraduationCap,
+  },
+  {
+    code: 'EMPLOYER',
+    title: 'Employer',
+    description: 'Hire verified workers for overseas jobs.',
+    to: '/employer/login',
+    accent: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
+    Icon: Briefcase,
   },
 ] as const;
 
@@ -50,7 +68,7 @@ export default function PartnerLoginChooser() {
           <div className="text-center space-y-2">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Partner Sign In</h1>
             <p className="text-sm text-muted-foreground">
-              Choose your partner type. Trade test centres use SSVN login — not E-Mitra.
+              Choose your account type. Trade test centres use SSVN login — not E-Mitra.
             </p>
           </div>
 
@@ -59,11 +77,7 @@ export default function PartnerLoginChooser() {
               <Card key={opt.code} className="overflow-hidden">
                 <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className={`p-3 rounded-xl shrink-0 w-fit ${opt.accent}`}>
-                    {opt.code === 'SSVN' ? (
-                      <Building2 className="h-5 w-5" />
-                    ) : (
-                      <Store className="h-5 w-5" />
-                    )}
+                    <opt.Icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h2 className="font-semibold">{opt.title}</h2>
