@@ -125,8 +125,6 @@ const Footer = () => {
                 {[
                   { to: "/faq", label: t("footer.faq") },
                   { to: "/country-insights", label: t("footer.insights") },
-                  { to: "/salary-guide", label: t("footer.salary") },
-                  { to: "/language-resources", label: t("footer.language") },
                   { to: "/cultural-guides", label: t("footer.culture") },
                   { to: "/legal-advice", label: t("footer.legal") },
                 ].map((link) => (

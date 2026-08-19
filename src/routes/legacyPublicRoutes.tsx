@@ -5,9 +5,8 @@ import EmailVerificationPending from '@/pages/EmailVerificationPending';
 import VisaGuide from '@/pages/resources/VisaGuide';
 import SuccessStories from '@/pages/resources/SuccessStories';
 import SupportCenter from '@/pages/resources/SupportCenter';
-import LanguageResources from '@/pages/resources/LanguageResources';
 import CountryInsightsPage from '@/pages/resources/CountryInsightsPage';
-import SalaryGuide from '@/pages/resources/SalaryGuide';
+import CountryInsightDetailPage from '@/pages/resources/CountryInsightDetailPage';
 import LegalAdvice from '@/pages/resources/LegalAdvice';
 import CulturalGuides from '@/pages/resources/CulturalGuides';
 import FaqPage from '@/pages/resources/FaqPage';
@@ -23,9 +22,8 @@ export const legacyPublicRoutes = (
     <Route path="/visa-guide" element={<VisaGuide />} />
     <Route path="/success-stories" element={<SuccessStories />} />
     <Route path="/support" element={<SupportCenter />} />
-    <Route path="/language-resources" element={<LanguageResources />} />
     <Route path="/country-insights" element={<CountryInsightsPage />} />
-    <Route path="/salary-guide" element={<SalaryGuide />} />
+    <Route path="/country-insights/:slug" element={<CountryInsightDetailPage />} />
     <Route path="/legal-advice" element={<LegalAdvice />} />
     <Route path="/cultural-guides" element={<CulturalGuides />} />
     <Route path="/faq" element={<FaqPage />} />
