@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Facebook, Twitter, Linkedin, Instagram, ArrowRight, FileCheck, ShieldCheck } from "lucide-react";
+import { Mail, Facebook, Twitter, Linkedin, Instagram, ArrowRight, FileCheck, ShieldCheck, MapPin } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { SAFEWORK_CONTACT } from "@/config/workerSupport";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -203,6 +204,10 @@ const Footer = () => {
                   <Mail className="h-3.5 w-3.5" />
                   <span>mukul@safeworkglobal.com</span>
                 </a>
+                <span className="flex items-start gap-1.5 text-white/50 max-w-xs">
+                  <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>{SAFEWORK_CONTACT.officeAddress}</span>
+                </span>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm">

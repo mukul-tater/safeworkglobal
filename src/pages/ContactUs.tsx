@@ -25,11 +25,13 @@ import {
   CheckCircle2,
   ExternalLink,
   Search,
+  LifeBuoy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { isValidIndianMobile, normalizeIndianMobile } from "@/lib/validations/common";
 import {
   EMIGRATE_PORTAL_URL,
+  MADAD_PORTAL_URL,
   MEA_PBSK,
   SAFEWORK_CONTACT,
   getSafeworkMailtoUrl,
@@ -118,15 +120,6 @@ export default function ContactUs() {
                 Connect with SafeWork Global for worker registration, skill verification, employer
                 enquiries, partnership opportunities and overseas employment support.
               </p>
-
-              <div className="mt-8 flex justify-center">
-                <Button asChild size="lg" className="h-12 rounded-xl text-base px-8">
-                  <a href={getSafeworkMailtoUrl("SafeWork Global – Enquiry")}>
-                    <Send className="h-5 w-5" />
-                    Send Enquiry
-                  </a>
-                </Button>
-              </div>
             </ScrollReveal>
           </div>
         </section>
@@ -300,6 +293,7 @@ export default function ContactUs() {
             </ScrollReveal>
 
             <div className="grid md:grid-cols-2 gap-4 md:gap-5">
+              <div className="flex flex-col gap-4 md:gap-5">
               <ScrollReveal>
                 <article className="h-full rounded-2xl border border-[#1e2a4a]/15 bg-white dark:bg-[#12140f] dark:border-[#e8eadf]/10 p-5 sm:p-6 shadow-sm">
                   <div className="flex items-start gap-3 mb-4">
@@ -326,6 +320,34 @@ export default function ContactUs() {
                   </Button>
                 </article>
               </ScrollReveal>
+
+              <ScrollReveal>
+                <article className="h-full rounded-2xl border border-[#1e2a4a]/15 bg-white dark:bg-[#12140f] dark:border-[#e8eadf]/10 p-5 sm:p-6 shadow-sm">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1e2a4a]/8 text-[#1e2a4a] dark:bg-[#e8eadf]/10 dark:text-[#e8eadf]">
+                      <LifeBuoy className="h-5 w-5" aria-hidden />
+                    </div>
+                    <div>
+                      <h3 className="font-bold font-heading text-lg text-[#1e2a4a] dark:text-[#e8eadf]">
+                        MADAD Portal
+                      </h3>
+                      <p className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mt-0.5">
+                        Official government MADAD portal for overseas workers
+                      </p>
+                      <p className="text-sm text-[#1e2a4a]/60 dark:text-[#e8eadf]/60">
+                        प्रवासी श्रमिकों के लिए आधिकारिक सरकारी मदद पोर्टल
+                      </p>
+                    </div>
+                  </div>
+                  <Button asChild className="w-full h-12 rounded-xl bg-[#1e2a4a] hover:bg-[#162038] text-white">
+                    <a href={MADAD_PORTAL_URL} target="_blank" rel="noopener noreferrer">
+                      Visit MADAD | MADAD पर जाएं
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </article>
+              </ScrollReveal>
+              </div>
 
               <ScrollReveal delay={0.05}>
                 <article className="h-full rounded-2xl border border-[#1e2a4a]/15 bg-white dark:bg-[#12140f] dark:border-[#e8eadf]/10 p-5 sm:p-6 shadow-sm">
@@ -424,34 +446,6 @@ export default function ContactUs() {
               <Card className="border-border/50">
                 <CardContent className="p-5 flex items-start gap-3">
                   <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
-                    <Phone className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Phone</p>
-                    <a href={getSafeworkMailtoUrl("SafeWork Global – Call request")} className="text-sm font-semibold text-foreground hover:text-primary">
-                      {SAFEWORK_CONTACT.email}
-                    </a>
-                    <p className="text-xs text-muted-foreground mt-0.5">Email us to request a call</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-border/50">
-                <CardContent className="p-5 flex items-start gap-3">
-                  <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
-                    <MessageCircle className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">WhatsApp</p>
-                    <a href={getSafeworkMailtoUrl("SafeWork Global – WhatsApp enquiry")} className="text-sm font-semibold text-foreground hover:text-primary">
-                      {SAFEWORK_CONTACT.email}
-                    </a>
-                    <p className="text-xs text-muted-foreground mt-0.5">Write to us and we will follow up</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-border/50">
-                <CardContent className="p-5 flex items-start gap-3">
-                  <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
                     <Mail className="h-5 w-5 text-primary" />
                   </div>
                   <div>
@@ -471,7 +465,7 @@ export default function ContactUs() {
                     <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                       Office Address
                     </p>
-                    <p className="text-sm font-semibold text-foreground">{SAFEWORK_CONTACT.officeAddress}</p>
+                    <p className="text-sm font-semibold text-foreground leading-relaxed">{SAFEWORK_CONTACT.officeAddress}</p>
                   </div>
                 </CardContent>
               </Card>

@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import SEOHead from "@/components/SEOHead";
+import { SAFEWORK_CONTACT } from "@/config/workerSupport";
 
 export default function TermsOfService() {
   return (
@@ -114,6 +115,7 @@ export default function TermsOfService() {
             <p>For questions about these Terms, contact us at:</p>
             <ul className="list-none space-y-1">
               <li>Email: <a href="mailto:mukul@safeworkglobal.com" className="text-primary underline">mukul@safeworkglobal.com</a></li>
+              <li>Office Address: {SAFEWORK_CONTACT.officeAddress}</li>
             </ul>
           </section>
         </div>

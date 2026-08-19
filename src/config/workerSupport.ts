@@ -8,7 +8,7 @@ export function getWorkerSupportMailtoUrl(subject = "SafeWork Global – Worker 
 /** Verified SafeWork Global contact details used on public pages. Do not invent numbers. */
 export const SAFEWORK_CONTACT = {
   email: WORKER_SUPPORT_EMAIL,
-  officeAddress: "Udaipur, Rajasthan, IN",
+  officeAddress: "Ward No. 12, Pratap Choraha, Fatehnagar, Udaipur, Rajasthan 313205",
 } as const;
 
 export function getSafeworkMailtoUrl(subject = "SafeWork Global – Enquiry", body?: string): string {
@@ -30,3 +30,4 @@ export const MEA_PBSK = {
 } as const;
 
 export const EMIGRATE_PORTAL_URL = "https://emigrate.gov.in/";
+export const MADAD_PORTAL_URL = "https://www.madad.gov.in/madad/";
