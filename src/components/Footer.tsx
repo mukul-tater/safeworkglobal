@@ -123,6 +123,7 @@ const Footer = () => {
               <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">{t("footer.resources")}</h3>
               <ul className="space-y-2.5">
                 {[
+                  { to: "/faq", label: t("footer.faq") },
                   { to: "/country-insights", label: t("footer.insights") },
                   { to: "/salary-guide", label: t("footer.salary") },
                   { to: "/language-resources", label: t("footer.language") },

@@ -10,6 +10,7 @@ import CountryInsightsPage from '@/pages/resources/CountryInsightsPage';
 import SalaryGuide from '@/pages/resources/SalaryGuide';
 import LegalAdvice from '@/pages/resources/LegalAdvice';
 import CulturalGuides from '@/pages/resources/CulturalGuides';
+import FaqPage from '@/pages/resources/FaqPage';
 
 /** Public routes restored from legacy App.tsx — required for employer hiring flow. */
 export const legacyPublicRoutes = (
@@ -27,6 +28,7 @@ export const legacyPublicRoutes = (
     <Route path="/salary-guide" element={<SalaryGuide />} />
     <Route path="/legal-advice" element={<LegalAdvice />} />
     <Route path="/cultural-guides" element={<CulturalGuides />} />
+    <Route path="/faq" element={<FaqPage />} />
     <Route path="/legacy" element={<Navigate to="/" replace />} />
   </>
 );
