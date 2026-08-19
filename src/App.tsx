@@ -9,7 +9,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeProvider } from "./components/ThemeProvider";
 import PageTransition from "./components/PageTransition";
-import PilotPhaseBanner from "./components/PilotPhaseBanner";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Jobs from "./pages/Jobs";
@@ -105,7 +104,6 @@ import {
   WorkerAuthProvider,
   WorkerLanguageProvider,
 } from "./modules/worker-registration";
-import { useIsActiveModuleRoute } from "./modules/worker-registration/hooks/useIsWorkerRegistrationRoute";
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -126,12 +124,9 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppShell() {
-  const isActiveModule = useIsActiveModuleRoute();
-
   return (
     <>
       <OAuthLandingHandler />
-      {!isActiveModule && <PilotPhaseBanner />}
       <PageTransition>
         <Routes>
           {/* Original SafeWork Global home */}
