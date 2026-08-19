@@ -10,14 +10,17 @@ export default function HomeLicenseStrip() {
             Licensed & Regulated
           </div>
 
-          <h2 className="text-lg sm:text-xl font-bold font-heading tracking-tight mb-2">
-            Technology platform. Licensed recruitment.
-          </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-foreground leading-relaxed max-w-2xl mx-auto">
             SafeWork Global is a technology and workforce mobility platform.
-            Overseas recruitment is conducted through{" "}
-            <span className="text-foreground font-medium">Vesta Immigration LLP</span>,
-            a Registered Recruiting Agent (MEA).
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto mt-3">
+            Overseas Recruitment Process Conducted Through:
+          </p>
+          <p className="text-sm sm:text-base font-semibold font-heading mt-1">
+            Vesta Immigration LLP
+          </p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            Registered Recruiting Agent (MEA)
           </p>
 
           <div className="mt-5 inline-flex items-center gap-2.5 rounded-lg border border-border bg-card px-4 py-2.5 text-left">

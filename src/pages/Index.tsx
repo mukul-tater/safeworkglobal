@@ -8,7 +8,6 @@ import WorkerJourneyDemo from "@/components/WorkerJourneyDemo";
 import ProcessTimeline from "@/components/ProcessTimeline";
 import FeaturedJobs from "@/components/FeaturedJobs";
 import HomeFooterCTA from "@/components/HomeFooterCTA";
-import HomeRADetails from "@/components/HomeRADetails";
 import HomeLicenseStrip from "@/components/HomeLicenseStrip";
 import EmployerHomeSections from "@/components/EmployerHomeSections";
 import Footer from "@/components/Footer";
@@ -68,10 +67,6 @@ const Index = () => {
 
           <ScrollReveal>
             <FeaturedJobs />
-          </ScrollReveal>
-
-          <ScrollReveal>
-            <HomeRADetails />
           </ScrollReveal>
 
           <ScrollReveal>

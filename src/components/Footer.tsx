@@ -50,7 +50,7 @@ const Footer = () => {
                 <span className="text-lg sm:text-xl font-bold font-heading text-white">SafeWorkGlobal</span>
               </Link>
               <p className="text-white/60 leading-relaxed max-w-sm text-sm">
-                SafeWork Global is a technology and workforce mobility platform connecting skilled workers with verified overseas opportunities.
+                SafeWork Global is a technology and workforce mobility platform. Connecting skilled workers with verified overseas opportunities.
               </p>
 
               <div className="flex gap-2">
