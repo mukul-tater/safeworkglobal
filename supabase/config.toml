@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.worker-portal]
 verify_jwt = false
+
+[functions.contact-enquiry]
+verify_jwt = false

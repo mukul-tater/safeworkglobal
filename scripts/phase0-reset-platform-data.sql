@@ -4,7 +4,7 @@
 -- Keeps ONLY these admin accounts:
 --   gurpreetsinghelectrician@gmail.com
 --   kailash@safeworkglobal.com
---   mukul@safeworkglobal.com
+--   mukultater@safeworkglobal.com
 --
 -- Wipes: jobs, profiles (worker/employer/partner), applications, onboarding,
 -- partner data, test submissions, and all other non-admin users.
@@ -98,7 +98,7 @@ DELETE FROM auth.users
 WHERE lower(email) NOT IN (
   'gurpreetsinghelectrician@gmail.com',
   'kailash@safeworkglobal.com',
-  'mukul@safeworkglobal.com'
+  'mukultater@safeworkglobal.com'
 );
 
 -- ---------------------------------------------------------------------------
@@ -111,7 +111,7 @@ WHERE user_id IN (
   WHERE lower(email) IN (
     'gurpreetsinghelectrician@gmail.com',
     'kailash@safeworkglobal.com',
-    'mukul@safeworkglobal.com'
+    'mukultater@safeworkglobal.com'
   )
 );
 
@@ -121,7 +121,7 @@ FROM auth.users u
 WHERE lower(u.email) IN (
   'gurpreetsinghelectrician@gmail.com',
   'kailash@safeworkglobal.com',
-  'mukul@safeworkglobal.com'
+  'mukultater@safeworkglobal.com'
 );
 
 -- Strip any role-specific profile rows that may remain on admin accounts
@@ -159,7 +159,7 @@ BEGIN
   IF lower(NEW.email) IN (
     'gurpreetsinghelectrician@gmail.com',
     'kailash@safeworkglobal.com',
-    'mukul@safeworkglobal.com'
+    'mukultater@safeworkglobal.com'
   ) THEN
     INSERT INTO public.user_roles (user_id, role)
     VALUES (NEW.id, 'admin')
@@ -196,7 +196,7 @@ BEGIN
   IF v_email IS NULL OR v_email NOT IN (
     'gurpreetsinghelectrician@gmail.com',
     'kailash@safeworkglobal.com',
-    'mukul@safeworkglobal.com'
+    'mukultater@safeworkglobal.com'
   ) THEN
     RETURN false;
   END IF;

@@ -19,6 +19,7 @@ import {
 import {
   Mail,
   MapPin,
+  Loader2,
   Send,
   Phone,
   MessageCircle,
@@ -28,6 +29,7 @@ import {
   LifeBuoy,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { isValidIndianMobile, normalizeIndianMobile } from "@/lib/validations/common";
 import {
   EMIGRATE_PORTAL_URL,
@@ -66,9 +68,10 @@ export default function ContactUs() {
     subject: "",
     message: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.role) {
       toast.error("Please select who you are. / कृपया चुनें कि आप कौन हैं।");
@@ -81,18 +84,36 @@ export default function ContactUs() {
 
     const roleLabel = ENQUIRY_ROLES.find((r) => r.value === formData.role)?.label ?? formData.role;
     const mobile = normalizeIndianMobile(formData.mobile);
-    const body = [
-      `Name: ${formData.name.trim()}`,
-      `I am: ${roleLabel}`,
-      `Mobile: ${mobile}`,
-      `Email: ${formData.email.trim()}`,
-      "",
-      formData.message.trim(),
-    ].join("\n");
+    const name = formData.name.trim();
+    const email = formData.email.trim();
+    const subject = formData.subject.trim();
+    const message = formData.message.trim();
 
-    window.location.href = getSafeworkMailtoUrl(formData.subject.trim(), body);
-    setSubmitted(true);
-    setFormData({ name: "", mobile: "", email: "", role: "", subject: "", message: "" });
+    setIsSubmitting(true);
+    try {
+      const { error: insertError } = await supabase.from("contact_submissions").insert({
+        name,
+        email,
+        subject,
+        message: [`I am: ${roleLabel}`, `Mobile: ${mobile}`, "", message].join("\n"),
+      });
+      if (insertError) throw insertError;
+
+      const { error: emailError } = await supabase.functions.invoke("contact-enquiry", {
+        body: { name, email, mobile, role: roleLabel, subject, message },
+      });
+      if (emailError) {
+        console.error("Enquiry saved but email dispatch failed:", emailError);
+      }
+
+      setSubmitted(true);
+      setFormData({ name: "", mobile: "", email: "", role: "", subject: "", message: "" });
+    } catch (error) {
+      console.error("Error submitting contact form:", error);
+      toast.error("Failed to send enquiry. Please try again. / पूछताछ नहीं भेजी जा सकी।");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -251,9 +272,18 @@ export default function ContactUs() {
                         />
                       </div>
 
-                      <Button type="submit" size="lg" className="w-full h-12 rounded-xl text-base">
-                        <Send className="h-5 w-5" />
-                        Submit Enquiry | पूछताछ भेजें
+                      <Button type="submit" size="lg" className="w-full h-12 rounded-xl text-base" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            Sending…
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-5 w-5" />
+                            Submit Enquiry | पूछताछ भेजें
+                          </>
+                        )}
                       </Button>
                     </form>
                   </CardContent>

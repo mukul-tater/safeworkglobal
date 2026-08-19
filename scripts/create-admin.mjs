@@ -16,7 +16,7 @@ import { randomBytes } from 'crypto';
 const ALLOWED = new Set([
   'gurpreetsinghelectrician@gmail.com',
   'kailash@safeworkglobal.com',
-  'mukul@safeworkglobal.com',
+  'mukultater@safeworkglobal.com',
 ]);
 
 function loadEnv() {

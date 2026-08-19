@@ -15,7 +15,7 @@ import {
   Check,
 } from "lucide-react";
 
-const SUPPORT_EMAIL = "mukul@safeworkglobal.com";
+const SUPPORT_EMAIL = "mukultater@safeworkglobal.com";
 
 export default function EmployerTrust() {
   const navigate = useNavigate();

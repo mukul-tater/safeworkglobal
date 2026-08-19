@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Sparkles, ShieldCheck, ArrowRight, Wallet, Mail, Clock } from "lucide-react";
 import EmployerFlowStepper from "@/components/employer/EmployerFlowStepper";
 
-const SUPPORT_EMAIL = "mukul@safeworkglobal.com";
+const SUPPORT_EMAIL = "mukultater@safeworkglobal.com";
 
 export default function PilotOffer() {
   const navigate = useNavigate();

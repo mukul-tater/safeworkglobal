@@ -62,8 +62,8 @@ export default function SupportCenter() {
             </div>
             <h3 className="font-semibold mb-1">Email Support</h3>
             <p className="text-xs text-muted-foreground mb-3">Reply within 24 hours</p>
-            <a href="mailto:mukul@safeworkglobal.com" className="text-sm text-primary font-medium hover:underline">
-              mukul@safeworkglobal.com
+            <a href="mailto:mukultater@safeworkglobal.com" className="text-sm text-primary font-medium hover:underline">
+              mukultater@safeworkglobal.com
             </a>
           </CardContent>
         </Card>
@@ -74,8 +74,8 @@ export default function SupportCenter() {
             </div>
             <h3 className="font-semibold mb-1">WhatsApp Support</h3>
             <p className="text-xs text-muted-foreground mb-3">Mon – Sat, 9am – 8pm IST</p>
-            <a href="mailto:mukul@safeworkglobal.com" className="text-sm text-success font-medium hover:underline">
-              mukul@safeworkglobal.com
+            <a href="mailto:mukultater@safeworkglobal.com" className="text-sm text-success font-medium hover:underline">
+              mukultater@safeworkglobal.com
             </a>
           </CardContent>
         </Card>

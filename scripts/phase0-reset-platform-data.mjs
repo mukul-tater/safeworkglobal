@@ -17,7 +17,7 @@ import { createClient } from '@supabase/supabase-js';
 const KEEP_ADMIN_EMAILS = new Set([
   'gurpreetsinghelectrician@gmail.com',
   'kailash@safeworkglobal.com',
-  'mukul@safeworkglobal.com',
+  'mukultater@safeworkglobal.com',
 ]);
 
 /** Tables cleared in dependency order (children before parents). */
