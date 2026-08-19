@@ -186,7 +186,7 @@ const Header = () => {
                       </div>
                       <div>
                         <div className="font-semibold text-sm">Partner</div>
-                        <div className="text-xs text-muted-foreground">E-Mitra, SSVN, ITI & employers</div>
+                        <div className="text-xs text-muted-foreground">E-Mitra, SSVN, ITI, MEA Licensed RA, consultants & employers</div>
                       </div>
                     </button>
                     <div className="border-t border-border my-2" />

@@ -99,6 +99,18 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
       { label: "Tickets", to: "/partner/tickets", icon: Ticket },
     ],
   },
+  CONSULTANT: {
+    code: "CONSULTANT",
+    landing: "/partner/consultant/dashboard",
+    navItems: [
+      { label: "Dashboard", to: "/partner/consultant/dashboard", icon: LayoutDashboard },
+      { label: "Wallet", to: "/partner/wallet", icon: Wallet },
+      { label: "Invoices", to: "/partner/invoices", icon: Receipt },
+      { label: "Payouts", to: "/partner/payouts", icon: Banknote },
+      { label: "Tickets", to: "/partner/tickets", icon: Ticket },
+      { label: "Support", to: "/partner/support", icon: LifeBuoy },
+    ],
+  },
   SEN_GLOBAL: {
     code: "SEN_GLOBAL",
     landing: "/partner/sen-global/dashboard",

@@ -30,6 +30,7 @@ import SsvnCheckin from "./modules/partner/pages/ssvn/SsvnCheckin";
 import SsvnAssessmentWizard from "./modules/partner/pages/ssvn/SsvnAssessmentWizard";
 import SsvnLoginPage from "./modules/partner/pages/ssvn/SsvnLoginPage";
 import ItiDashboard from "./modules/partner/pages/iti/ItiDashboard";
+import ConsultantDashboard from "./modules/partner/pages/consultant/ConsultantDashboard";
 import PartnerLoginChooser from "./modules/partner/pages/PartnerLoginChooser";
 import AdminTradeTestAllocations from "./pages/admin/AdminTradeTestAllocations";
 import PartnerWallet from "./modules/partner/pages/shared/PartnerWallet";
@@ -172,6 +173,8 @@ function AppShell() {
           <Route path="/partner/login" element={<PartnerLoginChooser />} />
           <Route path="/partner/ssvn/login" element={<SsvnLoginPage />} />
           <Route path="/partner/iti/login" element={<SsvnLoginPage />} />
+          <Route path="/partner/srn/login" element={<SsvnLoginPage />} />
+          <Route path="/partner/consultant/login" element={<SsvnLoginPage />} />
           <Route
             path="/emitra/dashboard"
             element={
@@ -274,6 +277,8 @@ function AppShell() {
           />
           <Route path="/partner/register-ssvn" element={<PartnerRegisterLegacy />} />
           <Route path="/partner/register-iti" element={<PartnerRegisterLegacy />} />
+          <Route path="/partner/register-srn" element={<PartnerRegisterLegacy />} />
+          <Route path="/partner/register-consultant" element={<PartnerRegisterLegacy />} />
           <Route path="/partner/register-legacy" element={<Navigate to="/partner/register" replace />} />
           <Route
             path="/partner/pending"
@@ -302,6 +307,9 @@ function AppShell() {
 
           {/* ITI — Industrial Training Institutes */}
           <Route path="/partner/iti/dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><ItiDashboard /></ProtectedRoute>} />
+
+          {/* Consultants — placement consultants, NGOs, mobilisers */}
+          <Route path="/partner/consultant/dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><ConsultantDashboard /></ProtectedRoute>} />
 
           {/* SRN — Recruitment Network */}
           <Route path="/partner/srn/dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><SrnDashboard /></ProtectedRoute>} />

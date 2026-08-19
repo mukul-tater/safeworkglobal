@@ -24,7 +24,7 @@ import {
 
 /**
  * Partner signup hub — choose a partner type.
- * Live types (E-Mitra, SSVN, ITI, Employer) redirect to their onboarding after confirm.
+ * Live types (E-Mitra, SSVN, ITI, MEA Licensed RA, Consultants, Employer) redirect to their onboarding after confirm.
  */
 export default function PartnerRegister() {
   const navigate = useNavigate();
@@ -58,7 +58,8 @@ export default function PartnerRegister() {
           </div>
           <h1 className="text-3xl font-bold font-heading tracking-tight">Become a SafeWork Partner</h1>
           <p className="text-muted-foreground mt-1 max-w-xl">
-            Choose your partner type to continue. More partner programmes will open here as they go live.
+            Choose your partner type to continue. Open to placement consultants, recruitment
+            partners, freelancers, NGOs and candidate mobilisers.
           </p>
         </div>
 

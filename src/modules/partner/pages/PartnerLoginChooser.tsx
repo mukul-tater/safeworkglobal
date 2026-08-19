@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Store, GraduationCap, Briefcase, ArrowRight, Home } from 'lucide-react';
+import { Building2, Store, GraduationCap, Briefcase, HeartPulse, UsersRound, ArrowRight, Home } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 const OPTIONS = [
@@ -28,6 +28,22 @@ const OPTIONS = [
     to: '/partner/iti/login',
     accent: 'bg-teal-500/10 text-teal-700 dark:text-teal-400',
     Icon: GraduationCap,
+  },
+  {
+    code: 'SRN',
+    title: 'MEA Licensed RA',
+    description: 'MEA-approved licensed recruitment agencies — overseas placement, visa and emigration.',
+    to: '/partner/srn/login',
+    accent: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
+    Icon: HeartPulse,
+  },
+  {
+    code: 'CONSULTANT',
+    title: 'Consultants',
+    description: 'Placement consultants, recruitment partners, freelancers, NGOs and candidate mobilisers.',
+    to: '/partner/consultant/login',
+    accent: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
+    Icon: UsersRound,
   },
   {
     code: 'EMPLOYER',

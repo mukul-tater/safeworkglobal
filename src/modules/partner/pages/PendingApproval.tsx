@@ -4,6 +4,7 @@ import { CheckCircle2, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCurrentPartner } from "../hooks/useCurrentPartner";
 import { useAuth } from "@/contexts/AuthContext";
+import { LOCKED_PARTNER_PORTALS } from "../config/partnerPortalRoutes";
 
 export default function PendingApproval() {
   const { partner, loading } = useCurrentPartner();
@@ -59,28 +60,17 @@ export default function PendingApproval() {
           <div><b>Partner Type:</b> {partner.partner_type_name}</div>
           <div><b>Status:</b> {partner.status}</div>
         </div>
-        {partner.partner_type_code === "SSVN" && (
+        {LOCKED_PARTNER_PORTALS[partner.partner_type_code] && (
           <p className="text-xs text-muted-foreground mb-4">
             After approval, sign in at{" "}
             <button
               type="button"
               className="text-primary underline"
-              onClick={() => navigate("/partner/ssvn/login")}
+              onClick={() =>
+                navigate(LOCKED_PARTNER_PORTALS[partner.partner_type_code].loginPath)
+              }
             >
-              Trade Test Centre login
-            </button>
-            .
-          </p>
-        )}
-        {partner.partner_type_code === "ITI" && (
-          <p className="text-xs text-muted-foreground mb-4">
-            After approval, sign in at{" "}
-            <button
-              type="button"
-              className="text-primary underline"
-              onClick={() => navigate("/partner/iti/login")}
-            >
-              ITI partner login
+              {LOCKED_PARTNER_PORTALS[partner.partner_type_code].signInLabel}
             </button>
             .
           </p>

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Phone, Mail, Building2, GraduationCap, Home } from 'lucide-react';
+import { Loader2, Phone, Mail, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import {
@@ -25,6 +25,7 @@ import {
   isSsvnPartnerApproved,
 } from '../../services/ssvnAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { lockedPartnerFromPath, LOCKED_PARTNER_PORTALS } from '../../config/partnerPortalRoutes';
 
 type Method = 'mobile' | 'email';
 type Step = 'credentials' | 'otp';
@@ -36,11 +37,12 @@ export default function SsvnLoginPage() {
   const { login, isAuthenticated, role } = useAuth();
   const firebaseOtp = useFirebasePhoneOtp();
   const nextPath = searchParams.get('next') || '';
-  const isIti = pathname.includes('/partner/iti/');
-  const typeCode = isIti ? 'ITI' : 'SSVN';
-  const typeLabel = isIti ? 'ITI' : 'SSVN';
-  const defaultDashboard = isIti ? '/partner/iti/dashboard' : '/partner/ssvn/dashboard';
-  const registerPath = isIti ? '/partner/register-iti' : '/partner/register-ssvn';
+  const portal = lockedPartnerFromPath(pathname) ?? LOCKED_PARTNER_PORTALS.SSVN;
+  const typeCode = portal.code;
+  const typeLabel = portal.typeLabel;
+  const defaultDashboard = portal.dashboardPath;
+  const registerPath = portal.registerPath;
+  const PortalIcon = portal.Icon;
 
   const afterLoginPath = () => {
     if (nextPath.startsWith('/') && !nextPath.startsWith('//')) return nextPath;
@@ -62,9 +64,7 @@ export default function SsvnLoginPage() {
 
     const org = await getPartnerOrgForUser(userId, typeCode);
     if (!org) {
-      return isIti
-        ? 'No ITI partner registration found for this account. Apply first.'
-        : 'No trade test centre (SSVN) registration found for this account. Apply first.';
+      return portal.missingOrg;
     }
     if (!isSsvnPartnerApproved(org)) {
       if (org.status === 'pending') {
@@ -265,16 +265,14 @@ export default function SsvnLoginPage() {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-4">
           <div className="text-center space-y-2 mb-2">
-            <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${isIti ? 'bg-teal-500/10 text-teal-700 dark:text-teal-400' : 'bg-violet-500/10 text-violet-700 dark:text-violet-400'}`}>
-              {isIti ? <GraduationCap className="h-6 w-6" /> : <Building2 className="h-6 w-6" />}
+            <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${portal.accentClass}`}>
+              <PortalIcon className="h-6 w-6" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight">
-              {isIti ? 'ITI Partner Sign In' : 'Trade Test Centre Sign In'}
+              {portal.loginTitle}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {isIti
-                ? 'ITI partners — train and onboard skilled workers for SafeWork.'
-                : 'SSVN partners — run assessments for SafeWork-allocated candidates.'}
+              {portal.loginBlurb}
             </p>
           </div>
 
@@ -415,7 +413,7 @@ export default function SsvnLoginPage() {
 
               <div className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border space-y-2">
                 <p>
-                  New {isIti ? 'ITI' : 'trade test centre'}?{' '}
+                  New {portal.applyNoun}?{' '}
                   <Link
                     to={registerPath}
                     className="text-primary font-medium hover:underline"

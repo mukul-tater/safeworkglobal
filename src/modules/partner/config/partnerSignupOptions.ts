@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Store, Building2, HeartPulse, Globe2, GraduationCap, Briefcase } from "lucide-react";
+import { Store, Building2, HeartPulse, Globe2, GraduationCap, Briefcase, UsersRound } from "lucide-react";
 
 export type PartnerSignupStatus = "live" | "coming_soon";
 
@@ -31,8 +31,8 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
   },
   {
     code: "SSVN",
-    name: "SSVN",
-    shortDescription: "Skill verification & assessment centres",
+    name: "SSVN / Safework skill verification network",
+    shortDescription: "Skill verification & assessment centres / trade test centers",
     icon: Building2,
     status: "live",
     registerPath: "/partner/register-ssvn",
@@ -48,6 +48,26 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
     accentClass: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
   },
   {
+    code: "SRN",
+    name: "MEA Licensed RA",
+    shortDescription:
+      "MEA-approved licensed recruitment agencies — overseas placement, visa & emigration",
+    icon: HeartPulse,
+    status: "live",
+    registerPath: "/partner/register-srn",
+    accentClass: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
+  },
+  {
+    code: "CONSULTANT",
+    name: "Consultants",
+    shortDescription:
+      "Placement consultants, recruitment partners, freelancers, NGOs and candidate mobilisers",
+    icon: UsersRound,
+    status: "live",
+    registerPath: "/partner/register-consultant",
+    accentClass: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+  },
+  {
     code: "EMPLOYER",
     name: "Employer",
     shortDescription: "Hire verified workers for overseas jobs",
@@ -55,14 +75,6 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
     status: "live",
     registerPath: "/employer/quick-signup",
     accentClass: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  },
-  {
-    code: "SRN",
-    name: "SRN",
-    shortDescription: "Recruitment network — medical, visa & travel",
-    icon: HeartPulse,
-    status: "coming_soon",
-    accentClass: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
   },
   {
     code: "SEN_GLOBAL",

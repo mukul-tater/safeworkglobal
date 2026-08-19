@@ -1,6 +1,6 @@
 /**
- * SSVN / ITI / generic partner registration form.
- * Canonical paths: /partner/register-ssvn, /partner/register-iti
+ * SSVN / ITI / SRN / generic partner registration form.
+ * Canonical paths: /partner/register-ssvn, /partner/register-iti, /partner/register-srn, /partner/register-consultant
  */
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { indianStates } from "@/lib/validations/partner";
 import { partnerAuthEmailFromMobile, displayableEmail } from "@/lib/workerAuthEmail";
+import { lockedPartnerFromPath } from "@/modules/partner/config/partnerPortalRoutes";
 
 interface PartnerType {
   id: string;
@@ -33,25 +34,12 @@ export default function PartnerRegisterLegacy() {
   const { user, isAuthenticated, assignRole, signup, refreshProfile, refreshRole } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const lockedTypeCode = pathname.includes("register-ssvn")
-    ? "SSVN"
-    : pathname.includes("register-iti")
-      ? "ITI"
-      : null;
-  const loginPath = lockedTypeCode === "ITI" ? "/partner/iti/login" : "/partner/ssvn/login";
-  const heading =
-    lockedTypeCode === "SSVN"
-      ? "Trade Test Centre (SSVN) Registration"
-      : lockedTypeCode === "ITI"
-        ? "ITI Partner Registration"
-        : "Partner Registration";
-  const subtitle =
-    lockedTypeCode === "SSVN"
-      ? "Apply to operate a SafeWork trade test centre. After approval, sign in at SSVN login."
-      : lockedTypeCode === "ITI"
-        ? "Apply as an Industrial Training Institute. After approval, sign in at ITI login."
-        : "Join the SafeWork Global partner network";
-  const signInLabel = lockedTypeCode === "ITI" ? "ITI sign in" : "SSVN sign in";
+  const portal = lockedPartnerFromPath(pathname);
+  const lockedTypeCode = portal?.code ?? null;
+  const loginPath = portal?.loginPath ?? "/partner/ssvn/login";
+  const heading = portal?.heading ?? "Partner Registration";
+  const subtitle = portal?.subtitle ?? "Join the SafeWork Global partner network";
+  const signInLabel = portal?.signInLabel ?? "Partner sign in";
   const [types, setTypes] = useState<PartnerType[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -289,7 +277,7 @@ export default function PartnerRegisterLegacy() {
 
           <section className="grid md:grid-cols-2 gap-4">
             <div>
-              <Label>{lockedTypeCode === "ITI" ? "Institute Name *" : "Company / Center Name *"}</Label>
+              <Label>{portal?.orgNameLabel ?? "Company / Center Name *"}</Label>
               <Input value={form.company_name} onChange={(e) => set("company_name", e.target.value)} />
             </div>
             <div>
