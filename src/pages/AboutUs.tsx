@@ -254,7 +254,7 @@ export default function AboutUs() {
                   हमारे बारे में
                 </p>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-heading tracking-tight leading-[1.15] mb-3">
-                  <span lang="hi">भारत का कौशल, दुनिया के अवसर।</span>
+                  <span lang="hi">भारत का हुनर, दुनिया के रोज़गार।</span>
                 </h1>
                 <p className="text-xl sm:text-2xl font-heading font-semibold text-primary mb-6">
                   Indian Skills. Global Opportunities.
