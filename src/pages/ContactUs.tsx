@@ -148,65 +148,139 @@ export default function ContactUs() {
           </div>
         </section>
 
-        {/* MEA Helpline */}
+        {/* Government Helplines */}
         <section className="py-12 md:py-16 bg-muted/30">
-          <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
+          <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
             <ScrollReveal>
-              <Card className="border-border/50 overflow-hidden">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-start gap-4 mb-5">
-                    <div className="p-3 rounded-xl bg-amber-500/10 shrink-0">
-                      <ShieldCheck className="h-6 w-6 text-amber-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg sm:text-xl font-bold font-heading">
-                        Ministry of External Affairs (MEA) — Emigrant Helpline
-                      </h2>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Government of India toll-free helpline for overseas workers
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 mb-5 p-4 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                    <Phone className="h-5 w-5 text-amber-600 shrink-0" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Toll-free helpline (24×7)</p>
-                      <a href="tel:18001130090" className="text-lg font-bold text-foreground hover:text-primary transition-colors">
-                        1800-11-3090
-                      </a>
-                    </div>
-                  </div>
-
-                  <ul className="space-y-3 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <span className="text-amber-600 font-bold mt-0.5">•</span>
-                      Report complaints against unlicensed or fraudulent recruiting agents.
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-amber-600 font-bold mt-0.5">•</span>
-                      Verify if a recruiting agent (RA) holds a valid MEA licence before accepting any job offer.
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-amber-600 font-bold mt-0.5">•</span>
-                      Get assistance with emigration clearance, PDOT registration, and passport-related queries.
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-amber-600 font-bold mt-0.5">•</span>
-                      Seek help if you face exploitation, contract violations, or non-payment of wages abroad.
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-amber-600 font-bold mt-0.5">•</span>
-                      No worker should ever pay more than the government-prescribed maximum recruitment charges.
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-amber-600 font-bold mt-0.5">•</span>
-                      MEA&apos;s e-Migrate portal (<a href="https://emigrate.gov.in" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">emigrate.gov.in</a>) provides online emigration services and RA verification.
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
+              <div className="text-center mb-8">
+                <h2 className="text-xl sm:text-2xl font-bold font-heading">
+                  Government Helplines for Overseas Workers
+                </h2>
+                <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto">
+                  Indian government toll-free helplines to protect and assist workers going abroad.
+                </p>
+              </div>
             </ScrollReveal>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* MEA Helpline */}
+              <ScrollReveal>
+                <Card className="border-border/50 h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="p-2.5 rounded-lg bg-amber-500/10 shrink-0">
+                        <ShieldCheck className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base">MEA Helpline</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Ministry of External Affairs — Emigrant Assistance
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                      <Phone className="h-5 w-5 text-amber-600 shrink-0" />
+                      <div>
+                        <p className="text-[11px] text-muted-foreground">Toll-free (24×7)</p>
+                        <a href="tel:18001130090" className="text-lg font-bold text-foreground hover:text-primary transition-colors">
+                          1800-11-3090
+                        </a>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold mt-0.5">•</span>
+                        Report complaints against unlicensed or fraudulent recruiting agents.
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold mt-0.5">•</span>
+                        Verify if a recruiting agent (RA) holds a valid MEA licence.
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold mt-0.5">•</span>
+                        Assistance with emigration clearance, PDOT registration, and passport queries.
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-600 font-bold mt-0.5">•</span>
+                        No worker should pay more than the government-prescribed recruitment charges.
+                      </li>
+                    </ul>
+
+                    <a
+                      href="https://emigrate.gov.in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-4 text-xs font-medium text-primary hover:underline"
+                    >
+                      e-Migrate Portal →
+                    </a>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
+
+              {/* PBSK Helpline */}
+              <ScrollReveal delay={0.1}>
+                <Card className="border-border/50 h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="p-2.5 rounded-lg bg-blue-500/10 shrink-0">
+                        <Phone className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base">PBSK Helpline</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Pravasi Bharatiya Sahayata Kendra — Overseas Indian Workers
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                      <Phone className="h-5 w-5 text-blue-600 shrink-0" />
+                      <div>
+                        <p className="text-[11px] text-muted-foreground">Toll-free (24×7)</p>
+                        <a href="tel:1800113090" className="text-lg font-bold text-foreground hover:text-primary transition-colors">
+                          1800-11-3090
+                        </a>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold mt-0.5">•</span>
+                        24×7 helpline run by the MEA to assist Indian workers in distress abroad.
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold mt-0.5">•</span>
+                        Help with wage disputes, contract violations, and employer exploitation overseas.
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold mt-0.5">•</span>
+                        Emergency repatriation support for stranded workers in GCC and other countries.
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold mt-0.5">•</span>
+                        Legal guidance on employment contracts, visa issues, and worker rights abroad.
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 font-bold mt-0.5">•</span>
+                        Available in Hindi, English, and major regional languages.
+                      </li>
+                    </ul>
+
+                    <a
+                      href="https://www.pbsk.gov.in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-4 text-xs font-medium text-primary hover:underline"
+                    >
+                      PBSK Portal →
+                    </a>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
+            </div>
           </div>
         </section>
       </main>
