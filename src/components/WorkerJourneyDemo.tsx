@@ -31,6 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { TRADE_TEST_CENTERS } from "@/data/tradeTestCenters";
+import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo";
 import { cn } from "@/lib/utils";
 
 type JourneyStep = {
@@ -297,7 +298,10 @@ function StepDetail({
           {step.bullets.map((bullet) => (
             <li key={bullet} className="flex items-start gap-2 text-sm text-foreground">
               <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
-              <span>{bullet}</span>
+              <span className="inline-flex items-center gap-1.5">
+                {bullet}
+                {bullet.startsWith("Passport") && <PassportRequirementInfo />}
+              </span>
             </li>
           ))}
         </ul>

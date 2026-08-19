@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo";
 import { cn } from "@/lib/utils";
 
 export type JourneyStatus = "completed" | "in_progress" | "waiting";
@@ -303,7 +304,10 @@ export default function WorkerJourneyHome({
                     <BIcon className="h-3.5 w-3.5 text-primary" />
                     <CheckCircle2 className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 text-success bg-card rounded-full" />
                   </div>
-                  <p className="text-xs font-medium text-foreground leading-snug">{b.label}</p>
+                  <p className="text-xs font-medium text-foreground leading-snug inline-flex items-center justify-center gap-1">
+                    {b.label}
+                    {b.label.startsWith("Passport") && <PassportRequirementInfo />}
+                  </p>
                 </div>
               );
             })}

@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, User, Briefcase, FileCheck, Globe, BadgeCheck } from "lucide-react";
+import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo";
 import AvatarUpload from "@/components/AvatarUpload";
 import WorkerSkillMedia from "@/components/worker/WorkerSkillMedia";
 import ChangePasswordCard from "@/components/ChangePasswordCard";
@@ -469,7 +470,10 @@ export default function WorkerProfile() {
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-4">
               <div>
-                <Label htmlFor="has_passport">Do you have a valid passport?</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="has_passport">Do you have a valid passport?</Label>
+                  <PassportRequirementInfo />
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   A valid passport is required for overseas employment.
                 </p>
