@@ -82,11 +82,6 @@ export default function EmployerHomeSections() {
       title: "Trade-tested candidates",
       desc: "Skill and trade tests completed before a profile reaches you.",
     },
-    {
-      icon: CheckCircle2,
-      title: "Licensed partner deployment",
-      desc: "Visa and emigration handled by licensed recruitment partners.",
-    },
   ];
 
   return (
