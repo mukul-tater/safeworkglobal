@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Globe, Facebook, Twitter, Linkedin, Instagram, ArrowRight, Sparkles } from "lucide-react";
+import { Mail, Facebook, Twitter, Linkedin, Instagram, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -112,12 +112,6 @@ const Footer = () => {
                 <li><Link to="/benefits-for-employers" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">Benefits for Employers</Link></li>
                 <li><Link to="/contact" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">Talk to our team</Link></li>
               </ul>
-              <div className="rounded-lg border border-primary/35 bg-gradient-to-br from-primary/25 to-info/15 p-3">
-                <p className="text-[11px] sm:text-xs text-white/70 leading-relaxed">
-                  <span className="font-semibold text-primary">Pay only after you hire.</span>{" "}
-                  No large upfront recruiter commission to get started.
-                </p>
-              </div>
             </div>
             )}
 
@@ -159,10 +153,6 @@ const Footer = () => {
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-white/40">
-                <Sparkles className="h-3 w-3" />
-                <span>Join 1,000+ subscribers</span>
-              </div>
             </div>
           </div>
         </div>
@@ -188,14 +178,9 @@ const Footer = () => {
                   <Mail className="h-3.5 w-3.5" />
                   <span>mukul@safeworkglobal.com</span>
                 </a>
-                <span className="flex items-center gap-1.5 text-white/50">
-                  <Globe className="h-3.5 w-3.5" />
-                  <span>15+ languages</span>
-                </span>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
-                <Link to="/admin/login" className="text-white/40 hover:text-white transition-colors">Admin Portal</Link>
                 <Link to="/privacy" className="text-white/40 hover:text-white transition-colors">Privacy</Link>
                 <Link to="/terms" className="text-white/40 hover:text-white transition-colors">Terms</Link>
                 <span className="text-white/30 hidden sm:inline">|</span>
