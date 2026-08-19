@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import heroImage from "@/assets/hero-indian-workers.jpg";
@@ -5,6 +6,44 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useI18n } from "@/i18n";
+
+function FitSingleLine({
+  children,
+  className,
+  lang,
+}: {
+  children: string;
+  className?: string;
+  lang?: string;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    const parent = el?.parentElement;
+    if (!el || !parent) return;
+
+    const fit = () => {
+      const available = parent.clientWidth;
+      if (available <= 0) return;
+      const maxPx = parseFloat(getComputedStyle(parent).fontSize);
+      el.style.fontSize = `${maxPx}px`;
+      const width = el.scrollWidth;
+      el.style.fontSize = `${width > available ? Math.max(12, (maxPx * available) / width) : maxPx}px`;
+    };
+
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(parent);
+    return () => ro.disconnect();
+  }, [children]);
+
+  return (
+    <span ref={ref} lang={lang} className={className}>
+      {children}
+    </span>
+  );
+}
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -80,6 +119,12 @@ const HeroSection = () => {
               <>
                 {t("hero.workerTitle1")}
                 <span className="block mt-1 text-white/90">{t("hero.workerTitle2")}</span>
+                <FitSingleLine
+                  lang="hi"
+                  className="mt-2 block w-full whitespace-nowrap leading-none tracking-tight text-white/90"
+                >
+                  {t("hero.workerTitle3")}
+                </FitSingleLine>
               </>
             )}
           </h1>
