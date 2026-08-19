@@ -320,7 +320,7 @@ function StepDetail({
             <div className="rounded-xl border border-warning/30 bg-warning/5 px-3 py-2.5 flex items-start gap-2">
               <XCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-semibold uppercase text-warning">No</p>
+                <p className="text-xs font-semibold uppercase text-warning">Fail</p>
                 <p className="text-sm text-foreground">{step.branch.fail}</p>
               </div>
             </div>
