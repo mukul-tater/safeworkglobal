@@ -8,7 +8,6 @@ import WorkerJourneyDemo from "@/components/WorkerJourneyDemo";
 import ProcessTimeline from "@/components/ProcessTimeline";
 import FeaturedJobs from "@/components/FeaturedJobs";
 import HomeFooterCTA from "@/components/HomeFooterCTA";
-import HomeLicenseStrip from "@/components/HomeLicenseStrip";
 import EmployerHomeSections from "@/components/EmployerHomeSections";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -30,7 +29,6 @@ const Index = () => {
       <Header />
 
       <HeroSection />
-      <HomeLicenseStrip />
 
       {isEmployer ? (
         <>

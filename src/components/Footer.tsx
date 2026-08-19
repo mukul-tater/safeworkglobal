@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Facebook, Twitter, Linkedin, Instagram, ArrowRight } from "lucide-react";
+import { Mail, Facebook, Twitter, Linkedin, Instagram, ArrowRight, FileCheck, ShieldCheck } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -157,15 +157,40 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* RA Licensing */}
-        <div className="relative z-10 border-t border-white/10">
-          <div className="container mx-auto px-4 sm:px-6 py-4">
-            <p className="text-[11px] sm:text-xs text-white/40 text-center leading-relaxed">
-              Overseas recruitment process conducted through{" "}
-              <strong className="text-white/60">Vesta Immigration LLP</strong>,
-              Registered Recruiting Agent (MEA). RC No.:{" "}
-              <span className="text-white/60">B-2069/UP/PART/1000+/5/10331/2023</span>.
-            </p>
+        {/* RA Licensing — footer-only disclosure */}
+        <div className="relative z-10 bg-[#f3f4f6]">
+          <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-10">
+            <div className="max-w-3xl mx-auto text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">
+                <FileCheck className="h-3.5 w-3.5" />
+                Licensed & Regulated
+              </div>
+
+              <p className="text-sm sm:text-base text-[#1f2937] leading-relaxed">
+                SafeWork Global is a technology and workforce mobility platform.
+              </p>
+              <p className="text-sm text-[#6b7280] leading-relaxed mt-3">
+                Overseas Recruitment Process Conducted Through:
+              </p>
+              <p className="text-sm sm:text-base font-semibold font-heading text-[#111827] mt-1">
+                Vesta Immigration LLP
+              </p>
+              <p className="text-xs sm:text-sm text-[#6b7280] mt-0.5">
+                Registered Recruiting Agent (MEA)
+              </p>
+
+              <div className="mt-5 inline-flex items-center gap-2.5 rounded-lg border border-[#e5e7eb] bg-white px-4 py-2.5 text-left">
+                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-[#6b7280] font-semibold">
+                    RC No.
+                  </p>
+                  <p className="text-xs sm:text-sm font-semibold font-heading tracking-tight text-[#111827]">
+                    B-2069/UP/PART/1000+/5/10331/2023
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
