@@ -37,7 +37,7 @@ function readStoredLocale(): WorkerLocale {
 }
 
 export function WorkerLanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<WorkerLocale>(readStoredLocale);
+  const [locale, setLocaleState] = useState<WorkerLocale>("en");
 
   const setLocale = useCallback((next: WorkerLocale) => {
     setLocaleState(next);
@@ -46,6 +46,11 @@ export function WorkerLanguageProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore
     }
+  }, []);
+
+  useEffect(() => {
+    const stored = readStoredLocale();
+    if (stored !== "en") setLocaleState(stored);
   }, []);
 
   useEffect(() => {

@@ -630,16 +630,8 @@ export default function AboutUs() {
               </ScrollReveal>
               <ScrollReveal delay={0.08}>
                 <Card className="h-full border-primary/20 bg-primary/[0.04]">
-                  <CardContent className="p-6">
-                    <p className="text-[11px] uppercase tracking-wider font-semibold text-primary mb-2">1% Employer Model</p>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {pick(
-                        locale,
-                        "SafeWork's employer model is designed around a 1% commission on monthly gross salary for the duration of employment, subject to agreed commercial terms. This is not a guaranteed payment or guaranteed placement.",
-                        "SafeWork का नियोक्ता मॉडल रोजगार की अवधि तक मासिक सकल वेतन पर 1% कमीशन के आसपास बनाया गया है — सहमत व्यावसायिक शर्तों के अधीन। यह गारंटीशुदा भुगतान या गारंटीशुदा प्लेसमेंट नहीं है।",
-                      )}
-                    </p>
-                    <Button className="w-full mt-5 h-12 rounded-xl" onClick={goHire}>
+                  <CardContent className="p-6 flex flex-col justify-center h-full">
+                    <Button className="w-full h-12 rounded-xl" onClick={goHire}>
                       Hire from India | भारत से भर्ती करें
                     </Button>
                   </CardContent>
@@ -685,9 +677,6 @@ export default function AboutUs() {
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-heading text-white tracking-tight">
                 Building India's Workforce Mobility Infrastructure
               </h2>
-              <p lang="hi" className="text-lg text-white/70 mt-2 font-heading">
-                भारत के Workforce Mobility Infrastructure का निर्माण
-              </p>
               <p className="text-white/70 mt-6 leading-relaxed">
                 {pick(
                   locale,
@@ -796,12 +785,6 @@ export default function AboutUs() {
                 </a>
               </div>
             </div>
-            <p className="text-xs sm:text-sm text-[#1e2a4a]/75 dark:text-[#e8eadf]/75 leading-relaxed">
-              SafeWork Global is not a Government of India website or government agency. For independent verification of Recruiting Agents, overseas employment information, or grievances, workers may use official Government of India / Ministry of External Affairs channels.
-            </p>
-            <p lang="hi" className="text-xs sm:text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 leading-relaxed mt-2">
-              SafeWork Global भारत सरकार या विदेश मंत्रालय की सरकारी वेबसाइट/एजेंसी नहीं है। भर्ती एजेंट की स्वतंत्र पुष्टि, विदेश रोजगार संबंधी आधिकारिक जानकारी या शिकायत के लिए उम्मीदवार भारत सरकार/विदेश मंत्रालय के आधिकारिक माध्यमों का उपयोग कर सकते हैं।
-            </p>
           </div>
         </section>
 

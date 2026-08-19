@@ -41,21 +41,21 @@ import {
 } from "@/config/workerSupport";
 
 const ENQUIRY_ROLES = [
-  { value: "worker", label: "Worker / श्रमिक" },
-  { value: "employer", label: "Employer / नियोक्ता" },
-  { value: "emitra", label: "E-Mitra Partner" },
-  { value: "iti", label: "ITI / Training Institute" },
-  { value: "ttc", label: "Trade Test Centre" },
-  { value: "other", label: "Other" },
+  { value: "worker", en: "Worker", hi: "श्रमिक" },
+  { value: "employer", en: "Employer", hi: "नियोक्ता" },
+  { value: "emitra", en: "E-Mitra Partner", hi: "ई-मित्र साझेदार" },
+  { value: "iti", en: "ITI / Training Institute", hi: "ITI / प्रशिक्षण संस्थान" },
+  { value: "ttc", en: "Trade Test Centre", hi: "ट्रेड टेस्ट सेंटर" },
+  { value: "other", en: "Other", hi: "अन्य" },
 ] as const;
 
 type EnquiryRole = (typeof ENQUIRY_ROLES)[number]["value"];
 
 function BilingualLabel({ en, hi, htmlFor }: { en: string; hi: string; htmlFor?: string }) {
+  const { locale } = useI18n();
   return (
     <Label htmlFor={htmlFor} className="mb-2 block text-sm font-medium text-foreground">
-      {en}
-      <span className="ml-1.5 font-normal text-muted-foreground">{hi}</span>
+      {locale === "hi" && hi ? hi : en}
     </Label>
   );
 }
@@ -76,15 +76,20 @@ export default function ContactUs() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.role) {
-      toast.error("Please select who you are. / कृपया चुनें कि आप कौन हैं।");
+      toast.error(locale === "hi" ? "कृपया चुनें कि आप कौन हैं।" : "Please select who you are.");
       return;
     }
     if (!isValidIndianMobile(formData.mobile)) {
-      toast.error("Enter a valid 10-digit Indian mobile number. / सही 10 अंकों का मोबाइल नंबर लिखें।");
+      toast.error(
+        locale === "hi"
+          ? "सही 10 अंकों का मोबाइल नंबर लिखें।"
+          : "Enter a valid 10-digit Indian mobile number.",
+      );
       return;
     }
 
-    const roleLabel = ENQUIRY_ROLES.find((r) => r.value === formData.role)?.label ?? formData.role;
+    const roleRow = ENQUIRY_ROLES.find((r) => r.value === formData.role);
+    const roleLabel = roleRow ? (locale === "hi" ? roleRow.hi : roleRow.en) : formData.role;
     const mobile = normalizeIndianMobile(formData.mobile);
     const name = formData.name.trim();
     const email = formData.email.trim();
@@ -112,14 +117,14 @@ export default function ContactUs() {
       setFormData({ name: "", mobile: "", email: "", role: "", subject: "", message: "" });
     } catch (error) {
       console.error("Error submitting contact form:", error);
-      toast.error("Failed to send enquiry. Please try again. / पूछताछ नहीं भेजी जा सकी।");
+      toast.error(locale === "hi" ? "पूछताछ नहीं भेजी जा सकी।" : "Failed to send enquiry. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-32 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
       <SEOHead
         title="Contact Us | SafeWork Global"
         description="Connect with SafeWork Global for worker registration, skill verification, employer enquiries, partnership opportunities and overseas employment support."
@@ -136,7 +141,7 @@ export default function ContactUs() {
               <h1 className="text-3xl sm:text-4xl md:text-[2.75rem] font-bold font-heading text-foreground mb-2 tracking-tight leading-tight">
                 {t("contact.title")}
               </h1>
-              {locale === "en" && (
+              {locale === "hi" && (
               <p className="text-lg sm:text-xl font-heading text-primary/90 mb-5">
                 विदेश रोजगार से जुड़ी सहायता चाहिए?
               </p>
@@ -234,12 +239,12 @@ export default function ContactUs() {
                           onValueChange={(value) => setFormData({ ...formData, role: value as EnquiryRole })}
                         >
                           <SelectTrigger className="h-12">
-                            <SelectValue placeholder="Select / चुनें" />
+                            <SelectValue placeholder={locale === "hi" ? "चुनें" : "Select"} />
                           </SelectTrigger>
                           <SelectContent>
                             {ENQUIRY_ROLES.map((role) => (
                               <SelectItem key={role.value} value={role.value} className="py-2.5">
-                                {role.label}
+                                {locale === "hi" ? role.hi : role.en}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -264,7 +269,7 @@ export default function ContactUs() {
                           id="message"
                           rows={5}
                           className="min-h-[120px]"
-                          placeholder="Tell us more… / और बताएँ…"
+                          placeholder={locale === "hi" ? "और बताएँ…" : "Tell us more…"}
                           value={formData.message}
                           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                           required
@@ -280,7 +285,7 @@ export default function ContactUs() {
                         ) : (
                           <>
                             <Send className="h-5 w-5" />
-                            Submit Enquiry | पूछताछ भेजें
+                            {locale === "hi" ? "पूछताछ भेजें" : "Submit Enquiry"}
                           </>
                         )}
                       </Button>
@@ -306,18 +311,22 @@ export default function ContactUs() {
                 <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#1e2a4a] dark:text-[#e8eadf]">
                   Official Government Resources
                 </h2>
+                {locale === "hi" && (
                 <p className="mt-1 text-lg text-[#1e2a4a]/75 dark:text-[#e8eadf]/75">
                   आधिकारिक सरकारी सहायता
                 </p>
+                )}
                 <p className="mt-4 text-sm sm:text-base text-[#1e2a4a]/80 dark:text-[#e8eadf]/80 max-w-2xl mx-auto leading-relaxed">
                   For official information, Recruiting Agent verification and overseas
                   employment-related assistance, workers and prospective emigrants can use the
                   Government of India&apos;s official channels.
                 </p>
+                {locale === "hi" && (
                 <p className="mt-3 text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 max-w-2xl mx-auto leading-relaxed">
                   आधिकारिक जानकारी, Recruiting Agent सत्यापन और विदेश रोजगार से संबंधित सहायता के
                   लिए उम्मीदवार भारत सरकार के आधिकारिक माध्यमों का उपयोग कर सकते हैं।
                 </p>
+                )}
               </div>
             </ScrollReveal>
 
@@ -336,14 +345,16 @@ export default function ContactUs() {
                       <p className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mt-0.5">
                         Government of India&apos;s official overseas employment portal
                       </p>
+                      {locale === "hi" && (
                       <p className="text-sm text-[#1e2a4a]/60 dark:text-[#e8eadf]/60">
                         भारत सरकार का आधिकारिक विदेश रोजगार पोर्टल
                       </p>
+                      )}
                     </div>
                   </div>
                   <Button asChild className="w-full h-12 rounded-xl bg-[#1e2a4a] hover:bg-[#162038] text-white">
                     <a href={EMIGRATE_PORTAL_URL} target="_blank" rel="noopener noreferrer">
-                      Visit eMigrate | eMigrate पर जाएं
+                      {locale === "hi" ? "eMigrate पर जाएं" : "Visit eMigrate"}
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   </Button>
@@ -363,14 +374,16 @@ export default function ContactUs() {
                       <p className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mt-0.5">
                         Official government MADAD portal for overseas workers
                       </p>
+                      {locale === "hi" && (
                       <p className="text-sm text-[#1e2a4a]/60 dark:text-[#e8eadf]/60">
                         प्रवासी श्रमिकों के लिए आधिकारिक सरकारी मदद पोर्टल
                       </p>
+                      )}
                     </div>
                   </div>
                   <Button asChild className="w-full h-12 rounded-xl bg-[#1e2a4a] hover:bg-[#162038] text-white">
                     <a href={MADAD_PORTAL_URL} target="_blank" rel="noopener noreferrer">
-                      Visit MADAD | MADAD पर जाएं
+                      {locale === "hi" ? "MADAD पर जाएं" : "Visit MADAD"}
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   </Button>
@@ -391,9 +404,11 @@ export default function ContactUs() {
                       <p className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mt-0.5">
                         24×7 Overseas Employment Assistance
                       </p>
+                      {locale === "hi" && (
                       <p className="text-sm text-[#1e2a4a]/60 dark:text-[#e8eadf]/60">
                         24×7 विदेश रोजगार सहायता
                       </p>
+                      )}
                     </div>
                   </div>
 
@@ -442,9 +457,11 @@ export default function ContactUs() {
                 <h3 className="font-heading font-semibold text-[#1e2a4a] dark:text-[#e8eadf]">
                   Overseas / Chargeable Assistance
                 </h3>
+                {locale === "hi" && (
                 <p className="text-sm text-[#1e2a4a]/65 dark:text-[#e8eadf]/65 mb-3">
                   विदेश से / अतिरिक्त सहायता
                 </p>
+                )}
                 <p className="text-xs sm:text-sm text-[#1e2a4a]/75 dark:text-[#e8eadf]/75 mb-3 leading-relaxed">
                   Additional assistance number based on official MEA information. Standard
                   international or chargeable calling rates may apply.
@@ -467,7 +484,9 @@ export default function ContactUs() {
             <ScrollReveal>
               <div className="text-center mb-8">
                 <h2 className="text-2xl sm:text-3xl font-bold font-heading">Talk to SafeWork Global</h2>
-                <p className="text-muted-foreground mt-1">SafeWork Global से संपर्क करें</p>
+                {locale === "hi" && (
+                  <p className="text-muted-foreground mt-1">SafeWork Global से संपर्क करें</p>
+                )}
               </div>
             </ScrollReveal>
 
@@ -502,38 +521,6 @@ export default function ContactUs() {
           </div>
         </section>
       </main>
-
-      {/* Mobile-first contact actions */}
-      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 px-3 pb-[env(safe-area-inset-bottom)]">
-        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-card/95 backdrop-blur-md p-2 shadow-lg">
-          <a
-            href={MEA_PBSK.phoneTel}
-            className="flex flex-col items-center justify-center gap-0.5 min-h-12 rounded-xl px-1 py-2 text-foreground bg-muted"
-          >
-            <Phone className="h-5 w-5" />
-            <span className="text-[10px] font-semibold leading-tight text-center">Call</span>
-            <span className="text-[9px] text-muted-foreground">MEA</span>
-          </a>
-          <a
-            href={MEA_PBSK.whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center justify-center gap-0.5 min-h-12 rounded-xl px-1 py-2 text-[#128C7E] bg-[#128C7E]/10"
-          >
-            <MessageCircle className="h-5 w-5" />
-            <span className="text-[10px] font-semibold leading-tight text-center">WhatsApp</span>
-            <span className="text-[9px] text-muted-foreground">MEA</span>
-          </a>
-          <a
-            href={getSafeworkMailtoUrl()}
-            className="flex flex-col items-center justify-center gap-0.5 min-h-12 rounded-xl px-1 py-2 text-primary bg-primary/10"
-          >
-            <Mail className="h-5 w-5" />
-            <span className="text-[10px] font-semibold">Email</span>
-            <span className="text-[9px] text-muted-foreground">SafeWork</span>
-          </a>
-        </div>
-      </div>
 
       <Footer />
     </div>
