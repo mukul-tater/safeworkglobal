@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { CountryInsight } from "../types";
 import { Bi, BiInline } from "./Bi";
 import { DisclaimerBox, SectionShell } from "./SectionShell";
-import { COUNTRY_INSIGHTS } from "../data/countries";
+import { getCountryInsightComparisonColumns } from "../data/countries";
 
 export function EmployerReality({ country }: { country: CountryInsight }) {
   const data = country.employerSpecific;
@@ -39,7 +39,7 @@ export function EmployerReality({ country }: { country: CountryInsight }) {
 
 export function CountryComparison({ country }: { country: CountryInsight }) {
   const data = country.comparison;
-  const cols = COUNTRY_INSIGHTS;
+  const cols = getCountryInsightComparisonColumns();
   return (
     <SectionShell id="country-comparison" heading={data.heading}>
       <div className="overflow-x-auto rounded-xl border border-border mb-4">

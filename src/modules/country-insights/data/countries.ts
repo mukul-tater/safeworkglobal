@@ -1,7 +1,8 @@
 import type { CountryInsight } from "../types";
 import { buildCountryInsight, GCC_SECTORS, LISTING_BLURB } from "./shared";
+import { UAE_ALL_PHOTOS, UAE_PHOTOS } from "./uaePhotos";
 
-const uae = buildCountryInsight({
+const uaeBase = buildCountryInsight({
   id: "uae",
   slug: "uae",
   flag: "🇦🇪",
@@ -23,6 +24,62 @@ const uae = buildCountryInsight({
     },
   },
 });
+
+const uae: CountryInsight = {
+  ...uaeBase,
+  hero: {
+    ...uaeBase.hero,
+    collage: [
+      { ...UAE_PHOTOS.skyline, category: "City & infrastructure" },
+      { ...UAE_PHOTOS.rebar, category: "Skilled work" },
+      { ...UAE_PHOTOS.crane, category: "Construction / worksite" },
+      { ...UAE_PHOTOS.housingExterior, category: "Worker accommodation" },
+    ],
+  },
+  workingEnvironment: {
+    ...uaeBase.workingEnvironment,
+    sectors: uaeBase.workingEnvironment.sectors.map((sector) => {
+      if (sector.id === "construction") return { ...sector, image: UAE_PHOTOS.crane };
+      if (sector.id === "mep") return { ...sector, image: UAE_PHOTOS.rebar };
+      return sector;
+    }),
+  },
+  accommodation: {
+    ...uaeBase.accommodation,
+    photos: [
+      UAE_PHOTOS.housingExterior,
+      UAE_PHOTOS.courtyard,
+      ...uaeBase.accommodation.photos.filter((p) => p.id !== "ext" && p.id !== "bed"),
+    ],
+  },
+  workingConditions: {
+    ...uaeBase.workingConditions,
+    cards: uaeBase.workingConditions.cards.map((card) => {
+      if (card.id === "outdoor") return { ...card, image: UAE_PHOTOS.businessBay1 };
+      if (card.id === "sites") return { ...card, image: UAE_PHOTOS.crane };
+      if (card.id === "heat") return { ...card, image: UAE_PHOTOS.skyline };
+      if (card.id === "ppe") return { ...card, image: UAE_PHOTOS.rebar };
+      return card;
+    }),
+  },
+  livingConditions: {
+    ...uaeBase.livingConditions,
+    photos: [
+      UAE_PHOTOS.housingExterior,
+      UAE_PHOTOS.courtyard,
+      ...uaeBase.livingConditions.photos.slice(2),
+    ],
+  },
+  opportunityReality: {
+    ...uaeBase.opportunityReality,
+    opportunityImage: UAE_PHOTOS.skyline,
+    realityImage: UAE_PHOTOS.businessBay2,
+  },
+  photoGallery: {
+    ...uaeBase.photoGallery,
+    photos: UAE_ALL_PHOTOS,
+  },
+};
 
 const saudi = buildCountryInsight({
   id: "saudi-arabia",
@@ -74,9 +131,16 @@ const bahrain = buildCountryInsight({
   detailReady: true,
 });
 
-export const COUNTRY_INSIGHTS: CountryInsight[] = [uae, saudi, qatar, oman, kuwait, bahrain];
+const ALL_COUNTRY_INSIGHTS: CountryInsight[] = [uae, saudi, qatar, oman, kuwait, bahrain];
+
+/** Public listing and detail routes — UAE only for now. */
+export const COUNTRY_INSIGHTS: CountryInsight[] = ALL_COUNTRY_INSIGHTS.filter((c) => c.slug === "uae");
 
 export function getCountryInsight(slug: string | undefined): CountryInsight | undefined {
   if (!slug) return undefined;
   return COUNTRY_INSIGHTS.find((c) => c.slug === slug);
+}
+
+export function getCountryInsightComparisonColumns(): CountryInsight[] {
+  return ALL_COUNTRY_INSIGHTS;
 }

@@ -32,7 +32,15 @@ export function WorkingConditions({ country }: { country: CountryInsight }) {
         {data.cards.map((card, i) => {
           const Icon = CONDITION_ICONS[i] ?? HardHat;
           return (
-            <Card key={card.id}>
+            <Card key={card.id} className="overflow-hidden">
+              {card.image?.src && (
+                <img
+                  src={card.image.src}
+                  alt={card.image.alt.en}
+                  loading="lazy"
+                  className="h-32 w-full object-cover"
+                />
+              )}
               <CardContent className="p-5">
                 <Icon className="h-5 w-5 text-primary mb-2" />
                 <Bi text={card.title} as="h3" className="font-heading font-bold mb-2" />

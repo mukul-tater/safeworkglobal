@@ -10,7 +10,7 @@ export function PhotoTile({ photo }: { photo: PhotoRecord }) {
           src={photo.src}
           alt={photo.alt.en}
           loading="lazy"
-          className="h-40 w-full object-cover sm:h-48"
+          className="h-44 w-full object-cover sm:h-56"
         />
       ) : (
         <div className="flex h-40 sm:h-48 flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted to-muted/40 px-3 text-center">

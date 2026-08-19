@@ -87,6 +87,7 @@ export type CountryInsight = {
     headline: Bilingual;
     subheading: Bilingual;
     philosophy: Bilingual;
+    collage?: PhotoRecord[];
   };
   workingEnvironment: {
     heading: Bilingual;
@@ -117,7 +118,7 @@ export type CountryInsight = {
   };
   workingConditions: {
     heading: Bilingual;
-    cards: { id: string; title: Bilingual; body: Bilingual }[];
+    cards: { id: string; title: Bilingual; body: Bilingual; image?: PhotoRecord }[];
     disclaimer: Bilingual;
   };
   livingConditions: {
@@ -129,6 +130,8 @@ export type CountryInsight = {
     headline: Bilingual;
     opportunity: { title: Bilingual; points: Bilingual[] };
     reality: { title: Bilingual; points: Bilingual[] };
+    opportunityImage?: PhotoRecord;
+    realityImage?: PhotoRecord;
   };
   countryRules: {
     heading: Bilingual;
