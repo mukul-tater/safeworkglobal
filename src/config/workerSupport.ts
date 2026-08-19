@@ -11,8 +11,10 @@ export const SAFEWORK_CONTACT = {
   officeAddress: "Udaipur, Rajasthan, IN",
 } as const;
 
-export function getSafeworkMailtoUrl(subject = "SafeWork Global – Enquiry"): string {
-  return `mailto:${SAFEWORK_CONTACT.email}?subject=${encodeURIComponent(subject)}`;
+export function getSafeworkMailtoUrl(subject = "SafeWork Global – Enquiry", body?: string): string {
+  const params = new URLSearchParams({ subject });
+  if (body) params.set("body", body);
+  return `mailto:${SAFEWORK_CONTACT.email}?${params.toString()}`;
 }
 
 /** Official Government of India overseas-employment channels (not SafeWork). */

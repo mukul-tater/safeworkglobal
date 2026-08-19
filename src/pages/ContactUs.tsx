@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -20,20 +19,14 @@ import {
 import {
   Mail,
   MapPin,
-  Loader2,
   Send,
   Phone,
   MessageCircle,
-  HardHat,
-  Briefcase,
-  Handshake,
-  HelpCircle,
   CheckCircle2,
   ExternalLink,
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { isValidIndianMobile, normalizeIndianMobile } from "@/lib/validations/common";
 import {
   EMIGRATE_PORTAL_URL,
@@ -53,65 +46,6 @@ const ENQUIRY_ROLES = [
 
 type EnquiryRole = (typeof ENQUIRY_ROLES)[number]["value"];
 
-const CATEGORIES = [
-  {
-    key: "workers",
-    icon: HardHat,
-    title: "Workers",
-    hindi: "श्रमिकों के लिए",
-    items: [
-      "Job enquiries",
-      "Registration assistance",
-      "Skill verification",
-      "Application status",
-      "Documentation assistance",
-    ],
-    cta: "Worker Support",
-    to: "/worker/quick-signup",
-    role: "worker" as EnquiryRole,
-  },
-  {
-    key: "employers",
-    icon: Briefcase,
-    title: "Employers",
-    hindi: "नियोक्ताओं के लिए",
-    items: [
-      "Skilled manpower requirements",
-      "Employer onboarding",
-      "Workforce enquiries",
-      "Partnership discussions",
-    ],
-    cta: "Hire Skilled Workers",
-    to: "/employer/quick-signup",
-    role: "employer" as EnquiryRole,
-  },
-  {
-    key: "partners",
-    icon: Handshake,
-    title: "Partners",
-    hindi: "साझेदारों के लिए",
-    items: [
-      "E-Mitra partnership",
-      "ITI partnership",
-      "Trade Test Centre partnership",
-      "Training Centre partnership",
-    ],
-    cta: "Become a Partner",
-    to: "/partner/register",
-    role: "emitra" as EnquiryRole,
-  },
-  {
-    key: "general",
-    icon: HelpCircle,
-    title: "General Enquiries",
-    hindi: "सामान्य पूछताछ",
-    items: ["General information", "Business enquiries", "Other support"],
-    cta: null,
-    to: "#enquiry",
-    role: "other" as EnquiryRole,
-  },
-] as const;
-
 function BilingualLabel({ en, hi, htmlFor }: { en: string; hi: string; htmlFor?: string }) {
   return (
     <Label htmlFor={htmlFor} className="mb-2 block text-sm font-medium text-foreground">
@@ -130,15 +64,9 @@ export default function ContactUs() {
     subject: "",
     message: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const scrollToEnquiry = (role?: EnquiryRole) => {
-    if (role) setFormData((prev) => ({ ...prev, role }));
-    document.getElementById("enquiry")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.role) {
       toast.error("Please select who you are. / कृपया चुनें कि आप कौन हैं।");
@@ -151,29 +79,18 @@ export default function ContactUs() {
 
     const roleLabel = ENQUIRY_ROLES.find((r) => r.value === formData.role)?.label ?? formData.role;
     const mobile = normalizeIndianMobile(formData.mobile);
+    const body = [
+      `Name: ${formData.name.trim()}`,
+      `I am: ${roleLabel}`,
+      `Mobile: ${mobile}`,
+      `Email: ${formData.email.trim()}`,
+      "",
+      formData.message.trim(),
+    ].join("\n");
 
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase.from("contact_submissions").insert({
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        subject: formData.subject.trim(),
-        message: [
-          `I am: ${roleLabel}`,
-          `Mobile: ${mobile}`,
-          "",
-          formData.message.trim(),
-        ].join("\n"),
-      });
-      if (error) throw error;
-      setSubmitted(true);
-      setFormData({ name: "", mobile: "", email: "", role: "", subject: "", message: "" });
-    } catch (error) {
-      console.error("Error submitting contact form:", error);
-      toast.error("Failed to send enquiry. Please try again. / पूछताछ नहीं भेजी जा सकी।");
-    } finally {
-      setIsSubmitting(false);
-    }
+    window.location.href = getSafeworkMailtoUrl(formData.subject.trim(), body);
+    setSubmitted(true);
+    setFormData({ name: "", mobile: "", email: "", role: "", subject: "", message: "" });
   };
 
   return (
@@ -202,88 +119,15 @@ export default function ContactUs() {
                 enquiries, partnership opportunities and overseas employment support.
               </p>
 
-              <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-lg mx-auto sm:max-w-none">
-                <Button asChild size="lg" className="h-12 rounded-xl text-base">
-                  <a href={getSafeworkMailtoUrl("SafeWork Global – Call request")}>
-                    <Phone className="h-5 w-5" />
-                    Call Us
+              <div className="mt-8 flex justify-center">
+                <Button asChild size="lg" className="h-12 rounded-xl text-base px-8">
+                  <a href={getSafeworkMailtoUrl("SafeWork Global – Enquiry")}>
+                    <Send className="h-5 w-5" />
+                    Send Enquiry
                   </a>
-                </Button>
-                <Button asChild size="lg" variant="success" className="h-12 rounded-xl text-base">
-                  <a href={getSafeworkMailtoUrl("SafeWork Global – WhatsApp enquiry")}>
-                    <MessageCircle className="h-5 w-5" />
-                    WhatsApp Us
-                  </a>
-                </Button>
-                <Button
-                  type="button"
-                  size="lg"
-                  variant="outline"
-                  className="h-12 rounded-xl text-base"
-                  onClick={() => scrollToEnquiry()}
-                >
-                  <Send className="h-5 w-5" />
-                  Send Enquiry
                 </Button>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                <a href={getSafeworkMailtoUrl()} className="font-medium text-primary hover:underline">
-                  {SAFEWORK_CONTACT.email}
-                </a>
-              </p>
             </ScrollReveal>
-          </div>
-        </section>
-
-        {/* Categories */}
-        <section className="py-12 md:py-16">
-          <div className="container mx-auto px-4 sm:px-6">
-            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
-              {CATEGORIES.map((cat, i) => (
-                <ScrollReveal key={cat.key} delay={i * 0.05}>
-                  <Card className="h-full border-border/60 hover:border-primary/30 hover:shadow-md transition-all">
-                    <CardContent className="p-5 sm:p-6 flex flex-col h-full">
-                      <div className="flex items-start gap-3 mb-4">
-                        <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
-                          <cat.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <h2 className="text-base font-bold font-heading uppercase tracking-wide">
-                            {cat.title}
-                          </h2>
-                          <p className="text-sm text-muted-foreground">{cat.hindi}</p>
-                        </div>
-                      </div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                        For
-                      </p>
-                      <ul className="space-y-1.5 text-sm text-foreground/80 mb-5 flex-1">
-                        {cat.items.map((item) => (
-                          <li key={item} className="flex gap-2">
-                            <span className="text-primary mt-1.5 h-1 w-1 rounded-full bg-primary shrink-0" />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                      {cat.cta ? (
-                        <Button asChild className="w-full h-11 rounded-xl" variant={cat.key === "workers" ? "default" : "outline"}>
-                          <Link to={cat.to}>{cat.cta}</Link>
-                        </Button>
-                      ) : (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full h-11 rounded-xl"
-                          onClick={() => scrollToEnquiry(cat.role)}
-                        >
-                          Send Enquiry
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                </ScrollReveal>
-              ))}
-            </div>
           </div>
         </section>
 
@@ -414,18 +258,9 @@ export default function ContactUs() {
                         />
                       </div>
 
-                      <Button type="submit" size="lg" className="w-full h-12 rounded-xl text-base" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                            Sending…
-                          </>
-                        ) : (
-                          <>
-                            <Send className="h-5 w-5" />
-                            Submit Enquiry | पूछताछ भेजें
-                          </>
-                        )}
+                      <Button type="submit" size="lg" className="w-full h-12 rounded-xl text-base">
+                        <Send className="h-5 w-5" />
+                        Submit Enquiry | पूछताछ भेजें
                       </Button>
                     </form>
                   </CardContent>
