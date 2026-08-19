@@ -13,11 +13,6 @@ const EDUCATION_LEVELS = [
 
 const GCC_COUNTRIES = [
   'UAE',
-  'Saudi Arabia',
-  'Qatar',
-  'Kuwait',
-  'Oman',
-  'Bahrain',
 ] as const;
 
 const emptyToUndefined = (val: unknown) =>

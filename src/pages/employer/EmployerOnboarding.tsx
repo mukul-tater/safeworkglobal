@@ -19,7 +19,7 @@ import {
   Building2, Briefcase, Users, ShieldCheck, CreditCard,
 } from 'lucide-react';
 import {
-  JOB_CATEGORIES, POPULAR_SKILLS, DESTINATION_COUNTRIES, NATIONALITIES, WORK_PREFERENCES, WAGE_TYPES,
+  JOB_CATEGORIES, POPULAR_SKILLS, DESTINATION_COUNTRIES, WORK_PREFERENCES, WAGE_TYPES,
 } from '@/lib/constants';
 import AutoSaveStatus from '@/components/profile/AutoSaveStatus';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -390,8 +390,7 @@ export default function EmployerOnboarding() {
   };
 
   const progress = (step / STEPS.length) * 100;
-  const filteredCountries = NATIONALITIES.filter(c => c !== 'All Nationalities');
-  const filteredDestCountries = DESTINATION_COUNTRIES.filter(c => c !== 'All Countries');
+  const filteredCountries = DESTINATION_COUNTRIES.filter(c => c !== 'All Countries');
   const filteredCategories = JOB_CATEGORIES.filter(c => c !== 'All Categories');
 
   return (
@@ -621,7 +620,7 @@ export default function EmployerOnboarding() {
                 <div className="space-y-1.5">
                   <Label>Preferred Countries (source workers from)</Label>
                   <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto p-2 border rounded-md">
-                    {filteredDestCountries.slice(0, 20).map(c => (
+                    {filteredCountries.slice(0, 20).map(c => (
                       <Badge
                         key={c}
                         variant={preferredCountries.includes(c) ? 'default' : 'outline'}

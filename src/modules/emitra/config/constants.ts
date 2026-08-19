@@ -20,11 +20,6 @@ export const EXPERIENCE_LEVELS = [
 
 export const GCC_COUNTRIES = [
   'UAE',
-  'Saudi Arabia',
-  'Qatar',
-  'Kuwait',
-  'Oman',
-  'Bahrain',
 ] as const;
 
 export const SKILL_LEVELS = ['Helper', 'Semi Skilled', 'Skilled'] as const;

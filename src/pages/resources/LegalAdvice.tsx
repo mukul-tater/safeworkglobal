@@ -1,7 +1,7 @@
 import ResourcePageLayout from "@/components/ResourcePageLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Scale, ShieldAlert, FileText, AlertTriangle, ArrowRight } from "lucide-react";
+import { Scale, FileText, AlertTriangle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const topics = [
@@ -11,14 +11,9 @@ const topics = [
     body: "Confirm salary, working hours, overtime, accommodation, food, leave entitlement and termination clauses in writing. Never sign a contract you haven't read in your own language. SafeWorkGlobal reviews every contract uploaded to the platform.",
   },
   {
-    icon: ShieldAlert,
-    title: "Never surrender your passport",
-    body: "It is illegal in the UAE, Saudi Arabia, Qatar and most Gulf countries for an employer to confiscate your passport. If asked, refuse politely and report it to your embassy and to SafeWorkGlobal support immediately.",
-  },
-  {
     icon: AlertTriangle,
     title: "Beware of recruitment scams",
-    body: "No legitimate employer asks workers to pay placement fees in India. If anyone — agent, sub-agent or 'consultant' — asks for ₹1L+ to 'guarantee' a job, walk away. SafeWorkGlobal placements are 100% free for workers.",
+    body: "No legitimate employer asks workers to pay placement fees in India. If anyone — agent, sub-agent or 'consultant' — asks for ₹1L+ to 'guarantee' a job, walk away.",
   },
   {
     icon: Scale,

@@ -34,7 +34,7 @@ import { formatINRAmount } from '@/lib/utils';
 const JOBS_PER_PAGE = 20;
 const QUICK_CATEGORIES = ['Welding', 'Construction', 'Electrical', 'Plumbing', 'HVAC'];
 const SUGGESTED_CATEGORIES = ['Construction', 'Welding', 'Electrical', 'Plumbing', 'HVAC', 'Manufacturing'];
-const SUGGESTED_COUNTRIES = ['UAE', 'Saudi Arabia', 'Qatar', 'Japan', 'Germany', 'Australia'];
+const SUGGESTED_COUNTRIES = ['UAE'];
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Newest first' },
@@ -351,7 +351,7 @@ export default function Jobs() {
   }, [allJobs]);
 
   const countryFacets = useMemo(() => {
-    const facets = topFacets(allJobs, 'country', 6);
+    const facets = topFacets(allJobs, 'country', 6).filter((f) => f.label === 'UAE');
     return facets.length > 0 ? facets : SUGGESTED_COUNTRIES.map((label) => ({ label }));
   }, [allJobs]);
 

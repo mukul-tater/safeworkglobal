@@ -17,7 +17,7 @@ import { Loader2, ChevronRight, ChevronLeft, CheckCircle2, MapPin, Briefcase, Se
 import {
   JOB_CATEGORIES, POPULAR_SKILLS, SKILL_LEVELS, EXPERIENCE_RANGES,
   PROJECT_TYPES, AVAILABILITY_CHOICES, SHIFT_PREFERENCES,
-  WORK_PREFERENCES, WAGE_TYPES, DESTINATION_COUNTRIES, NATIONALITIES,
+  WORK_PREFERENCES, WAGE_TYPES, NATIONALITIES,
 } from '@/lib/constants';
 import AutoSaveStatus from '@/components/profile/AutoSaveStatus';
 import { useAutoSave } from '@/hooks/useAutoSave';

@@ -22,7 +22,7 @@ import { Card, Input, LoadingView } from '../../components/ui';
 type Props = NativeStackScreenProps<PublicStackParamList, 'Jobs'>;
 type SortOption = 'recent' | 'salary-high' | 'salary-low';
 
-const POPULAR_COUNTRIES = ['UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman'];
+const POPULAR_COUNTRIES = ['UAE'];
 
 export default function JobsScreen({ navigation }: Props) {
   const route = useRoute<RouteProp<PublicStackParamList, 'Jobs'>>();

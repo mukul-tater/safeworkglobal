@@ -8,7 +8,6 @@ import { SectionNavigation } from "./SectionNavigation";
 import { WorkingEnvironment } from "./WorkingEnvironment";
 import { AccommodationGallery, LivingConditions, RealPhotosGallery } from "./Galleries";
 import { WorkerTimeline } from "./WorkerTimeline";
-import { SalaryEarnings } from "./SalaryEarnings";
 import { BenefitsChecklist, WorkingConditions } from "./BenefitsAndConditions";
 import { OpportunityReality } from "./OpportunityReality";
 import { CountryRules } from "./CountryRules";
@@ -33,7 +32,6 @@ export function CountryInsightsDetail({ country }: { country: CountryInsight }) 
         <WorkingEnvironment country={country} />
         <AccommodationGallery country={country} />
         <WorkerTimeline country={country} />
-        <SalaryEarnings country={country} />
         <BenefitsChecklist country={country} />
         <WorkingConditions country={country} />
         <LivingConditions country={country} />

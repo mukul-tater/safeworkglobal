@@ -1,25 +1,7 @@
-// Comprehensive list of destination countries for job seekers
+// Destination countries for job seekers (UAE-only portal)
 export const DESTINATION_COUNTRIES = [
   'All Countries',
-  // Middle East
-  'UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain', 'Jordan', 'Lebanon', 'Israel',
-  // Asia Pacific
-  'Japan', 'Singapore', 'South Korea', 'Malaysia', 'Thailand', 'Hong Kong', 'Taiwan', 'China', 'Vietnam', 'Indonesia',
-  // Europe
-  'Germany', 'UK', 'France', 'Netherlands', 'Belgium', 'Ireland', 'Norway', 'Sweden', 'Denmark', 'Finland', 
-  'Switzerland', 'Austria', 'Italy', 'Spain', 'Portugal', 'Poland', 'Czech Republic', 'Greece', 'Romania', 'Hungary',
-  // North America
-  'USA', 'Canada', 'Mexico',
-  // Oceania
-  'Australia', 'New Zealand',
-  // Russia & CIS
-  'Russia', 'Kazakhstan', 'Uzbekistan',
-  // Africa
-  'South Africa', 'Nigeria', 'Kenya', 'Egypt', 'Morocco',
-  // South America
-  'Brazil', 'Argentina', 'Chile',
-  // Caribbean
-  'Bahamas', 'Trinidad and Tobago'
+  'UAE',
 ];
 
 // Worker nationalities (source countries)

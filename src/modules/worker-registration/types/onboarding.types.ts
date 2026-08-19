@@ -84,20 +84,10 @@ export const SALARY_CURRENCIES = [
 
 export const GCC_COUNTRIES = [
   'UAE',
-  'Saudi Arabia',
-  'Qatar',
-  'Kuwait',
-  'Oman',
-  'Bahrain',
 ] as const;
 
 export const GCC_CITIES: Record<(typeof GCC_COUNTRIES)[number], string[]> = {
   UAE: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Al Ain'],
-  'Saudi Arabia': ['Riyadh', 'Jeddah', 'Dammam', 'Mecca', 'Medina', 'Khobar'],
-  Qatar: ['Doha', 'Al Wakrah', 'Al Khor', 'Lusail'],
-  Kuwait: ['Kuwait City', 'Hawalli', 'Salmiya', 'Farwaniya'],
-  Oman: ['Muscat', 'Salalah', 'Sohar', 'Nizwa'],
-  Bahrain: ['Manama', 'Muharraq', 'Riffa', 'Hamad Town'],
 };
 
 export const LANGUAGE_OPTIONS = [

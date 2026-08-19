@@ -519,7 +519,7 @@ export default function WorkerProfile() {
               <Label htmlFor="preferred_countries">Preferred Countries</Label>
               <Input
                 id="preferred_countries"
-                placeholder="e.g., UAE, Qatar, Saudi Arabia, Kuwait"
+                placeholder="UAE"
                 className={`mt-1.5 h-11 ${errors.preferred_countries ? 'border-destructive' : ''}`}
                 {...register('preferred_countries')}
               />

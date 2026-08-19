@@ -9,9 +9,8 @@ export function WorkerTimeline({ country }: { country: CountryInsight }) {
     <SectionShell id="real-worker-life" heading={data.heading}>
       <ol className="max-w-xl space-y-0 mb-6">
         {data.steps.map((step, i) => (
-          <li key={`${step.time}-${step.title.en}`} className="relative">
+          <li key={step.title.en} className="relative">
             <div className="rounded-xl border border-border bg-card px-4 py-3">
-              <p className="text-xs font-semibold text-primary">{step.time}</p>
               <Bi text={step.title} as="p" className="font-medium" />
             </div>
             {i < data.steps.length - 1 && (

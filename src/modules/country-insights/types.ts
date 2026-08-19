@@ -171,7 +171,6 @@ export const SECTION_NAV: { id: string; en: string; hi: string }[] = [
   { id: "working-environment", en: "Working Environment", hi: "काम का माहौल" },
   { id: "accommodation", en: "Accommodation", hi: "रहने की व्यवस्था" },
   { id: "real-worker-life", en: "Real Worker Life", hi: "Worker का दिन" },
-  { id: "salary-earnings", en: "Salary & Earnings", hi: "वेतन और कमाई" },
   { id: "employer-benefits", en: "Employer Benefits", hi: "Employer लाभ" },
   { id: "working-conditions", en: "Working Conditions", hi: "काम की परिस्थितियां" },
   { id: "living-conditions", en: "Living Conditions", hi: "रहने की वास्तविकता" },

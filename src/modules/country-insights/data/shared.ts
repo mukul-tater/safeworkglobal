@@ -387,8 +387,8 @@ export function buildCountryInsight(
         { time: "Night", title: { en: "Rest", hi: "आराम" } },
       ],
       disclaimer: {
-        en: "Illustrative daily routine — actual timings depend on the employer, occupation and employment contract.",
-        hi: "यह केवल उदाहरणात्मक दिनचर्या है। वास्तविक समय employer, occupation और employment contract के अनुसार अलग हो सकता है।",
+        en: "Illustrative daily routine — the actual day depends on the employer, occupation and employment contract.",
+        hi: "यह केवल उदाहरणात्मक दिनचर्या है। वास्तविक दिन employer, occupation और employment contract के अनुसार अलग हो सकता है।",
       },
     },
     salary: {
@@ -414,8 +414,8 @@ export function buildCountryInsight(
           id: "outdoor",
           title: { en: "Outdoor Work", hi: "बाहरी काम" },
           body: {
-            en: "Some trades spend long hours outdoors. Confirm the worksite type in your offer.",
-            hi: "कुछ trades में लंबे समय बाहर काम हो सकता है। अपने offer में worksite का प्रकार confirm करें।",
+            en: "Some trades spend long hours outdoors.",
+            hi: "कुछ trades में लंबे समय बाहर काम हो सकता है।",
           },
         },
         {
