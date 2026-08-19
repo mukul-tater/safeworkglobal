@@ -50,9 +50,9 @@ const STEPS: JourneyStep[] = [
     number: 1,
     title: "Candidate Registration",
     shortTitle: "Registration",
-    description: "Start your journey through E-Mitra, the website, or the mobile app.",
+    description: "Start your journey through the website, the mobile app, or partners.",
     icon: UserPlus,
-    bullets: ["E-Mitra Centre", "Website", "Mobile App"],
+    bullets: ["Website", "Mobile App", "Partners"],
   },
   {
     id: "documents",

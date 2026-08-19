@@ -1,5 +1,22 @@
 import { useEffect } from 'react';
 
+const BRAND = 'SafeWork Global';
+
+function formatDocumentTitle(title: string): string {
+  const trimmed = title.trim();
+  if (!trimmed) return BRAND;
+
+  const alreadyBranded = trimmed.replace(/^SafeWorkGlobal\b/i, BRAND);
+  if (/^safework\s*global\b/i.test(alreadyBranded)) return alreadyBranded;
+
+  const page = trimmed
+    .replace(/\s*[|—–-]\s*SafeWork\s*Global\s*$/i, '')
+    .replace(/\s*[|—–-]\s*SafeWorkGlobal\s*$/i, '')
+    .trim();
+
+  return page ? `${BRAND} | ${page}` : BRAND;
+}
+
 interface SEOHeadProps {
   title: string;
   description: string;
@@ -20,8 +37,8 @@ export default function SEOHead({
   structuredData,
 }: SEOHeadProps) {
   useEffect(() => {
-    // Update document title
-    document.title = title;
+    const documentTitle = formatDocumentTitle(title);
+    document.title = documentTitle;
 
     // Update or create meta tags
     const updateMeta = (name: string, content: string, property = false) => {
@@ -39,7 +56,7 @@ export default function SEOHead({
     if (keywords) updateMeta('keywords', keywords);
     
     // Open Graph
-    updateMeta('og:title', title, true);
+    updateMeta('og:title', documentTitle, true);
     updateMeta('og:description', description, true);
     updateMeta('og:type', ogType, true);
     updateMeta('og:image', ogImage, true);
@@ -47,7 +64,7 @@ export default function SEOHead({
 
     // Twitter
     updateMeta('twitter:card', 'summary_large_image');
-    updateMeta('twitter:title', title);
+    updateMeta('twitter:title', documentTitle);
     updateMeta('twitter:description', description);
     updateMeta('twitter:image', ogImage);
 
