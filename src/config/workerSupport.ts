@@ -9,6 +9,19 @@ export function getWorkerSupportMailtoUrl(subject = "SafeWork Global – Worker 
 export const SAFEWORK_CONTACT = {
   email: WORKER_SUPPORT_EMAIL,
   officeAddress: "Ward No. 12, Pratap Choraha, Fatehnagar, Udaipur, Rajasthan 313205",
+  brand: "SafeWork Global",
+  operatingCompany: "AgriFox Smart Solutions Private Limited",
+  founderName: "Mukul Tater",
+  founderTitle: "Founder & CEO",
+  websiteDisplay: "www.safeworkglobal.com",
+  websiteUrl: "https://www.safeworkglobal.com",
+} as const;
+
+/** Licensed overseas recruitment is conducted through this designated partner — not by SafeWork Global. */
+export const RECRUITMENT_PARTNER = {
+  name: "Vesta Immigration LLP",
+  designation: "Registered Recruitment Agent (MEA)",
+  rcNo: "B-2069/UP/PART/1000+/5/10331/2023",
 } as const;
 
 export function getSafeworkMailtoUrl(subject = "SafeWork Global – Enquiry", body?: string): string {

@@ -5,6 +5,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
@@ -60,6 +61,7 @@ const Header = () => {
     { to: "/contact", label: "Contact", icon: Bell },
   ];
   const overlaysHomeHero = location.pathname === "/" && !isScrolled && !isMobileMenuOpen;
+  const showLanguageToggle = location.pathname === "/about";
 
   return (
     <>
@@ -82,7 +84,7 @@ const Header = () => {
                 alt="SafeWorkGlobal" 
                 className={`h-9 w-9 transition-transform group-hover:scale-105 ${overlaysHomeHero ? "drop-shadow-sm" : ""}`}
               />
-              <span className={`text-xl font-bold font-heading tracking-tight transition-colors ${overlaysHomeHero ? "text-white" : "text-foreground"}`}>
+              <span className={`text-xl font-bold font-heading tracking-tight transition-colors ${overlaysHomeHero ? "text-white" : "text-foreground"} ${showLanguageToggle ? "hidden md:inline" : ""}`}>
                 SafeWorkGlobal
               </span>
             </Link>
@@ -110,6 +112,7 @@ const Header = () => {
 
             {/* Desktop Actions */}
             <div className={`hidden md:flex items-center gap-3 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
+              {showLanguageToggle && <AboutLanguageToggle />}
               <ThemeToggle />
               {isAuthenticated ? (
                 <>
@@ -212,6 +215,7 @@ const Header = () => {
 
             {/* Mobile Actions */}
             <div className={`flex items-center gap-1 md:hidden ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
+              {showLanguageToggle && <AboutLanguageToggle compact className="mr-1" />}
               <ThemeToggle />
             {/* Mobile Menu Toggle */}
             <Button 

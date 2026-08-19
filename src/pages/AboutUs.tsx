@@ -1,149 +1,1021 @@
+import type { ComponentType, ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ScrollReveal from "@/components/ScrollReveal";
-import { Building2, Users, Target, Award, Heart, Globe, Shield } from "lucide-react";
+import SEOHead from "@/components/SEOHead";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { useWorkerLanguage } from "@/modules/worker-registration";
+import { pick } from "@/pages/about/copy";
+import {
+  EMIGRATE_PORTAL_URL,
+  MADAD_PORTAL_URL,
+  MEA_PBSK,
+  RECRUITMENT_PARTNER,
+  SAFEWORK_CONTACT,
+  getSafeworkMailtoUrl,
+} from "@/config/workerSupport";
+import {
+  ArrowDown,
+  ArrowRight,
+  BadgeCheck,
+  Building2,
+  Check,
+  ClipboardCheck,
+  ExternalLink,
+  FileCheck,
+  Globe2,
+  GraduationCap,
+  Handshake,
+  HardHat,
+  Landmark,
+  Mail,
+  MapPin,
+  Network,
+  Phone,
+  Scale,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  UserPlus,
+  Video,
+  Wrench,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+function BilingualHeading({
+  as: Tag = "h2",
+  en,
+  hi,
+  align = "center",
+  className,
+}: {
+  as?: "h1" | "h2" | "h3";
+  en: string;
+  hi: string;
+  align?: "center" | "left";
+  className?: string;
+}) {
+  return (
+    <div className={cn(align === "center" ? "text-center" : "text-left", className)}>
+      <Tag
+        className={cn(
+          "font-bold font-heading tracking-tight text-foreground",
+          Tag === "h1" && "text-3xl sm:text-4xl md:text-[2.75rem] leading-tight",
+          Tag === "h2" && "text-2xl sm:text-3xl lg:text-4xl leading-tight",
+          Tag === "h3" && "text-lg sm:text-xl leading-snug",
+        )}
+      >
+        {en}
+      </Tag>
+      <p
+        lang="hi"
+        className={cn(
+          "font-heading text-primary/85 mt-1.5",
+          Tag === "h1" && "text-lg sm:text-xl",
+          Tag === "h2" && "text-base sm:text-lg",
+          Tag === "h3" && "text-sm",
+        )}
+      >
+        {hi}
+      </p>
+    </div>
+  );
+}
+
+function SectionEyebrow({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-semibold tracking-[0.16em] uppercase bg-primary/10 text-primary mb-4">
+      {children}
+    </span>
+  );
+}
+
+function FlowNode({
+  title,
+  subtitle,
+  description,
+  icon: Icon,
+}: {
+  title: string;
+  subtitle?: string;
+  description: string;
+  icon: ComponentType<{ className?: string }>;
+}) {
+  return (
+    <div className="relative flex-1 min-w-0">
+      <div className="rounded-2xl border border-border/60 bg-card p-4 sm:p-5 h-full shadow-xs">
+        <div className="inline-flex p-2.5 rounded-xl bg-primary/10 mb-3">
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
+        {subtitle && (
+          <p lang="hi" className="text-xs text-primary/80 mt-0.5">
+            {subtitle}
+          </p>
+        )}
+        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{description}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function AboutUs() {
-  const stats = [
-    { icon: Building2, value: "120+", label: "Companies", color: "bg-primary/10 text-primary" },
-    { icon: Users, value: "450+", label: "Workers Placed", color: "bg-secondary/10 text-secondary" },
-    { icon: Target, value: "920+", label: "Jobs Posted", color: "bg-info/10 text-info" },
-    { icon: Award, value: "98%", label: "Satisfaction", color: "bg-success/10 text-success" },
+  const { locale } = useWorkerLanguage();
+  const navigate = useNavigate();
+  const { isAuthenticated, role } = useAuth();
+  const isHi = locale === "hi";
+
+  const goFindJobs = () => {
+    if (!isAuthenticated) return navigate("/jobs");
+    if (role === "employer") {
+      toast.error(
+        pick(locale, "This is an employer account. Switch to a worker account to browse jobs.", "यह एक नियोक्ता खाता है। नौकरियाँ देखने के लिए worker खाते से साइन इन करें।"),
+      );
+      return;
+    }
+    navigate("/jobs");
+  };
+
+  const goRegisterWorker = () => {
+    if (!isAuthenticated) return navigate("/worker/quick-signup");
+    if (role === "worker") return navigate("/worker/dashboard");
+    if (role === "employer") {
+      toast.error(
+        pick(locale, "You're signed in as an employer. Sign out to register as a worker.", "आप नियोक्ता के रूप में साइन इन हैं। Worker के रूप में रजिस्टर करने के लिए साइन आउट करें।"),
+      );
+      return;
+    }
+    navigate("/worker/quick-signup");
+  };
+
+  const goHire = () => {
+    if (!isAuthenticated) return navigate("/employer/quick-signup");
+    if (role === "employer") return navigate("/employer/dashboard");
+    if (role === "worker") {
+      toast.error(
+        pick(locale, "You're signed in as a worker. Sign out to hire from India.", "आप worker के रूप में साइन इन हैं। भारत से भर्ती के लिए साइन आउट करें।"),
+      );
+      return;
+    }
+    navigate("/employer/quick-signup");
+  };
+
+  const onboardingFeatures = [
+    { en: "Digital registration", hi: "डिजिटल पंजीकरण" },
+    { en: "Worker profile", hi: "श्रमिक प्रोफ़ाइल" },
+    { en: "Document upload", hi: "दस्तावेज़ अपलोड" },
+    { en: "KYC workflow", hi: "KYC प्रक्रिया" },
+    { en: "Skill & experience information", hi: "कौशल और अनुभव की जानकारी" },
   ];
 
-  const values = [
-    {
-      icon: Heart,
-      title: "Worker First",
-      description: "We prioritize worker welfare, safety, and fair compensation in everything we do.",
-    },
-    {
-      icon: Shield,
-      title: "Transparency",
-      description: "Clear terms, honest communication, and complete visibility throughout the process.",
-    },
-    {
-      icon: Award,
-      title: "Quality",
-      description: "We maintain high standards for both workers and employers on our platform.",
-    },
+  const skillWorkflow = [
+    { en: "Registration", hi: "पंजीकरण" },
+    { en: "KYC", hi: "KYC" },
+    { en: "Technical Screening", hi: "तकनीकी स्क्रीनिंग" },
+    { en: "Skill / Trade Test", hi: "कौशल / ट्रेड टेस्ट" },
+    { en: "Digital Scorecard", hi: "डिजिटल स्कोरकार्ड" },
+    { en: "Verified Profile", hi: "सत्यापित प्रोफ़ाइल" },
   ];
 
-  const team = [
-    { name: "Mukul Tater", role: "Founder & CEO", initials: "MT" },
-    { name: "Kailash Gayari", role: "Head of Platform / Tech", initials: "KG" },
-    { name: "Deependra Gadwal", role: "Operations & Legal Advisor", initials: "DG" },
+  const ecosystem = [
+    { icon: HardHat, title: "Workers", hi: "श्रमिक", desc: pick(locale, "India's skilled workforce", "भारत का कुशल कार्यबल") },
+    { icon: Store, title: "E-Mitra / CSC / ITI", hi: "प्रशिक्षण साझेदार", desc: pick(locale, "Local worker onboarding & facilitation; training & skill ecosystem", "स्थानीय पंजीकरण, सुविधा और कौशल प्रशिक्षण") },
+    { icon: Network, title: "SafeWork Platform", hi: "SafeWork प्लेटफ़ॉर्म", desc: pick(locale, "Technology, workflow & workforce mobility infrastructure", "तकनीक, वर्कफ़्लो और workforce mobility इंफ्रास्ट्रक्चर") },
+    { icon: ClipboardCheck, title: "Skill Verification", hi: "कौशल सत्यापन", desc: pick(locale, "Standardized assessment & digital verification", "मानकीकृत आकलन और डिजिटल सत्यापन") },
+    { icon: Building2, title: "Global Employers", hi: "वैश्विक नियोक्ता", desc: pick(locale, "International workforce demand", "अंतरराष्ट्रीय कार्यबल की माँग") },
+    { icon: Scale, title: "Licensed Recruitment", hi: "लाइसेंस्ड भर्ती", desc: pick(locale, "Regulated overseas recruitment", "नियमित विदेश भर्ती प्रक्रिया") },
+    { icon: Globe2, title: "International Deployment", hi: "तैनाती", desc: pick(locale, "International employment", "अंतरराष्ट्रीय रोजगार") },
+  ];
+
+  const indiaCards = [
+    { title: "E-MITRA", hi: "ई-मित्र", desc: pick(locale, "Local-level worker registration", "स्थानीय स्तर पर श्रमिक पंजीकरण"), icon: Store },
+    { title: "CSC NETWORK", hi: "CSC नेटवर्क", desc: pick(locale, "Rural & semi-urban reach", "ग्रामीण और अर्ध-शहरी पहुँच"), icon: Network },
+    { title: "ITIs", hi: "आईटीआई", desc: pick(locale, "Training + skilled workforce", "प्रशिक्षण और कुशल कार्यबल"), icon: GraduationCap },
+    { title: "TRADE TEST CENTRES", hi: "ट्रेड टेस्ट सेंटर", desc: pick(locale, "Practical skill verification", "व्यावहारिक कौशल सत्यापन"), icon: Wrench },
+    { title: "TRAINING CENTRES", hi: "प्रशिक्षण केंद्र", desc: pick(locale, "Skill development ecosystem", "कौशल विकास पारिस्थितिकी"), icon: Sparkles },
+  ];
+
+  const verifySteps = [
+    { en: "Profile", hi: "प्रोफ़ाइल", icon: UserPlus },
+    { en: "Video KYC", hi: "वीडियो KYC", icon: Video },
+    { en: "Technical Interview", hi: "तकनीकी इंटरव्यू", icon: Landmark },
+    { en: "Trade Test", hi: "ट्रेड टेस्ट", icon: Wrench },
+    { en: "Digital Scorecard", hi: "डिजिटल स्कोरकार्ड", icon: FileCheck },
+    { en: "Verified Skill Profile", hi: "सत्यापित कौशल प्रोफ़ाइल", icon: BadgeCheck },
+  ];
+
+  const workerJourney = [
+    { en: "Local Skill", hi: "स्थानीय कौशल" },
+    { en: "Verified Skill", hi: "सत्यापित कौशल" },
+    { en: "Global Opportunity", hi: "वैश्विक अवसर" },
+    { en: "International Employment", hi: "अंतरराष्ट्रीय रोजगार" },
+  ];
+
+  const employerServices = [
+    { en: "Workforce sourcing", hi: "कार्यबल सोर्सिंग" },
+    { en: "Skill verification", hi: "कौशल सत्यापन" },
+    { en: "Trade testing", hi: "ट्रेड टेस्टिंग" },
+    { en: "Technical screening", hi: "तकनीकी स्क्रीनिंग" },
+    { en: "Candidate profiles", hi: "उम्मीदवार प्रोफ़ाइल" },
+    { en: "Documentation coordination", hi: "दस्तावेज़ समन्वय" },
+    { en: "Deployment support", hi: "तैनाती सहायता" },
+    { en: "Replacement support, where agreed", hi: "सहमति पर replacement सहायता" },
+  ];
+
+  const principles = [
+    { en: "Safe", hi: "सुरक्षित", icon: Shield, desc: pick(locale, "Worker safety and informed decision-making come first.", "श्रमिक सुरक्षा और सूचित निर्णय सबसे पहले आते हैं।") },
+    { en: "Transparent", hi: "पारदर्शी", icon: FileCheck, desc: pick(locale, "Clear information about jobs, processes, requirements and applicable charges.", "नौकरी, प्रक्रिया, आवश्यकताओं और लागू शुल्कों की स्पष्ट जानकारी।") },
+    { en: "Skill-First", hi: "कौशल प्रथम", icon: Wrench, desc: pick(locale, "Focus on what a worker can actually do—not just what a resume says.", "ध्यान इस पर कि श्रमिक वास्तव में क्या कर सकता है—सिर्फ़ CV पर क्या लिखा है, उस पर नहीं।") },
+    { en: "Ethical", hi: "नैतिक", icon: Handshake, desc: pick(locale, "Building responsible relationships with workers, institutions and employers.", "श्रमिकों, संस्थानों और नियोक्ताओं के साथ ज़िम्मेदार संबंध।") },
+    { en: "India-First", hi: "भारत प्रथम", icon: MapPin, desc: pick(locale, "Building opportunities for skilled workers across India's cities, towns and villages.", "भारत के शहरों, कस्बों और गाँवों के कुशल श्रमिकों के लिए अवसर।") },
+    { en: "Global", hi: "वैश्विक", icon: Globe2, desc: pick(locale, "Connecting Indian skills with international workforce demand.", "भारतीय कौशल को अंतरराष्ट्रीय माँग से जोड़ना।") },
+  ];
+
+  const whyPoints = [
+    { en: "India-wide worker onboarding ecosystem", hi: "भारत-व्यापी श्रमिक पंजीकरण नेटवर्क" },
+    { en: "Skill-first worker profiles", hi: "कौशल-प्रथम प्रोफ़ाइल" },
+    { en: "Standardized skill verification approach", hi: "मानकीकृत कौशल सत्यापन" },
+    { en: "Technology-enabled workflow", hi: "तकनीक-आधारित वर्कफ़्लो" },
+    { en: "Global employer connectivity", hi: "वैश्विक नियोक्ता कनेक्टिविटी" },
+    { en: "Partner-driven physical infrastructure", hi: "साझेदार-आधारित भौतिक इंफ्रास्ट्रक्चर" },
+    { en: "Transparent workforce mobility process", hi: "पारदर्शी workforce mobility प्रक्रिया" },
+    { en: "Licensed recruitment partner model", hi: "लाइसेंस्ड भर्ती-साझेदार मॉडल" },
+  ];
+
+  const trustPoints = [
+    { en: "Transparent process", hi: "पारदर्शी प्रक्रिया" },
+    { en: "Verified opportunities", hi: "सत्यापित अवसर" },
+    { en: "Clear employment information", hi: "स्पष्ट रोजगार जानकारी" },
+    { en: "Skill verification", hi: "कौशल सत्यापन" },
+    { en: "Documentation support", hi: "दस्तावेज़ सहायता" },
+    { en: "No false job promises", hi: "झूठे नौकरी वादे नहीं" },
+    { en: "Recruitment through applicable legal channels", hi: "लागू कानूनी माध्यमों से भर्ती" },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-background pb-32 md:pb-0">
+      <SEOHead
+        title="About SafeWork Global | India's Workforce Mobility Platform"
+        description="SafeWork Global is a technology and workforce mobility platform connecting India's skilled workforce with global employment opportunities through worker onboarding, skill verification and a transparent workforce ecosystem."
+        keywords="SafeWork Global, workforce mobility, skilled workers India, overseas employment, skill verification, GCC jobs"
+        canonicalUrl="https://safeworkglobal.com/about"
+        ogImage="https://safeworkglobal.com/safework-global-logo.png"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          name: "About SafeWork Global",
+          url: "https://safeworkglobal.com/about",
+          description:
+            "SafeWork Global is a technology and workforce mobility platform connecting India's skilled workforce with global employment opportunities.",
+          mainEntity: {
+            "@type": "Organization",
+            name: "SafeWork Global",
+            legalName: SAFEWORK_CONTACT.operatingCompany,
+            url: SAFEWORK_CONTACT.websiteUrl,
+            founder: { "@type": "Person", name: SAFEWORK_CONTACT.founderName },
+          },
+        }}
+      />
       <Header />
       <MobileBottomNav />
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-primary/[0.04] to-background">
-          <div className="container mx-auto px-4 sm:px-6 text-center">
+        <section className="relative overflow-hidden py-14 sm:py-20 md:py-24">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(230_85%_55%/0.12),transparent_55%),radial-gradient(ellipse_at_bottom_right,hsl(192_95%_48%/0.08),transparent_45%)]" />
+          <div className="container mx-auto px-4 sm:px-6 relative z-10">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+              <ScrollReveal>
+                <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-muted-foreground mb-1">
+                  About SafeWork Global
+                </p>
+                <p lang="hi" className="text-sm text-primary mb-5">
+                  हमारे बारे में
+                </p>
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-heading tracking-tight leading-[1.15] mb-3">
+                  <span lang="hi">भारत का कौशल, दुनिया के अवसर।</span>
+                </h1>
+                <p className="text-xl sm:text-2xl font-heading font-semibold text-primary mb-6">
+                  Indian Skills. Global Opportunities.
+                </p>
+                <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground mb-5">
+                  {pick(locale, "India's Workforce Mobility Infrastructure", "भारत का Workforce Mobility Infrastructure")}
+                </p>
+                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-4">
+                  {pick(
+                    locale,
+                    "SafeWork Global is a technology and workforce mobility platform built to connect India's skilled workforce with trusted global employment opportunities through a structured, transparent and skill-first ecosystem.",
+                    "SafeWork Global एक तकनीक और workforce mobility प्लेटफ़ॉर्म है, जो भारत के कुशल कार्यबल को विश्वसनीय वैश्विक रोजगार से जोड़ता है — एक व्यवस्थित, पारदर्शी और कौशल-प्रथम व्यवस्था के ज़रिए।",
+                  )}
+                </p>
+                <p className="text-base text-muted-foreground leading-relaxed mb-8">
+                  {pick(
+                    locale,
+                    "We believe that skilled electricians, plumbers, welders, fitters, HVAC technicians, drivers, construction workers and other skilled professionals should have access to a transparent pathway to global employment.",
+                    "हम मानते हैं कि कुशल इलेक्ट्रीशियन, प्लंबर, वेल्डर, फिटर, HVAC तकनीशियन, ड्राइवर, निर्माण श्रमिक और अन्य कुशल पेशेवरों को वैश्विक रोजगार का एक पारदर्शी रास्ता मिलना चाहिए।",
+                  )}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button size="lg" className="h-12 rounded-xl" onClick={goFindJobs}>
+                    Find Jobs | नौकरी खोजें
+                  </Button>
+                  <Button size="lg" variant="outline" className="h-12 rounded-xl" asChild>
+                    <Link to="/partner/register">Partner With Us | साझेदार बनें</Link>
+                  </Button>
+                </div>
+              </ScrollReveal>
+
+              <ScrollReveal delay={0.08}>
+                <div className="relative rounded-3xl border border-border/60 bg-card/80 p-6 sm:p-8 overflow-hidden">
+                  <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+                  <div className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-info/10 blur-3xl" />
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-6 relative">
+                    {pick(locale, "A structured pathway", "एक व्यवस्थित मार्ग")}
+                  </p>
+                  <div className="relative space-y-3">
+                    {[
+                      { label: "INDIA", hi: "भारत", icon: MapPin, note: pick(locale, "Skilled workforce", "कुशल कार्यबल") },
+                      { label: "VERIFIED SKILLS", hi: "सत्यापित कौशल", icon: BadgeCheck, note: pick(locale, "Evidence, not just a CV", "सिर्फ़ CV नहीं — प्रमाण") },
+                      { label: "GLOBAL EMPLOYERS", hi: "वैश्विक नियोक्ता", icon: Globe2, note: pick(locale, "Trusted demand", "विश्वसनीय माँग") },
+                    ].map((node, i) => (
+                      <div key={node.label}>
+                        <div className="flex items-center gap-4 rounded-2xl border border-border bg-background/80 p-4">
+                          <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-info flex items-center justify-center shrink-0">
+                            <node.icon className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="font-heading font-semibold tracking-wide">{node.label}</p>
+                            <p lang="hi" className="text-xs text-primary/80">
+                              {node.hi}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{node.note}</p>
+                          </div>
+                        </div>
+                        {i < 2 && (
+                          <div className="flex justify-center py-1 text-primary/40" aria-hidden>
+                            <ArrowDown className="h-4 w-4" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ScrollReveal>
+            </div>
+          </div>
+        </section>
+
+        {/* Mission */}
+        <section className="py-14 md:py-20">
+          <div className="container mx-auto px-4 sm:px-6">
             <ScrollReveal>
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-primary/10 text-primary mb-4">
-                <Globe className="h-3.5 w-3.5" />
-                Our Story
-              </span>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold font-heading text-foreground mb-4 tracking-tight">
-                About SafeWorkGlobal
-              </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Connecting skilled workers with verified opportunities across the globe — safely, ethically, and transparently.
+              <div className="text-center mb-8">
+                <SectionEyebrow>Our Mission | हमारा मिशन</SectionEyebrow>
+                <BilingualHeading en="Our Mission" hi="हमारा मिशन" />
+              </div>
+            </ScrollReveal>
+            <ScrollReveal>
+              <Card className="relative overflow-hidden border-border/60 bg-gradient-to-br from-primary/[0.06] via-card to-info/[0.05] max-w-4xl mx-auto">
+                <CardContent className="p-6 sm:p-10">
+                  <p className="text-xl sm:text-2xl font-heading font-semibold text-foreground leading-snug">
+                    {pick(
+                      locale,
+                      "To make global employment safer, more transparent and more accessible for India's skilled workforce.",
+                      "भारत के skilled workers के लिए global employment को अधिक सुरक्षित, पारदर्शी और सुलभ बनाना।",
+                    )}
+                  </p>
+                  {!isHi && (
+                    <p lang="hi" className="text-base text-primary/80 mt-4 leading-relaxed">
+                      भारत के skilled workers के लिए global employment को अधिक सुरक्षित, पारदर्शी और सुलभ बनाना।
+                    </p>
+                  )}
+                  <p className="text-muted-foreground mt-6 leading-relaxed">
+                    {pick(
+                      locale,
+                      "SafeWork aims to reduce information gaps between workers and employers, improve visibility of genuine skills, and create a structured pathway from Indian skill to global employment.",
+                      "SafeWork का उद्देश्य श्रमिकों और नियोक्ताओं के बीच जानकारी की कमी कम करना, वास्तविक कौशल को दिखाना, और भारतीय कौशल से वैश्विक रोजगार तक एक व्यवस्थित मार्ग बनाना है।",
+                    )}
+                  </p>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* What we do */}
+        <section className="py-14 md:py-20 bg-muted/30">
+          <div className="container mx-auto px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="text-center mb-10">
+                <BilingualHeading en="What We Do" hi="हम क्या करते हैं" />
+              </div>
+            </ScrollReveal>
+            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
+              <ScrollReveal>
+                <Card className="h-full border-border/50">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="inline-flex p-2.5 rounded-xl bg-primary/10 mb-4">
+                      <UserPlus className="h-5 w-5 text-primary" />
+                    </div>
+                    <h3 className="font-heading font-semibold text-lg">Worker Onboarding</h3>
+                    <p lang="hi" className="text-sm text-primary/80 mb-3">
+                      श्रमिक पंजीकरण
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                      {pick(
+                        locale,
+                        "Workers can register through our digital platform and our growing network of onboarding partners including E-Mitra centres, CSC-linked channels, ITIs and training institutions.",
+                        "श्रमिक हमारे डिजिटल प्लेटफ़ॉर्म और ई-मित्र केंद्र, CSC-संबद्ध माध्यम, ITI और प्रशिक्षण संस्थानों सहित बढ़ते साझेदार नेटवर्क से पंजीकरण कर सकते हैं।",
+                      )}
+                    </p>
+                    <ul className="space-y-1.5">
+                      {onboardingFeatures.map((f) => (
+                        <li key={f.en} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="h-4 w-4 text-success mt-0.5 shrink-0" />
+                          {pick(locale, f.en, f.hi)}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
+
+              <ScrollReveal delay={0.05}>
+                <Card className="h-full border-border/50">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="inline-flex p-2.5 rounded-xl bg-info/10 mb-4">
+                      <ClipboardCheck className="h-5 w-5 text-info" />
+                    </div>
+                    <h3 className="font-heading font-semibold text-lg">Skill Verification</h3>
+                    <p lang="hi" className="text-sm text-primary/80 mb-3">
+                      कौशल सत्यापन
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                      {pick(
+                        locale,
+                        "A worker's experience should be more than a statement on a CV.",
+                        "श्रमिक का अनुभव सिर्फ़ CV पर लिखी बात नहीं होना चाहिए।",
+                      )}
+                    </p>
+                    <ol className="space-y-2">
+                      {skillWorkflow.map((step, i) => (
+                        <li key={step.en} className="flex items-center gap-2 text-sm">
+                          <span className="h-6 w-6 rounded-full bg-muted text-[11px] font-bold flex items-center justify-center shrink-0">
+                            {i + 1}
+                          </span>
+                          <span>{pick(locale, step.en, step.hi)}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
+
+              <ScrollReveal delay={0.1}>
+                <Card className="h-full border-border/50">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="inline-flex p-2.5 rounded-xl bg-secondary/10 mb-4">
+                      <Building2 className="h-5 w-5 text-secondary" />
+                    </div>
+                    <h3 className="font-heading font-semibold text-lg leading-snug">Global Employer Connectivity</h3>
+                    <p lang="hi" className="text-sm text-primary/80 mb-3">
+                      वैश्विक नियोक्ता कनेक्टिविटी
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {pick(
+                        locale,
+                        "We work with employers and manpower organizations in international markets to understand workforce requirements and build verified candidate pipelines from India.",
+                        "हम अंतरराष्ट्रीय बाज़ारों के नियोक्ताओं और manpower संगठनों के साथ काम करते हैं, उनकी ज़रूरतें समझते हैं, और भारत से सत्यापित उम्मीदवार पाइपलाइन तैयार करते हैं।",
+                      )}
+                    </p>
+                    <p className="text-sm text-foreground/80 mt-4 rounded-xl bg-muted/60 px-3 py-2">
+                      {pick(locale, "Initial focus: GCC markets, including UAE.", "शुरुआती ध्यान: GCC बाज़ार, जिसमें UAE शामिल है।")}
+                    </p>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
+
+              <ScrollReveal delay={0.15}>
+                <Card className="h-full border-border/50">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="inline-flex p-2.5 rounded-xl bg-success/10 mb-4">
+                      <Scale className="h-5 w-5 text-success" />
+                    </div>
+                    <h3 className="font-heading font-semibold text-lg">Recruitment & Deployment</h3>
+                    <p lang="hi" className="text-sm text-primary/80 mb-3">
+                      भर्ती एवं तैनाती
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {pick(
+                        locale,
+                        "Where overseas recruitment requires a registered Recruitment Agent, the regulated recruitment process is conducted through our designated licensed recruitment partner.",
+                        "जहाँ विदेश भर्ती के लिए पंजीकृत Recruitment Agent आवश्यक है, वह नियमित प्रक्रिया हमारे designated लाइसेंस्ड भर्ती साझेदार के माध्यम से होती है।",
+                      )}
+                    </p>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
+            </div>
+          </div>
+        </section>
+
+        {/* Compliance */}
+        <section className="py-14 md:py-20">
+          <div className="container mx-auto px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="max-w-3xl mx-auto rounded-3xl border border-amber-500/25 bg-amber-500/[0.06] p-6 sm:p-10 text-center">
+                <BilingualHeading en="Clear Roles. Transparent Process." hi="स्पष्ट भूमिका। पारदर्शी प्रक्रिया।" />
+                <div className="mt-8 space-y-4">
+                  <div className="rounded-2xl border border-border bg-card p-5">
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">SafeWork Global</p>
+                    <p className="font-heading font-semibold text-lg mt-1">
+                      {pick(locale, "Technology & Workforce Mobility Platform", "तकनीक और Workforce Mobility प्लेटफ़ॉर्म")}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {pick(
+                        locale,
+                        "SafeWork Global does not own a Recruitment Agent licence. Platform functions are technology, workflow and mobility infrastructure.",
+                        "SafeWork Global के पास Recruitment Agent लाइसेंस नहीं है। प्लेटफ़ॉर्म का काम तकनीक, वर्कफ़्लो और mobility इंफ्रास्ट्रक्चर है।",
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex justify-center text-primary/50" aria-hidden>
+                    <ArrowDown className="h-6 w-6" />
+                  </div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {pick(locale, "Overseas recruitment process conducted through", "विदेश भर्ती प्रक्रिया इनके माध्यम से")}
+                  </p>
+                  <div className="rounded-2xl border border-border bg-card p-5">
+                    <p className="font-heading font-semibold text-lg">{RECRUITMENT_PARTNER.name}</p>
+                    <p className="text-sm text-muted-foreground">{RECRUITMENT_PARTNER.designation}</p>
+                    <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-2.5 text-left">
+                      <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">RC No.</p>
+                        <p className="text-sm font-semibold font-heading">{RECRUITMENT_PARTNER.rcNo}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* Ecosystem */}
+        <section className="py-14 md:py-20 bg-muted/30">
+          <div className="container mx-auto px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="text-center mb-10">
+                <BilingualHeading en="One Ecosystem. Multiple Partners." hi="एक नेटवर्क, अनेक साझेदार।" />
+              </div>
+            </ScrollReveal>
+            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 max-w-6xl mx-auto">
+              {ecosystem.map((node, i) => (
+                <ScrollReveal key={node.title} delay={i * 0.03}>
+                  <div className="flex flex-col h-full">
+                    <FlowNode title={node.title} subtitle={node.hi} description={node.desc} icon={node.icon} />
+                    {i < ecosystem.length - 1 && (
+                      <div className="flex justify-center py-1 text-primary/40 sm:hidden" aria-hidden>
+                        <ArrowDown className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Built for India */}
+        <section className="py-14 md:py-20">
+          <div className="container mx-auto px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="text-center max-w-2xl mx-auto mb-10">
+                <BilingualHeading en="Built for India" hi="भारत के लिए बनाया गया" />
+                <p className="text-muted-foreground mt-4 leading-relaxed">
+                  {pick(
+                    locale,
+                    "India has millions of skilled workers across cities, towns and villages. Our approach is therefore India-first and network-driven.",
+                    "भारत में शहरों, कस्बों और गाँवों में लाखों कुशल श्रमिक हैं। इसलिए हमारा दृष्टिकोण भारत-प्रथम और नेटवर्क-आधारित है।",
+                  )}
+                </p>
+              </div>
+            </ScrollReveal>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {indiaCards.map((card, i) => (
+                <ScrollReveal key={card.title} delay={i * 0.04}>
+                  <Card className="h-full border-border/50">
+                    <CardContent className="p-5">
+                      <card.icon className="h-5 w-5 text-primary mb-3" />
+                      <h3 className="font-heading font-semibold text-sm tracking-wide">{card.title}</h3>
+                      <p lang="hi" className="text-xs text-primary/80 mb-2">
+                        {card.hi}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{card.desc}</p>
+                    </CardContent>
+                  </Card>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Skill verification */}
+        <section className="py-14 md:py-20 bg-muted/30">
+          <div className="container mx-auto px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="text-center max-w-3xl mx-auto mb-10">
+                <BilingualHeading
+                  en="Don't Just Tell Employers Your Skill. Show Them."
+                  hi="अपने कौशल की सिर्फ़ जानकारी न दें — उसे साबित करें।"
+                />
+                <p className="text-muted-foreground mt-4 leading-relaxed">
+                  {pick(
+                    locale,
+                    "SafeWork's skill-verification ecosystem is designed to create structured evidence of a worker's practical capabilities. Candidates may undergo steps as required by the trade, employer or process — not every candidate automatically receives every test.",
+                    "SafeWork का कौशल-सत्यापन तंत्र श्रमिक की व्यावहारिक क्षमता का व्यवस्थित प्रमाण बनाने के लिए है। उम्मीदवार trade, नियोक्ता या प्रक्रिया के अनुसार चरणों से गुज़र सकते हैं — हर उम्मीदवार को हर टेस्ट अपने आप नहीं मिलता।",
+                  )}
+                </p>
+              </div>
+            </ScrollReveal>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+              {verifySteps.map((step, i) => (
+                <ScrollReveal key={step.en} delay={i * 0.04}>
+                  <div className="rounded-2xl border border-border/50 bg-card p-4 text-center h-full">
+                    <div className="mx-auto mb-3 h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <step.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-sm font-semibold font-heading">{pick(locale, step.en, step.hi)}</p>
+                    {i < verifySteps.length - 1 && (
+                      <p className="lg:hidden text-[10px] text-primary/50 mt-2">↓</p>
+                    )}
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+            <ScrollReveal>
+              <Card className="border-border/50 max-w-3xl mx-auto">
+                <CardContent className="p-6">
+                  <h3 className="font-heading font-semibold text-lg mb-1">SafeWork Skill Verification Network</h3>
+                  <p lang="hi" className="text-sm text-primary/80 mb-3">
+                    SafeWork कौशल सत्यापन नेटवर्क
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {pick(
+                      locale,
+                      "Partners can include ITIs, training institutions, Trade Test Centres and assessment partners.",
+                      "साझेदारों में ITI, प्रशिक्षण संस्थान, ट्रेड टेस्ट सेंटर और आकलन साझेदार शामिल हो सकते हैं।",
+                    )}
+                  </p>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* For workers */}
+        <section className="py-14 md:py-20">
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="grid lg:grid-cols-2 gap-10 items-center">
+              <ScrollReveal>
+                <BilingualHeading
+                  align="left"
+                  en="Your Skill. Your Identity. Your Global Career."
+                  hi="आपकी Skill, आपकी पहचान, आपका Global Career."
+                />
+                <p className="text-muted-foreground mt-4 leading-relaxed mb-6">
+                  {pick(
+                    locale,
+                    "SafeWork aims to help workers build a structured digital profile and access verified international employment opportunities through a transparent process.",
+                    "SafeWork का उद्देश्य श्रमिकों को एक व्यवस्थित डिजिटल प्रोफ़ाइल बनाने और पारदर्शी प्रक्रिया से सत्यापित अंतरराष्ट्रीय रोजगार तक पहुँचने में मदद करना है।",
+                  )}
+                </p>
+                <Button size="lg" className="h-12 rounded-xl w-full sm:w-auto" onClick={goRegisterWorker}>
+                  Register as Worker | Worker के रूप में रजिस्टर करें
+                </Button>
+              </ScrollReveal>
+              <ScrollReveal delay={0.08}>
+                <div className="grid grid-cols-2 gap-3">
+                  {workerJourney.map((step, i) => (
+                    <div key={step.en} className="rounded-2xl border border-border/50 bg-card p-5">
+                      <p className="text-xs font-semibold text-primary mb-2">0{i + 1}</p>
+                      <p className="font-heading font-semibold">{pick(locale, step.en, step.hi)}</p>
+                    </div>
+                  ))}
+                </div>
+              </ScrollReveal>
+            </div>
+          </div>
+        </section>
+
+        {/* For employers */}
+        <section className="py-14 md:py-20 bg-muted/30">
+          <div className="container mx-auto px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="text-center mb-10">
+                <BilingualHeading en="Verified Indian Workforce. One Platform." hi="Verified Indian Workforce. एक Platform." />
+              </div>
+            </ScrollReveal>
+            <div className="grid lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
+              <ScrollReveal className="lg:col-span-2">
+                <Card className="h-full border-border/50">
+                  <CardContent className="p-6">
+                    <h3 className="font-heading font-semibold mb-4">
+                      {pick(locale, "Employer services", "नियोक्ता सेवाएँ")}
+                    </h3>
+                    <ul className="grid sm:grid-cols-2 gap-2.5">
+                      {employerServices.map((s) => (
+                        <li key={s.en} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="h-4 w-4 text-success mt-0.5 shrink-0" />
+                          {pick(locale, s.en, s.hi)}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
+              <ScrollReveal delay={0.08}>
+                <Card className="h-full border-primary/20 bg-primary/[0.04]">
+                  <CardContent className="p-6">
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-primary mb-2">1% Employer Model</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {pick(
+                        locale,
+                        "SafeWork's employer model is designed around a 1% commission on monthly gross salary for the duration of employment, subject to agreed commercial terms. This is not a guaranteed payment or guaranteed placement.",
+                        "SafeWork का नियोक्ता मॉडल रोजगार की अवधि तक मासिक सकल वेतन पर 1% कमीशन के आसपास बनाया गया है — सहमत व्यावसायिक शर्तों के अधीन। यह गारंटीशुदा भुगतान या गारंटीशुदा प्लेसमेंट नहीं है।",
+                      )}
+                    </p>
+                    <Button className="w-full mt-5 h-12 rounded-xl" onClick={goHire}>
+                      Hire from India | भारत से भर्ती करें
+                    </Button>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
+            </div>
+          </div>
+        </section>
+
+        {/* Principles */}
+        <section className="py-14 md:py-20">
+          <div className="container mx-auto px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="text-center mb-10">
+                <BilingualHeading en="Our Principles" hi="हमारे सिद्धांत" />
+              </div>
+            </ScrollReveal>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {principles.map((p, i) => (
+                <ScrollReveal key={p.en} delay={i * 0.04}>
+                  <Card className="h-full border-border/50 hover:border-primary/30 transition-colors">
+                    <CardContent className="p-6">
+                      <p.icon className="h-5 w-5 text-primary mb-3" />
+                      <h3 className="font-heading font-semibold text-lg uppercase tracking-wide">{p.en}</h3>
+                      <p lang="hi" className="text-sm text-primary/80 mb-2">
+                        {p.hi}
+                      </p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+                    </CardContent>
+                  </Card>
+                </ScrollReveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Vision */}
+        <section className="relative py-16 md:py-24 overflow-hidden">
+          <div className="absolute inset-0 bg-[hsl(230_25%_10%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(230_85%_55%/0.22),transparent_50%),radial-gradient(ellipse_at_bottom_left,hsl(192_95%_48%/0.12),transparent_45%)]" />
+          <div className="container mx-auto px-4 sm:px-6 relative z-10 text-center max-w-4xl">
+            <ScrollReveal>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-heading text-white tracking-tight">
+                Building India's Workforce Mobility Infrastructure
+              </h2>
+              <p lang="hi" className="text-lg text-white/70 mt-2 font-heading">
+                भारत के Workforce Mobility Infrastructure का निर्माण
+              </p>
+              <p className="text-white/70 mt-6 leading-relaxed">
+                {pick(
+                  locale,
+                  "We envision a future where every skilled worker can build a verified digital skill profile, every employer can access reliable and assessed talent, and every worker can understand the employment process before making a decision.",
+                  "हम एक ऐसा भविष्य देखते हैं जहाँ हर कुशल श्रमिक एक सत्यापित डिजिटल कौशल प्रोफ़ाइल बना सके, हर नियोक्ता विश्वसनीय और मूल्यांकित प्रतिभा तक पहुँच सके, और हर श्रमिक निर्णय से पहले प्रक्रिया समझ सके।",
+                )}
+              </p>
+              <p className="text-xl sm:text-2xl font-heading font-semibold text-white mt-10">
+                India's skills should not be limited by geography.
+              </p>
+              <p lang="hi" className="text-base sm:text-lg text-white/75 mt-2">
+                भारत का कौशल सिर्फ़ सीमाओं तक सीमित नहीं होना चाहिए।
               </p>
             </ScrollReveal>
           </div>
         </section>
 
-        {/* Mission + Stats */}
-        <section className="py-12 md:py-20">
-          <div className="container mx-auto px-4 sm:px-6">
-            <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center mb-16 md:mb-24">
-              <ScrollReveal>
-                <h2 className="text-2xl sm:text-3xl font-bold font-heading mb-4">Our Mission</h2>
-                <p className="text-muted-foreground mb-4 leading-relaxed">
-                  SafeWorkGlobal is dedicated to bridging the gap between skilled workers and employers worldwide.
-                  We provide a secure, transparent platform that empowers workers to find meaningful employment
-                  while helping employers discover qualified talent.
-                </p>
-                <p className="text-muted-foreground leading-relaxed">
-                  With a focus on compliance, worker welfare, and fair employment practices, we're building
-                  the future of global workforce mobility.
-                </p>
-              </ScrollReveal>
-
-              <ScrollReveal delay={0.1}>
-                <div className="grid grid-cols-2 gap-4">
-                  {stats.map((stat) => (
-                    <Card key={stat.label} className="text-center border-border/50">
-                      <CardContent className="pt-6 pb-5">
-                        <div className={`inline-flex p-3 rounded-xl ${stat.color.split(' ')[0]} mb-3`}>
-                          <stat.icon className={`h-6 w-6 ${stat.color.split(' ')[1]}`} />
-                        </div>
-                        <h3 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">{stat.value}</h3>
-                        <p className="text-sm text-muted-foreground">{stat.label}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollReveal>
-            </div>
-
-            {/* Values */}
+        {/* Why SafeWork */}
+        <section className="py-14 md:py-20">
+          <div className="container mx-auto px-4 sm:px-6 max-w-4xl">
             <ScrollReveal>
-              <div className="bg-muted/30 rounded-2xl p-8 sm:p-12">
-                <h2 className="text-2xl sm:text-3xl font-bold font-heading text-center mb-10">Our Values</h2>
-                <div className="grid sm:grid-cols-3 gap-8">
-                  {values.map((v, i) => (
-                    <ScrollReveal key={v.title} delay={i * 0.08}>
-                      <div className="text-center">
-                        <div className="inline-flex p-4 rounded-2xl bg-primary/10 mb-4">
-                          <v.icon className="h-7 w-7 text-primary" />
-                        </div>
-                        <h3 className="font-semibold text-lg text-foreground mb-2">{v.title}</h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{v.description}</p>
-                      </div>
-                    </ScrollReveal>
-                  ))}
-                </div>
+              <div className="text-center mb-8">
+                <BilingualHeading en="Why SafeWork Global?" hi="SafeWork Global क्यों?" />
               </div>
             </ScrollReveal>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {whyPoints.map((p) => (
+                <div key={p.en} className="flex items-start gap-3 rounded-xl border border-border/50 bg-card px-4 py-3">
+                  <Check className="h-5 w-5 text-success shrink-0 mt-0.5" />
+                  <span className="text-sm">{pick(locale, p.en, p.hi)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-            {/* Team */}
+        {/* Trust + government */}
+        <section className="py-14 md:py-20 border-y border-[#c4a35a]/35 bg-[#f7f4ec] dark:bg-[#1a1c18] dark:border-[#c4a35a]/20">
+          <div className="container mx-auto px-4 sm:px-6 max-w-5xl">
             <ScrollReveal>
-              <div className="mt-16 md:mt-24 text-center">
-                <h2 className="text-2xl sm:text-3xl font-bold font-heading mb-3">Leadership Team</h2>
-                <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto mb-10">
-                  The people building safer pathways for global work.
+              <div className="text-center mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#1e2a4a] dark:text-[#e8eadf]">
+                  Safe Migration. SafeWork.
+                </h2>
+                <p lang="hi" className="text-lg text-[#1e2a4a]/75 dark:text-[#e8eadf]/75 mt-1">
+                  सुरक्षित विदेश रोजगार के लिए हमारी प्रतिबद्धता
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 max-w-3xl mx-auto items-stretch">
-                  {team.map((member, i) => (
-                    <ScrollReveal key={member.name} delay={i * 0.08} className="h-full">
-                      <Card className="h-full border-border/50 bg-card/80 hover:border-primary/30 transition-colors">
-                        <CardContent className="pt-7 pb-6 px-5 h-full flex flex-col items-center text-center">
-                          <div className="w-16 h-16 rounded-full bg-primary/10 ring-1 ring-primary/15 flex items-center justify-center mb-4 shrink-0">
-                            <span className="text-lg font-bold text-primary">{member.initials}</span>
-                          </div>
-                          <h4 className="font-semibold text-foreground leading-snug">{member.name}</h4>
-                          <p className="text-sm text-muted-foreground mt-1.5 min-h-[2.5rem] flex items-start justify-center leading-snug">
-                            {member.role}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </ScrollReveal>
-                  ))}
+              </div>
+            </ScrollReveal>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-10">
+              {trustPoints.map((p) => (
+                <div
+                  key={p.en}
+                  className="rounded-xl border border-[#1e2a4a]/10 bg-white dark:bg-[#12140f] dark:border-[#e8eadf]/10 px-4 py-3 text-sm text-[#1e2a4a] dark:text-[#e8eadf]"
+                >
+                  {pick(locale, p.en, p.hi)}
+                </div>
+              ))}
+            </div>
+
+            <ScrollReveal>
+              <h3 className="font-heading font-semibold text-lg text-[#1e2a4a] dark:text-[#e8eadf] mb-1">
+                Government Resources
+              </h3>
+              <p lang="hi" className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mb-4">
+                सरकारी संसाधन
+              </p>
+            </ScrollReveal>
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <a
+                href={EMIGRATE_PORTAL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-2xl border border-[#1e2a4a]/15 bg-white dark:bg-[#12140f] p-5 hover:border-primary/40 transition-colors"
+              >
+                <p className="font-heading font-semibold text-[#1e2a4a] dark:text-[#e8eadf]">eMigrate Portal</p>
+                <p className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mt-1">
+                  {pick(locale, "Official overseas employment portal", "आधिकारिक विदेश रोजगार पोर्टल")}
+                </p>
+                <span className="inline-flex items-center gap-1 text-sm text-primary mt-3">
+                  Visit <ExternalLink className="h-3.5 w-3.5" />
+                </span>
+              </a>
+              <a
+                href={MADAD_PORTAL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-2xl border border-[#1e2a4a]/15 bg-white dark:bg-[#12140f] p-5 hover:border-primary/40 transition-colors"
+              >
+                <p className="font-heading font-semibold text-[#1e2a4a] dark:text-[#e8eadf]">MADAD Portal</p>
+                <p className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mt-1">
+                  {pick(locale, "Official grievance / help channel", "आधिकारिक शिकायत / सहायता माध्यम")}
+                </p>
+                <span className="inline-flex items-center gap-1 text-sm text-primary mt-3">
+                  Visit <ExternalLink className="h-3.5 w-3.5" />
+                </span>
+              </a>
+              <div className="rounded-2xl border border-[#1e2a4a]/15 bg-white dark:bg-[#12140f] p-5">
+                <p className="font-heading font-semibold text-[#1e2a4a] dark:text-[#e8eadf]">{MEA_PBSK.name}</p>
+                <p className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mt-1">
+                  {pick(locale, "MEA overseas employment assistance", "विदेश मंत्रालय विदेश रोजगार सहायता")}
+                </p>
+                <a href={MEA_PBSK.phoneTel} className="inline-flex items-center gap-2 text-sm font-semibold mt-3 text-[#1e2a4a] dark:text-[#e8eadf]">
+                  <Phone className="h-4 w-4" />
+                  {MEA_PBSK.phoneDisplay}
+                </a>
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm text-[#1e2a4a]/75 dark:text-[#e8eadf]/75 leading-relaxed">
+              SafeWork Global is not a Government of India website or government agency. For independent verification of Recruiting Agents, overseas employment information, or grievances, workers may use official Government of India / Ministry of External Affairs channels.
+            </p>
+            <p lang="hi" className="text-xs sm:text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 leading-relaxed mt-2">
+              SafeWork Global भारत सरकार या विदेश मंत्रालय की सरकारी वेबसाइट/एजेंसी नहीं है। भर्ती एजेंट की स्वतंत्र पुष्टि, विदेश रोजगार संबंधी आधिकारिक जानकारी या शिकायत के लिए उम्मीदवार भारत सरकार/विदेश मंत्रालय के आधिकारिक माध्यमों का उपयोग कर सकते हैं।
+            </p>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="py-14 md:py-20">
+          <div className="container mx-auto px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-primary/[0.08] to-info/[0.06] p-6 sm:p-12 text-center">
+                <h2 className="text-2xl sm:text-3xl font-bold font-heading">Your Skills Can Travel Further.</h2>
+                <p lang="hi" className="text-lg text-primary/85 mt-1 mb-4">
+                  आपका कौशल और आगे जा सकता है।
+                </p>
+                <p className="text-muted-foreground max-w-xl mx-auto mb-8">
+                  {pick(
+                    locale,
+                    "Build your verified profile and explore global employment opportunities with SafeWork Global.",
+                    "अपनी सत्यापित प्रोफ़ाइल बनाएँ और SafeWork Global के साथ वैश्विक रोजगार के अवसर देखें।",
+                  )}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button size="lg" className="h-12 rounded-xl" onClick={goFindJobs}>
+                    Find Jobs | नौकरी खोजें
+                  </Button>
+                  <Button size="lg" variant="outline" className="h-12 rounded-xl" onClick={goRegisterWorker}>
+                    Register as Worker | रजिस्टर करें
+                  </Button>
+                  <Button size="lg" variant="outline" className="h-12 rounded-xl" asChild>
+                    <Link to="/partner/register">Partner With Us | साझेदार बनें</Link>
+                  </Button>
                 </div>
               </div>
             </ScrollReveal>
           </div>
         </section>
+
+        {/* Contact */}
+        <section id="contact" className="py-14 md:py-20 bg-muted/30">
+          <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
+            <ScrollReveal>
+              <div className="text-center mb-8">
+                <BilingualHeading en="Contact Us" hi="संपर्क करें" />
+              </div>
+            </ScrollReveal>
+            <Card className="border-border/50">
+              <CardContent className="p-6 sm:p-8 space-y-5">
+                <div>
+                  <p className="font-heading text-xl font-bold">{SAFEWORK_CONTACT.brand}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {pick(locale, "Operating Brand:", "संचालन ब्रांड:")}{" "}
+                    <span className="text-foreground font-medium">{SAFEWORK_CONTACT.operatingCompany}</span>
+                  </p>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                  <a href={SAFEWORK_CONTACT.websiteUrl} className="rounded-xl border border-border p-4 hover:border-primary/30">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Website</p>
+                    <p className="font-semibold mt-1">{SAFEWORK_CONTACT.websiteDisplay}</p>
+                  </a>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      {SAFEWORK_CONTACT.founderTitle}
+                    </p>
+                    <p className="font-semibold mt-1">{SAFEWORK_CONTACT.founderName}</p>
+                  </div>
+                  <a href={getSafeworkMailtoUrl()} className="rounded-xl border border-border p-4 hover:border-primary/30 flex items-start gap-3">
+                    <Mail className="h-4 w-4 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Email</p>
+                      <p className="font-semibold mt-1 break-all">{SAFEWORK_CONTACT.email}</p>
+                    </div>
+                  </a>
+                </div>
+                <div className="rounded-xl bg-muted/50 border border-border p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Overseas Recruitment Process Conducted Through:
+                  </p>
+                  <p className="font-heading font-semibold">{RECRUITMENT_PARTNER.name}</p>
+                  <p className="text-sm text-muted-foreground">{RECRUITMENT_PARTNER.designation}</p>
+                  <p className="text-sm font-semibold mt-1">RC No.: {RECRUITMENT_PARTNER.rcNo}</p>
+                </div>
+                <Button variant="outline" className="w-full h-11 rounded-xl" asChild>
+                  <Link to="/contact">
+                    {pick(locale, "Open full contact page", "पूरा संपर्क पेज खोलें")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
       </main>
+
+      <div className="md:hidden fixed bottom-16 inset-x-0 z-40 px-3 pb-[env(safe-area-inset-bottom)]">
+        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-card/95 backdrop-blur-md p-2 shadow-lg">
+          <Button className="h-12 rounded-xl text-xs sm:text-sm" onClick={goFindJobs}>
+            Find Jobs | नौकरी
+          </Button>
+          <Button variant="outline" className="h-12 rounded-xl text-xs sm:text-sm" asChild>
+            <Link to="/partner/register">Partner | साझेदार</Link>
+          </Button>
+        </div>
+      </div>
 
       <Footer />
     </div>
