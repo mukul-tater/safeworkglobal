@@ -50,7 +50,7 @@ const Footer = () => {
                 <span className="text-lg sm:text-xl font-bold font-heading text-white">SafeWorkGlobal</span>
               </Link>
               <p className="text-white/60 leading-relaxed max-w-sm text-sm">
-                Connecting skilled workers with verified global opportunities. Your trusted gateway to international careers since 2024.
+                SafeWork Global is a technology and workforce mobility platform connecting skilled workers with verified overseas opportunities.
               </p>
 
               <div className="flex gap-2">
@@ -171,8 +171,10 @@ const Footer = () => {
         <div className="relative z-10 border-t border-white/10">
           <div className="container mx-auto px-4 sm:px-6 py-4">
             <p className="text-[11px] sm:text-xs text-white/40 text-center leading-relaxed">
-              Recruitment services provided under MEA-licensed Recruiting Agent <strong className="text-white/60">Vesta</strong>.
-              Workers are deployed through licensed, regulated channels in compliance with the Emigration Act.
+              Overseas recruitment process conducted through{" "}
+              <strong className="text-white/60">Vesta Immigration LLP</strong>,
+              Registered Recruiting Agent (MEA). RC No.:{" "}
+              <span className="text-white/60">B-2069/UP/PART/1000+/5/10331/2023</span>.
             </p>
           </div>
         </div>

@@ -16,10 +16,10 @@ const RA_ENTITIES = [
     icon: Building2,
   },
   {
-    name: "Vesta",
-    role: "Licensed Recruiting Agent (RA)",
+    name: "Vesta Immigration LLP",
+    role: "Registered Recruiting Agent (MEA)",
     description:
-      "Ministry of External Affairs licensed recruiting agent responsible for regulatory compliance, emigration clearance, and worker deployment to GCC countries.",
+      "MEA-licensed recruiting agent (RC No. B-2069/UP/PART/1000+/5/10331/2023) responsible for regulatory compliance, emigration clearance, and worker deployment.",
     icon: Award,
   },
 ];
