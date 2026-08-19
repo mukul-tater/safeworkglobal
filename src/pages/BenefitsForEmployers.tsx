@@ -12,7 +12,6 @@ import {
   Zap,
   ShieldCheck,
   Lock,
-  Banknote,
   Target,
   BarChart3,
   TrendingUp,
@@ -58,14 +57,6 @@ const benefits = [
     highlight: "Completely low-risk model",
     accent: "from-purple-500/10 to-purple-500/5",
     iconColor: "text-purple-600 dark:text-purple-400",
-  },
-  {
-    icon: Banknote,
-    title: "Escrow-Based Payment Protection",
-    bullets: ["Salary secured before deployment", "Payment released after work"],
-    highlight: "Ensures accountability on both sides",
-    accent: "from-teal-500/10 to-teal-500/5",
-    iconColor: "text-teal-600 dark:text-teal-400",
   },
   {
     icon: Target,

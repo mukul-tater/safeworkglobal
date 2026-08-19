@@ -788,27 +788,6 @@ export default function AboutUs() {
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="py-14 md:py-20">
-          <div className="container mx-auto px-4 sm:px-6">
-            <ScrollReveal>
-              <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-primary/[0.08] to-info/[0.06] p-6 sm:p-10 text-center">
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button size="lg" className="h-12 rounded-xl" onClick={goFindJobs}>
-                    Find Jobs | नौकरी खोजें
-                  </Button>
-                  <Button size="lg" variant="outline" className="h-12 rounded-xl" onClick={goRegisterWorker}>
-                    Register as Worker | रजिस्टर करें
-                  </Button>
-                  <Button size="lg" variant="outline" className="h-12 rounded-xl" asChild>
-                    <Link to="/partner/register">Partner With Us | साझेदार बनें</Link>
-                  </Button>
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
-        </section>
-
       </main>
 
       <Footer />
