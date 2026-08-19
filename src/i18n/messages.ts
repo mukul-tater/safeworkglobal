@@ -150,6 +150,10 @@ const en = {
   "partner.confirmBody":
     "You will be redirected to the dedicated {{name}} onboarding form to complete your application.",
   "partner.confirmCta": "Continue to Onboarding",
+  "partner.emitraInfoAria": "State-wise E-Mitra / CSC names",
+  "partner.emitraInfoTitle": "Known as E-Mitra / CSC in your state",
+  "partner.emitraInfoHint":
+    "Common Service Centres use different local names. This partner type is for all of them.",
 
   "contact.title": "Need Help With Overseas Employment?",
   "contact.subtitle":
@@ -307,6 +311,10 @@ const hi: Record<AppMessageKey, string> = {
   "partner.confirmBody":
     "आवेदन पूरा करने के लिए आपको {{name}} ऑनबोर्डिंग फ़ॉर्म पर भेजा जाएगा।",
   "partner.confirmCta": "ऑनबोर्डिंग पर जाएँ",
+  "partner.emitraInfoAria": "राज्य के अनुसार E-Mitra / CSC नाम",
+  "partner.emitraInfoTitle": "आपके राज्य में E-Mitra / CSC का नाम",
+  "partner.emitraInfoHint":
+    "कॉमन सर्विस सेंटर अलग-अलग राज्यों में अलग नाम से चलते हैं। यह साझेदार प्रकार उन सभी के लिए है।",
 
   "contact.title": "विदेश रोजगार से जुड़ी सहायता चाहिए?",
   "contact.subtitle":

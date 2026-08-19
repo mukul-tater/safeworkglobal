@@ -88,6 +88,36 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
 
 export const DEFAULT_PARTNER_SIGNUP_CODE = "EMITRA";
 
+/** Local citizen-service kiosk names by state (E-Mitra is Rajasthan’s brand). */
+export const EMITRA_STATE_BRANDS: { stateEn: string; stateHi: string; brand: string }[] = [
+  {
+    stateEn: "Andhra Pradesh",
+    stateHi: "आंध्र प्रदेश",
+    brand: "గ్రామ/వార్డ్ సచివాలయం (Village/Ward Secretariat) / Rajiv Citizen Service Centre",
+  },
+  { stateEn: "Assam", stateHi: "असम", brand: "Assam e-District / Common Services Centre" },
+  { stateEn: "Bihar", stateHi: "बिहार", brand: "RTPS Bihar / Lok Sewaon Ka Adhikar" },
+  { stateEn: "Chhattisgarh", stateHi: "छत्तीसगढ़", brand: "Lok Seva Kendra / Chhattisgarh e-District" },
+  { stateEn: "Delhi", stateHi: "दिल्ली", brand: "e-District Delhi / Doorstep Delivery" },
+  { stateEn: "Goa", stateHi: "गोआ", brand: "Goa Online" },
+  { stateEn: "Gujarat", stateHi: "गुजरात", brand: "Digital Gujarat" },
+  { stateEn: "Haryana", stateHi: "हरियाणा", brand: "Saral Haryana" },
+  { stateEn: "Himachal Pradesh", stateHi: "हिमाचल प्रदेश", brand: "Him e-Seva" },
+  { stateEn: "Jharkhand", stateHi: "झारखंड", brand: "Jharsewa" },
+  { stateEn: "Karnataka", stateHi: "कर्नाटक", brand: "Seva Sindhu" },
+  { stateEn: "Kerala", stateHi: "केरल", brand: "Akshaya Centers" },
+  { stateEn: "Madhya Pradesh", stateHi: "मध्य प्रदेश", brand: "MP Online / Lok Seva Kendra" },
+  { stateEn: "Maharashtra", stateHi: "महाराष्ट्र", brand: "Aaple Sarkar" },
+  { stateEn: "Odisha", stateHi: "ओडिशा", brand: "e-District Odisha" },
+  { stateEn: "Punjab", stateHi: "पंजाब", brand: "Sewa Kendra / Gram Suvidha" },
+  { stateEn: "Rajasthan", stateHi: "राजस्थान", brand: "e-Mitra" },
+  { stateEn: "Tamil Nadu", stateHi: "तमिलनाडु", brand: "TNeSevai / e-Sevai" },
+  { stateEn: "Telangana", stateHi: "तेलंगाना", brand: "Meeseva" },
+  { stateEn: "Uttar Pradesh", stateHi: "उत्तर प्रदेश", brand: "e-District UP" },
+  { stateEn: "Uttarakhand", stateHi: "उत्तराखंड", brand: "Apuni Sarkar" },
+  { stateEn: "West Bengal", stateHi: "पश्चिम बंगाल", brand: "Banglar Sahayata Kendra (BSK)" },
+];
+
 export function getPartnerSignupOption(code: string): PartnerSignupOption | undefined {
   return PARTNER_SIGNUP_OPTIONS.find((o) => o.code === code);
 }

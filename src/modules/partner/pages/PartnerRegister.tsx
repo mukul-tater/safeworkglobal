@@ -13,12 +13,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowRight, Handshake, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Handshake, CheckCircle2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import Header from "@/components/Header";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DEFAULT_PARTNER_SIGNUP_CODE,
+  EMITRA_STATE_BRANDS,
   PARTNER_SIGNUP_OPTIONS,
   getPartnerSignupOption,
   type PartnerSignupOption,
@@ -30,7 +32,7 @@ import {
  */
 export default function PartnerRegister() {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [selectedCode, setSelectedCode] = useState(DEFAULT_PARTNER_SIGNUP_CODE);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -81,15 +83,23 @@ export default function PartnerRegister() {
               const isLive = option.status === "live";
 
               return (
-                <button
+                <div
                   key={option.code}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
                     setSelectedCode(option.code);
                     if (isLive) requestContinue(option);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedCode(option.code);
+                      if (isLive) requestContinue(option);
+                    }
+                  }}
                   className={cn(
-                    "w-full text-left rounded-xl border p-4 transition-all",
+                    "w-full text-left rounded-xl border p-4 transition-all cursor-pointer",
                     isSelected
                       ? "border-primary bg-primary/5 ring-1 ring-primary/25"
                       : "border-border hover:bg-muted/50",
@@ -102,6 +112,43 @@ export default function PartnerRegister() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-sm sm:text-base">{option.name}</span>
+                        {option.code === "EMITRA" && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                aria-label={t("partner.emitraInfoAria")}
+                                onClick={(e) => e.stopPropagation()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                              >
+                                <Info className="h-4 w-4" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              align="start"
+                              className="w-[22rem] sm:w-96 p-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="border-b px-3 py-2.5">
+                                <p className="text-sm font-semibold">{t("partner.emitraInfoTitle")}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {t("partner.emitraInfoHint")}
+                                </p>
+                              </div>
+                              <ul className="max-h-72 overflow-y-auto divide-y">
+                                {EMITRA_STATE_BRANDS.map((row) => (
+                                  <li key={row.stateEn} className="px-3 py-2">
+                                    <p className="text-xs text-muted-foreground">
+                                      {locale === "hi" ? row.stateHi : row.stateEn}
+                                    </p>
+                                    <p className="text-sm font-medium leading-snug">{row.brand}</p>
+                                  </li>
+                                ))}
+                              </ul>
+                            </PopoverContent>
+                          </Popover>
+                        )}
                         <Badge className="h-5 text-[10px]">{t("partner.available")}</Badge>
                         {option.code === DEFAULT_PARTNER_SIGNUP_CODE && (
                           <Badge variant="secondary" className="h-5 text-[10px]">
@@ -117,7 +164,7 @@ export default function PartnerRegister() {
                       <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
