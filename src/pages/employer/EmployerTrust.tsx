@@ -13,6 +13,7 @@ import {
   TrendingDown,
   X,
   Check,
+  Phone,
 } from "lucide-react";
 
 const SUPPORT_EMAIL = "mukultater@safeworkglobal.com";

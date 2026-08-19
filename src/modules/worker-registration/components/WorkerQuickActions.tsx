@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Camera, Mail, Search, User } from "lucide-react";
+import { ArrowRight, Camera, Mail, MessageCircle, Search, User } from "lucide-react";
 import { getWorkerSupportMailtoUrl } from "@/config/workerSupport";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
 
