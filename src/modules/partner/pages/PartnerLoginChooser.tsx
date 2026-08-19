@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, Store, GraduationCap, Briefcase, HeartPulse, UsersRound, ArrowRight, Home } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import AboutLanguageToggle from '@/components/AboutLanguageToggle';
 
 const OPTIONS = [
   {
@@ -68,6 +69,7 @@ export default function PartnerLoginChooser() {
             <span className="font-semibold text-sm sm:text-base">SafeWork Global</span>
           </a>
           <div className="flex items-center gap-1">
+            <AboutLanguageToggle compact />
             <ThemeToggle />
             <Button asChild variant="ghost" size="sm">
               <Link to="/">

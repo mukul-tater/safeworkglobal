@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useI18n } from "@/i18n";
 import { isValidIndianMobile, normalizeIndianMobile } from "@/lib/validations/common";
 import {
   EMIGRATE_PORTAL_URL,
@@ -60,6 +61,7 @@ function BilingualLabel({ en, hi, htmlFor }: { en: string; hi: string; htmlFor?:
 }
 
 export default function ContactUs() {
+  const { t, locale } = useI18n();
   const [formData, setFormData] = useState({
     name: "",
     mobile: "",
@@ -132,14 +134,15 @@ export default function ContactUs() {
           <div className="container mx-auto px-4 sm:px-6 text-center">
             <ScrollReveal>
               <h1 className="text-3xl sm:text-4xl md:text-[2.75rem] font-bold font-heading text-foreground mb-2 tracking-tight leading-tight">
-                Need Help With Overseas Employment?
+                {t("contact.title")}
               </h1>
+              {locale === "en" && (
               <p className="text-lg sm:text-xl font-heading text-primary/90 mb-5">
                 विदेश रोजगार से जुड़ी सहायता चाहिए?
               </p>
+              )}
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Connect with SafeWork Global for worker registration, skill verification, employer
-                enquiries, partnership opportunities and overseas employment support.
+                {t("contact.subtitle")}
               </p>
             </ScrollReveal>
           </div>
@@ -150,8 +153,7 @@ export default function ContactUs() {
           <div className="container mx-auto px-4 sm:px-6 max-w-3xl">
             <ScrollReveal>
               <div className="text-center mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold font-heading">Send an Enquiry</h2>
-                <p className="text-muted-foreground mt-1">पूछताछ भेजें</p>
+                <h2 className="text-2xl sm:text-3xl font-bold font-heading">{t("contact.enquiry")}</h2>
               </div>
             </ScrollReveal>
 
@@ -161,12 +163,9 @@ export default function ContactUs() {
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-success/15">
                     <CheckCircle2 className="h-7 w-7 text-success" />
                   </div>
-                  <h3 className="text-xl font-bold font-heading mb-2">Enquiry received</h3>
+                  <h3 className="text-xl font-bold font-heading mb-2">{t("contact.received")}</h3>
                   <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
-                    Thank you. Our team will review your message and get back to you shortly.
-                  </p>
-                  <p className="text-muted-foreground mt-2 leading-relaxed">
-                    धन्यवाद। हमारी टीम आपकी पूछताछ देखकर शीघ्र संपर्क करेगी।
+                    {t("contact.thanks")}
                   </p>
                   <Button
                     type="button"
@@ -174,7 +173,7 @@ export default function ContactUs() {
                     className="mt-6"
                     onClick={() => setSubmitted(false)}
                   >
-                    Send another enquiry
+                    {t("contact.another")}
                   </Button>
                 </CardContent>
               </Card>

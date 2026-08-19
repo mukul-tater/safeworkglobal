@@ -1,50 +1,69 @@
-import { useWorkerLanguage } from "@/modules/worker-registration";
+import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 
-interface AboutLanguageToggleProps {
+interface LanguageToggleProps {
   className?: string;
+  /** Compact header control: EN / हिं. */
   compact?: boolean;
+  /** High-contrast on photo / dark hero headers. */
+  variant?: "default" | "onDark";
 }
 
-export default function AboutLanguageToggle({ className, compact }: AboutLanguageToggleProps) {
-  const { locale, setLocale } = useWorkerLanguage();
+export default function AboutLanguageToggle({
+  className,
+  compact,
+  variant = "default",
+}: LanguageToggleProps) {
+  const { locale, setLocale, t } = useI18n();
+  const onDark = variant === "onDark";
+  const hi = locale === "hi";
 
   return (
     <div
       role="group"
-      aria-label="Language / भाषा"
+      aria-label={t("lang.aria")}
       className={cn(
-        "inline-flex items-center rounded-full border border-border bg-card/80 p-0.5 text-xs font-semibold",
-        compact && "scale-[0.97]",
+        "relative isolate grid grid-cols-2 overflow-hidden rounded-full border p-[3px] shrink-0",
+        compact ? "h-8 w-[4.75rem]" : "h-9 w-[10.5rem]",
+        onDark ? "bg-white/95 border-white" : "bg-muted/80 border-border",
         className,
       )}
     >
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute top-[3px] bottom-[3px] w-[calc(50%-3px)] rounded-full bg-primary transition-[left] duration-200 ease-out",
+          hi ? "left-1/2" : "left-[3px]",
+        )}
+      />
       <button
         type="button"
+        data-inline
         onClick={() => setLocale("en")}
-        aria-pressed={locale === "en"}
+        aria-label="English"
+        aria-pressed={!hi}
         className={cn(
-          "rounded-full px-2.5 py-1.5 transition-colors",
-          locale === "en"
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:text-foreground",
+          "relative z-10 flex h-full min-h-0 min-w-0 items-center justify-center rounded-full p-0 font-semibold leading-none appearance-none",
+          compact ? "text-[11px] tracking-wide" : "text-xs sm:text-sm",
+          hi ? "text-muted-foreground" : "text-primary-foreground",
         )}
       >
         {compact ? "EN" : "English"}
       </button>
       <button
         type="button"
+        data-inline
         onClick={() => setLocale("hi")}
         lang="hi"
-        aria-pressed={locale === "hi"}
+        aria-label="हिंदी"
+        aria-pressed={hi}
         className={cn(
-          "rounded-full px-2.5 py-1.5 transition-colors",
-          locale === "hi"
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:text-foreground",
+          "relative z-10 flex h-full min-h-0 min-w-0 items-center justify-center rounded-full p-0 font-semibold leading-none appearance-none",
+          compact ? "text-[11px]" : "text-xs sm:text-sm",
+          hi ? "text-primary-foreground" : "text-muted-foreground",
         )}
       >
-        हिंदी
+        {compact ? "हिं" : "हिंदी"}
       </button>
     </div>
   );

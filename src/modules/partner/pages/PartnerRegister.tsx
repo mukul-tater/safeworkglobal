@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowRight, Handshake, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n";
+import Header from "@/components/Header";
 import {
   DEFAULT_PARTNER_SIGNUP_CODE,
   PARTNER_SIGNUP_OPTIONS,
@@ -28,6 +30,7 @@ import {
  */
 export default function PartnerRegister() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [selectedCode, setSelectedCode] = useState(DEFAULT_PARTNER_SIGNUP_CODE);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -49,25 +52,25 @@ export default function PartnerRegister() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 py-10 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-muted/30 pb-16 md:pb-0">
+      <Header />
+      <div className="max-w-3xl mx-auto py-10 px-4">
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold mb-3">
             <Handshake className="h-3.5 w-3.5" />
-            Partner network
+            {t("partner.badge")}
           </div>
-          <h1 className="text-3xl font-bold font-heading tracking-tight">Become a SafeWork Partner</h1>
+          <h1 className="text-3xl font-bold font-heading tracking-tight">{t("partner.title")}</h1>
           <p className="text-muted-foreground mt-1 max-w-xl">
-            Choose your partner type to continue. Open to placement consultants, recruitment
-            partners, freelancers, NGOs and candidate mobilisers.
+            {t("partner.subtitle")}
           </p>
         </div>
 
         <Card className="p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-semibold">Partner type</h2>
+            <h2 className="font-semibold">{t("partner.type")}</h2>
             <Badge variant="secondary" className="font-normal">
-              {PARTNER_SIGNUP_OPTIONS.filter((o) => o.status === "live").length} live
+              {PARTNER_SIGNUP_OPTIONS.filter((o) => o.status === "live").length} {t("partner.live")}
             </Badge>
           </div>
 
@@ -99,10 +102,10 @@ export default function PartnerRegister() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-sm sm:text-base">{option.name}</span>
-                        <Badge className="h-5 text-[10px]">Available</Badge>
+                        <Badge className="h-5 text-[10px]">{t("partner.available")}</Badge>
                         {option.code === DEFAULT_PARTNER_SIGNUP_CODE && (
                           <Badge variant="secondary" className="h-5 text-[10px]">
-                            Default
+                            {t("partner.default")}
                           </Badge>
                         )}
                       </div>
@@ -121,22 +124,22 @@ export default function PartnerRegister() {
 
           <div className="flex flex-col sm:flex-row justify-between gap-3 pt-2 border-t">
             <Button variant="outline" onClick={() => navigate("/")}>
-              Cancel
+              {t("partner.cancel")}
             </Button>
             <Button
               disabled={selected.status !== "live"}
               onClick={() => selected && requestContinue(selected)}
               className="gap-1.5"
             >
-              Continue as {selected.name}
+              {t("partner.continue", { name: selected.name })}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Already a partner?{" "}
+            {t("partner.already")}{" "}
             <Link to="/partner/login" className="text-primary hover:underline font-medium">
-              Sign in
+              {t("partner.signIn")}
             </Link>
           </p>
         </Card>
@@ -149,16 +152,15 @@ export default function PartnerRegister() {
               <Handshake className="h-6 w-6" />
             </div>
             <AlertDialogTitle className="text-center">
-              Continue as {selected?.name ?? "Partner"}
+              {t("partner.confirmTitle", { name: selected?.name ?? "Partner" })}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center">
-              You will be redirected to the dedicated {selected?.name ?? "partner"} onboarding form
-              to complete your application.
+              {t("partner.confirmBody", { name: selected?.name ?? "partner" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="sm:justify-center gap-2">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={goToOnboarding}>Continue to Onboarding</AlertDialogAction>
+            <AlertDialogCancel>{t("partner.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={goToOnboarding}>{t("partner.confirmCta")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

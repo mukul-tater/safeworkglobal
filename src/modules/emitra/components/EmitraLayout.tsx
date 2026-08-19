@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, LogIn, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import AboutLanguageToggle from '@/components/AboutLanguageToggle';
 
 interface Props {
   children: React.ReactNode;
@@ -88,6 +89,7 @@ export default function EmitraLayout({
             <div className="flex items-center gap-1 sm:gap-2">
               <TopNav />
               <div className="hidden sm:block h-6 w-px bg-border mx-1" />
+              <AboutLanguageToggle compact />
               <ThemeToggle />
             </div>
           </div>

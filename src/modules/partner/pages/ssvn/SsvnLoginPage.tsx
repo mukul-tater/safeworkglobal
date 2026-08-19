@@ -25,6 +25,7 @@ import {
   isSsvnPartnerApproved,
 } from '../../services/ssvnAuth';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import AboutLanguageToggle from '@/components/AboutLanguageToggle';
 import { lockedPartnerFromPath, LOCKED_PARTNER_PORTALS } from '../../config/partnerPortalRoutes';
 
 type Method = 'mobile' | 'email';
@@ -251,6 +252,7 @@ export default function SsvnLoginPage() {
             <span className="font-semibold text-sm sm:text-base">SafeWork Global</span>
           </a>
           <div className="flex items-center gap-1">
+            <AboutLanguageToggle compact />
             <ThemeToggle />
             <Button asChild variant="ghost" size="sm">
               <Link to="/">

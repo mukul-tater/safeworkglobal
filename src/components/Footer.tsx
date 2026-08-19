@@ -5,17 +5,19 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { SAFEWORK_CONTACT } from "@/config/workerSupport";
+import { useI18n } from "@/i18n";
 
 const Footer = () => {
   const navigate = useNavigate();
   const { isAuthenticated, role } = useAuth();
+  const { t } = useI18n();
 
   // Worker "Create Profile" — gated by auth + role
   const handleCreateProfile = () => {
     if (!isAuthenticated) return navigate('/worker/quick-signup');
     if (role === 'worker') return navigate('/worker/dashboard');
     if (role === 'employer') {
-      toast.error("You're logged in as an Employer. Sign out to create a Worker profile.");
+      toast.error(t("footer.employerToast"));
       return;
     }
     navigate('/worker/quick-signup');
@@ -26,7 +28,7 @@ const Footer = () => {
     if (!isAuthenticated) return navigate('/employer/quick-signup');
     if (role === 'employer') return navigate(workerPath);
     if (role === 'worker') {
-      toast.error("You're logged in as a Worker. Sign out to access employer features.");
+      toast.error(t("footer.workerToast"));
       return;
     }
     navigate('/employer/quick-signup');
@@ -51,7 +53,7 @@ const Footer = () => {
                 <span className="text-lg sm:text-xl font-bold font-heading text-white">SafeWorkGlobal</span>
               </Link>
               <p className="text-white/60 leading-relaxed max-w-sm text-sm">
-                SafeWork Global is a technology and workforce mobility platform. Connecting skilled workers with verified overseas opportunities.
+                {t("footer.blurb")}
               </p>
 
               <div className="flex gap-2">
@@ -77,19 +79,19 @@ const Footer = () => {
             {/* For Workers */}
             {role !== 'employer' && (
             <div className="lg:col-span-2 space-y-4">
-              <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">For Workers</h3>
+              <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">{t("footer.workers")}</h3>
               <ul className="space-y-2.5">
                 <li>
-                  <Link to="/jobs" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">Find Jobs</Link>
+                  <Link to="/jobs" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">{t("footer.findJobs")}</Link>
                 </li>
                 <li>
                   <button onClick={handleCreateProfile} className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">
-                    Create Profile
+                    {t("footer.createProfile")}
                   </button>
                 </li>
-                <li><Link to="/visa-guide" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">Visa Guide</Link></li>
-                <li><Link to="/success-stories" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">Success Stories</Link></li>
-                <li><Link to="/support" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">Support Center</Link></li>
+                <li><Link to="/visa-guide" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">{t("footer.visa")}</Link></li>
+                <li><Link to="/success-stories" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">{t("footer.stories")}</Link></li>
+                <li><Link to="/support" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">{t("footer.support")}</Link></li>
               </ul>
             </div>
             )}
@@ -97,35 +99,35 @@ const Footer = () => {
             {/* For Employers */}
             {role !== 'worker' && (
             <div className="lg:col-span-3 space-y-4">
-              <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">For Employers</h3>
+              <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">{t("footer.employers")}</h3>
               <ul className="space-y-2.5">
                 <li>
                   <button onClick={goEmployer('/employer/search-workers')} className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">
-                    Browse Workers
+                    {t("footer.browseWorkers")}
                   </button>
                 </li>
                 <li>
                   <button onClick={goEmployer('/employer/post-job')} className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">
-                    Post a Job
+                    {t("footer.postJob")}
                   </button>
                 </li>
-                <li><Link to="/about" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">How It Works</Link></li>
-                <li><Link to="/benefits-for-employers" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">Benefits for Employers</Link></li>
-                <li><Link to="/contact" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">Talk to our team</Link></li>
+                <li><Link to="/about" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">{t("footer.how")}</Link></li>
+                <li><Link to="/benefits-for-employers" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">{t("footer.benefits")}</Link></li>
+                <li><Link to="/contact" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">{t("footer.talk")}</Link></li>
               </ul>
             </div>
             )}
 
             {/* Resources */}
             <div className="lg:col-span-2 space-y-4">
-              <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">Resources</h3>
+              <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">{t("footer.resources")}</h3>
               <ul className="space-y-2.5">
                 {[
-                  { to: "/country-insights", label: "Country Insights" },
-                  { to: "/salary-guide", label: "Salary Guide" },
-                  { to: "/language-resources", label: "Language Resources" },
-                  { to: "/cultural-guides", label: "Cultural Guides" },
-                  { to: "/legal-advice", label: "Legal Advice" },
+                  { to: "/country-insights", label: t("footer.insights") },
+                  { to: "/salary-guide", label: t("footer.salary") },
+                  { to: "/language-resources", label: t("footer.language") },
+                  { to: "/cultural-guides", label: t("footer.culture") },
+                  { to: "/legal-advice", label: t("footer.legal") },
                 ].map((link) => (
                   <li key={link.label}>
                     <Link to={link.to} className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">
@@ -138,14 +140,14 @@ const Footer = () => {
 
             {/* Newsletter */}
             <div className="sm:col-span-2 lg:col-span-2 space-y-4">
-              <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">Stay Updated</h3>
+              <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">{t("footer.stay")}</h3>
               <p className="text-white/50 text-xs sm:text-sm">
-                Get weekly updates on new opportunities and career insights.
+                {t("footer.staySub")}
               </p>
               <div className="p-1 rounded-xl bg-white/5 border border-white/10">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Enter your email"
+                    placeholder={t("footer.email")}
                     type="email"
                     className="h-10 sm:h-11 bg-transparent border-0 text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
                   />
@@ -162,14 +164,7 @@ const Footer = () => {
         <div className="relative z-10 bg-[#f3f4f6]">
           <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
             <p className="text-center text-xs sm:text-[13px] leading-relaxed text-[#4b5563]">
-              Licensed &amp; regulated. SafeWork Global is a technology and workforce mobility platform.
-              Overseas recruitment through{" "}
-              <span className="font-medium text-[#111827]">Vesta Immigration LLP</span>
-              , Registered Recruiting Agent (MEA), RC No.{" "}
-              <span className="font-medium text-[#111827] tracking-tight">
-                B-2069/UP/PART/1000+/5/10331/2023
-              </span>
-              .
+              {t("footer.ra")}
             </p>
           </div>
         </div>
@@ -190,8 +185,8 @@ const Footer = () => {
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm">
-                <Link to="/privacy" className="text-white/40 hover:text-white transition-colors">Privacy</Link>
-                <Link to="/terms" className="text-white/40 hover:text-white transition-colors">Terms</Link>
+                <Link to="/privacy" className="text-white/40 hover:text-white transition-colors">{t("footer.privacy")}</Link>
+                <Link to="/terms" className="text-white/40 hover:text-white transition-colors">{t("footer.terms")}</Link>
                 <span className="text-white/30 hidden sm:inline">|</span>
                 <span className="text-white/40">© {new Date().getFullYear()} SafeWorkGlobal</span>
               </div>

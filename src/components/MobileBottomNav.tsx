@@ -1,12 +1,13 @@
-import { Home, Briefcase, User, LogOut, Search } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Home, User, LogOut, Search } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n";
 
 export default function MobileBottomNav() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
+  const { t } = useI18n();
 
   // Hide on dashboard pages (they have their own nav)
   const isDashboard = ["/worker/", "/employer/", "/admin/", "/partner/"].some(p => location.pathname.startsWith(p));
@@ -17,9 +18,9 @@ export default function MobileBottomNav() {
   };
 
   const navItems = [
-    { path: "/", icon: Home, label: "Home" },
-    { path: "/jobs", icon: Search, label: "Jobs" },
-    { path: isAuthenticated ? "/dashboard" : "/auth", icon: User, label: isAuthenticated ? "Account" : "Login" },
+    { path: "/", icon: Home, label: t("nav.home") },
+    { path: "/jobs", icon: Search, label: t("nav.jobs") },
+    { path: isAuthenticated ? "/dashboard" : "/auth", icon: User, label: isAuthenticated ? t("nav.account") : t("nav.login") },
   ];
 
   return (
@@ -59,7 +60,7 @@ export default function MobileBottomNav() {
             <div className="p-1.5 rounded-xl">
               <LogOut className="h-5 w-5" />
             </div>
-            <span className="text-[10px] font-medium">Logout</span>
+            <span className="text-[10px] font-medium">{t("nav.logout")}</span>
           </button>
         )}
       </div>

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Home, LogIn, Menu, Shield, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import AboutLanguageToggle from '@/components/AboutLanguageToggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -132,7 +133,10 @@ export default function AdminLayout({
                 ← Back to SafeWork Global
               </Link>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <AboutLanguageToggle compact />
+              <ThemeToggle />
+            </div>
           </div>
         </header>
 

@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
+import { useI18n } from "@/i18n";
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
@@ -16,6 +17,7 @@ const Header = () => {
   const { isAuthenticated, profile, role, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useI18n();
 
   const handleLogout = async () => {
     await logout();
@@ -55,13 +57,12 @@ const Header = () => {
 
   const navLinks = [
     ...(role === 'employer'
-      ? [{ to: "/employer/search-workers", label: "Find Workers", icon: Search }]
-      : [{ to: "/jobs", label: "Find Jobs", icon: Search }]),
-    { to: "/about", label: "About Us", icon: Globe },
-    { to: "/contact", label: "Contact", icon: Bell },
+      ? [{ to: "/employer/search-workers", label: t("nav.findWorkers"), icon: Search }]
+      : [{ to: "/jobs", label: t("nav.findJobs"), icon: Search }]),
+    { to: "/about", label: t("nav.about"), icon: Globe },
+    { to: "/contact", label: t("nav.contact"), icon: Bell },
   ];
   const overlaysHomeHero = location.pathname === "/" && !isScrolled && !isMobileMenuOpen;
-  const showLanguageToggle = location.pathname === "/about";
 
   return (
     <>
@@ -84,7 +85,7 @@ const Header = () => {
                 alt="SafeWorkGlobal" 
                 className={`h-9 w-9 transition-transform group-hover:scale-105 ${overlaysHomeHero ? "drop-shadow-sm" : ""}`}
               />
-              <span className={`text-xl font-bold font-heading tracking-tight transition-colors ${overlaysHomeHero ? "text-white" : "text-foreground"} ${showLanguageToggle ? "hidden md:inline" : ""}`}>
+              <span className={`text-xl font-bold font-heading tracking-tight transition-colors ${overlaysHomeHero ? "text-white" : "text-foreground"} hidden md:inline`}>
                 SafeWorkGlobal
               </span>
             </Link>
@@ -111,8 +112,9 @@ const Header = () => {
             </nav>
 
             {/* Desktop Actions */}
-            <div className={`hidden md:flex items-center gap-3 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
-              {showLanguageToggle && <AboutLanguageToggle />}
+            <div className="hidden md:flex items-center gap-3">
+              <AboutLanguageToggle variant={overlaysHomeHero ? "onDark" : "default"} />
+              <div className={`flex items-center gap-3 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
               <ThemeToggle />
               {isAuthenticated ? (
                 <>
@@ -128,7 +130,7 @@ const Header = () => {
                         </AvatarFallback>
                       </Avatar>
                       <span className="hidden lg:inline font-medium">
-                        {profile?.full_name || 'Dashboard'}
+                        {profile?.full_name || t("header.dashboard")}
                       </span>
                     </Button>
                   </Link>
@@ -146,12 +148,12 @@ const Header = () => {
                   <PopoverTrigger asChild>
                     <Button variant="default" className="gap-2">
                       <User className="h-4 w-4" />
-                      Get Started
+                      {t("header.getStarted")}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-72 p-3">
                     <p className="text-xs font-semibold text-muted-foreground mb-2 px-1">
-                      I want to…
+                      {t("header.iWantTo")}
                     </p>
                     <button
                       onClick={() => navigate('/worker/quick-signup')}
@@ -161,8 +163,8 @@ const Header = () => {
                         <HardHat className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="font-semibold text-sm">Find a job</div>
-                        <div className="text-xs text-muted-foreground">Sign up as a Worker</div>
+                        <div className="font-semibold text-sm">{t("header.findJob")}</div>
+                        <div className="text-xs text-muted-foreground">{t("header.findJobSub")}</div>
                       </div>
                     </button>
                     <button
@@ -173,8 +175,8 @@ const Header = () => {
                         <Briefcase className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="font-semibold text-sm">Hire workers</div>
-                        <div className="text-xs text-muted-foreground">Sign up as an Employer</div>
+                        <div className="font-semibold text-sm">{t("header.hire")}</div>
+                        <div className="text-xs text-muted-foreground">{t("header.hireSub")}</div>
                       </div>
                     </button>
                     <button
@@ -185,8 +187,8 @@ const Header = () => {
                         <Handshake className="h-4 w-4" />
                       </div>
                       <div>
-                        <div className="font-semibold text-sm">Partner</div>
-                        <div className="text-xs text-muted-foreground">E-Mitra, SSVN, ITI, MEA Licensed RA, consultants & employers</div>
+                        <div className="font-semibold text-sm">{t("header.partner")}</div>
+                        <div className="text-xs text-muted-foreground">{t("header.partnerSub")}</div>
                       </div>
                     </button>
                     <div className="border-t border-border my-2" />
@@ -194,28 +196,30 @@ const Header = () => {
                       onClick={() => navigate('/worker/login')}
                       className="w-full text-xs text-center text-primary hover:underline py-1"
                     >
-                      Already registered as a worker? Sign in
+                      {t("header.workerSignIn")}
                     </button>
                     <button
                       onClick={() => navigate('/employer/login')}
                       className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
                     >
-                      Employer account? Sign in
+                      {t("header.employerSignIn")}
                     </button>
                     <button
                       onClick={() => navigate('/partner/login')}
                       className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
                     >
-                      Partner account? Sign in
+                      {t("header.partnerSignIn")}
                     </button>
                   </PopoverContent>
                 </Popover>
               )}
+              </div>
             </div>
 
             {/* Mobile Actions */}
-            <div className={`flex items-center gap-1 md:hidden ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
-              {showLanguageToggle && <AboutLanguageToggle compact className="mr-1" />}
+            <div className="flex items-center gap-1 md:hidden">
+              <AboutLanguageToggle compact variant={overlaysHomeHero ? "onDark" : "default"} className="mr-1" />
+              <div className={`flex items-center ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
               <ThemeToggle />
             {/* Mobile Menu Toggle */}
             <Button 
@@ -228,6 +232,7 @@ const Header = () => {
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -249,6 +254,10 @@ const Header = () => {
             className="fixed top-16 left-0 right-0 bottom-0 bg-card z-50 md:hidden overflow-y-auto animate-fade-in"
           >
             <nav className="container mx-auto px-4 py-6 space-y-2">
+              <div className="px-1 pb-4 mb-2 border-b border-border">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">{t("lang.aria")}</p>
+                <AboutLanguageToggle />
+              </div>
               {navLinks.map((link) => (
                 <Link 
                   key={link.to}
@@ -290,8 +299,8 @@ const Header = () => {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-semibold">{profile?.full_name || 'My Account'}</p>
-                        <p className="text-sm text-muted-foreground">Go to Dashboard</p>
+                        <p className="font-semibold">{profile?.full_name || t("header.myAccount")}</p>
+                        <p className="text-sm text-muted-foreground">{t("header.goDashboard")}</p>
                       </div>
                     </Link>
                     <Button 
@@ -300,12 +309,12 @@ const Header = () => {
                       onClick={handleLogout}
                     >
                       <LogOut className="h-4 w-4" />
-                      Sign Out
+                      {t("header.signOut")}
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground px-1">I want to…</p>
+                    <p className="text-xs font-semibold text-muted-foreground px-1">{t("header.iWantTo")}</p>
                     <Button
                       variant="default"
                       size="lg"
@@ -313,7 +322,7 @@ const Header = () => {
                       onClick={() => { navigate('/worker/quick-signup'); closeMobileMenu(); }}
                     >
                       <HardHat className="h-4 w-4" />
-                      Find a job (Worker signup)
+                      {t("header.findJobCta")}
                     </Button>
                     <Button
                       variant="secondary"
@@ -322,7 +331,7 @@ const Header = () => {
                       onClick={() => { navigate('/employer/quick-signup'); closeMobileMenu(); }}
                     >
                       <Briefcase className="h-4 w-4" />
-                      Hire workers (Employer signup)
+                      {t("header.hireCta")}
                     </Button>
                     <Button
                       variant="outline"
@@ -331,19 +340,19 @@ const Header = () => {
                       onClick={() => { navigate('/partner/register'); closeMobileMenu(); }}
                     >
                       <Handshake className="h-4 w-4" />
-                      Partner
+                      {t("header.partner")}
                     </Button>
                     <button
                       onClick={() => { navigate('/worker/login'); closeMobileMenu(); }}
                       className="w-full text-xs text-center text-primary hover:underline py-1"
                     >
-                      Already registered as a worker? Sign in
+                      {t("header.workerSignIn")}
                     </button>
                     <button
                       onClick={() => { navigate('/partner/login'); closeMobileMenu(); }}
                       className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
                     >
-                      Partner account? Sign in
+                      {t("header.partnerSignIn")}
                     </button>
                   </div>
                 )}

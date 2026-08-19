@@ -7,6 +7,7 @@ import { LogOut, Wallet as WalletIcon } from "lucide-react";
 import { useCurrentPartner } from "../hooks/useCurrentPartner";
 import { partnerTypeConfig } from "../config/partnerTypes";
 import { useAuth } from "@/contexts/AuthContext";
+import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 
 export default function PartnerLayout({ children }: { children: ReactNode }) {
   const { partner, loading } = useCurrentPartner();
@@ -108,13 +109,16 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
               {[partner.city, partner.district, partner.state].filter(Boolean).join(", ") || "—"}
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/5 border">
+          <div className="ml-auto flex items-center gap-3">
+            <AboutLanguageToggle compact />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/5 border">
             <WalletIcon className="h-4 w-4 text-primary" />
             <div>
               <div className="text-xs text-muted-foreground">Wallet</div>
               <div className="font-semibold text-sm">
                 ₹{Number(partner.wallet_available).toLocaleString("en-IN")}
               </div>
+            </div>
             </div>
           </div>
         </header>

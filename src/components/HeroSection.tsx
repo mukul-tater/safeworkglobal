@@ -4,10 +4,12 @@ import heroImage from "@/assets/hero-indian-workers.jpg";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n";
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const { isAuthenticated, role, loading, profileLoading } = useAuth();
+  const { t } = useI18n();
   const isEmployer = role === "employer";
   const authResolving = loading || (isAuthenticated && profileLoading);
 
@@ -17,7 +19,7 @@ const HeroSection = () => {
       return;
     }
     if (role === "employer") {
-      toast.error("This is an employer account. Switch to a worker account to browse jobs.");
+      toast.error(t("hero.employerToast"));
       return;
     }
     navigate("/jobs");
@@ -29,7 +31,7 @@ const HeroSection = () => {
       return;
     }
     if (role === "worker") {
-      toast.error("This is a worker account. Switch to an employer account to hire workers.");
+      toast.error(t("hero.workerToast"));
       return;
     }
     navigate("/employer/dashboard");
@@ -68,21 +70,19 @@ const HeroSection = () => {
           <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold font-heading text-white mb-5 leading-[1.08] tracking-tight">
             {isEmployer ? (
               <>
-                Hire verified workers.
-                <span className="block mt-1 text-white/90">Ready to deploy.</span>
+                {t("hero.employerTitle1")}
+                <span className="block mt-1 text-white/90">{t("hero.employerTitle2")}</span>
               </>
             ) : (
               <>
-                Verified jobs abroad.
-                <span className="block mt-1 text-white/90">Clear contracts.</span>
+                {t("hero.workerTitle1")}
+                <span className="block mt-1 text-white/90">{t("hero.workerTitle2")}</span>
               </>
             )}
           </h1>
 
           <p className="text-base sm:text-lg text-white/80 mb-8 max-w-xl leading-relaxed">
-            {isEmployer
-              ? "Skill-tested, document-verified Indian workers — deployed through licensed recruitment partners."
-              : "We verify your documents and skills, then connect you to overseas employers through licensed recruitment partners."}
+            {isEmployer ? t("hero.employerBody") : t("hero.workerBody")}
           </p>
 
           {!authResolving && (
@@ -93,7 +93,7 @@ const HeroSection = () => {
                   className="h-12 px-7 gap-2 text-base font-semibold rounded-xl shadow-primary"
                   onClick={handleHireWorkers}
                 >
-                  Browse Workers <ArrowRight className="h-5 w-5" />
+                  {t("hero.browseWorkers")} <ArrowRight className="h-5 w-5" />
                 </Button>
               ) : (
                 <>
@@ -102,7 +102,7 @@ const HeroSection = () => {
                     className="h-12 px-7 gap-2 text-base font-semibold rounded-xl shadow-primary"
                     onClick={handleFindJobs}
                   >
-                    Browse Jobs <ArrowRight className="h-5 w-5" />
+                    {t("hero.browseJobs")} <ArrowRight className="h-5 w-5" />
                   </Button>
                   <Button
                     size="lg"
@@ -110,7 +110,7 @@ const HeroSection = () => {
                     className="h-12 px-7 rounded-xl border-white/40 bg-white/5 text-white hover:bg-white/15 hover:text-white"
                     onClick={handleEmployerCta}
                   >
-                    I&apos;m an employer
+                    {t("hero.imEmployer")}
                   </Button>
                 </>
               )}
@@ -119,9 +119,7 @@ const HeroSection = () => {
 
           {/* Quiet trust line — plain text, no floating chips on the photo */}
           <p className="text-sm text-white/65 font-medium tracking-wide">
-            {isEmployer
-              ? "Verified workers · Skill & trade tested · Licensed partner deployment"
-              : "Verified employers · Skill-tested profile · Licensed partner deployment"}
+            {isEmployer ? t("hero.employerTrust") : t("hero.workerTrust")}
           </p>
         </div>
       </div>

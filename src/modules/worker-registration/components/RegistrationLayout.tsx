@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Briefcase, LogIn, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import WorkerLanguageSwitcher from './WorkerLanguageSwitcher';
+import AboutLanguageToggle from '@/components/AboutLanguageToggle';
 import { useWorkerLanguage } from '../context/WorkerLanguageContext';
 
 interface RegistrationLayoutProps {
@@ -100,7 +100,7 @@ export default function RegistrationLayout({
             <div className="flex items-center gap-1 sm:gap-2">
               <TopNav />
               <div className="hidden sm:block h-6 w-px bg-border mx-1" />
-              <WorkerLanguageSwitcher />
+              <AboutLanguageToggle />
               <ThemeToggle />
             </div>
           </div>

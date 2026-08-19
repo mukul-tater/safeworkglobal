@@ -6,10 +6,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DESTINATION_COUNTRIES, JOB_CATEGORIES } from "@/lib/constants";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/i18n";
 
 const HomeSearchBar = () => {
   const navigate = useNavigate();
   const { role } = useAuth();
+  const { t } = useI18n();
   const isEmployer = role === "employer";
   const [isSticky, setIsSticky] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -46,13 +48,13 @@ const HomeSearchBar = () => {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="max-w-5xl mx-auto rounded-2xl border border-border/70 bg-card/95 p-4 sm:p-5 shadow-xl backdrop-blur-md">
             <p className="text-xs font-semibold text-muted-foreground mb-3">
-              {isEmployer ? "Search verified workers" : "Search verified jobs abroad"}
+              {isEmployer ? t("search.workers") : t("search.jobs")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="relative group lg:col-span-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
-                  placeholder={isEmployer ? "Skill or worker type" : "Job title or skill"}
+                  placeholder={isEmployer ? t("search.skillPlaceholder") : t("search.jobPlaceholder")}
                   className="pl-10 h-11 sm:h-12 rounded-xl"
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
@@ -64,7 +66,7 @@ const HomeSearchBar = () => {
                 <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 group-focus-within:text-primary transition-colors" />
                 <Select value={searchLocation} onValueChange={setSearchLocation}>
                   <SelectTrigger className="pl-10 h-11 sm:h-12 rounded-xl">
-                    <SelectValue placeholder="Country" />
+                    <SelectValue placeholder={t("search.country")} />
                   </SelectTrigger>
                   <SelectContent className="max-h-64">
                     {DESTINATION_COUNTRIES.filter((c) => c !== "All Countries")

@@ -1,7 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkerAuth } from "@/modules/worker-registration/context/WorkerAuthContext";
 import { useOptionalWorkerLanguage } from "@/modules/worker-registration/context/WorkerLanguageContext";
-import WorkerLanguageSwitcher from "@/modules/worker-registration/components/WorkerLanguageSwitcher";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +16,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import NotificationDrawer from "@/components/NotificationDrawer";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 import { displayableEmail, formatIndianMobile } from "@/lib/workerAuthEmail";
 import { getGoogleEmailFromUser } from "@/modules/worker-verification/lib/connectGoogleEmail";
 
@@ -84,7 +84,7 @@ export default function DashboardHeader({
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          {showLanguageSwitcher && <WorkerLanguageSwitcher />}
+          <AboutLanguageToggle compact />
           <ThemeToggle />
           <NotificationDrawer />
 
