@@ -1,7 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { employerNavGroups, employerProfileMenu } from "@/config/employerNav";
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -227,16 +226,6 @@ export default function CompanyProfile() {
                 )}
               </div>
             </div>
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="text-xl font-bold mb-2">Escrow payments</h2>
-            <p className="text-sm text-muted-foreground mb-3">
-              Salary escrow opens once payment rails are live. There is no active escrow balance in the app today.
-            </p>
-            <Button variant="outline" asChild>
-              <Link to="/employer/escrow">View escrow status</Link>
-            </Button>
           </Card>
 
           <Button onClick={handleSave} className="w-full" disabled={saving}>
