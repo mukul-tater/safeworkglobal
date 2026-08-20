@@ -141,6 +141,9 @@ const en = {
   "partner.subtitle":
     "Choose your partner type to continue. Open to placement consultants, recruitment partners, freelancers, NGOs and candidate mobilisers.",
   "partner.type": "Partner type",
+  "partner.chooseTitle": "Choose your partner type",
+  "partner.chooseHint": "Select how you want to work with SafeWork — you'll complete a short application next.",
+  "partner.stepOf": "Step {{current}} of {{total}}",
   "partner.live": "live",
   "partner.available": "Available",
   "partner.default": "Default",
@@ -304,6 +307,9 @@ const hi: Record<AppMessageKey, string> = {
   "partner.subtitle":
     "आगे बढ़ने के लिए अपना साझेदार प्रकार चुनें। प्लेसमेंट कंसल्टेंट, भर्ती साझेदार, फ्रीलांसर, NGO और कैंडिडेट मोबिलाइज़र आमंत्रित हैं।",
   "partner.type": "साझेदार प्रकार",
+  "partner.chooseTitle": "अपना साझेदार प्रकार चुनें",
+  "partner.chooseHint": "SafeWork के साथ काम करने का तरीका चुनें — अगले चरण में एक छोटा आवेदन पूरा होगा।",
+  "partner.stepOf": "चरण {{current}} / {{total}}",
   "partner.live": "लाइव",
   "partner.available": "उपलब्ध",
   "partner.default": "डिफ़ॉल्ट",

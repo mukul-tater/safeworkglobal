@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import EmitraLayout from '../components/EmitraLayout';
+import AuthSplitLayout from '@/components/AuthSplitLayout';
 import PartnerDocUpload from '@/components/partner/PartnerDocUpload';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -460,20 +459,45 @@ export default function EmitraOnboardingPage() {
 
   if (loading) {
     return (
-      <EmitraLayout maxWidth="3xl" title="Become a SafeWork Partner" subtitle="Loading your application…">
-        <Card className="p-8 text-center text-muted-foreground">Loading saved progress…</Card>
-      </EmitraLayout>
+      <AuthSplitLayout audience="partner" activeStep={1} maxWidthClassName="max-w-2xl" centerVertically={false}>
+        <p className="py-8 text-center text-sm text-muted-foreground">Loading saved progress…</p>
+      </AuthSplitLayout>
     );
   }
 
   return (
-    <EmitraLayout
-      maxWidth="3xl"
-      title="E-Mitra Partner Onboarding"
-      subtitle="Complete your application to start registering workers on SafeWork Global"
+    <AuthSplitLayout
+      audience="partner"
+      activeStep={1}
+      maxWidthClassName="max-w-2xl"
+      centerVertically={false}
+      cardClassName="overflow-hidden p-0 sm:p-0"
     >
-      <Card className="overflow-hidden border-border/60">
-        <div className="px-5 pt-5 md:px-7 md:pt-6">
+      <div className="px-5 pt-5 md:px-7 md:pt-6">
+          <div className="mb-4">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="h-1.5 w-6 rounded-full bg-primary/30" />
+              <span className="h-1.5 w-6 rounded-full bg-primary" />
+              <span className="h-1.5 w-6 rounded-full bg-muted-foreground/25" />
+              <span className="ml-1 text-[11px] font-medium text-muted-foreground">Step 2 of 3</span>
+            </div>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
+                  E-Mitra partner onboarding
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Complete your application to start registering workers.
+                </p>
+              </div>
+              <Link
+                to="/partner/register"
+                className="shrink-0 text-xs font-medium text-primary hover:underline"
+              >
+                Change type
+              </Link>
+            </div>
+          </div>
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2 min-w-0">
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -906,7 +930,7 @@ export default function EmitraOnboardingPage() {
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between gap-3 px-5 py-5 md:px-7 border-t border-border bg-muted/20">
+        <div className="flex flex-col gap-3 border-t border-border bg-muted/20 px-5 py-5 sm:flex-row sm:justify-between md:px-7">
           <Button
             type="button"
             variant="outline"
@@ -914,22 +938,37 @@ export default function EmitraOnboardingPage() {
             onClick={() => setStep((s) => Math.max(1, s - 1))}
             disabled={step === 1 || saving}
           >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back
           </Button>
           {step < STEPS.length ? (
-            <Button type="button" className="h-11" onClick={() => void handleNext()} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-              Continue <ArrowRight className="h-4 w-4 ml-1" />
+            <Button
+              type="button"
+              className="h-11 bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+              onClick={() => void handleNext()}
+              disabled={saving}
+            >
+              {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              Continue <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           ) : (
-            <Button type="button" className="h-11" onClick={() => void handleSubmit()} disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-              Submit Application
+            <Button
+              type="button"
+              className="h-11 bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+              onClick={() => void handleSubmit()}
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />}
+              Submit application
             </Button>
           )}
         </div>
-      </Card>
-    </EmitraLayout>
+        <p className="px-5 pb-5 text-center text-sm text-muted-foreground md:px-7">
+          Already a partner?{' '}
+          <Link to="/emitra/login" className="font-medium text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
+    </AuthSplitLayout>
   );
 }
 

@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,9 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { indianStates } from "@/lib/validations/partner";
 import { partnerAuthEmailFromMobile, displayableEmail } from "@/lib/workerAuthEmail";
 import { lockedPartnerFromPath } from "@/modules/partner/config/partnerPortalRoutes";
+import AuthSplitLayout from "@/components/AuthSplitLayout";
+import { cn } from "@/lib/utils";
 
 interface PartnerType {
   id: string;
@@ -42,6 +44,8 @@ export default function PartnerRegisterLegacy() {
   const signInLabel = portal?.signInLabel ?? "Partner sign in";
   const [types, setTypes] = useState<PartnerType[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState({
     partner_type_id: "",
     company_name: "",
@@ -207,26 +211,52 @@ export default function PartnerRegisterLegacy() {
     }
   };
 
+  const PortalIcon = portal?.Icon;
+
   return (
-    <div className="min-h-screen bg-muted/30 py-10 px-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">
-            {heading}
-          </h1>
-          <p className="text-muted-foreground">
-            {subtitle}
-          </p>
+    <AuthSplitLayout
+      audience="partner"
+      activeStep={1}
+      maxWidthClassName="max-w-[520px]"
+      centerVertically={false}
+    >
+      <div className="mb-5">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="h-1.5 w-6 rounded-full bg-primary/30" />
+          <span className="h-1.5 w-6 rounded-full bg-primary" />
+          <span className="h-1.5 w-6 rounded-full bg-muted-foreground/25" />
+          <span className="ml-1 text-[11px] font-medium text-muted-foreground">Step 2 of 3</span>
         </div>
-        <Card className="p-6 space-y-6">
-          <section>
-            <h2 className="font-semibold mb-3">Partner Type</h2>
+        <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
+          {heading}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+
+      <div className="space-y-5">
+        {lockedTypeCode && portal && PortalIcon ? (
+          <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-muted/40 px-3 py-2.5">
+            <div className={cn("rounded-lg p-1.5", portal.accentClass)}>
+              <PortalIcon className="h-4 w-4" />
+            </div>
+            <span className="min-w-0 truncate text-sm font-semibold">{portal.typeLabel}</span>
+            <Link
+              to="/partner/register"
+              className="ml-auto shrink-0 text-xs font-medium text-primary hover:underline"
+            >
+              Change type
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <Label>Partner type</Label>
             <Select
               value={form.partner_type_id}
               onValueChange={(v) => set("partner_type_id", v)}
-              disabled={!!lockedTypeCode}
             >
-              <SelectTrigger><SelectValue placeholder="Select partner type" /></SelectTrigger>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Select partner type" />
+              </SelectTrigger>
               <SelectContent>
                 {types.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
@@ -240,144 +270,209 @@ export default function PartnerRegisterLegacy() {
                 ))}
               </SelectContent>
             </Select>
-          </section>
+          </div>
+        )}
 
-          {!isAuthenticated && (
-            <section className="rounded-lg border bg-muted/30 p-4 space-y-3">
-              <h2 className="font-semibold">Create login</h2>
-              <p className="text-xs text-muted-foreground">
-                Set a password now. After SafeWork approves you, sign in at{" "}
-                <Link to={loginPath} className="text-primary underline">
-                  {loginPath}
+        {!isAuthenticated && (
+          <section className="space-y-3 rounded-xl border border-border/60 bg-muted/30 p-4">
+            <div>
+              <h3 className="text-sm font-semibold">Create login</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Set a password now. After approval, sign in at{" "}
+                <Link to={loginPath} className="font-medium text-primary hover:underline">
+                  {signInLabel}
                 </Link>
                 .
               </p>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Password *</Label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Password *</Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
                     value={form.password}
                     onChange={(e) => set("password", e.target.value)}
+                    className="h-11 pl-10 pr-9"
+                    placeholder="Min 6 chars"
                   />
+                  <button
+                    type="button"
+                    data-inline
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-                <div>
-                  <Label>Confirm password *</Label>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Confirm *</Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     autoComplete="new-password"
                     value={form.confirmPassword}
                     onChange={(e) => set("confirmPassword", e.target.value)}
+                    className="h-11 pl-10 pr-9"
+                    placeholder="Re-enter"
                   />
+                  <button
+                    type="button"
+                    data-inline
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
-            </section>
-          )}
+            </div>
+          </section>
+        )}
 
-          <section className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>{portal?.orgNameLabel ?? "Company / Center Name *"}</Label>
-              <Input value={form.company_name} onChange={(e) => set("company_name", e.target.value)} />
-            </div>
-            <div>
-              <Label>Owner Name</Label>
-              <Input value={form.owner_name} onChange={(e) => set("owner_name", e.target.value)} />
-            </div>
-            <div>
-              <Label>Mobile *</Label>
+        <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>{portal?.orgNameLabel ?? "Company / Center Name *"}</Label>
+            <Input
+              className="h-11"
+              value={form.company_name}
+              onChange={(e) => set("company_name", e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Owner name</Label>
+            <Input className="h-11" value={form.owner_name} onChange={(e) => set("owner_name", e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Mobile *</Label>
+            <Input
+              className="h-11"
+              inputMode="numeric"
+              maxLength={10}
+              value={form.mobile}
+              onChange={(e) => set("mobile", e.target.value.replace(/\D/g, ""))}
+            />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Email {!isAuthenticated ? "(recommended)" : ""}</Label>
+            <Input
+              className="h-11"
+              type="email"
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+            />
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>State</Label>
+            <Select value={form.state} onValueChange={(v) => set("state", v)}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Select state" />
+              </SelectTrigger>
+              <SelectContent>
+                {indianStates.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>District</Label>
+            <Input className="h-11" value={form.district} onChange={(e) => set("district", e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>City</Label>
+            <Input className="h-11" value={form.city} onChange={(e) => set("city", e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Pincode</Label>
+            <Input className="h-11" value={form.pincode} onChange={(e) => set("pincode", e.target.value)} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label>Address</Label>
+            <Textarea value={form.address} onChange={(e) => set("address", e.target.value)} rows={2} />
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>PAN</Label>
+            <Input
+              className="h-11"
+              value={form.pan}
+              onChange={(e) => set("pan", e.target.value.toUpperCase())}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>GST (optional)</Label>
+            <Input
+              className="h-11"
+              value={form.gst}
+              onChange={(e) => set("gst", e.target.value.toUpperCase())}
+            />
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold">Bank / payout</h3>
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Account holder</Label>
               <Input
-                inputMode="numeric"
-                maxLength={10}
-                value={form.mobile}
-                onChange={(e) => set("mobile", e.target.value.replace(/\D/g, ""))}
+                className="h-11"
+                value={form.account_holder}
+                onChange={(e) => set("account_holder", e.target.value)}
               />
             </div>
-            <div>
-              <Label>Email {!isAuthenticated ? "(recommended)" : ""}</Label>
-              <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+            <div className="space-y-1.5">
+              <Label>Account number</Label>
+              <Input
+                className="h-11"
+                value={form.account_number}
+                onChange={(e) => set("account_number", e.target.value)}
+              />
             </div>
-          </section>
-
-          <section className="grid md:grid-cols-3 gap-4">
-            <div>
-              <Label>State</Label>
-              <Select value={form.state} onValueChange={(v) => set("state", v)}>
-                <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                <SelectContent>
-                  {indianStates.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-1.5">
+              <Label>IFSC</Label>
+              <Input
+                className="h-11"
+                value={form.ifsc}
+                onChange={(e) => set("ifsc", e.target.value.toUpperCase())}
+              />
             </div>
-            <div>
-              <Label>District</Label>
-              <Input value={form.district} onChange={(e) => set("district", e.target.value)} />
-            </div>
-            <div>
-              <Label>City</Label>
-              <Input value={form.city} onChange={(e) => set("city", e.target.value)} />
-            </div>
-            <div className="md:col-span-2">
-              <Label>Address</Label>
-              <Textarea value={form.address} onChange={(e) => set("address", e.target.value)} />
-            </div>
-            <div>
-              <Label>Pincode</Label>
-              <Input value={form.pincode} onChange={(e) => set("pincode", e.target.value)} />
-            </div>
-          </section>
-
-          <section className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label>PAN</Label>
-              <Input value={form.pan} onChange={(e) => set("pan", e.target.value.toUpperCase())} />
-            </div>
-            <div>
-              <Label>GST (optional)</Label>
-              <Input value={form.gst} onChange={(e) => set("gst", e.target.value.toUpperCase())} />
-            </div>
-          </section>
-
-          <section>
-            <h2 className="font-semibold mb-3">Bank / Payout</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label>Account Holder</Label>
-                <Input value={form.account_holder} onChange={(e) => set("account_holder", e.target.value)} />
-              </div>
-              <div>
-                <Label>Account Number</Label>
-                <Input value={form.account_number} onChange={(e) => set("account_number", e.target.value)} />
-              </div>
-              <div>
-                <Label>IFSC</Label>
-                <Input value={form.ifsc} onChange={(e) => set("ifsc", e.target.value.toUpperCase())} />
-              </div>
-              <div>
-                <Label>UPI ID</Label>
-                <Input value={form.upi} onChange={(e) => set("upi", e.target.value)} />
-              </div>
-            </div>
-          </section>
-
-          <div className="flex flex-col sm:flex-row justify-between gap-2">
-            <p className="text-sm text-muted-foreground self-center">
-              Already registered?{" "}
-              <Link to={loginPath} className="text-primary font-medium hover:underline">
-                {signInLabel}
-              </Link>
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => navigate("/")}>Cancel</Button>
-              <Button onClick={submit} disabled={saving}>
-                {saving ? "Submitting..." : "Submit Registration"}
-              </Button>
+            <div className="space-y-1.5">
+              <Label>UPI ID</Label>
+              <Input className="h-11" value={form.upi} onChange={(e) => set("upi", e.target.value)} />
             </div>
           </div>
-        </Card>
+        </section>
+
+        <Button
+          onClick={submit}
+          disabled={saving}
+          className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+        >
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {saving ? "Submitting…" : "Submit registration"}
+        </Button>
+
+        <p className="pt-1 text-center text-sm text-muted-foreground">
+          Already registered?{" "}
+          <Link to={loginPath} className="font-medium text-primary hover:underline">
+            {signInLabel}
+          </Link>
+        </p>
       </div>
-    </div>
+    </AuthSplitLayout>
   );
 }

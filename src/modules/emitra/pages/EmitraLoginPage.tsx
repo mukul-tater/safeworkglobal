@@ -3,15 +3,13 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import EmitraLayout from '../components/EmitraLayout';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Phone, Mail } from 'lucide-react';
+import { Loader2, Phone, Mail, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import {
@@ -21,6 +19,7 @@ import {
 import { partnerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
 import { isPartnerOperational, getPartnerProfile } from '../services/emitraService';
 import { hasValidLspSession } from '@/modules/lsp/services/lspSession';
+import AuthSplitLayout from '@/components/AuthSplitLayout';
 
 type Method = 'mobile' | 'email';
 type Step = 'credentials' | 'otp';
@@ -220,15 +219,22 @@ export default function EmitraLoginPage() {
   };
 
   return (
-    <EmitraLayout
-      centered
-      maxWidth="md"
-      title="Partner Sign In"
-      subtitle="Access your E-Mitra partner dashboard. Approved partners only."
-    >
-      <Card className="border-border/60 shadow-lg">
-        <CardContent className="p-6 md:p-8">
-          <Tabs
+    <AuthSplitLayout audience="partner" variant="login">
+      <div className="mb-5">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
+            <Store className="h-4 w-4" />
+          </div>
+          <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
+            E-Mitra sign in
+          </h2>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Access your E-Mitra partner dashboard. Approved partners only.
+        </p>
+      </div>
+
+      <Tabs
             value={method}
             onValueChange={(v) => {
               setMethod(v as Method);
@@ -274,7 +280,7 @@ export default function EmitraLoginPage() {
                 <Button
                   id={WORKER_OTP_RECAPTCHA_BTN_ID}
                   type="submit"
-                  className="w-full h-11 font-medium"
+                    className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
                   disabled={loading}
                 >
                   {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -310,7 +316,7 @@ export default function EmitraLoginPage() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-11 font-medium"
+                    className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
                   disabled={loading || otp.length !== 6 || password.length < 6}
                 >
                   {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -380,29 +386,27 @@ export default function EmitraLoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
+              <Button type="submit" className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Sign In
               </Button>
             </form>
           )}
 
-          <div className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border space-y-2">
+          <div className="mt-5 space-y-2 border-t border-border pt-4 text-center text-sm text-muted-foreground">
             <p>
               New E-Mitra partner?{' '}
-              <Link to="/emitra/register" className="text-primary font-medium hover:underline">
+              <Link to="/emitra/register" className="font-medium text-primary hover:underline">
                 Apply here
               </Link>
             </p>
             <p>
               Trade test centre (SSVN)?{' '}
-              <Link to="/partner/ssvn/login" className="text-primary font-medium hover:underline">
+              <Link to="/partner/ssvn/login" className="font-medium text-primary hover:underline">
                 Use SSVN login
               </Link>
             </p>
           </div>
-        </CardContent>
-      </Card>
-    </EmitraLayout>
+    </AuthSplitLayout>
   );
 }

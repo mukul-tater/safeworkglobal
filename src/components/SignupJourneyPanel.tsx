@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Building2, LogIn, ShieldCheck, UserPlus, Users, Wallet } from 'lucide-react';
+import { BadgeCheck, Building2, Handshake, LogIn, ShieldCheck, UserPlus, Users, Wallet } from 'lucide-react';
 
 const TRUST = {
   worker: [
@@ -9,6 +9,10 @@ const TRUST = {
   employer: [
     { icon: Users, label: 'Verified workers' },
     { icon: BadgeCheck, label: 'Free to start' },
+  ],
+  partner: [
+    { icon: BadgeCheck, label: 'Free to apply' },
+    { icon: Wallet, label: 'Transparent payouts' },
   ],
 } as const;
 
@@ -61,23 +65,58 @@ const COPY = {
       ],
     },
   },
+  partner: {
+    signup: {
+      badge: 'Partner signup',
+      BadgeIcon: Handshake,
+      headline: 'Grow with the SafeWork partner network',
+      body: 'Apply as E-Mitra, a trade test centre, ITI, licensed RA or consultant — onboard verified workers and earn through the platform. No large upfront listing fees.',
+      steps: [
+        { n: '1', title: 'Choose type', detail: 'E-Mitra, SSVN, ITI, RA or consultant' },
+        { n: '2', title: 'Complete application', detail: 'Organisation details & documents' },
+        { n: '3', title: 'Go live', detail: 'Approved partners start serving workers' },
+      ],
+    },
+    login: {
+      badge: 'Partner sign in',
+      BadgeIcon: LogIn,
+      headline: 'Welcome back — continue as a partner',
+      body: 'Sign in to manage workers, assessments, placements and payouts from your partner portal.',
+      steps: [
+        { n: '1', title: 'Sign in', detail: 'Mobile OTP or email + password' },
+        { n: '2', title: 'Open your portal', detail: 'Dashboard for your partner type' },
+        { n: '3', title: 'Serve workers', detail: 'Register, verify and place talent' },
+      ],
+    },
+  },
 } as const;
 
-type Audience = keyof typeof COPY;
-type Variant = keyof typeof COPY.worker;
+export type SignupAudience = keyof typeof COPY;
+export type SignupVariant = keyof typeof COPY.worker;
+type Audience = SignupAudience;
+type Variant = SignupVariant;
 
-/** Left / top trust panel for worker or employer auth — Option A split layout. */
+const MOBILE_BADGE: Record<Audience, string> = {
+  worker: 'Worker',
+  employer: 'Employer',
+  partner: 'Partner',
+};
+
+/** Left / top trust panel for worker, employer or partner auth — Option A split layout. */
 export default function SignupJourneyPanel({
   variant = 'signup',
   audience = 'worker',
+  activeStep = 0,
 }: {
   variant?: Variant;
   audience?: Audience;
+  /** 0-based step to highlight in the journey list. */
+  activeStep?: number;
 }) {
   const copy = COPY[audience][variant];
   const BadgeIcon = copy.BadgeIcon;
   const trust = TRUST[audience];
-  const mobileBadge = audience === 'employer' ? 'Employer' : 'Worker';
+  const mobileBadge = MOBILE_BADGE[audience];
 
   return (
     <aside className="relative flex shrink-0 flex-col overflow-hidden bg-[hsl(230_25%_10%)] text-white md:h-full md:w-[44%] lg:w-[46%]">
@@ -110,7 +149,7 @@ export default function SignupJourneyPanel({
               <div
                 key={step.n}
                 className={`rounded-lg border px-2 py-2 text-center ${
-                  i === 0 ? 'border-primary/50 bg-primary/20' : 'border-white/10 bg-white/5'
+                  i === activeStep ? 'border-primary/50 bg-primary/20' : 'border-white/10 bg-white/5'
                 }`}
               >
                 <p className="text-[10px] font-bold text-white">{step.title}</p>
@@ -149,7 +188,7 @@ export default function SignupJourneyPanel({
               <li key={step.n} className="flex gap-3.5">
                 <span
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                    i === 0
+                    i === activeStep
                       ? 'bg-gradient-to-br from-primary to-info text-white shadow-[0_0_24px_hsl(230_85%_55%/0.35)]'
                       : 'border border-white/15 bg-white/5 text-white/70'
                   }`}

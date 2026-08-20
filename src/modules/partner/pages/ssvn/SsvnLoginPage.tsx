@@ -3,14 +3,13 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Phone, Mail, Home } from 'lucide-react';
+import { Loader2, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import {
@@ -24,9 +23,9 @@ import {
   getPartnerOrgForUser,
   isSsvnPartnerApproved,
 } from '../../services/ssvnAuth';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import AboutLanguageToggle from '@/components/AboutLanguageToggle';
 import { lockedPartnerFromPath, LOCKED_PARTNER_PORTALS } from '../../config/partnerPortalRoutes';
+import AuthSplitLayout from '@/components/AuthSplitLayout';
+import { cn } from '@/lib/utils';
 
 type Method = 'mobile' | 'email';
 type Step = 'credentials' | 'otp';
@@ -241,199 +240,172 @@ export default function SsvnLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 flex flex-col">
-      <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <a
-            href="https://safeworkglobal.com"
-            className="flex items-center gap-2 hover:opacity-80"
-          >
-            <img src="/safework-global-logo.png" alt="SafeWork Global" className="h-8 w-8 rounded-lg" />
-            <span className="font-semibold text-sm sm:text-base">SafeWork Global</span>
-          </a>
-          <div className="flex items-center gap-1">
-            <AboutLanguageToggle compact />
-            <ThemeToggle />
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/">
-                <Home className="h-4 w-4 mr-1" />
-                Home
-              </Link>
-            </Button>
+    <AuthSplitLayout audience="partner" variant="login">
+      <div className="mb-5">
+        <div className="mb-3 flex items-center gap-2">
+          <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', portal.accentClass)}>
+            <PortalIcon className="h-4 w-4" />
           </div>
-        </div>
-      </header>
-
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-4">
-          <div className="text-center space-y-2 mb-2">
-            <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${portal.accentClass}`}>
-              <PortalIcon className="h-6 w-6" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">
+          <div className="min-w-0">
+            <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
               {portal.loginTitle}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {portal.loginBlurb}
-            </p>
+            </h2>
           </div>
-
-          <Card className="border-border/60 shadow-lg">
-            <CardContent className="p-6 md:p-8">
-              <Tabs
-                value={method}
-                onValueChange={(v) => {
-                  setMethod(v as Method);
-                  setStep('credentials');
-                  setError('');
-                  firebaseOtp.resetRecaptcha();
-                }}
-              >
-                <TabsList className="grid w-full grid-cols-2 mb-6 h-11">
-                  <TabsTrigger value="mobile" className="gap-1.5 text-sm">
-                    <Phone className="h-3.5 w-3.5" /> Mobile OTP
-                  </TabsTrigger>
-                  <TabsTrigger value="email" className="gap-1.5 text-sm">
-                    <Mail className="h-3.5 w-3.5" /> Email
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-
-              {error && (
-                <Alert variant="destructive" className="mb-5">
-                  <AlertDescription className="text-sm">{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {method === 'mobile' ? (
-                step === 'credentials' ? (
-                  <form onSubmit={handleMobileOtpRequest} className="space-y-5">
-                    <div className="space-y-2">
-                      <Label htmlFor="ssvn-mobile">Mobile Number</Label>
-                      <Input
-                        id="ssvn-mobile"
-                        inputMode="numeric"
-                        maxLength={10}
-                        placeholder="10-digit mobile number"
-                        className="h-11"
-                        value={mobile}
-                        onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Use the mobile from your {typeLabel} registration. SMS via Firebase (+91).
-                      </p>
-                    </div>
-                    <Button
-                      id={WORKER_OTP_RECAPTCHA_BTN_ID}
-                      type="submit"
-                      className="w-full h-11 font-medium"
-                      disabled={loading}
-                    >
-                      {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Send OTP
-                    </Button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleMobileOtpVerify} className="space-y-5">
-                    <p className="text-sm text-muted-foreground text-center">
-                      Enter the SMS OTP sent to{' '}
-                      <span className="font-medium text-foreground">+91 {mobile}</span>
-                    </p>
-                    <div className="flex justify-center py-1">
-                      <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                        <InputOTPGroup>
-                          {[0, 1, 2, 3, 4, 5].map((i) => (
-                            <InputOTPSlot key={i} index={i} />
-                          ))}
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="ssvn-otp-password">Password</Label>
-                      <Input
-                        id="ssvn-otp-password"
-                        type="password"
-                        autoComplete="current-password"
-                        className="h-11"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Password from registration"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full h-11 font-medium"
-                      disabled={loading || otp.length !== 6 || password.length < 6}
-                    >
-                      {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Verify & Sign In
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => {
-                        setStep('credentials');
-                        setOtp('');
-                        setError('');
-                        firebaseOtp.resetRecaptcha();
-                      }}
-                    >
-                      Change number
-                    </Button>
-                  </form>
-                )
-              ) : (
-                <form onSubmit={handleEmailLogin} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="ssvn-email">Email Address</Label>
-                    <Input
-                      id="ssvn-email"
-                      type="email"
-                      className="h-11"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="centre@email.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ssvn-password">Password</Label>
-                    <Input
-                      id="ssvn-password"
-                      type="password"
-                      className="h-11"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
-                    {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    Sign In
-                  </Button>
-                </form>
-              )}
-
-              <div className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border space-y-2">
-                <p>
-                  New {portal.applyNoun}?{' '}
-                  <Link
-                    to={registerPath}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    Apply as {typeLabel} partner
-                  </Link>
-                </p>
-                <p>
-                  E-Mitra partner?{' '}
-                  <Link to="/emitra/login" className="text-primary font-medium hover:underline">
-                    Use E-Mitra login
-                  </Link>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-      </main>
-    </div>
+        <p className="text-sm text-muted-foreground">{portal.loginBlurb}</p>
+      </div>
+
+      <Tabs
+        value={method}
+        onValueChange={(v) => {
+          setMethod(v as Method);
+          setStep('credentials');
+          setError('');
+          firebaseOtp.resetRecaptcha();
+        }}
+      >
+        <TabsList className="mb-5 grid h-11 w-full grid-cols-2">
+          <TabsTrigger value="mobile" className="gap-1.5 text-sm">
+            <Phone className="h-3.5 w-3.5" /> Mobile OTP
+          </TabsTrigger>
+          <TabsTrigger value="email" className="gap-1.5 text-sm">
+            <Mail className="h-3.5 w-3.5" /> Email
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {error && (
+        <Alert variant="destructive" className="mb-4 py-2">
+          <AlertDescription className="text-sm">{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {method === 'mobile' ? (
+        step === 'credentials' ? (
+          <form onSubmit={handleMobileOtpRequest} className="space-y-3.5">
+            <div className="space-y-1.5">
+              <Label htmlFor="ssvn-mobile">Mobile number</Label>
+              <Input
+                id="ssvn-mobile"
+                inputMode="numeric"
+                maxLength={10}
+                placeholder="10-digit mobile number"
+                className="h-11"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
+              />
+              <p className="text-xs text-muted-foreground">
+                Use the mobile from your {typeLabel} registration. SMS via Firebase (+91).
+              </p>
+            </div>
+            <Button
+              id={WORKER_OTP_RECAPTCHA_BTN_ID}
+              type="submit"
+              className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+              disabled={loading}
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send OTP
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleMobileOtpVerify} className="space-y-3.5">
+            <p className="text-center text-sm text-muted-foreground">
+              Enter the SMS OTP sent to{' '}
+              <span className="font-medium text-foreground">+91 {mobile}</span>
+            </p>
+            <div className="flex justify-center py-1">
+              <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                <InputOTPGroup>
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <InputOTPSlot key={i} index={i} />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ssvn-otp-password">Password</Label>
+              <Input
+                id="ssvn-otp-password"
+                type="password"
+                autoComplete="current-password"
+                className="h-11"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password from registration"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+              disabled={loading || otp.length !== 6 || password.length < 6}
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Verify & sign in
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                setStep('credentials');
+                setOtp('');
+                setError('');
+                firebaseOtp.resetRecaptcha();
+              }}
+            >
+              Change number
+            </Button>
+          </form>
+        )
+      ) : (
+        <form onSubmit={handleEmailLogin} className="space-y-3.5">
+          <div className="space-y-1.5">
+            <Label htmlFor="ssvn-email">Email address</Label>
+            <Input
+              id="ssvn-email"
+              type="email"
+              className="h-11"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="centre@email.com"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="ssvn-password">Password</Label>
+            <Input
+              id="ssvn-password"
+              type="password"
+              className="h-11"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <Button
+            type="submit"
+            className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+            disabled={loading}
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Sign in
+          </Button>
+        </form>
+      )}
+
+      <div className="mt-5 space-y-2 border-t border-border pt-4 text-center text-sm text-muted-foreground">
+        <p>
+          New {portal.applyNoun}?{' '}
+          <Link to={registerPath} className="font-medium text-primary hover:underline">
+            Apply as {typeLabel} partner
+          </Link>
+        </p>
+        <p>
+          E-Mitra partner?{' '}
+          <Link to="/emitra/login" className="font-medium text-primary hover:underline">
+            Use E-Mitra login
+          </Link>
+        </p>
+      </div>
+    </AuthSplitLayout>
   );
 }

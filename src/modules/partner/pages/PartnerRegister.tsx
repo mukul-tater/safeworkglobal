@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,8 +15,8 @@ import {
 import { ArrowRight, Handshake, CheckCircle2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n";
-import Header from "@/components/Header";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import AuthSplitLayout from "@/components/AuthSplitLayout";
 import {
   DEFAULT_PARTNER_SIGNUP_CODE,
   EMITRA_STATE_BRANDS,
@@ -54,143 +53,141 @@ export default function PartnerRegister() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-16 md:pb-0">
-      <Header />
-      <div className="max-w-3xl mx-auto py-10 px-4">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold mb-3">
-            <Handshake className="h-3.5 w-3.5" />
-            {t("partner.badge")}
+    <>
+      <AuthSplitLayout
+        audience="partner"
+        maxWidthClassName="max-w-[480px]"
+        centerVertically={false}
+      >
+        <div className="mb-5">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="h-1.5 w-6 rounded-full bg-primary" />
+            <span className="h-1.5 w-6 rounded-full bg-muted-foreground/25" />
+            <span className="h-1.5 w-6 rounded-full bg-muted-foreground/25" />
+            <span className="ml-1 text-[11px] font-medium text-muted-foreground">
+              {t("partner.stepOf", { current: 1, total: 3 })}
+            </span>
           </div>
-          <h1 className="text-3xl font-bold font-heading tracking-tight">{t("partner.title")}</h1>
-          <p className="text-muted-foreground mt-1 max-w-xl">
-            {t("partner.subtitle")}
-          </p>
-        </div>
-
-        <Card className="p-5 sm:p-6 space-y-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-semibold">{t("partner.type")}</h2>
-            <Badge variant="secondary" className="font-normal">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
+                {t("partner.chooseTitle")}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("partner.chooseHint")}</p>
+            </div>
+            <Badge variant="secondary" className="mt-1 shrink-0 font-normal">
               {PARTNER_SIGNUP_OPTIONS.filter((o) => o.status === "live").length} {t("partner.live")}
             </Badge>
           </div>
+        </div>
 
-          <div className="grid gap-3">
-            {PARTNER_SIGNUP_OPTIONS.filter((o) => o.status === "live").map((option) => {
-              const Icon = option.icon;
-              const isSelected = selectedCode === option.code;
-              const isLive = option.status === "live";
+        <div className="grid gap-2">
+          {PARTNER_SIGNUP_OPTIONS.filter((o) => o.status === "live").map((option) => {
+            const Icon = option.icon;
+            const isSelected = selectedCode === option.code;
+            const isLive = option.status === "live";
 
-              return (
-                <div
-                  key={option.code}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
+            return (
+              <div
+                key={option.code}
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  setSelectedCode(option.code);
+                  if (isLive) requestContinue(option);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
                     setSelectedCode(option.code);
                     if (isLive) requestContinue(option);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setSelectedCode(option.code);
-                      if (isLive) requestContinue(option);
-                    }
-                  }}
-                  className={cn(
-                    "w-full text-left rounded-xl border p-4 transition-all cursor-pointer",
-                    isSelected
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/25"
-                      : "border-border hover:bg-muted/50",
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={cn("p-2.5 rounded-lg shrink-0", option.accentClass)}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-sm sm:text-base">{option.name}</span>
-                        {option.code === "EMITRA" && (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button
-                                type="button"
-                                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                aria-label={t("partner.emitraInfoAria")}
-                                onClick={(e) => e.stopPropagation()}
-                                onPointerDown={(e) => e.stopPropagation()}
-                              >
-                                <Info className="h-4 w-4" />
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              align="start"
-                              className="w-[22rem] sm:w-96 p-0"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="border-b px-3 py-2.5">
-                                <p className="text-sm font-semibold">{t("partner.emitraInfoTitle")}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                  {t("partner.emitraInfoHint")}
-                                </p>
-                              </div>
-                              <ul className="max-h-72 overflow-y-auto divide-y">
-                                {EMITRA_STATE_BRANDS.map((row) => (
-                                  <li key={row.stateEn} className="px-3 py-2">
-                                    <p className="text-xs text-muted-foreground">
-                                      {locale === "hi" ? row.stateHi : row.stateEn}
-                                    </p>
-                                    <p className="text-sm font-medium leading-snug">{row.brand}</p>
-                                  </li>
-                                ))}
-                              </ul>
-                            </PopoverContent>
-                          </Popover>
-                        )}
-                        <Badge className="h-5 text-[10px]">{t("partner.available")}</Badge>
-                        {option.code === DEFAULT_PARTNER_SIGNUP_CODE && (
-                          <Badge variant="secondary" className="h-5 text-[10px]">
-                            {t("partner.default")}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        {option.shortDescription}
-                      </p>
-                    </div>
-                    {isSelected && (
-                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    )}
+                  }
+                }}
+                className={cn(
+                  "w-full cursor-pointer rounded-xl border px-3 py-3 text-left transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/5 ring-1 ring-primary/25"
+                    : "border-border hover:bg-muted/50",
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={cn("shrink-0 rounded-lg p-2", option.accentClass)}>
+                    <Icon className="h-4 w-4" />
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-sm font-semibold">{option.name}</span>
+                      {option.code === "EMITRA" && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                              aria-label={t("partner.emitraInfoAria")}
+                              onClick={(e) => e.stopPropagation()}
+                              onPointerDown={(e) => e.stopPropagation()}
+                            >
+                              <Info className="h-3.5 w-3.5" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            align="start"
+                            className="w-[22rem] p-0 sm:w-96"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="border-b px-3 py-2.5">
+                              <p className="text-sm font-semibold">{t("partner.emitraInfoTitle")}</p>
+                              <p className="mt-0.5 text-xs text-muted-foreground">
+                                {t("partner.emitraInfoHint")}
+                              </p>
+                            </div>
+                            <ul className="max-h-72 divide-y overflow-y-auto">
+                              {EMITRA_STATE_BRANDS.map((row) => (
+                                <li key={row.stateEn} className="px-3 py-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    {locale === "hi" ? row.stateHi : row.stateEn}
+                                  </p>
+                                  <p className="text-sm font-medium leading-snug">{row.brand}</p>
+                                </li>
+                              ))}
+                            </ul>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                      <Badge className="h-5 text-[10px]">{t("partner.available")}</Badge>
+                      {option.code === DEFAULT_PARTNER_SIGNUP_CODE && (
+                        <Badge variant="secondary" className="h-5 text-[10px]">
+                          {t("partner.default")}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{option.shortDescription}</p>
+                  </div>
+                  {isSelected && (
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  )}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
+        </div>
 
-          <div className="flex flex-col sm:flex-row justify-between gap-3 pt-2 border-t">
-            <Button variant="outline" onClick={() => navigate("/")}>
-              {t("partner.cancel")}
-            </Button>
-            <Button
-              disabled={selected.status !== "live"}
-              onClick={() => selected && requestContinue(selected)}
-              className="gap-1.5"
-            >
-              {t("partner.continue", { name: selected.name })}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
+        <Button
+          disabled={selected.status !== "live"}
+          onClick={() => selected && requestContinue(selected)}
+          className="mt-5 h-11 w-full gap-1.5 bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+        >
+          {t("partner.continue", { name: selected.name })}
+          <ArrowRight className="h-4 w-4" />
+        </Button>
 
-          <p className="text-xs text-muted-foreground text-center">
-            {t("partner.already")}{" "}
-            <Link to="/partner/login" className="text-primary hover:underline font-medium">
-              {t("partner.signIn")}
-            </Link>
-          </p>
-        </Card>
-      </div>
+        <p className="pt-4 text-center text-sm text-muted-foreground">
+          {t("partner.already")}{" "}
+          <Link to="/partner/login" className="font-medium text-primary hover:underline">
+            {t("partner.signIn")}
+          </Link>
+        </p>
+      </AuthSplitLayout>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="sm:max-w-md">
@@ -205,12 +202,12 @@ export default function PartnerRegister() {
               {t("partner.confirmBody", { name: selected?.name ?? "partner" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="sm:justify-center gap-2">
+          <AlertDialogFooter className="gap-2 sm:justify-center">
             <AlertDialogCancel>{t("partner.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={goToOnboarding}>{t("partner.confirmCta")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }

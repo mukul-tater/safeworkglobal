@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Store, GraduationCap, Briefcase, HeartPulse, UsersRound, ArrowRight, Home } from 'lucide-react';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import AboutLanguageToggle from '@/components/AboutLanguageToggle';
+import { Building2, Store, GraduationCap, Briefcase, HeartPulse, UsersRound, ArrowRight } from 'lucide-react';
+import AuthSplitLayout from '@/components/AuthSplitLayout';
 
 const OPTIONS = [
   {
@@ -58,68 +56,58 @@ const OPTIONS = [
 
 export default function PartnerLoginChooser() {
   return (
-    <div className="min-h-screen bg-muted/30 flex flex-col">
-      <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <a
-            href="https://safeworkglobal.com"
-            className="flex items-center gap-2 hover:opacity-80"
+    <AuthSplitLayout
+      audience="partner"
+      variant="login"
+      maxWidthClassName="max-w-[480px]"
+      centerVertically={false}
+    >
+      <div className="mb-5">
+        <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
+          Sign in to continue
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Choose your account type. Trade test centres use SSVN login — not E-Mitra.
+        </p>
+      </div>
+
+      <div className="grid gap-2">
+        {OPTIONS.map((opt) => (
+          <Link
+            key={opt.code}
+            to={opt.to}
+            className="flex items-start gap-3 rounded-xl border border-border px-3 py-3 transition-all hover:border-primary/40 hover:bg-muted/50"
           >
-            <img src="/safework-global-logo.png" alt="SafeWork Global" className="h-8 w-8 rounded-lg" />
-            <span className="font-semibold text-sm sm:text-base">SafeWork Global</span>
-          </a>
-          <div className="flex items-center gap-1">
-            <AboutLanguageToggle compact />
-            <ThemeToggle />
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/">
-                <Home className="h-4 w-4 mr-1" />
-                Home
-              </Link>
-            </Button>
-          </div>
+            <div className={`shrink-0 rounded-lg p-2 ${opt.accent}`}>
+              <opt.Icon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold">{opt.title}</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">{opt.description}</p>
+            </div>
+            <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+          </Link>
+        ))}
+      </div>
+
+      <p className="pt-5 text-center text-sm text-muted-foreground">
+        New partner?{' '}
+        <Link to="/partner/register" className="font-medium text-primary hover:underline">
+          Apply here
+        </Link>
+      </p>
+
+      <div className="mt-5 border-t border-border pt-4">
+        <p className="mb-2.5 text-center text-xs text-muted-foreground">Looking for a different portal?</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button asChild variant="outline" className="h-10 text-sm font-medium">
+            <Link to="/worker/login">Worker sign in</Link>
+          </Button>
+          <Button asChild variant="outline" className="h-10 text-sm font-medium">
+            <Link to="/employer/login">Employer sign in</Link>
+          </Button>
         </div>
-      </header>
-
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-xl space-y-5">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Partner Sign In</h1>
-            <p className="text-sm text-muted-foreground">
-              Choose your account type. Trade test centres use SSVN login — not E-Mitra.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {OPTIONS.map((opt) => (
-              <Card key={opt.code} className="overflow-hidden">
-                <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className={`p-3 rounded-xl shrink-0 w-fit ${opt.accent}`}>
-                    <opt.Icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="font-semibold">{opt.title}</h2>
-                    <p className="text-sm text-muted-foreground mt-0.5">{opt.description}</p>
-                  </div>
-                  <Button asChild className="shrink-0 gap-1.5">
-                    <Link to={opt.to}>
-                      Sign in
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <p className="text-center text-sm text-muted-foreground">
-            New partner?{' '}
-            <Link to="/partner/register" className="text-primary font-medium hover:underline">
-              Apply here
-            </Link>
-          </p>
-        </div>
-      </main>
-    </div>
+      </div>
+    </AuthSplitLayout>
   );
 }
