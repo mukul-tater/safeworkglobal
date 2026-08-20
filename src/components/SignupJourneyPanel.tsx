@@ -4,12 +4,10 @@ import { BadgeCheck, Building2, LogIn, ShieldCheck, UserPlus, Users, Wallet } fr
 const TRUST = {
   worker: [
     { icon: ShieldCheck, label: 'Verified employers' },
-    { icon: Wallet, label: 'Escrow pay' },
     { icon: BadgeCheck, label: 'Free to start' },
   ],
   employer: [
     { icon: Users, label: 'Verified workers' },
-    { icon: Wallet, label: 'Escrow pay' },
     { icon: BadgeCheck, label: 'Free to start' },
   ],
 } as const;
@@ -24,7 +22,7 @@ const COPY = {
       steps: [
         { n: '1', title: 'Create account', detail: 'Name, email, mobile OTP & password' },
         { n: '2', title: 'Verify skills', detail: 'Profile, proofs & trade checks' },
-        { n: '3', title: 'Get matched', detail: 'Verified Gulf employers, escrow pay' },
+        { n: '3', title: 'Get matched', detail: 'Verified Gulf employers' },
       ],
     },
     login: {
@@ -35,7 +33,7 @@ const COPY = {
       steps: [
         { n: '1', title: 'Sign in', detail: 'Mobile or email + password' },
         { n: '2', title: 'Continue journey', detail: 'Pick up where you left off' },
-        { n: '3', title: 'Get matched', detail: 'Verified Gulf employers, escrow pay' },
+        { n: '3', title: 'Get matched', detail: 'Verified Gulf employers' },
       ],
     },
   },
@@ -48,7 +46,7 @@ const COPY = {
       steps: [
         { n: '1', title: 'Create account', detail: 'Name, work email & password' },
         { n: '2', title: 'Verify company', detail: 'Details, hiring needs & documents' },
-        { n: '3', title: 'Hire talent', detail: 'Post jobs, shortlist, escrow pay' },
+        { n: '3', title: 'Hire talent', detail: 'Post jobs, shortlist' },
       ],
     },
     login: {
