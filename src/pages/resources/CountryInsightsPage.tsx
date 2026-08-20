@@ -12,7 +12,7 @@ export default function CountryInsightsPage() {
       <SEOHead
         title="Country Insights | SafeWork Global"
         description="Know the country, understand the work, and learn about living conditions before you travel."
-        canonicalUrl="https://safeworkglobal.com/country-insights"
+        canonicalUrl="https://www.safeworkglobal.com/country-insights"
       />
       <Header />
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-muted/40 to-background">

@@ -66,7 +66,7 @@ const stories = [
 export default function SuccessStories() {
   return (
     <ResourcePageLayout
-      title="Success Stories — Real Workers, Real Earnings | SafeWorkGlobal"
+      title="Success Stories | SafeWork Global"
       description="Read how Indian workers transformed their families' lives by working overseas through SafeWorkGlobal."
       eyebrow="Success Stories"
       heading="From small towns to global careers"

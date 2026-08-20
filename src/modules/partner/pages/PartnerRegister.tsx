@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
+import SEOHead from "@/components/SEOHead";
 import {
   DEFAULT_PARTNER_SIGNUP_CODE,
   EMITRA_STATE_BRANDS,
@@ -54,6 +55,10 @@ export default function PartnerRegister() {
 
   return (
     <>
+      <SEOHead
+        title="Partner Registration | SafeWork Global"
+        description="Apply to join the SafeWork Global partner network as E-Mitra, a trade test centre, ITI, licensed recruitment agency or consultant."
+      />
       <AuthSplitLayout
         audience="partner"
         maxWidthClassName="max-w-[480px]"

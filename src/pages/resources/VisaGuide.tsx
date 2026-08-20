@@ -71,7 +71,7 @@ const visas = [
 export default function VisaGuide() {
   return (
     <ResourcePageLayout
-      title="Visa Guide for Overseas Jobs | SafeWorkGlobal"
+      title="Visa Guide for Overseas Jobs | SafeWork Global"
       description="Step-by-step visa requirements, costs and processing times for the top 6 destinations Indian workers move to."
       eyebrow="Visa Guide"
       heading="Visas, demystified — country by country"

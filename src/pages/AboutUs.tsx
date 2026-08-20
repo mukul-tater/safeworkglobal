@@ -216,16 +216,15 @@ export default function AboutUs() {
   return (
     <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
       <SEOHead
-        title="About SafeWork Global | India's Workforce Mobility Platform"
+        title="About SafeWork Global"
         description="SafeWork Global is a technology and workforce mobility platform connecting India's skilled workforce with global employment opportunities through worker onboarding, skill verification and a transparent workforce ecosystem."
         keywords="SafeWork Global, workforce mobility, skilled workers India, overseas employment, skill verification, GCC jobs"
-        canonicalUrl="https://safeworkglobal.com/about"
-        ogImage="https://safeworkglobal.com/safework-global-logo.png"
+        canonicalUrl="https://www.safeworkglobal.com/about"
         structuredData={{
           "@context": "https://schema.org",
           "@type": "AboutPage",
           name: "About SafeWork Global",
-          url: "https://safeworkglobal.com/about",
+          url: "https://www.safeworkglobal.com/about",
           description:
             "SafeWork Global is a technology and workforce mobility platform connecting India's skilled workforce with global employment opportunities.",
           mainEntity: {

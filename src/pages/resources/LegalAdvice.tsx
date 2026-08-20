@@ -34,7 +34,7 @@ const helplines = [
 export default function LegalAdvice() {
   return (
     <ResourcePageLayout
-      title="Legal Advice for Overseas Indian Workers | SafeWorkGlobal"
+      title="Legal Advice for Overseas Indian Workers | SafeWork Global"
       description="Know your rights, avoid scams and get the right helpline numbers before you travel for overseas work."
       eyebrow="Legal Advice"
       heading="Know your rights — before you fly"

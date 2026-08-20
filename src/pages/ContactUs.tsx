@@ -126,9 +126,9 @@ export default function ContactUs() {
   return (
     <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
       <SEOHead
-        title="Contact Us | SafeWork Global"
+        title="Contact SafeWork Global"
         description="Connect with SafeWork Global for worker registration, skill verification, employer enquiries, partnership opportunities and overseas employment support."
-        canonicalUrl="https://safeworkglobal.com/contact"
+        canonicalUrl="https://www.safeworkglobal.com/contact"
       />
       <Header />
       <MobileBottomNav />

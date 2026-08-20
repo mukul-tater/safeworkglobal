@@ -62,7 +62,7 @@ const guides = [
 export default function CulturalGuides() {
   return (
     <ResourcePageLayout
-      title="Cultural Guides for Indian Workers Abroad | SafeWorkGlobal"
+      title="Cultural Guides for Indian Workers Abroad | SafeWork Global"
       description="Practical cultural do's and don'ts for Indian workers moving to the UAE, Saudi Arabia, Qatar, Germany, Singapore and Canada."
       eyebrow="Cultural Guides"
       heading="Settle in faster, work smarter"

@@ -8,8 +8,8 @@ export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
       <SEOHead
-        title="Terms of Service | SafeWorkGlobal"
-        description="Read the terms and conditions governing your use of the SafeWorkGlobal platform."
+        title="Terms of Service | SafeWork Global"
+        description="Read the terms and conditions governing your use of the SafeWork Global platform."
       />
       <Header />
       <main className="container mx-auto px-4 sm:px-6 py-12 max-w-4xl">

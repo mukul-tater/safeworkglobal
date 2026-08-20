@@ -11,6 +11,7 @@ import { validateSchema } from "@/lib/validations/common";
 import { quickEmployerSignupSchema } from "@/lib/validations/onboarding";
 import GoogleAuthButton from "@/modules/worker-registration/components/GoogleAuthButton";
 import SignupJourneyPanel from "@/components/SignupJourneyPanel";
+import SEOHead from "@/components/SEOHead";
 
 export default function QuickEmployerSignup() {
   const navigate = useNavigate();
@@ -107,6 +108,10 @@ export default function QuickEmployerSignup() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-muted/40">
+      <SEOHead
+        title="Employer Signup | SafeWork Global"
+        description="Create a SafeWork Global employer account to hire skill-verified workers through a technology and workforce mobility platform."
+      />
       <div className="flex h-full flex-col md:flex-row">
         <SignupJourneyPanel audience="employer" />
 

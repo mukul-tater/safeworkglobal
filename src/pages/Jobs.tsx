@@ -617,10 +617,10 @@ export default function Jobs() {
       page="jobs"
       publicHead={
         <SEOHead
-          title="SafeWork Global | International Jobs | Find Global Opportunities"
-          description="Browse international job opportunities for skilled workers in construction, electrical, welding and more. Visa sponsorship available across 40+ countries."
-          keywords="international jobs, overseas jobs, visa sponsorship jobs, construction jobs abroad, welding jobs overseas, skilled worker jobs, gulf jobs, middle east jobs"
-          canonicalUrl={`${window.location.origin}/jobs`}
+          title="Jobs | SafeWork Global"
+          description="Browse international job opportunities for skilled workers in construction, electrical, welding and more."
+          keywords="international jobs, overseas jobs, construction jobs abroad, welding jobs overseas, skilled worker jobs, gulf jobs, middle east jobs"
+          canonicalUrl="https://www.safeworkglobal.com/jobs"
           ogType="website"
           structuredData={jobListingStructuredData}
         />

@@ -1,6 +1,14 @@
 import { useEffect } from 'react';
+import {
+  DEFAULT_OG_IMAGE,
+  DEFAULT_OG_IMAGE_HEIGHT,
+  DEFAULT_OG_IMAGE_WIDTH,
+  SITE_NAME,
+  SITE_ORIGIN,
+  canonicalUrl as toCanonical,
+} from '@/lib/seo';
 
-const BRAND = 'SafeWork Global';
+const BRAND = SITE_NAME;
 
 function formatDocumentTitle(title: string): string {
   const trimmed = title.trim();
@@ -14,12 +22,14 @@ function formatDocumentTitle(title: string): string {
     .replace(/\s*[|—–-]\s*SafeWorkGlobal\s*$/i, '')
     .trim();
 
-  return page ? `${BRAND} | ${page}` : BRAND;
+  return page ? `${page} | ${BRAND}` : BRAND;
 }
 
 interface SEOHeadProps {
   title: string;
   description: string;
+  ogDescription?: string;
+  twitterDescription?: string;
   keywords?: string;
   canonicalUrl?: string;
   ogType?: string;
@@ -30,17 +40,28 @@ interface SEOHeadProps {
 export default function SEOHead({
   title,
   description,
+  ogDescription,
+  twitterDescription,
   keywords,
   canonicalUrl,
   ogType = 'website',
-  ogImage = 'https://lovable.dev/opengraph-image-p98pqg.png',
+  ogImage = DEFAULT_OG_IMAGE,
   structuredData,
 }: SEOHeadProps) {
   useEffect(() => {
     const documentTitle = formatDocumentTitle(title);
     document.title = documentTitle;
+    const socialDescription = ogDescription || description;
+    const tweetDescription = twitterDescription || socialDescription;
 
-    // Update or create meta tags
+    const resolvedCanonical = toCanonical(
+      canonicalUrl || (typeof window !== 'undefined' ? window.location.pathname : '/'),
+    );
+
+    const resolvedOgImage = ogImage.startsWith('http')
+      ? ogImage.replace('https://safeworkglobal.com', SITE_ORIGIN)
+      : `${SITE_ORIGIN}${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`;
+
     const updateMeta = (name: string, content: string, property = false) => {
       const attr = property ? 'property' : 'name';
       let meta = document.querySelector(`meta[${attr}="${name}"]`);
@@ -54,49 +75,46 @@ export default function SEOHead({
 
     updateMeta('description', description);
     if (keywords) updateMeta('keywords', keywords);
-    
-    // Open Graph
-    updateMeta('og:title', documentTitle, true);
-    updateMeta('og:description', description, true);
-    updateMeta('og:type', ogType, true);
-    updateMeta('og:image', ogImage, true);
-    if (canonicalUrl) updateMeta('og:url', canonicalUrl, true);
 
-    // Twitter
+    updateMeta('og:title', documentTitle, true);
+    updateMeta('og:description', socialDescription, true);
+    updateMeta('og:type', ogType, true);
+    updateMeta('og:url', resolvedCanonical, true);
+    updateMeta('og:site_name', BRAND, true);
+    updateMeta('og:image', resolvedOgImage, true);
+    updateMeta('og:image:width', DEFAULT_OG_IMAGE_WIDTH, true);
+    updateMeta('og:image:height', DEFAULT_OG_IMAGE_HEIGHT, true);
+    updateMeta('og:image:alt', `${BRAND} — Indian Skills. Global Opportunities.`, true);
+
     updateMeta('twitter:card', 'summary_large_image');
     updateMeta('twitter:title', documentTitle);
-    updateMeta('twitter:description', description);
-    updateMeta('twitter:image', ogImage);
+    updateMeta('twitter:description', tweetDescription);
+    updateMeta('twitter:image', resolvedOgImage);
 
-    // Canonical URL
-    if (canonicalUrl) {
-      let link = document.querySelector('link[rel="canonical"]');
-      if (!link) {
-        link = document.createElement('link');
-        link.setAttribute('rel', 'canonical');
-        document.head.appendChild(link);
-      }
-      link.setAttribute('href', canonicalUrl);
+    let link = document.querySelector('link[rel="canonical"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      document.head.appendChild(link);
     }
+    link.setAttribute('href', resolvedCanonical);
 
-    // Structured data
     if (structuredData) {
-      let script = document.querySelector('script[type="application/ld+json"]');
+      let script = document.querySelector('script[data-seo-jsonld="page"]');
       if (!script) {
         script = document.createElement('script');
         script.setAttribute('type', 'application/ld+json');
+        script.setAttribute('data-seo-jsonld', 'page');
         document.head.appendChild(script);
       }
       script.textContent = JSON.stringify(structuredData);
     }
 
-    // Cleanup on unmount
     return () => {
-      // Remove structured data script on unmount
-      const ldScript = document.querySelector('script[type="application/ld+json"]');
+      const ldScript = document.querySelector('script[data-seo-jsonld="page"]');
       if (ldScript) ldScript.remove();
     };
-  }, [title, description, keywords, canonicalUrl, ogType, ogImage, structuredData]);
+  }, [title, description, ogDescription, twitterDescription, keywords, canonicalUrl, ogType, ogImage, structuredData]);
 
   return null;
 }

@@ -63,7 +63,7 @@ export default function Workers() {
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
       <SEOHead
-        title="Browse Verified Workers — Hire Globally | SafeWork Global"
+        title="Browse Verified Workers | SafeWork Global"
         description="Preview verified workers ready to relocate. Skilled tradespeople with passports, visas and global experience — hire in days, not months."
       />
       <Header />

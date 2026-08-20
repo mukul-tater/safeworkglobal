@@ -22,8 +22,12 @@ export function CountryInsightsDetail({ country }: { country: CountryInsight }) 
     <div className="min-h-screen bg-background pb-32 md:pb-0">
       <SEOHead
         title={`${country.name.en} Country Insights | SafeWork Global`}
-        description={country.hero.subheading.en}
-        canonicalUrl={`https://safeworkglobal.com/country-insights/${country.slug}`}
+        description={
+          country.slug === "uae"
+            ? "Understand work environments, accommodation, employment conditions and important information before travelling to the UAE for work."
+            : country.hero.subheading.en
+        }
+        canonicalUrl={`https://www.safeworkglobal.com/country-insights/${country.slug}`}
       />
       <Header />
       <CountryHero country={country} />

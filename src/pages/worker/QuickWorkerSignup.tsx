@@ -23,6 +23,7 @@ import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAut
 import TermsAgreeRow from '@/components/TermsAgreeRow';
 import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 import SignupJourneyPanel from '@/components/SignupJourneyPanel';
+import SEOHead from '@/components/SEOHead';
 
 type Step = 'form' | 'otp';
 
@@ -185,6 +186,10 @@ export default function QuickWorkerSignup() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-muted/40">
+      <SEOHead
+        title="Worker Registration | SafeWork Global"
+        description="Create a free SafeWork Global worker profile to complete skill verification and connect with global employment opportunities."
+      />
       <div className="flex h-full flex-col md:flex-row">
         <SignupJourneyPanel />
 

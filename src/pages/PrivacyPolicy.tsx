@@ -8,8 +8,8 @@ export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
       <SEOHead
-        title="Privacy Policy | SafeWorkGlobal"
-        description="Learn how SafeWorkGlobal collects, uses, and protects your personal data. Read our comprehensive privacy policy."
+        title="Privacy Policy | SafeWork Global"
+        description="Learn how SafeWork Global collects, uses, and protects your personal data."
       />
       <Header />
       <main className="container mx-auto px-4 sm:px-6 py-12 max-w-4xl">

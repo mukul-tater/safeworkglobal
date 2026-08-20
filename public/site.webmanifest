@@ -1,0 +1,29 @@
+{
+  "name": "SafeWork Global",
+  "short_name": "SafeWork Global",
+  "description": "Technology and workforce mobility platform connecting India's skilled workforce with global employment opportunities.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A1B3D",
+  "theme_color": "#0A1B3D",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/safework-global-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

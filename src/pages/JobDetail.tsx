@@ -655,10 +655,10 @@ export default function JobDetail() {
           </div>
     </>,
     <SEOHead
-      title={`${job.title} at ${companyName} | SafeWorkGlobal`}
+      title={`${job.title} at ${companyName} | SafeWork Global`}
       description={`Apply for ${job.title} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(job.salary_min, job.salary_max, job.currency)}/month.`}
       keywords={`${job.title}, ${job.location} jobs, ${job.country} jobs, ${companyName} careers, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
-      canonicalUrl={`${window.location.origin}/jobs/${job.slug}`}
+      canonicalUrl={`${job.slug ? `https://www.safeworkglobal.com/jobs/${job.slug}` : "https://www.safeworkglobal.com/jobs"}`}
       ogType="article"
       structuredData={jobStructuredData}
     />,

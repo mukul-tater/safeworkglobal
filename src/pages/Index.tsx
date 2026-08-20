@@ -1,4 +1,6 @@
 import Header from "@/components/Header";
+import SEOHead from "@/components/SEOHead";
+import { DEFAULT_DESCRIPTION, DEFAULT_OG_DESCRIPTION, DEFAULT_TITLE, canonicalUrl } from "@/lib/seo";
 import HeroSection from "@/components/HeroSection";
 import HomeSearchBar from "@/components/HomeSearchBar";
 import HomeTradesStrip from "@/components/HomeTradesStrip";
@@ -25,6 +27,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0">
+      <SEOHead
+        title={DEFAULT_TITLE}
+        description={DEFAULT_DESCRIPTION}
+        ogDescription={DEFAULT_OG_DESCRIPTION}
+        twitterDescription="India's skilled workforce. Global opportunities."
+        canonicalUrl={canonicalUrl("/")}
+      />
       <Header />
 
       <HeroSection />

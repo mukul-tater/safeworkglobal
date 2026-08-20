@@ -48,7 +48,7 @@ const faqs = [
 export default function SupportCenter() {
   return (
     <ResourcePageLayout
-      title="Support Center — We're Here to Help | SafeWorkGlobal"
+      title="Support Center | SafeWork Global"
       description="Get answers to common questions and reach our support team by email, phone or chat."
       eyebrow="Support Center"
       heading="We're here, every step of the way"

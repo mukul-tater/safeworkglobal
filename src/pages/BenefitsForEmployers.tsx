@@ -171,7 +171,7 @@ export default function BenefitsForEmployers() {
       <SEOHead
         title="Benefits for Employers | SafeWork Global"
         description="Access India's skilled workforce through a structured, technology-enabled and skill-first pipeline. Simple 1% monthly model for UAE and GCC employers."
-        canonicalUrl="https://safeworkglobal.com/benefits-for-employers"
+        canonicalUrl="https://www.safeworkglobal.com/benefits-for-employers"
       />
       <Header />
 

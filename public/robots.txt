@@ -10,5 +10,29 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: WhatsApp
+Allow: /
+
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /dashboard
+Disallow: /auth
+Disallow: /login
+Disallow: /worker/login
+Disallow: /worker/dashboard
+Disallow: /worker/journey
+Disallow: /employer/login
+Disallow: /employer/dashboard
+Disallow: /partner/login
+Disallow: /partner/dashboard
+Disallow: /partner/ssvn/
+Disallow: /partner/iti/
+Disallow: /partner/srn/
+Disallow: /partner/consultant/
+Disallow: /emitra/login
+Disallow: /emitra/dashboard
+Disallow: /interviewer/
+
+Sitemap: https://www.safeworkglobal.com/sitemap.xml
