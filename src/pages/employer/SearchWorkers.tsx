@@ -87,6 +87,7 @@ export default function SearchWorkers() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState<{ url: string; name: string } | null>(null);
   const [sortBy, setSortBy] = useState<string>('best_match');
+  const [visibleFields, setVisibleFields] = useState<FieldVisibilityMap>({});
 
   useEffect(() => {
     loadWorkers();
