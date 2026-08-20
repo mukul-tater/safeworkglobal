@@ -351,7 +351,13 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <Pressable
                       key={opt.val}
-                      onPress={() => setOverseas({ ...overseas, workedOutsideIndia: opt.val as any })}
+                      onPress={() =>
+                        setOverseas({
+                          ...overseas,
+                          workedOutsideIndia: opt.val as 'yes' | 'no',
+                          gccReturn: opt.val === 'no' ? 'no' : overseas.gccReturn,
+                        })
+                      }
                       style={[styles.chip, overseas.workedOutsideIndia === opt.val && styles.chipActive]}
                     >
                       <Text
@@ -366,8 +372,45 @@ export default function WorkerPreJourneyScreeningModal({
                   ))}
                 </View>
                 {errors.workedOutsideIndia ? <Text style={styles.errorText}>{errors.workedOutsideIndia}</Text> : null}
+              </Card>
 
-                {overseas.workedOutsideIndia === 'yes' ? (
+              {/* GCC return */}
+              <Card elevated={false}>
+                <Text style={styles.questionText}>4. Are you a GCC return worker?</Text>
+                <Text style={styles.sectionDesc}>
+                  Have you previously worked in a GCC country (UAE, Saudi Arabia, Qatar, Kuwait, Oman or Bahrain)
+                  and returned to India?
+                </Text>
+                <View style={styles.chipGroup}>
+                  {[
+                    { val: 'no', label: 'No' },
+                    { val: 'yes', label: 'Yes' },
+                  ].map((opt) => (
+                    <Pressable
+                      key={opt.val}
+                      onPress={() =>
+                        setOverseas({
+                          ...overseas,
+                          gccReturn: opt.val as 'yes' | 'no',
+                          workedOutsideIndia: opt.val === 'yes' ? 'yes' : overseas.workedOutsideIndia,
+                        })
+                      }
+                      style={[styles.chip, overseas.gccReturn === opt.val && styles.chipActive]}
+                    >
+                      <Text
+                        style={[
+                          styles.chipText,
+                          overseas.gccReturn === opt.val && styles.chipTextActive,
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                {errors.gccReturn ? <Text style={styles.errorText}>{errors.gccReturn}</Text> : null}
+
+                {overseas.workedOutsideIndia === 'yes' || overseas.gccReturn === 'yes' ? (
                   <View style={styles.subInputContainer}>
                     <Input
                       label="Country"
@@ -437,7 +480,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Deported */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  4. Have you ever been deported, removed or repatriated from another country?
+                  5. Have you ever been deported, removed or repatriated from another country?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -470,7 +513,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Visa Refusal */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  5. Have you ever been refused entry, refused a work visa, or had a visa cancelled?
+                  6. Have you ever been refused entry, refused a work visa, or had a visa cancelled?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -508,7 +551,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Overstayed */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  6. Have you ever overstayed a visa or violated immigration rules in another country?
+                  7. Have you ever overstayed a visa or violated immigration rules in another country?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -556,7 +599,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Registered with other agency */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  7. Have you previously registered with another recruitment agency/agent for this job?
+                  8. Have you previously registered with another recruitment agency/agent for this job?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -595,7 +638,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Paid Money */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  8. Have you already paid money to any person/agency for an overseas job related to this application?
+                  9. Have you already paid money to any person/agency for an overseas job related to this application?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -633,7 +676,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Promised job for money */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  9. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
+                  10. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[

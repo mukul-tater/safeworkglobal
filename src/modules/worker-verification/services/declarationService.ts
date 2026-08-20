@@ -21,6 +21,7 @@ export const INITIAL_MEDICAL: MedicalFitnessDeclaration = {
 
 export const INITIAL_OVERSEAS: PreviousOverseasEmploymentDeclaration = {
   workedOutsideIndia: '',
+  gccReturn: '',
   overseasDetails: {
     country: '',
     employer: '',
@@ -75,7 +76,10 @@ export function validateStep2(overseas: PreviousOverseasEmploymentDeclaration): 
   if (!overseas.workedOutsideIndia) {
     errors.workedOutsideIndia = 'Please select if you have previously worked outside India.';
   }
-  if (overseas.workedOutsideIndia === 'yes') {
+  if (!overseas.gccReturn) {
+    errors.gccReturn = 'Please select if you are a GCC return worker.';
+  }
+  if (overseas.workedOutsideIndia === 'yes' || overseas.gccReturn === 'yes') {
     const details = overseas.overseasDetails;
     if (!details?.country?.trim()) errors.country = 'Please enter country name.';
     if (!details?.employer?.trim()) errors.employer = 'Please enter employer name.';

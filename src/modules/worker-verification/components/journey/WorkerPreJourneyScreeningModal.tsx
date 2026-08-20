@@ -406,7 +406,13 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         name="workedOutsideIndia"
                         value={opt.val}
                         checked={overseas.workedOutsideIndia === opt.val}
-                        onChange={() => setOverseas({ ...overseas, workedOutsideIndia: opt.val as any })}
+                        onChange={() =>
+                          setOverseas({
+                            ...overseas,
+                            workedOutsideIndia: opt.val as 'yes' | 'no',
+                            gccReturn: opt.val === 'no' ? 'no' : overseas.gccReturn,
+                          })
+                        }
                         className="sr-only"
                       />
                       {opt.label}
@@ -416,8 +422,54 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 {errors.workedOutsideIndia && (
                   <p className="text-xs font-medium text-destructive">{errors.workedOutsideIndia}</p>
                 )}
+              </div>
 
-                {overseas.workedOutsideIndia === 'yes' && (
+              {/* Question 4 — GCC return */}
+              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+                <Label className="text-sm font-semibold text-foreground leading-snug">
+                  4. Are you a GCC return worker?
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Have you previously worked in a GCC country (UAE, Saudi Arabia, Qatar, Kuwait, Oman or Bahrain)
+                  and returned to India?
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { val: 'no', label: 'No' },
+                    { val: 'yes', label: 'Yes' },
+                  ].map((opt) => (
+                    <label
+                      key={opt.val}
+                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                        overseas.gccReturn === opt.val
+                          ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
+                          : 'border-border bg-background hover:bg-muted/50 text-foreground'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="gccReturn"
+                        value={opt.val}
+                        checked={overseas.gccReturn === opt.val}
+                        onChange={() =>
+                          setOverseas({
+                            ...overseas,
+                            gccReturn: opt.val as 'yes' | 'no',
+                            workedOutsideIndia:
+                              opt.val === 'yes' ? 'yes' : overseas.workedOutsideIndia,
+                          })
+                        }
+                        className="sr-only"
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+                {errors.gccReturn && (
+                  <p className="text-xs font-medium text-destructive">{errors.gccReturn}</p>
+                )}
+
+                {(overseas.workedOutsideIndia === 'yes' || overseas.gccReturn === 'yes') && (
                   <div className="mt-4 space-y-3 rounded-lg bg-muted/40 p-3 sm:p-4 border border-border/50 animate-in fade-in">
                     <p className="text-xs font-bold text-foreground uppercase tracking-wider">
                       Details of Previous Overseas Employment
@@ -503,10 +555,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 4 */}
+              {/* Question 5 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  4. Have you previously been deported, removed or repatriated from another country?
+                  5. Have you previously been deported, removed or repatriated from another country?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -549,10 +601,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 5 */}
+              {/* Question 6 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  5. Have you ever been refused entry, refused a work visa, or had an employment/residence visa cancelled by another country?
+                  6. Have you ever been refused entry, refused a work visa, or had an employment/residence visa cancelled by another country?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -595,10 +647,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 6 */}
+              {/* Question 7 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  6. Have you ever overstayed a visa or violated immigration rules in another country?
+                  7. Have you ever overstayed a visa or violated immigration rules in another country?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -656,10 +708,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 </p>
               </div>
 
-              {/* Question 7 */}
+              {/* Question 8 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  7. Have you previously registered with another overseas recruitment agency/agent for this job or another overseas job?
+                  8. Have you previously registered with another overseas recruitment agency/agent for this job or another overseas job?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -703,10 +755,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 8 */}
+              {/* Question 9 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  8. Have you already paid money to any person/agency for an overseas job related to this application?
+                  9. Have you already paid money to any person/agency for an overseas job related to this application?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -749,10 +801,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 9 */}
+              {/* Question 10 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  9. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
+                  10. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[

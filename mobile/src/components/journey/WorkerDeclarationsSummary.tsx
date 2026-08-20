@@ -96,7 +96,13 @@ export default function WorkerDeclarationsSummary({ declaration, onEdit }: Props
                 <Text style={styles.label}>Worked Outside India: </Text>
                 <Text style={styles.value}>{declaration.overseas?.workedOutsideIndia || 'No'}</Text>
               </Text>
-              {declaration.overseas?.workedOutsideIndia === 'yes' && declaration.overseas?.overseasDetails ? (
+              <Text style={styles.itemText}>
+                <Text style={styles.label}>GCC return: </Text>
+                <Text style={styles.value}>{declaration.overseas?.gccReturn || '—'}</Text>
+              </Text>
+              {(declaration.overseas?.workedOutsideIndia === 'yes' ||
+                declaration.overseas?.gccReturn === 'yes') &&
+              declaration.overseas?.overseasDetails ? (
                 <Text style={styles.itemText}>
                   <Text style={styles.label}>Country / employer / trade: </Text>
                   <Text style={styles.value}>

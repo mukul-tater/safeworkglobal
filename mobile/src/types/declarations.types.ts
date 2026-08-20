@@ -15,6 +15,8 @@ export interface OverseasWorkItem {
 
 export interface PreviousOverseasEmploymentDeclaration {
   workedOutsideIndia: 'no' | 'yes' | '';
+  /** Previously worked in a GCC country and returned to India. */
+  gccReturn: 'no' | 'yes' | '';
   overseasDetails?: OverseasWorkItem;
   beenDeported: 'no' | 'yes' | '';
   deportedDetails?: string;

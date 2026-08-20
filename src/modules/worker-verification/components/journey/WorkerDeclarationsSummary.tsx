@@ -126,7 +126,13 @@ export default function WorkerDeclarationsSummary({ declaration, className }: Pr
                 label="Worked outside India"
                 value={formatYesNo(declaration.overseas?.workedOutsideIndia)}
               />
-              {declaration.overseas?.workedOutsideIndia === 'yes' && declaration.overseas?.overseasDetails && (
+              <Detail
+                label="GCC return"
+                value={formatYesNo(declaration.overseas?.gccReturn)}
+              />
+              {(declaration.overseas?.workedOutsideIndia === 'yes' ||
+                declaration.overseas?.gccReturn === 'yes') &&
+                declaration.overseas?.overseasDetails && (
                 <>
                   <Detail
                     label="Country"
