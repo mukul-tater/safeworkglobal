@@ -415,9 +415,13 @@ export default function SearchWorkers() {
           ) : sortedWorkers.length === 0 ? (
             <Card className="p-12 text-center">
               <Globe className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No workers found</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                {allWorkers.length === 0 ? 'No workers shared with you yet' : 'No workers found'}
+              </h3>
               <p className="text-muted-foreground mb-4">
-                Try removing some filters or broadening your criteria.
+                {allWorkers.length === 0
+                  ? 'Your account manager decides which workers are available to your company. Contact support to request access to more trades.'
+                  : 'Try removing some filters or broadening your criteria.'}
               </p>
               <Button variant="outline" onClick={() => { setFilters(DEFAULT_FILTERS); setWorkers(allWorkers); }}>
                 Reset all filters
