@@ -4244,14 +4244,11 @@ export type Database = {
           kyc_status: string
           kyc_verified_at: string | null
           media_submitted_at: string | null
-          medical_blood_report_url: string | null
           medical_instructions: string | null
           medical_place: string | null
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
-          medical_xray_photo_url: string | null
-          medical_xray_report_url: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_status: string | null
@@ -4318,14 +4315,11 @@ export type Database = {
           kyc_status?: string
           kyc_verified_at?: string | null
           media_submitted_at?: string | null
-          medical_blood_report_url?: string | null
           medical_instructions?: string | null
           medical_place?: string | null
           medical_result_url?: string | null
           medical_scheduled_at?: string | null
           medical_status?: string | null
-          medical_xray_photo_url?: string | null
-          medical_xray_report_url?: string | null
           paid_at?: string | null
           payment_amount?: number | null
           payment_status?: string | null
@@ -4392,14 +4386,11 @@ export type Database = {
           kyc_status?: string
           kyc_verified_at?: string | null
           media_submitted_at?: string | null
-          medical_blood_report_url?: string | null
           medical_instructions?: string | null
           medical_place?: string | null
           medical_result_url?: string | null
           medical_scheduled_at?: string | null
           medical_status?: string | null
-          medical_xray_photo_url?: string | null
-          medical_xray_report_url?: string | null
           paid_at?: string | null
           payment_amount?: number | null
           payment_status?: string | null
@@ -4736,14 +4727,11 @@ export type Database = {
           kyc_status: string
           kyc_verified_at: string | null
           media_submitted_at: string | null
-          medical_blood_report_url: string | null
           medical_instructions: string | null
           medical_place: string | null
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
-          medical_xray_photo_url: string | null
-          medical_xray_report_url: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_status: string | null
@@ -4819,14 +4807,11 @@ export type Database = {
           kyc_status: string
           kyc_verified_at: string | null
           media_submitted_at: string | null
-          medical_blood_report_url: string | null
           medical_instructions: string | null
           medical_place: string | null
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
-          medical_xray_photo_url: string | null
-          medical_xray_report_url: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_status: string | null
@@ -5082,14 +5067,11 @@ export type Database = {
           kyc_status: string
           kyc_verified_at: string | null
           media_submitted_at: string | null
-          medical_blood_report_url: string | null
           medical_instructions: string | null
           medical_place: string | null
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
-          medical_xray_photo_url: string | null
-          medical_xray_report_url: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_status: string | null
@@ -5165,14 +5147,11 @@ export type Database = {
           kyc_status: string
           kyc_verified_at: string | null
           media_submitted_at: string | null
-          medical_blood_report_url: string | null
           medical_instructions: string | null
           medical_place: string | null
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
-          medical_xray_photo_url: string | null
-          medical_xray_report_url: string | null
           paid_at: string | null
           payment_amount: number | null
           payment_status: string | null
