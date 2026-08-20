@@ -273,11 +273,16 @@ export async function setActiveBondTemplate(id: string): Promise<void> {
 
 export async function submitQuiz(
   userId: string,
-  answers: { quiz_item_id: string; answer: boolean; expected: boolean }[],
+  answers: { quiz_item_id: string; answer: boolean }[],
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
-  const correct = answers.filter((a) => a.answer === a.expected).length;
-  const score = answers.length ? Math.round((correct / answers.length) * 1000) / 10 : 0;
+  // Grading and scoring are done server-side against the hidden answer key.
+  const { data: graded, error: gradeErr } = await (supabase as any).rpc('submit_worker_quiz', {
+    p_answers: answers.map((a) => ({ quiz_item_id: a.quiz_item_id, answer: a.answer })),
+  });
+  if (gradeErr) throw new Error(gradeErr.message);
+  const result = Array.isArray(graded) ? graded[0] : graded;
+  const score = Number(result?.score ?? 0);
   const passed = score >= QUIZ_PASS_SCORE;
   const now = new Date().toISOString();
 
