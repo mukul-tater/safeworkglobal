@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import EmployerFlowStepper from "@/components/employer/EmployerFlowStepper";
 import SendJobRequestDialog from "@/components/employer/SendJobRequestDialog";
 import { Send } from "lucide-react";
+import { fetchEmployerWorkers, type EmployerWorkerRow } from "@/services/employerWorkerAccessService";
 
 interface ShortlistedWorker {
   id: string;
@@ -75,24 +76,24 @@ export default function WorkerShortlist() {
         return;
       }
 
-      // Fetch profiles separately
-      const workerIds = shortlistData.map(w => w.worker_id);
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, full_name, email, avatar_url")
-        .in("id", workerIds);
+      // Worker details come from the access-controlled backend function:
+      // only workers assigned to this employer, and only the permitted fields.
+      const allowed = await fetchEmployerWorkers({ limit: 500 });
+      const allowedById = new Map<string, EmployerWorkerRow>(allowed.map(w => [w.worker_user_id, w]));
 
-      if (profilesError) throw profilesError;
-
-      // Combine the data manually
-      const enrichedWorkers = shortlistData.map(worker => ({
-        ...worker,
-        profiles: profilesData?.find(p => p.id === worker.worker_id) || {
-          full_name: null,
-          email: "",
-          avatar_url: null
-        }
-      }));
+      const enrichedWorkers = shortlistData
+        .filter(worker => allowedById.has(worker.worker_id))
+        .map(worker => {
+          const w = allowedById.get(worker.worker_id)!;
+          return {
+            ...worker,
+            profiles: {
+              full_name: w.full_name,
+              email: w.email ?? "",
+              avatar_url: w.avatar_url,
+            },
+          };
+        });
 
       setShortlistedWorkers(enrichedWorkers as any);
       

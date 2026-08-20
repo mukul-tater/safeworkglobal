@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Sparkles, MapPin, Briefcase, Wallet, Star, Eye, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { fetchEmployerWorkers } from "@/services/employerWorkerAccessService";
 import {
   rankWorkers,
   resolveTemplate,
@@ -65,9 +66,21 @@ export default function RecommendedWorkers() {
         };
 
         // 2. Load public worker pool via RPC
-        const { data: workersRaw, error: wErr } = await supabase.rpc("list_public_workers", { p_limit: 200 });
-        if (wErr) throw wErr;
-        const workers: WorkerForMatch[] = (workersRaw || []) as any;
+        const assigned = await fetchEmployerWorkers({ limit: 200 });
+        const workers: WorkerForMatch[] = assigned.map((w) => ({
+          user_id: w.worker_user_id,
+          display_name: w.full_name,
+          avatar_url: w.avatar_url,
+          primary_work_type: w.trade,
+          years_of_experience: w.years_of_experience,
+          expected_salary_min: w.expected_salary_min,
+          expected_salary_max: w.expected_salary_max,
+          current_location: w.current_location,
+          nationality: w.nationality,
+          open_to_relocation: w.open_to_relocation,
+          visa_countries: null,
+          top_skills: w.skills,
+        }));
 
         // 3. Rank
         const ranked = rankWorkers(jobMatch, workers, 10);
