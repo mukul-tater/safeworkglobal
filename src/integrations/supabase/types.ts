@@ -700,6 +700,110 @@ export type Database = {
         }
         Relationships: []
       }
+      employer_field_visibility: {
+        Row: {
+          created_at: string
+          field_key: string
+          id: string
+          org_id: string
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          created_at?: string
+          field_key: string
+          id?: string
+          org_id: string
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          created_at?: string
+          field_key?: string
+          id?: string
+          org_id?: string
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employer_field_visibility_field_key_fkey"
+            columns: ["field_key"]
+            isOneToOne: false
+            referencedRelation: "employer_visible_field_catalog"
+            referencedColumns: ["field_key"]
+          },
+          {
+            foreignKeyName: "employer_field_visibility_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "employer_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employer_org_members: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          permissions: Json
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          permissions?: Json
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          permissions?: Json
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employer_org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "employer_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employer_organizations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employer_profiles: {
         Row: {
           billing_address: string | null
@@ -816,6 +920,112 @@ export type Database = {
           workers_required?: number | null
         }
         Relationships: []
+      }
+      employer_visible_field_catalog: {
+        Row: {
+          default_visible: boolean
+          field_group: string
+          field_key: string
+          label: string
+          sensitive: boolean
+          sort_order: number
+        }
+        Insert: {
+          default_visible?: boolean
+          field_group: string
+          field_key: string
+          label: string
+          sensitive?: boolean
+          sort_order?: number
+        }
+        Update: {
+          default_visible?: boolean
+          field_group?: string
+          field_key?: string
+          label?: string
+          sensitive?: boolean
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      employer_worker_access_rules: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          org_id: string
+          rule_type: string
+          rule_value: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id: string
+          rule_type: string
+          rule_value?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string
+          rule_type?: string
+          rule_value?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employer_worker_access_rules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "employer_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employer_worker_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          note: string | null
+          org_id: string
+          revoked: boolean
+          updated_at: string
+          worker_user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          org_id: string
+          revoked?: boolean
+          updated_at?: string
+          worker_user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          org_id?: string
+          revoked?: boolean
+          updated_at?: string
+          worker_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employer_worker_assignments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "employer_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fx_rates: {
         Row: {
@@ -4575,6 +4785,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_assign_workers: {
+        Args: { p_note?: string; p_org: string; p_worker_ids: string[] }
+        Returns: number
+      }
       admin_create_lsp: {
         Args: {
           p_code: string
@@ -4589,6 +4803,28 @@ export type Database = {
       }
       admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
       admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
+      admin_employer_org_workers: {
+        Args: { p_org: string }
+        Returns: {
+          full_name: string
+          mobile: string
+          source: string
+          state: string
+          trade: string
+          worker_user_id: string
+        }[]
+      }
+      admin_list_employer_orgs: {
+        Args: never
+        Returns: {
+          assigned_workers: number
+          name: string
+          org_id: string
+          owner_email: string
+          owner_user_id: string
+          rules: number
+        }[]
+      }
       admin_mark_bond_received: {
         Args: { p_user_id: string }
         Returns: undefined
@@ -4611,6 +4847,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_revoke_worker_assignment: {
+        Args: { p_org: string; p_worker_user_id: string }
+        Returns: undefined
+      }
       admin_rotate_lsp_secret: { Args: { p_lsp_id: string }; Returns: Json }
       admin_schedule_worker_assessment: {
         Args: {
@@ -4630,6 +4870,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      admin_set_field_visibility: {
+        Args: { p_field_key: string; p_org: string; p_visible: boolean }
+        Returns: undefined
       }
       admin_set_lsp_status: {
         Args: { p_lsp_id: string; p_status: string }
@@ -4860,6 +5104,7 @@ export type Database = {
         Returns: undefined
       }
       consume_lsp_launch_token: { Args: { p_token: string }; Returns: Json }
+      current_employer_org: { Args: never; Returns: string }
       current_partner: {
         Args: never
         Returns: {
@@ -4877,6 +5122,98 @@ export type Database = {
           verification_status: Database["public"]["Enums"]["partner_verification_status"]
           wallet_available: number
           wallet_pending: number
+        }[]
+      }
+      employer_field_map: {
+        Args: { p_org: string }
+        Returns: {
+          field_key: string
+          visible: boolean
+        }[]
+      }
+      employer_get_worker: {
+        Args: { p_worker_user_id: string }
+        Returns: {
+          aadhaar_last4: string
+          availability: string
+          avatar_url: string
+          bio: string
+          currency: string
+          current_city: string
+          current_location: string
+          ecr_status: string
+          email: string
+          expected_salary_max: number
+          expected_salary_min: number
+          full_name: string
+          has_passport: boolean
+          kyc_status: string
+          languages: string[]
+          medical_status: string
+          mobile: string
+          nationality: string
+          open_to_relocation: boolean
+          pan_number: string
+          passport_expiry: string
+          passport_number: string
+          skill_level: string
+          skills: string[]
+          trade: string
+          worker_user_id: string
+          years_of_experience: number
+        }[]
+      }
+      employer_list_workers: {
+        Args: {
+          p_availability?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_trade?: string
+        }
+        Returns: {
+          aadhaar_last4: string
+          availability: string
+          avatar_url: string
+          currency: string
+          current_city: string
+          current_location: string
+          ecr_status: string
+          email: string
+          expected_salary_max: number
+          expected_salary_min: number
+          full_name: string
+          has_passport: boolean
+          kyc_status: string
+          languages: string[]
+          medical_status: string
+          mobile: string
+          nationality: string
+          open_to_relocation: boolean
+          pan_number: string
+          passport_expiry: string
+          passport_number: string
+          skill_level: string
+          skills: string[]
+          total_count: number
+          trade: string
+          worker_user_id: string
+          years_of_experience: number
+        }[]
+      }
+      employer_visible_fields: {
+        Args: never
+        Returns: {
+          field_group: string
+          field_key: string
+          label: string
+          visible: boolean
+        }[]
+      }
+      employer_visible_worker_ids: {
+        Args: { p_org: string }
+        Returns: {
+          worker_user_id: string
         }[]
       }
       generate_partner_code: { Args: never; Returns: string }

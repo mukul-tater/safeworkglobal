@@ -15,6 +15,7 @@ import WorkerComparisonDrawer, { type CompareWorker } from '@/components/employe
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { fetchEmployerVisibleFields, fetchEmployerWorkers, toVisibilityMap, type FieldVisibilityMap } from '@/services/employerWorkerAccessService';
 import { Link } from 'react-router-dom';
 import { WorkerListSkeleton } from '@/components/ui/page-skeleton';
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
@@ -86,6 +87,14 @@ export default function SearchWorkers() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState<{ url: string; name: string } | null>(null);
   const [sortBy, setSortBy] = useState<string>('best_match');
+  const [visibleFields, setVisibleFields] = useState<FieldVisibilityMap>({});
+
+  const hiddenFieldNote = useMemo(() => {
+    const restricted = ['mobile', 'email', 'expected_salary', 'passport', 'aadhaar', 'pan', 'medical']
+      .filter(k => visibleFields[k] === false);
+    if (Object.keys(visibleFields).length === 0 || restricted.length === 0) return null;
+    return 'Some worker details are not shared with your account.';
+  }, [visibleFields]);
 
   useEffect(() => {
     loadWorkers();
@@ -126,32 +135,35 @@ export default function SearchWorkers() {
   const loadWorkers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('list_public_workers', { p_limit: 100 });
-      if (error) throw error;
-      const formatted: Worker[] = (data || []).map((w: any) => ({
-        id: w.user_id,
-        full_name: w.display_name || 'Worker',
+      const [rows, fields] = await Promise.all([
+        fetchEmployerWorkers({ limit: 100 }),
+        fetchEmployerVisibleFields().catch(() => []),
+      ]);
+      setVisibleFields(toVisibilityMap(fields));
+      const formatted: Worker[] = rows.map((w) => ({
+        id: w.worker_user_id,
+        full_name: w.full_name || 'Worker',
         avatar_url: w.avatar_url,
         nationality: w.nationality,
         current_location: w.current_location,
         years_of_experience: w.years_of_experience != null ? Number(w.years_of_experience) : null,
-        expected_salary_min: null,
-        expected_salary_max: null,
-        currency: 'INR',
+        expected_salary_min: w.expected_salary_min != null ? Number(w.expected_salary_min) : null,
+        expected_salary_max: w.expected_salary_max != null ? Number(w.expected_salary_max) : null,
+        currency: w.currency || 'INR',
         availability: w.availability,
         has_passport: !!w.has_passport,
-        has_visa: !!w.has_visa,
-        primary_work_type: w.primary_work_type,
+        has_visa: false,
+        primary_work_type: w.trade,
         skill_level: w.skill_level,
-        skills: (w.top_skills || []).map((s: string) => ({ skill_name: s })),
-        video_url: w.video_url || null,
-        verified_documents: w.verified_documents || [],
-        certifications_count: w.certifications_count || 0,
+        skills: (w.skills || []).map((s: string) => ({ skill_name: s })),
+        video_url: null,
+        verified_documents: [],
+        certifications_count: 0,
         languages: w.languages || [],
         open_to_relocation: !!w.open_to_relocation,
-        preferred_shift: w.preferred_shift,
+        preferred_shift: null,
         ecr_status: w.ecr_status,
-        last_active_at: w.last_active_at,
+        last_active_at: null,
       }));
       setAllWorkers(formatted);
       setWorkers(formatted);
@@ -405,14 +417,25 @@ export default function SearchWorkers() {
             </div>
           )}
 
+          {!loading && hiddenFieldNote && (
+            <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3" /> {hiddenFieldNote}
+            </p>
+          )}
+
+
           {loading ? (
             <WorkerListSkeleton count={4} />
           ) : sortedWorkers.length === 0 ? (
             <Card className="p-12 text-center">
               <Globe className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No workers found</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                {allWorkers.length === 0 ? 'No workers shared with you yet' : 'No workers found'}
+              </h3>
               <p className="text-muted-foreground mb-4">
-                Try removing some filters or broadening your criteria.
+                {allWorkers.length === 0
+                  ? 'Your account manager decides which workers are available to your company. Contact support to request access to more trades.'
+                  : 'Try removing some filters or broadening your criteria.'}
               </p>
               <Button variant="outline" onClick={() => { setFilters(DEFAULT_FILTERS); setWorkers(allWorkers); }}>
                 Reset all filters

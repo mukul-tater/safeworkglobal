@@ -71,6 +71,7 @@ import ContactSubmissions from "./pages/admin/ContactSubmissions";
 import AdminPartnerRewards from "./pages/admin/AdminPartnerRewards";
 import AdminWorkers from "./pages/admin/AdminWorkers";
 import AdminEmployers from "./pages/admin/AdminEmployers";
+import EmployerAccessControl from "./pages/admin/EmployerAccessControl";
 import AdminApplications from "./pages/admin/AdminApplications";
 import AdminPartnerWorkers from "./pages/admin/AdminPartnerWorkers";
 import AdminContentModeration from "./pages/admin/AdminContentModeration";
@@ -335,6 +336,7 @@ function AppShell() {
           <Route path="/admin/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
           <Route path="/admin/workers" element={<AdminRoute><AdminWorkers /></AdminRoute>} />
           <Route path="/admin/employers" element={<AdminRoute><AdminEmployers /></AdminRoute>} />
+          <Route path="/admin/employer-access" element={<AdminRoute><EmployerAccessControl /></AdminRoute>} />
           <Route path="/admin/applications" element={<AdminRoute><AdminApplications /></AdminRoute>} />
           <Route path="/admin/partner-workers" element={<AdminRoute><AdminPartnerWorkers /></AdminRoute>} />
           <Route path="/admin/partners" element={<AdminRoute><PartnerApprovals /></AdminRoute>} />
