@@ -156,12 +156,7 @@ export async function loadQuizItems(
         .select('*')
         .eq('skill_code', skill)
         .eq('active', true),
-      supabase
-        .from('worker_skill_quiz_items')
-        .select('*')
-        .eq('skill_code', skill)
-        .eq('active', true)
-        .order('sort_order', { ascending: true }),
+      (supabase as any).rpc('get_worker_quiz_items', { p_skill: skill }),
     ]);
 
     const configs = (cfgRows || []) as SkillQuizConfig[];
@@ -170,7 +165,11 @@ export async function loadQuizItems(
       configs.find((c) => !c.region) ||
       null;
 
-    const all = (itemRows || []) as SkillQuizItem[];
+    // Answer keys never reach the client — grading happens server-side.
+    const all = ((itemRows || []) as Omit<SkillQuizItem, 'expected_answer'>[]).map((q) => ({
+      ...q,
+      expected_answer: false,
+    })) as SkillQuizItem[];
     if (!all.length) return loadQuizItemsFromJson(skill);
 
     const regional = region ? all.filter((q) => q.region === region) : [];
