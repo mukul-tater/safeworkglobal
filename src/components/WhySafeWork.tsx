@@ -1,4 +1,4 @@
-import { BadgeCheck, FileCheck, Landmark, Wrench } from "lucide-react";
+import { BadgeCheck, FileCheck, Wrench } from "lucide-react";
 import { useI18n } from "@/i18n";
 
 export default function WhySafeWork() {
@@ -7,7 +7,6 @@ export default function WhySafeWork() {
   const trustPoints = [
     { icon: BadgeCheck, title: t("why.t1"), description: t("why.t1d"), iconBg: "bg-primary/10", iconColor: "text-primary" },
     { icon: Wrench, title: t("why.t2"), description: t("why.t2d"), iconBg: "bg-success/10", iconColor: "text-success" },
-    { icon: Landmark, title: t("why.t3"), description: t("why.t3d"), iconBg: "bg-info/10", iconColor: "text-info" },
     { icon: FileCheck, title: t("why.t4"), description: t("why.t4d"), iconBg: "bg-secondary/10", iconColor: "text-secondary" },
   ];
 
@@ -44,7 +43,7 @@ export default function WhySafeWork() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {trustPoints.map((point) => (
             <div
               key={point.title}
