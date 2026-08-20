@@ -79,7 +79,7 @@ export default function WorkerShortlist() {
       // Worker details come from the access-controlled backend function:
       // only workers assigned to this employer, and only the permitted fields.
       const allowed = await fetchEmployerWorkers({ limit: 500 });
-      const allowedById = new Map(allowed.map(w => [w.worker_user_id, w]));
+      const allowedById = new Map<string, EmployerWorkerRow>(allowed.map(w => [w.worker_user_id, w]));
 
       const enrichedWorkers = shortlistData
         .filter(worker => allowedById.has(worker.worker_id))
