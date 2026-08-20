@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, Search, Globe, User, Bell, X, LogOut, ChevronRight, HardHat, Briefcase, Handshake } from "lucide-react";
+import { Menu, Search, Globe, User, Bell, X, LogOut, ChevronRight, HardHat, Briefcase, Handshake, CircleHelp } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,6 +60,7 @@ const Header = () => {
       ? [{ to: "/employer/search-workers", label: t("nav.findWorkers"), icon: Search }]
       : [{ to: "/jobs", label: t("nav.findJobs"), icon: Search }]),
     { to: "/about", label: t("nav.about"), icon: Globe },
+    { to: "/faq", label: t("footer.faq"), icon: CircleHelp },
     { to: "/contact", label: t("nav.contact"), icon: Bell },
   ];
   const overlaysHomeHero = location.pathname === "/" && !isScrolled && !isMobileMenuOpen;
@@ -96,7 +97,7 @@ const Header = () => {
                 <Link 
                   key={link.to}
                   to={link.to} 
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActiveLink(link.to)
                       ? overlaysHomeHero
                         ? "text-white bg-white/15"
@@ -251,7 +252,7 @@ const Header = () => {
           {/* Menu Content */}
           <div 
             id="mobile-menu"
-            className="fixed top-16 left-0 right-0 bottom-0 bg-card z-50 md:hidden overflow-y-auto animate-fade-in"
+            className="fixed top-16 left-0 right-0 bottom-0 bg-card z-50 md:hidden overflow-y-auto animate-fade-in pb-24"
           >
             <nav className="container mx-auto px-4 py-6 space-y-2">
               <div className="px-1 pb-4 mb-2 border-b border-border">

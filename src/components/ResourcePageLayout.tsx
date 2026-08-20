@@ -22,7 +22,7 @@ export default function ResourcePageLayout({
   children,
 }: ResourcePageLayoutProps) {
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-16 md:pb-0 overflow-x-hidden">
       <SEOHead title={title} description={description} />
       <Header />
 
@@ -34,7 +34,7 @@ export default function ResourcePageLayout({
                 {eyebrow}
               </span>
             )}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-heading font-bold tracking-tight text-foreground mb-3">
+            <h1 className="text-[1.75rem] leading-tight sm:text-4xl lg:text-5xl font-heading font-bold tracking-tight text-foreground mb-3">
               {heading}
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground">{intro}</p>

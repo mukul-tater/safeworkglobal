@@ -30,7 +30,7 @@ export default function JobsScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [keyword, setKeyword] = useState(route.params?.keyword ?? '');
-  const [country, setCountry] = useState(route.params?.country ?? '');
+  const [country, setCountry] = useState(route.params?.country ?? 'UAE');
   const [sort, setSort] = useState<SortOption>('recent');
 
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +115,7 @@ export default function JobsScreen({ navigation }: Props) {
           <View style={styles.header}>
             <Text style={styles.pageTitle}>Find Your Next Opportunity</Text>
             <Text style={styles.pageSubtitle}>
-              Browse verified international jobs with salary protection
+              Browse verified UAE jobs from checked employers
             </Text>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -127,7 +127,7 @@ export default function JobsScreen({ navigation }: Props) {
                 icon={<Search size={18} color={colors.textMuted} />}
               />
               <Input
-                placeholder="Filter by country"
+                placeholder="Destination (UAE)"
                 value={country}
                 onChangeText={setCountry}
                 icon={<MapPin size={18} color={colors.textMuted} />}
@@ -186,7 +186,7 @@ export default function JobsScreen({ navigation }: Props) {
           <Card elevated={false} style={styles.emptyCard}>
             <Briefcase size={32} color={colors.textLight} style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>No jobs found</Text>
-            <Text style={styles.emptySubtitle}>Try adjusting your search or pick a different destination.</Text>
+            <Text style={styles.emptySubtitle}>Try adjusting your search. Jobs are listed for UAE.</Text>
           </Card>
         }
         renderItem={({ item }) => (

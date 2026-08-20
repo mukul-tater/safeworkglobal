@@ -49,10 +49,10 @@ export function CountryHero({ country }: { country: CountryInsight }) {
         <Bi text={country.hero.subheading} className="text-base sm:text-lg text-muted-foreground max-w-3xl mb-6" />
 
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
-          <Button asChild size="lg" className="rounded-xl h-12">
+          <Button asChild size="lg" className="rounded-xl h-auto min-h-12 py-3 whitespace-normal sm:whitespace-nowrap">
             <Link to={jobsTo}>View Jobs | नौकरियां देखें</Link>
           </Button>
-          <Button asChild size="lg" variant="outline" className="rounded-xl h-12">
+          <Button asChild size="lg" variant="outline" className="rounded-xl h-auto min-h-12 py-3 whitespace-normal sm:whitespace-nowrap">
             <Link to="/worker/quick-signup">Register as Worker | Worker Registration</Link>
           </Button>
         </div>
@@ -67,7 +67,7 @@ export function CountryHero({ country }: { country: CountryInsight }) {
                     loading="lazy"
                     className="h-28 sm:h-36 w-full object-cover"
                   />
-                  <figcaption className="px-2 py-1.5 text-[11px] font-medium text-foreground">
+                  <figcaption className="px-2 py-1.5 text-[11px] font-medium text-foreground truncate">
                     {photo.category}
                   </figcaption>
                 </figure>

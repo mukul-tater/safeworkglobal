@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../integrations/supabase/client';
+import { colors } from '../../theme/colors';
+import { radius, spacing } from '../../theme/spacing';
+import { typography } from '../../theme/typography';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Button, Card, Input, SectionTitle } from '../../components/ui';
 
@@ -14,7 +17,6 @@ export default function EmployerOnboardingScreen() {
   const [fullName, setFullName] = useState(profile?.full_name ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [companyName, setCompanyName] = useState('');
-  const [country, setCountry] = useState('');
   const [businessType, setBusinessType] = useState('');
 
   useEffect(() => {
@@ -27,7 +29,6 @@ export default function EmployerOnboardingScreen() {
         .maybeSingle();
       if (data) {
         setCompanyName(data.company_name ?? '');
-        setCountry(data.country ?? '');
         setBusinessType(data.business_type ?? '');
       }
       setLoading(false);
@@ -52,7 +53,7 @@ export default function EmployerOnboardingScreen() {
         {
           user_id: user.id,
           company_name: companyName.trim(),
-          country: country.trim() || null,
+          country: 'UAE',
           business_type: businessType.trim() || null,
           onboarding_completed: true,
         },
@@ -85,10 +86,30 @@ export default function EmployerOnboardingScreen() {
         <Input label="Full Name" value={fullName} onChangeText={setFullName} placeholder="Your full name" />
         <Input label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="+91 98765 43210" />
         <Input label="Company Name" value={companyName} onChangeText={setCompanyName} placeholder="Your company" />
-        <Input label="Country" value={country} onChangeText={setCountry} placeholder="e.g. UAE" />
+        <Text style={styles.label}>Hiring destination</Text>
+        <View style={styles.chips}>
+          <View style={[styles.chip, styles.chipOn]}>
+            <Text style={[styles.chipText, styles.chipTextOn]}>UAE</Text>
+          </View>
+        </View>
         <Input label="Business Type" value={businessType} onChangeText={setBusinessType} placeholder="e.g. Construction" />
         <Button title="Complete Setup" onPress={handleComplete} loading={saving} size="lg" />
       </Card>
     </ScreenLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  label: { ...typography.bodySm, fontWeight: '600', marginBottom: spacing.xs, marginTop: spacing.sm },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  chipOn: { backgroundColor: colors.employerLight, borderColor: colors.employer },
+  chipText: { ...typography.bodySm },
+  chipTextOn: { color: colors.employer, fontWeight: '700' },
+});

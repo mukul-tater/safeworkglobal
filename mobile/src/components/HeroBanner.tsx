@@ -12,6 +12,8 @@ type HeroBannerProps = {
   style?: ViewStyle;
   compact?: boolean;
   highlight?: string;
+  values?: string;
+  hindiTitle?: string;
 };
 
 export default function HeroBanner({
@@ -21,6 +23,8 @@ export default function HeroBanner({
   style,
   compact,
   highlight,
+  values,
+  hindiTitle,
 }: HeroBannerProps) {
   const titleParts = highlight && title.includes(highlight)
     ? title.split(highlight)
@@ -34,6 +38,7 @@ export default function HeroBanner({
         <View style={styles.eyebrow}>
           <Text style={styles.eyebrowText}>SafeWork Global</Text>
         </View>
+        {values ? <Text style={styles.values}>{values}</Text> : null}
 
         {titleParts ? (
           <Text style={styles.title}>
@@ -44,6 +49,11 @@ export default function HeroBanner({
         ) : (
           <Text style={styles.title}>{title}</Text>
         )}
+        {hindiTitle ? (
+          <Text style={styles.hindiTitle} accessibilityLanguage="hi">
+            {hindiTitle}
+          </Text>
+        ) : null}
 
         <Text style={styles.subtitle}>{subtitle}</Text>
         {children}
@@ -97,6 +107,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: colors.success,
+  },
+  values: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+    color: colors.mutedForeground,
+    marginBottom: spacing.sm,
+  },
+  hindiTitle: {
+    marginTop: spacing.sm,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '600',
+    color: colors.primary,
   },
   title: {
     ...typography.h1,

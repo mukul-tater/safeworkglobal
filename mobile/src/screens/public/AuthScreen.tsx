@@ -25,7 +25,7 @@ const roles: {
   {
     value: 'worker',
     label: 'Worker',
-    description: 'Find international job opportunities',
+    description: 'Verify skills and get matched with Gulf employers',
     icon: <HardHat color={colors.worker} size={20} />,
     bg: colors.workerLight,
     accent: colors.worker,
@@ -33,7 +33,7 @@ const roles: {
   {
     value: 'employer',
     label: 'Employer',
-    description: 'Hire skilled workers globally',
+    description: 'Hire skill-verified Indian workers for UAE roles',
     icon: <Briefcase color={colors.employer} size={20} />,
     bg: colors.employerLight,
     accent: colors.employer,
@@ -41,12 +41,36 @@ const roles: {
   {
     value: 'partner',
     label: 'Partner',
-    description: 'Register workers from your center',
+    description: 'E-Mitra, ITI, licensed RA, or consultant',
     icon: <Users color={colors.partner} size={20} />,
     bg: colors.partnerLight,
     accent: colors.partner,
   },
 ];
+
+const AUTH_COPY: Record<
+  AppRole,
+  { loginTitle: string; loginBody: string; signupTitle: string; signupBody: string }
+> = {
+  worker: {
+    loginTitle: 'Welcome back — continue the safe way',
+    loginBody: 'Sign in to pick up your verification journey and access verified Gulf opportunities — no agent fees.',
+    signupTitle: 'Start your overseas career the safe way',
+    signupBody: 'Create a free profile, verify your skills, and get matched with verified Gulf employers — no large upfront agent commission.',
+  },
+  employer: {
+    loginTitle: 'Welcome back — hire with confidence',
+    loginBody: 'Sign in to manage jobs, review verified workers, and hire skill-tested talent.',
+    signupTitle: 'Hire verified talent the safe way',
+    signupBody: 'Create a free company account, post jobs, and hire skill-verified workers — no large upfront recruiter fees. Pay only after you hire.',
+  },
+  partner: {
+    loginTitle: 'Welcome back — continue as a partner',
+    loginBody: 'Sign in to manage workers, assessments, placements and payouts from your partner portal.',
+    signupTitle: 'Grow with the SafeWork partner network',
+    signupBody: 'Apply as E-Mitra, ITI, licensed RA or consultant — onboard verified workers and earn through the platform.',
+  },
+};
 
 export default function AuthScreen({ route }: Props) {
   const initialMode = route.params?.mode ?? 'login';
@@ -150,12 +174,22 @@ export default function AuthScreen({ route }: Props) {
       <View style={styles.hero}>
         <BrandLogo size={52} />
         <Text style={styles.heroTitle}>
-          {mode === 'login' ? 'Welcome back' : 'Create your account'}
+          {role
+            ? mode === 'login'
+              ? AUTH_COPY[role].loginTitle
+              : AUTH_COPY[role].signupTitle
+            : mode === 'login'
+              ? 'Welcome back'
+              : 'Create your account'}
         </Text>
         <Text style={styles.heroSubtitle}>
-          {mode === 'login'
-            ? 'Sign in to your SafeWork Global account'
-            : 'Join the verified global jobs platform'}
+          {role
+            ? mode === 'login'
+              ? AUTH_COPY[role].loginBody
+              : AUTH_COPY[role].signupBody
+            : mode === 'login'
+              ? 'Sign in to your SafeWork Global account'
+              : 'Verified employers, skill-tested profiles, and licensed partner deployment.'}
         </Text>
       </View>
 
@@ -338,7 +372,7 @@ const styles = StyleSheet.create({
     ...typography.bodySm,
     marginTop: spacing.xs,
     textAlign: 'center',
-    maxWidth: 280,
+    maxWidth: 340,
   },
   formCard: {
     marginBottom: 0,

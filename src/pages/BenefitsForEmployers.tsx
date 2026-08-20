@@ -167,7 +167,7 @@ export default function BenefitsForEmployers() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-16 md:pb-0 overflow-x-hidden">
       <SEOHead
         title="Benefits for Employers | SafeWork Global"
         description="Access India's skilled workforce through a structured, technology-enabled and skill-first pipeline. Simple 1% monthly model for UAE and GCC employers."
@@ -195,8 +195,8 @@ export default function BenefitsForEmployers() {
               <p className="text-base sm:text-lg text-white/75 leading-relaxed max-w-2xl">
                 Access India&apos;s skilled workforce through a structured, technology-enabled and skill-first workforce pipeline — built for Dubai, UAE and GCC hiring.
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button size="lg" variant="hero" onClick={postRequirement} className="gap-2">
+              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                <Button size="lg" variant="hero" onClick={postRequirement} className="gap-2 w-full sm:w-auto whitespace-normal sm:whitespace-nowrap h-auto min-h-12 py-3">
                   Post Your Requirement
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -204,7 +204,7 @@ export default function BenefitsForEmployers() {
                   size="lg"
                   variant="outline"
                   asChild
-                  className="border-white/30 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                  className="border-white/30 bg-white/5 text-white hover:bg-white/10 hover:text-white w-full sm:w-auto"
                 >
                   <Link to="/contact">Talk to SafeWork</Link>
                 </Button>
@@ -435,11 +435,11 @@ export default function BenefitsForEmployers() {
               <p className="text-base sm:text-lg text-primary-foreground/90 mb-8">
                 Tell us your workforce requirement and our team will help build the candidate pipeline.
               </p>
-              <div className="flex flex-wrap gap-3 mb-8">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-8">
                 <Button
                   size="lg"
                   onClick={postRequirement}
-                  className="bg-background text-foreground hover:bg-background/90 gap-2 shadow-lg"
+                  className="bg-background text-foreground hover:bg-background/90 gap-2 shadow-lg w-full sm:w-auto"
                 >
                   Post Your Requirement
                   <ArrowRight className="h-4 w-4" />
@@ -448,7 +448,7 @@ export default function BenefitsForEmployers() {
                   size="lg"
                   variant="outline"
                   asChild
-                  className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                  className="border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground w-full sm:w-auto"
                 >
                   <Link to="/contact">Talk to SafeWork</Link>
                 </Button>

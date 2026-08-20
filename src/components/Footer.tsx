@@ -172,9 +172,9 @@ const Footer = () => {
           <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 sm:gap-6 text-xs sm:text-sm">
-                <a href={`mailto:${SAFEWORK_CONTACT.email}`} className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors">
-                  <Mail className="h-3.5 w-3.5" />
-                  <span>{SAFEWORK_CONTACT.email}</span>
+                <a href={`mailto:${SAFEWORK_CONTACT.email}`} className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors min-w-0">
+                  <Mail className="h-3.5 w-3.5 shrink-0" />
+                  <span className="break-all">{SAFEWORK_CONTACT.email}</span>
                 </a>
                 <span className="flex items-start gap-1.5 text-white/50 max-w-xs">
                   <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />

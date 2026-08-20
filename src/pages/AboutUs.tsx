@@ -214,7 +214,7 @@ export default function AboutUs() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0 overflow-x-hidden">
       <SEOHead
         title="About SafeWork Global"
         description="SafeWork Global is a technology and workforce mobility platform connecting India's skilled workforce with global employment opportunities through worker onboarding, skill verification and a transparent workforce ecosystem."
@@ -276,10 +276,10 @@ export default function AboutUs() {
                   )}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button size="lg" className="h-12 rounded-xl" onClick={goFindJobs}>
+                  <Button size="lg" className="h-auto min-h-12 py-3 rounded-xl w-full sm:w-auto whitespace-normal sm:whitespace-nowrap" onClick={goFindJobs}>
                     Find Jobs | नौकरी खोजें
                   </Button>
-                  <Button size="lg" variant="outline" className="h-12 rounded-xl" asChild>
+                  <Button size="lg" variant="outline" className="h-auto min-h-12 py-3 rounded-xl w-full sm:w-auto whitespace-normal sm:whitespace-nowrap" asChild>
                     <Link to="/partner/register">Partner With Us | साझेदार बनें</Link>
                   </Button>
                 </div>

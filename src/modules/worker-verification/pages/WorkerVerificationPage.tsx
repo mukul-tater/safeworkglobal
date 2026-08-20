@@ -22,6 +22,7 @@ import { indianStates } from '@/lib/validations/partner';
 import { displayableEmail, isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import {
   ASSESSMENT_FEE_INR,
+  ASSESSMENT_FEE_INCLUSIONS,
   educationOptionsForTenthPass,
   ecrFromTenthPass,
   GCC_JOURNEY_NAV_STEPS,
@@ -1521,7 +1522,7 @@ export default function WorkerVerificationPage() {
                 <div>
                   <h2 className="text-lg font-semibold font-heading leading-tight">Assessment fee</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    A one-time fee for your skill assessment and GCC processing. Pay securely — you continue automatically once it succeeds.
+                    A one-time ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')} fee covering visa, flights, documentation, insurance, government fees, and more. Pay securely — you continue automatically once it succeeds.
                   </p>
                 </div>
               </div>
@@ -1531,7 +1532,7 @@ export default function WorkerVerificationPage() {
                   ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Assessment fee for your overseas job application
+                  One-time all-inclusive fee for your overseas job application
                 </p>
                 <div className="mt-3 border-t border-border pt-3 text-sm">
                   <div className="flex items-center justify-between py-0.5">
@@ -1549,6 +1550,23 @@ export default function WorkerVerificationPage() {
                     <span className="tabular-nums">₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-sm font-semibold font-heading text-foreground">
+                  What you get in this ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  No hidden agent charges — this fee covers:
+                </p>
+                <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {ASSESSMENT_FEE_INCLUSIONS.map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-sm text-foreground">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               <div className="rounded-xl border border-success/30 bg-success/5 p-3">

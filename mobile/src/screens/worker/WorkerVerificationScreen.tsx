@@ -306,7 +306,19 @@ export default function WorkerVerificationScreen() {
             <SectionTitle title="Identity (KYC)" subtitle="Submit for verification before interviews" />
             <Input label="PAN" value={pan} onChangeText={setPan} autoCapitalize="characters" />
             <Input label="Aadhaar last 4" value={aadhaar} onChangeText={setAadhaar} keyboardType="number-pad" maxLength={4} />
-            <Input label="Passport number" value={passport} onChangeText={setPassport} autoCapitalize="characters" />
+            <Input
+              label="Passport number (optional for trade test)"
+              value={passport}
+              onChangeText={setPassport}
+              autoCapitalize="characters"
+            />
+            <Text style={styles.hint}>
+              Don't have a passport yet? You can still appear for the trade test. A valid passport is
+              required later for emigration clearance and international travel.
+            </Text>
+            <Text style={styles.hintHi}>
+              अभी पासपोर्ट नहीं है? आप फिर भी ट्रेड टेस्ट दे सकते हैं। विदेश यात्रा के लिए वैध पासपोर्ट आवश्यक है।
+            </Text>
             <Button title="Submit KYC" onPress={onSubmitKyc} loading={saving} fullWidth />
           </Card>
         ) : null}
@@ -358,6 +370,8 @@ const styles = StyleSheet.create({
   stepTitle: { ...typography.h3 },
   stepDesc: { ...typography.bodySm, marginTop: 2 },
   body: { ...typography.body, marginBottom: spacing.md },
+  hint: { ...typography.bodySm, marginBottom: spacing.xs, color: colors.mutedForeground },
+  hintHi: { ...typography.caption, marginBottom: spacing.md, color: colors.mutedForeground },
   chipLabel: { ...typography.bodySm, fontWeight: '600', marginBottom: spacing.xs, marginTop: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
   chip: {

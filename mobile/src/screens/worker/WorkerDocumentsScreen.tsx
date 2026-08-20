@@ -148,7 +148,7 @@ export default function WorkerDocumentsScreen() {
           </View>
         }
         ListEmptyComponent={
-          <EmptyState title="No documents yet" subtitle="Upload passport, Aadhaar, or skill proofs." />
+          <EmptyState title="No documents yet" subtitle="Upload Aadhaar, skill proofs, and passport if you have one. Passport is optional for the trade test." />
         }
         renderItem={({ item }) => (
           <Card>

@@ -26,7 +26,7 @@ const Index = () => {
   const showDefaultHome = !waitingForRole && role !== "employer";
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background pb-16 md:pb-0 overflow-x-hidden">
       <SEOHead
         title={DEFAULT_TITLE}
         description={DEFAULT_DESCRIPTION}

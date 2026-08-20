@@ -10,13 +10,13 @@ import { Button, Card, Input, SectionTitle } from '../../components/ui';
 
 const JOB_TYPES = ['Full-time', 'Contract', 'Temporary'] as const;
 const EXPERIENCE = ['Entry-Level', 'Mid-Level', 'Senior', 'Supervisor'] as const;
-const CURRENCIES = ['USD', 'AED', 'SAR', 'QAR', 'INR'] as const;
+const CURRENCIES = ['AED', 'USD', 'INR'] as const;
 
 export default function EmployerPostJobScreen() {
   const { profile } = useAuth();
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
-  const [country, setCountry] = useState('UAE');
+  const country = 'UAE';
   const [description, setDescription] = useState('');
   const [salaryMin, setSalaryMin] = useState('');
   const [salaryMax, setSalaryMax] = useState('');
@@ -73,8 +73,13 @@ export default function EmployerPostJobScreen() {
       <SectionTitle title="Post a Job" subtitle="Submit a new job for verification" />
       <Card>
         <Input label="Job Title" value={title} onChangeText={setTitle} placeholder="e.g. Construction Supervisor" />
-        <Input label="Location" value={location} onChangeText={setLocation} placeholder="City or region" />
-        <Input label="Country" value={country} onChangeText={setCountry} placeholder="e.g. UAE" />
+        <Input label="Location" value={location} onChangeText={setLocation} placeholder="City or region in UAE" />
+        <Text style={styles.label}>Country</Text>
+        <View style={styles.chips}>
+          <Pressable style={[styles.chip, styles.chipOn]}>
+            <Text style={[styles.chipText, styles.chipTextOn]}>UAE</Text>
+          </Pressable>
+        </View>
         <Text style={styles.label}>Job type</Text>
         <View style={styles.chips}>
           {JOB_TYPES.map((t) => (

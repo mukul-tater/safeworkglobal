@@ -7,6 +7,8 @@ export type PublicStackParamList = {
   Auth: { mode?: 'login' | 'signup'; role?: 'worker' | 'employer' | 'partner' };
   About: undefined;
   Contact: undefined;
+  Faq: undefined;
+  CountryInsights: undefined;
   Privacy: undefined;
   Terms: undefined;
 };

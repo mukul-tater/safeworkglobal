@@ -33,6 +33,10 @@ import {
 } from "@/components/ui/dialog";
 import { TRADE_TEST_CENTERS } from "@/data/tradeTestCenters";
 import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo";
+import {
+  ASSESSMENT_FEE_INR,
+  ASSESSMENT_FEE_INCLUSIONS,
+} from "@/modules/worker-verification/constants";
 import { cn } from "@/lib/utils";
 
 type JourneyStep = {
@@ -96,17 +100,12 @@ const STEPS: JourneyStep[] = [
   {
     id: "payment",
     number: 5,
-    title: "Payment",
+    title: `Payment — ₹${ASSESSMENT_FEE_INR.toLocaleString("en-IN")}`,
     shortTitle: "Payment",
     description:
-      "Pay the fee securely to unlock booking at a trade test center near you.",
+      "One transparent fee. This ₹35,400 covers everything you need to get travel-ready — no hidden agent charges.",
     icon: CreditCard,
-    bullets: [
-      "Secure online payment",
-      "Fee confirmation receipt",
-      "Receipt for your records",
-      "Unlocks physical trade test booking",
-    ],
+    bullets: [...ASSESSMENT_FEE_INCLUSIONS],
   },
   {
     id: "trade-test",
@@ -257,6 +256,7 @@ function StepDetail({
   const Icon = step.icon;
   const isTradeTest = step.id === "trade-test";
   const isInterview = step.id === "interview";
+  const isPayment = step.id === "payment";
 
   return (
     <AnimatePresence mode="wait">
@@ -304,7 +304,31 @@ function StepDetail({
           </div>
         </div>
 
-        <ul className="space-y-2 mb-4">
+        {isPayment && (
+          <div className="mb-4 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+              One-time fee
+            </p>
+            <p className="mt-0.5 text-2xl font-bold font-heading tabular-nums text-foreground">
+              ₹{ASSESSMENT_FEE_INR.toLocaleString("en-IN")}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              All-inclusive — visa, flights, docs, insurance &amp; government fees
+            </p>
+          </div>
+        )}
+
+        {isPayment && (
+          <p className="text-xs font-semibold uppercase tracking-wide text-foreground mb-2">
+            What you get in this payment
+          </p>
+        )}
+        <ul
+          className={cn(
+            "mb-4",
+            isPayment ? "grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2" : "space-y-2",
+          )}
+        >
           {step.bullets.map((bullet) => (
             <li key={bullet} className="flex items-start gap-2 text-sm text-foreground">
               <CheckCircle2 className="h-4 w-4 text-success shrink-0 mt-0.5" />
@@ -443,7 +467,7 @@ export default function WorkerJourneyDemo() {
                         )}
                         {step.id === "payment" && (
                           <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                            Unlock trade test booking
+                            ₹{ASSESSMENT_FEE_INR.toLocaleString("en-IN")} all-inclusive
                           </span>
                         )}
                         {step.id === "travel" && (
@@ -527,7 +551,7 @@ export default function WorkerJourneyDemo() {
                       )}
                       {step.id === "payment" && (
                         <span className="block text-xs text-muted-foreground mt-0.5">
-                          Pay fee to unlock booking
+                          ₹{ASSESSMENT_FEE_INR.toLocaleString("en-IN")} — visa, flights &amp; more
                         </span>
                       )}
                       {step.id === "travel" && (

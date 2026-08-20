@@ -9,38 +9,23 @@ import HomeScreen from '../screens/public/HomeScreen';
 import JobsScreen from '../screens/public/JobsScreen';
 import JobDetailScreen from '../screens/public/JobDetailScreen';
 import AuthScreen from '../screens/public/AuthScreen';
+import AboutScreen from '../screens/public/AboutScreen';
+import ContactScreen from '../screens/public/ContactScreen';
+import FaqScreen from '../screens/public/FaqScreen';
+import CountryInsightsScreen from '../screens/public/CountryInsightsScreen';
 import { InfoScreen } from '../components/DataListScreen';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { RA_DISCLOSURE, SAFEWORK_CONTACT } from '../config/workerSupport';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<PublicStackParamList>();
-
-function AboutScreen() {
-  return (
-    <InfoScreen
-      title="About SafeWork Global"
-      description="SafeWork Global connects verified workers with trusted international employers through compliance-first hiring."
-      variant="stack"
-    />
-  );
-}
-
-function ContactScreen() {
-  return (
-    <InfoScreen
-      title="Contact Us"
-      description="Reach our support team for help with applications, compliance, and account issues."
-      variant="stack"
-    />
-  );
-}
 
 function PrivacyScreen() {
   return (
     <InfoScreen
       title="Privacy Policy"
-      description="We protect your personal data and only share it for verified hiring workflows."
+      description={`We protect your personal data and only share it for verified hiring workflows. Questions: ${SAFEWORK_CONTACT.email}.`}
       variant="stack"
     />
   );
@@ -50,7 +35,7 @@ function TermsScreen() {
   return (
     <InfoScreen
       title="Terms of Service"
-      description="By using SafeWork Global you agree to our platform terms and compliance policies."
+      description={`By using SafeWork Global you agree to our platform terms and compliance policies. ${RA_DISCLOSURE}`}
       variant="stack"
     />
   );
@@ -125,6 +110,8 @@ export default function PublicNavigator() {
       <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: 'Job Details' }} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="Contact" component={ContactScreen} />
+      <Stack.Screen name="Faq" component={FaqScreen} options={{ title: 'FAQ' }} />
+      <Stack.Screen name="CountryInsights" component={CountryInsightsScreen} options={{ title: 'Country Insights' }} />
       <Stack.Screen name="Privacy" component={PrivacyScreen} />
       <Stack.Screen name="Terms" component={TermsScreen} />
     </Stack.Navigator>

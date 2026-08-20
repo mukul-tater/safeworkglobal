@@ -366,7 +366,7 @@ export default function WorkerPreJourneyScreeningModal({
                           overseasDetails: { ...overseas.overseasDetails!, country: val },
                         })
                       }
-                      placeholder="e.g. UAE, Saudi Arabia, Qatar"
+                      placeholder="e.g. UAE"
                     />
                     <Input
                       label="Employer Name"

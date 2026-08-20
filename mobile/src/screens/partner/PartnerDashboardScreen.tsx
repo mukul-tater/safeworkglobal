@@ -33,8 +33,8 @@ export default function PartnerDashboardScreen() {
     <ScreenLayout variant="stack" scrollable>
       <HeroBanner
         compact
-        title="E-Mitra Dashboard"
-        subtitle={profile?.full_name ?? profile?.email ?? 'Manage your service center'}
+        title="Partner Dashboard"
+        subtitle={profile?.full_name ?? profile?.email ?? 'Manage workers from your centre'}
       />
 
       <View style={styles.statsRow}>
@@ -44,7 +44,7 @@ export default function PartnerDashboardScreen() {
 
       <SectionTitle title="Quick Actions" subtitle="Common tasks for your center" />
       <Card elevated={false}>
-        <Text style={styles.muted}>Register new workers and track compliance from the menu.</Text>
+        <Text style={styles.muted}>Register new workers and track compliance from the menu. Open to E-Mitra, ITI, licensed RA, and consultant partners.</Text>
       </Card>
     </ScreenLayout>
   );

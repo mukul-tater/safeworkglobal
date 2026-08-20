@@ -19,7 +19,7 @@ import { MobileStickyCta } from "./MobileStickyCta";
 
 export function CountryInsightsDetail({ country }: { country: CountryInsight }) {
   return (
-    <div className="min-h-screen bg-background pb-32 md:pb-0">
+    <div className="min-h-screen bg-background pb-32 md:pb-0 overflow-x-hidden">
       <SEOHead
         title={`${country.name.en} Country Insights | SafeWork Global`}
         description={

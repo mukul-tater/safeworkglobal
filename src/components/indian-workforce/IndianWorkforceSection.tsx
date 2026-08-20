@@ -115,7 +115,7 @@ export default function IndianWorkforceSection() {
             <div className="flex flex-col gap-1.5">
               <Button
                 size="lg"
-                className="h-12 rounded-xl px-7 text-base font-semibold"
+                className="h-12 w-full rounded-xl px-7 text-base font-semibold sm:w-auto"
                 onClick={handleFindJobs}
               >
                 Find Jobs
@@ -127,7 +127,7 @@ export default function IndianWorkforceSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="h-12 rounded-xl px-7 text-base font-semibold"
+                className="h-12 w-full rounded-xl px-7 text-base font-semibold sm:w-auto"
                 onClick={handleRegisterWorker}
                 aria-label="Register as worker"
               >

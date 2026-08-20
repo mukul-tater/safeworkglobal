@@ -120,6 +120,19 @@ export function skillRequiresTradeTest(skill: string | null | undefined): boolea
 /** Fee (INR) shown on the Payment step. */
 export const ASSESSMENT_FEE_INR = 35400;
 
+/** What the ₹35,400 fee covers — shown on the Payment step. */
+export const ASSESSMENT_FEE_INCLUSIONS = [
+  'Visa',
+  'Flight tickets',
+  'All documentation',
+  'Insurance',
+  'All government fees',
+  'Emigration clearance',
+  'Trade test charges',
+  'Visa processing and documentation',
+  'Pre-departure assistance',
+] as const;
+
 export type VerificationStage =
   | 'essentials'
   | 'quiz'

@@ -80,7 +80,7 @@ function FaqGroupSection({ group }: { group: FaqGroup }) {
   const Icon = meta.icon;
 
   return (
-    <section id={group.id} className="scroll-mt-28">
+    <section id={group.id} className="scroll-mt-36 md:scroll-mt-28">
       <div className="flex items-center gap-3 mb-4">
         <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${meta.accent}`}>
           <Icon className="h-5 w-5" />
@@ -97,16 +97,16 @@ function FaqGroupSection({ group }: { group: FaqGroup }) {
             value={`faq-${item.n}`}
             className={`px-4 sm:px-5 ${i === group.items.length - 1 ? "border-b-0" : "border-border/60"}`}
           >
-            <AccordionTrigger className="text-left hover:no-underline py-4 sm:py-5 group/trigger">
-              <span className="pr-3 flex items-start gap-3 flex-1 min-w-0">
-                <span className="mt-0.5 h-7 min-w-7 px-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold font-mono flex items-center justify-center">
+            <AccordionTrigger className="text-left hover:no-underline py-4 sm:py-5 items-start gap-2 group/trigger">
+              <span className="pr-2 sm:pr-3 flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
+                <span className="mt-0.5 h-6 min-w-6 sm:h-7 sm:min-w-7 px-1 rounded-md sm:rounded-lg bg-primary/10 text-primary text-[10px] sm:text-xs font-bold font-mono flex items-center justify-center shrink-0">
                   {String(item.n).padStart(2, "0")}
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block font-semibold text-foreground group-hover/trigger:text-primary transition-colors">
+                  <span className="block text-sm sm:text-base font-semibold text-foreground break-words group-hover/trigger:text-primary transition-colors">
                     {item.qEn}
                   </span>
-                  <span className="block text-sm font-normal text-muted-foreground mt-0.5">{item.qHi}</span>
+                  <span className="block text-xs sm:text-sm font-normal text-muted-foreground mt-0.5 break-words">{item.qHi}</span>
                 </span>
               </span>
             </AccordionTrigger>
@@ -263,8 +263,11 @@ export default function FaqPage() {
           </aside>
 
           <div className="min-w-0 space-y-8">
-            <div className="lg:hidden -mx-4 sm:-mx-6 px-4 sm:px-6 overflow-x-auto">
-              <nav aria-label="FAQ topics" className="flex gap-2 pb-1 min-w-max">
+            <div className="lg:hidden sticky top-16 z-30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 mb-2 bg-background/95 backdrop-blur border-b border-border">
+              <nav
+                aria-label="FAQ topics"
+                className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              >
                 {FAQ_GROUPS.map((group) => {
                   const meta = GROUP_META[group.id] ?? {
                     icon: CircleHelp,
@@ -328,7 +331,7 @@ export default function FaqPage() {
 
             <section
               id="government-resources"
-              className="scroll-mt-28 rounded-2xl border border-[#c4a35a]/35 bg-[#f7f4ec] dark:bg-[#1a1c18] dark:border-[#c4a35a]/20 p-6 sm:p-8"
+              className="scroll-mt-36 md:scroll-mt-28 rounded-2xl border border-[#c4a35a]/35 bg-[#f7f4ec] dark:bg-[#1a1c18] dark:border-[#c4a35a]/20 p-5 sm:p-8"
             >
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7a5c1e] dark:text-[#e0c27a] mb-2">
                 Government of India
@@ -344,10 +347,10 @@ export default function FaqPage() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <article className="rounded-2xl border border-[#1e2a4a]/15 bg-white dark:bg-[#12140f] dark:border-[#e8eadf]/10 p-5">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e2a4a]/8 text-[#1e2a4a] dark:bg-[#e8eadf]/10 dark:text-[#e8eadf]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e2a4a]/8 text-[#1e2a4a] dark:bg-[#e8eadf]/10 dark:text-[#e8eadf] shrink-0">
                       <Search className="h-4 w-4" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <h3 className="font-heading font-bold text-[#1e2a4a] dark:text-[#e8eadf]">eMigrate</h3>
                       <p className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mt-0.5 leading-relaxed">
                         विदेशी रोजगार से संबंधित आधिकारिक जानकारी और Recruitment Agent verification के लिए Government of
@@ -364,10 +367,10 @@ export default function FaqPage() {
                 </article>
                 <article className="rounded-2xl border border-[#1e2a4a]/15 bg-white dark:bg-[#12140f] dark:border-[#e8eadf]/10 p-5">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e2a4a]/8 text-[#1e2a4a] dark:bg-[#e8eadf]/10 dark:text-[#e8eadf]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e2a4a]/8 text-[#1e2a4a] dark:bg-[#e8eadf]/10 dark:text-[#e8eadf] shrink-0">
                       <Landmark className="h-4 w-4" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <h3 className="font-heading font-bold text-[#1e2a4a] dark:text-[#e8eadf]">MEA / PBSK</h3>
                       <p className="text-sm text-[#1e2a4a]/70 dark:text-[#e8eadf]/70 mt-0.5 leading-relaxed">
                         विदेश रोजगार से संबंधित सहायता और जानकारी के लिए Ministry of External Affairs के official channels
@@ -391,7 +394,7 @@ export default function FaqPage() {
 
             <section
               id="need-help"
-              className="scroll-mt-28 relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/8 via-background to-secondary/8 p-6 sm:p-8 text-center"
+              className="scroll-mt-36 md:scroll-mt-28 relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/8 via-background to-secondary/8 p-5 sm:p-8 text-center"
             >
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <Mail className="h-5 w-5" />
@@ -417,14 +420,14 @@ export default function FaqPage() {
               <p className="text-sm text-muted-foreground mb-5">
                 आपके सवाल का जवाब नहीं मिला? Send an enquiry | हमसे संपर्क करें
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-                <Button asChild className="rounded-xl">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-3">
+                <Button asChild className="rounded-xl w-full sm:w-auto">
                   <Link to="/contact">
                     <Send className="h-4 w-4" />
                     Send Enquiry
                   </Link>
                 </Button>
-                <Button asChild variant="outline" className="rounded-xl">
+                <Button asChild variant="outline" className="rounded-xl w-full sm:w-auto">
                   <a href={getSafeworkMailtoUrl("SafeWork Global – FAQ")}>
                     <Mail className="h-4 w-4" />
                     Email

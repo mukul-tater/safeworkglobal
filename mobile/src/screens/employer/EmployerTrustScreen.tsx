@@ -4,13 +4,14 @@ import { InfoScreen } from '../../components/DataListScreen';
 export default function EmployerTrustScreen() {
   return (
     <InfoScreen
-      title="Why SafeWork Global"
-      description="Verified workers, transparent processes, and a faster hiring pipeline — without traditional agent fees."
+      title="Why employers choose SafeWork Global"
+      description="Access India's skilled workforce through a structured, skill-first pipeline — built for UAE hiring, without traditional agent fees."
       bullets={[
-        'Save up to 95% vs traditional recruitment agents',
-        'Every worker is ID and document verified',
-        'Transparent placement and onboarding processes',
-        'Shortlists delivered in 7–10 days for pilot batches',
+        "Access skilled workers across India via E-Mitra/CSC, ITIs, and skill-verification partners",
+        'Hire for the actual skill — technical screening, interviews, and physical trade tests',
+        "Simple 1% of the worker's monthly gross salary for the duration of employment",
+        'Share trade, experience, salary, location, and joining timeline — we build the pipeline around it',
+        'Sourcing, verification, trade testing, documentation, and licensed-partner deployment in one workflow',
       ]}
     />
   );
