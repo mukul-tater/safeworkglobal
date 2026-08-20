@@ -331,7 +331,7 @@ export default function WorkerPreJourneyScreeningModal({
 
               {/* Worked outside India */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>1. Have you previously worked outside India?</Text>
+                <Text style={styles.questionText}>3. Have you previously worked outside India?</Text>
                 <View style={styles.chipGroup}>
                   {[
                     { val: 'no', label: 'No' },
@@ -425,7 +425,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Deported */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  2. Have you ever been deported, removed or repatriated from another country?
+                  4. Have you ever been deported, removed or repatriated from another country?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -458,7 +458,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Visa Refusal */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  3. Have you ever been refused entry, refused a work visa, or had a visa cancelled?
+                  5. Have you ever been refused entry, refused a work visa, or had a visa cancelled?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -496,7 +496,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Overstayed */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  4. Have you ever overstayed a visa or violated immigration rules in another country?
+                  6. Have you ever overstayed a visa or violated immigration rules in another country?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -544,7 +544,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Registered with other agency */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  1. Have you previously registered with another recruitment agency/agent for this job?
+                  7. Have you previously registered with another recruitment agency/agent for this job?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -583,7 +583,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Paid Money */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  2. Have you already paid money to any person/agency for an overseas job related to this application?
+                  8. Have you already paid money to any person/agency for an overseas job related to this application?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[
@@ -621,7 +621,7 @@ export default function WorkerPreJourneyScreeningModal({
               {/* Promised job for money */}
               <Card elevated={false}>
                 <Text style={styles.questionText}>
-                  3. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
+                  9. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
                 </Text>
                 <View style={styles.chipGroup}>
                   {[

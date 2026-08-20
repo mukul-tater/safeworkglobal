@@ -195,17 +195,17 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
                   <Stethoscope className="h-5 w-5 text-primary" />
-                  4. Medical & Fitness
+                  1. Medical & Fitness
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Declare your physical suitability for overseas skilled trade work.
                 </p>
               </div>
 
-              {/* Question 10 */}
+              {/* Question 1 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  10. Do you consider yourself physically fit to perform the essential duties of the trade/job you are applying for?
+                  1. Do you consider yourself physically fit to perform the essential duties of the trade/job you are applying for?
                 </Label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
@@ -238,10 +238,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 11 */}
+              {/* Question 2 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  11. Do you have any medical condition or physical limitation that you believe may prevent you from safely performing the essential duties of the job?
+                  2. Do you have any medical condition or physical limitation that you believe may prevent you from safely performing the essential duties of the job?
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
@@ -307,17 +307,17 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
                   <Globe2 className="h-5 w-5 text-primary" />
-                  5. Previous Overseas Employment
+                  2. Previous Overseas Employment
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Tell us about your prior work experience outside India and immigration history.
                 </p>
               </div>
 
-              {/* Question 12 */}
+              {/* Question 3 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  12. Have you previously worked outside India?
+                  3. Have you previously worked outside India?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -434,10 +434,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 13 */}
+              {/* Question 4 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  13. Have you previously been deported, removed or repatriated from another country?
+                  4. Have you previously been deported, removed or repatriated from another country?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -480,10 +480,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 14 */}
+              {/* Question 5 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  14. Have you ever been refused entry, refused a work visa, or had an employment/residence visa cancelled by another country?
+                  5. Have you ever been refused entry, refused a work visa, or had an employment/residence visa cancelled by another country?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -526,10 +526,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 15 */}
+              {/* Question 6 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  15. Have you ever overstayed a visa or violated immigration rules in another country?
+                  6. Have you ever overstayed a visa or violated immigration rules in another country?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -580,17 +580,17 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
                   <UserCheck className="h-5 w-5 text-primary" />
-                  8. Previous Recruitment / Agent Experience
+                  3. Previous Recruitment / Agent Experience
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Help SafeWork protect you against unauthorized agency fees, fraud, or duplicate recruitment.
                 </p>
               </div>
 
-              {/* Question 21 */}
+              {/* Question 7 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  21. Have you previously registered with another overseas recruitment agency/agent for this job or another overseas job?
+                  7. Have you previously registered with another overseas recruitment agency/agent for this job or another overseas job?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -634,10 +634,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 22 */}
+              {/* Question 8 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  22. Have you already paid money to any person/agency for an overseas job related to this application?
+                  8. Have you already paid money to any person/agency for an overseas job related to this application?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -680,10 +680,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 )}
               </div>
 
-              {/* Question 23 */}
+              {/* Question 9 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  23. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
+                  9. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -737,7 +737,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 <div>
                   <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
                     <FileCheck2 className="h-5 w-5 text-primary" />
-                    9. Worker Understanding
+                    4. Worker Understanding
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Candidate Acknowledgement — Before allowing entry into the next stage, all 8 checkboxes are mandatory.
