@@ -10,7 +10,10 @@ import {
   FileCheck,
   CheckCircle2,
 } from 'lucide-react-native';
-import type { WorkerPreJourneyDeclaration } from '../../types/declarations.types';
+import {
+  CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
+  type WorkerPreJourneyDeclaration,
+} from '../../types/declarations.types';
 import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -95,22 +98,25 @@ export default function WorkerDeclarationsSummary({ declaration, onEdit }: Props
               </Text>
               {declaration.overseas?.workedOutsideIndia === 'yes' && declaration.overseas?.overseasDetails ? (
                 <Text style={styles.itemText}>
-                  <Text style={styles.label}>Details: </Text>
+                  <Text style={styles.label}>Country / employer / trade: </Text>
                   <Text style={styles.value}>
                     {declaration.overseas.overseasDetails.country} ({declaration.overseas.overseasDetails.employer},{' '}
-                    {declaration.overseas.overseasDetails.jobTrade})
+                    {declaration.overseas.overseasDetails.jobTrade}, {declaration.overseas.overseasDetails.duration},{' '}
+                    {declaration.overseas.overseasDetails.year})
                   </Text>
                 </Text>
               ) : null}
               <Text style={styles.itemText}>
-                <Text style={styles.label}>Deported / Visa Refusal / Overstay: </Text>
-                <Text style={styles.value}>
-                  {declaration.overseas?.beenDeported === 'yes' ||
-                  declaration.overseas?.refusedVisaOrEntry === 'yes' ||
-                  declaration.overseas?.overstayedVisa === 'yes'
-                    ? 'Declared'
-                    : 'None (Clean Record)'}
-                </Text>
+                <Text style={styles.label}>Deported / repatriated: </Text>
+                <Text style={styles.value}>{declaration.overseas?.beenDeported || 'No'}</Text>
+              </Text>
+              <Text style={styles.itemText}>
+                <Text style={styles.label}>Visa or entry refused: </Text>
+                <Text style={styles.value}>{declaration.overseas?.refusedVisaOrEntry || 'No'}</Text>
+              </Text>
+              <Text style={styles.itemText}>
+                <Text style={styles.label}>Overstayed visa: </Text>
+                <Text style={styles.value}>{declaration.overseas?.overstayedVisa || 'No'}</Text>
               </Text>
             </View>
           </View>
@@ -123,11 +129,15 @@ export default function WorkerDeclarationsSummary({ declaration, onEdit }: Props
             </View>
             <View style={styles.box}>
               <Text style={styles.itemText}>
-                <Text style={styles.label}>Paid Money to Agent: </Text>
+                <Text style={styles.label}>Registered with another agency: </Text>
+                <Text style={styles.value}>{declaration.recruitment?.registeredWithOtherAgency || 'No'}</Text>
+              </Text>
+              <Text style={styles.itemText}>
+                <Text style={styles.label}>Paid money for a job: </Text>
                 <Text style={styles.value}>{declaration.recruitment?.paidMoneyForJob || 'No'}</Text>
               </Text>
               <Text style={styles.itemText}>
-                <Text style={styles.label}>Guaranteed Job Promised: </Text>
+                <Text style={styles.label}>Guaranteed job promised for money: </Text>
                 <Text style={styles.value}>{declaration.recruitment?.promisedGuaranteedJobForMoney || 'No'}</Text>
               </Text>
             </View>
@@ -137,13 +147,21 @@ export default function WorkerDeclarationsSummary({ declaration, onEdit }: Props
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <FileCheck size={16} color={colors.primary} />
-              <Text style={styles.sectionTitle}>Candidate Acknowledgements (8/8)</Text>
-            </View>
-            <View style={styles.ackBox}>
-              <CheckCircle2 size={16} color={colors.success} />
-              <Text style={styles.ackText}>
-                All 8 mandatory declarations and legal candidate acknowledgements accepted.
+              <Text style={styles.sectionTitle}>
+                Candidate Acknowledgements (
+                {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.filter((item) => declaration.acknowledgements?.[item.key]).length}/
+                {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.length})
               </Text>
+            </View>
+            <View style={styles.ackList}>
+              {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.map((item, idx) => (
+                <View key={item.key} style={styles.ackRow}>
+                  <CheckCircle2 size={16} color={colors.success} />
+                  <Text style={styles.ackItemText}>
+                    [{idx + 1}] {item.text}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
         </View>
@@ -244,20 +262,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'capitalize',
   },
-  ackBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+  ackList: {
     backgroundColor: colors.surface,
     padding: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
+    gap: spacing.sm,
   },
-  ackText: {
+  ackRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+  },
+  ackItemText: {
     ...typography.bodySm,
-    color: colors.success,
-    fontWeight: '600',
+    color: colors.foreground,
     flex: 1,
   },
 });

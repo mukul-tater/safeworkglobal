@@ -18,12 +18,13 @@ import {
   ChevronLeft,
   X,
 } from 'lucide-react-native';
-import type {
-  MedicalFitnessDeclaration,
-  PreviousOverseasEmploymentDeclaration,
-  RecruitmentAgentExperienceDeclaration,
-  CandidateAcknowledgements,
-  WorkerPreJourneyDeclaration,
+import {
+  CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
+  type MedicalFitnessDeclaration,
+  type PreviousOverseasEmploymentDeclaration,
+  type RecruitmentAgentExperienceDeclaration,
+  type CandidateAcknowledgements,
+  type WorkerPreJourneyDeclaration,
 } from '../../types/declarations.types';
 import {
   INITIAL_MEDICAL,
@@ -144,41 +145,6 @@ export default function WorkerPreJourneyScreeningModal({
     });
     setErrors({});
   };
-
-  const ACK_ITEMS: Array<{ key: keyof CandidateAcknowledgements; text: string }> = [
-    {
-      key: 'noJobGuarantee',
-      text: 'I understand that registration with SafeWork Global does not guarantee employment.',
-    },
-    {
-      key: 'subjectToEmployerReqs',
-      text: "I understand that final selection is subject to the employer's requirements and applicable procedures.",
-    },
-    {
-      key: 'subjectToVisaClearance',
-      text: 'I understand that visa issuance and immigration clearance are subject to relevant authorities.',
-    },
-    {
-      key: 'tradeTestNoGuarantee',
-      text: 'I understand that a trade test or skill verification does not guarantee employment.',
-    },
-    {
-      key: 'agreeGenuineInfo',
-      text: 'I agree to provide genuine and accurate information and documents.',
-    },
-    {
-      key: 'falseDocConsequences',
-      text: 'I understand that submitting false documents or info may result in application cancellation and legal action.',
-    },
-    {
-      key: 'agreeMedicalAndTesting',
-      text: 'I agree to undergo medical examination, skill testing and verification for the job/country.',
-    },
-    {
-      key: 'transparentCharges',
-      text: 'I have been informed that applicable recruitment charges will be disclosed transparently through authorized processes.',
-    },
-  ];
 
   return (
     <Modal visible={isOpen} animationType="slide" onRequestClose={onClose}>
@@ -681,7 +647,7 @@ export default function WorkerPreJourneyScreeningModal({
 
               {errors._general ? <Text style={styles.errorText}>{errors._general}</Text> : null}
 
-              {ACK_ITEMS.map((item) => {
+              {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.map((item) => {
                 const isChecked = Boolean(ack[item.key]);
                 return (
                   <Pressable

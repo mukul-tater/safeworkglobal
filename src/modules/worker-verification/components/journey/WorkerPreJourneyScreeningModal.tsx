@@ -21,12 +21,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import type {
-  MedicalFitnessDeclaration,
-  PreviousOverseasEmploymentDeclaration,
-  RecruitmentAgentExperienceDeclaration,
-  CandidateAcknowledgements,
-  WorkerPreJourneyDeclaration,
+import {
+  CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
+  type MedicalFitnessDeclaration,
+  type PreviousOverseasEmploymentDeclaration,
+  type RecruitmentAgentExperienceDeclaration,
+  type CandidateAcknowledgements,
+  type WorkerPreJourneyDeclaration,
 } from '@/modules/worker-verification/types/declarations.types';
 import {
   INITIAL_MEDICAL,
@@ -764,41 +765,8 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               )}
 
               <div className="space-y-3">
-                {[
-                  {
-                    key: 'noJobGuarantee',
-                    text: 'I understand that registration with SafeWork Global does not guarantee employment.',
-                  },
-                  {
-                    key: 'subjectToEmployerReqs',
-                    text: "I understand that final selection is subject to the employer's requirements and applicable recruitment procedures.",
-                  },
-                  {
-                    key: 'subjectToVisaClearance',
-                    text: 'I understand that visa issuance and immigration/emigration clearance are subject to the relevant authorities and applicable requirements.',
-                  },
-                  {
-                    key: 'tradeTestNoGuarantee',
-                    text: 'I understand that a trade test or skill verification does not guarantee employment.',
-                  },
-                  {
-                    key: 'agreeGenuineInfo',
-                    text: 'I agree to provide genuine and accurate information and documents.',
-                  },
-                  {
-                    key: 'falseDocConsequences',
-                    text: 'I understand that submitting false documents or false information may result in cancellation of my application and may have legal consequences.',
-                  },
-                  {
-                    key: 'agreeMedicalAndTesting',
-                    text: 'I agree to undergo medical examination, skill testing and other verification required for the relevant job/country.',
-                  },
-                  {
-                    key: 'transparentCharges',
-                    text: 'I have been informed that applicable recruitment/service charges will be disclosed transparently and handled through the authorized process.',
-                  },
-                ].map((item, idx) => {
-                  const isChecked = (ack as any)[item.key];
+                {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.map((item, idx) => {
+                  const isChecked = ack[item.key];
                   return (
                     <label
                       key={item.key}
