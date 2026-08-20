@@ -63,7 +63,7 @@ export default function Dashboard() {
               .select('onboarding_completed')
               .eq('user_id', user?.id || '')
               .maybeSingle();
-            go(data?.onboarding_completed ? "/employer/dashboard" : "/employer/onboarding");
+            go(data?.onboarding_completed ? "/employer/dashboard" : "/employer/quick-signup");
           } catch (err) {
             console.error('Employer onboarding check failed:', err);
             go("/employer/dashboard");

@@ -54,3 +54,13 @@ export const quickEmployerSignupSchema = z.object({
   email: z.string().trim().email('Enter a valid email address').max(255),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
+
+/** Step 2 of /employer/quick-signup — remaining basic details + business info. */
+export const quickEmployerStep2Schema = z.object({
+  mobile: indianMobileRequired,
+  companyName: z.string().trim().min(2, 'Company name is required').max(100),
+  country: z.string().min(1, 'Country is required'),
+  employerRole: z.string().min(1, 'Your role is required'),
+  businessType: z.string().min(1, 'Business type is required'),
+  companySize: z.string().min(1, 'Company size is required'),
+});

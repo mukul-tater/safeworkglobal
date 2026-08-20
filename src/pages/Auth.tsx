@@ -66,6 +66,7 @@ export default function Auth() {
     assignRole,
     profile,
     isMobileVerified,
+    user,
   } = useAuth();
   const [view, setView] = useState<AuthView>(
     modeHint === 'signup' ? 'role-select' : 'login'
@@ -158,8 +159,22 @@ export default function Auth() {
     }
 
     if (role === 'employer') {
-      navigate('/employer/dashboard', { replace: true });
-      return;
+      let cancelled = false;
+      (async () => {
+        const { data } = await supabase
+          .from('employer_profiles')
+          .select('onboarding_completed')
+          .eq('user_id', user?.id || '')
+          .maybeSingle();
+        if (cancelled) return;
+        navigate(
+          data?.onboarding_completed ? '/employer/dashboard' : '/employer/quick-signup',
+          { replace: true },
+        );
+      })();
+      return () => {
+        cancelled = true;
+      };
     }
     if (role === 'partner') {
       navigate('/partner/dashboard', { replace: true });
@@ -170,7 +185,7 @@ export default function Auth() {
       return;
     }
     navigate('/dashboard', { replace: true });
-  }, [isAuthenticated, role, navigate, assigningRole, profileLoading, isMobileVerified]);
+  }, [isAuthenticated, role, navigate, assigningRole, profileLoading, isMobileVerified, user]);
 
   // Step 1 — open the role chooser modal. We do NOT trigger OAuth yet.
   const openGoogleRoleChooser = (context: 'login' | 'signup') => {
@@ -355,7 +370,7 @@ export default function Auth() {
         } catch {
           // Non-fatal — user can edit on the employer profile page.
         }
-        navigate('/employer/dashboard', { replace: true });
+        navigate('/employer/quick-signup', { replace: true });
       } else {
         navigate('/emitra/register', { replace: true });
       }

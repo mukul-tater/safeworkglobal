@@ -6,7 +6,6 @@ import EmployerLoginPage from '@/pages/employer/EmployerLoginPage';
 import QuickPostJob from '@/pages/employer/QuickPostJob';
 import PilotOffer from '@/pages/employer/PilotOffer';
 import RecommendedWorkers from '@/pages/employer/RecommendedWorkers';
-import EmployerOnboarding from '@/pages/employer/EmployerOnboarding';
 import EmployerDashboard from '@/pages/employer/EmployerDashboard';
 import EmployerProfile from '@/pages/employer/EmployerProfile';
 import CompanyProfile from '@/pages/employer/CompanyProfile';
@@ -48,7 +47,7 @@ export const legacyEmployerRoutes = (
     {employerRoute('/employer/quick-post-job', <QuickPostJob />)}
     {employerRoute('/employer/pilot-offer', <PilotOffer />)}
     {employerRoute('/employer/recommended-workers', <RecommendedWorkers />)}
-    {employerRoute('/employer/onboarding', <EmployerOnboarding />)}
+    <Route path="/employer/onboarding" element={<Navigate to="/employer/quick-signup" replace />} />
     {employerRoute('/employer/dashboard', <EmployerDashboard />)}
     {employerRoute('/employer/profile', <EmployerProfile />)}
     {employerRoute('/employer/company', <CompanyProfile />)}

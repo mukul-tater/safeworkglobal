@@ -49,8 +49,8 @@ const COPY = {
       body: 'Create a free company account, post jobs, and hire skill-verified workers — no large upfront recruiter fees. Pay only after you hire.',
       steps: [
         { n: '1', title: 'Create account', detail: 'Name, work email & password' },
-        { n: '2', title: 'Verify company', detail: 'Details, hiring needs & documents' },
-        { n: '3', title: 'Hire talent', detail: 'Post jobs, shortlist' },
+        { n: '2', title: 'Business details', detail: 'Company, role & locations' },
+        { n: '3', title: 'Hiring needs', detail: 'Roles, verification & pay' },
       ],
     },
     login: {
