@@ -1,43 +1,85 @@
 import { Link } from 'react-router-dom';
-import { BadgeCheck, LogIn, ShieldCheck, UserPlus, Wallet } from 'lucide-react';
+import { BadgeCheck, Building2, LogIn, ShieldCheck, UserPlus, Users, Wallet } from 'lucide-react';
 
-const TRUST = [
-  { icon: ShieldCheck, label: 'Verified employers' },
-  { icon: Wallet, label: 'Escrow pay' },
-  { icon: BadgeCheck, label: 'Free to start' },
-] as const;
+const TRUST = {
+  worker: [
+    { icon: ShieldCheck, label: 'Verified employers' },
+    { icon: Wallet, label: 'Escrow pay' },
+    { icon: BadgeCheck, label: 'Free to start' },
+  ],
+  employer: [
+    { icon: Users, label: 'Verified workers' },
+    { icon: Wallet, label: 'Escrow pay' },
+    { icon: BadgeCheck, label: 'Free to start' },
+  ],
+} as const;
 
 const COPY = {
-  signup: {
-    badge: 'Worker signup',
-    BadgeIcon: UserPlus,
-    headline: 'Start your overseas career the safe way',
-    body: 'Create a free profile, verify your skills, and get matched with verified Gulf employers — no large upfront agent commission.',
-    steps: [
-      { n: '1', title: 'Create account', detail: 'Name, email, mobile OTP & password' },
-      { n: '2', title: 'Verify skills', detail: 'Profile, proofs & trade checks' },
-      { n: '3', title: 'Get matched', detail: 'Verified Gulf employers, escrow pay' },
-    ],
+  worker: {
+    signup: {
+      badge: 'Worker signup',
+      BadgeIcon: UserPlus,
+      headline: 'Start your overseas career the safe way',
+      body: 'Create a free profile, verify your skills, and get matched with verified Gulf employers — no large upfront agent commission.',
+      steps: [
+        { n: '1', title: 'Create account', detail: 'Name, email, mobile OTP & password' },
+        { n: '2', title: 'Verify skills', detail: 'Profile, proofs & trade checks' },
+        { n: '3', title: 'Get matched', detail: 'Verified Gulf employers, escrow pay' },
+      ],
+    },
+    login: {
+      badge: 'Worker sign in',
+      BadgeIcon: LogIn,
+      headline: 'Welcome back — continue the safe way',
+      body: 'Sign in to pick up your verification journey and access verified Gulf opportunities — no agent fees.',
+      steps: [
+        { n: '1', title: 'Sign in', detail: 'Mobile or email + password' },
+        { n: '2', title: 'Continue journey', detail: 'Pick up where you left off' },
+        { n: '3', title: 'Get matched', detail: 'Verified Gulf employers, escrow pay' },
+      ],
+    },
   },
-  login: {
-    badge: 'Worker sign in',
-    BadgeIcon: LogIn,
-    headline: 'Welcome back — continue the safe way',
-    body: 'Sign in to pick up your verification journey and access verified Gulf opportunities — no agent fees.',
-    steps: [
-      { n: '1', title: 'Sign in', detail: 'Mobile or email + password' },
-      { n: '2', title: 'Continue journey', detail: 'Pick up where you left off' },
-      { n: '3', title: 'Get matched', detail: 'Verified Gulf employers, escrow pay' },
-    ],
+  employer: {
+    signup: {
+      badge: 'Employer signup',
+      BadgeIcon: Building2,
+      headline: 'Hire verified talent the safe way',
+      body: 'Create a free company account, post jobs, and hire skill-verified workers — no large upfront recruiter fees. Pay only after you hire.',
+      steps: [
+        { n: '1', title: 'Create account', detail: 'Name, work email & password' },
+        { n: '2', title: 'Verify company', detail: 'Details, hiring needs & documents' },
+        { n: '3', title: 'Hire talent', detail: 'Post jobs, shortlist, escrow pay' },
+      ],
+    },
+    login: {
+      badge: 'Employer sign in',
+      BadgeIcon: LogIn,
+      headline: 'Welcome back — hire with confidence',
+      body: 'Sign in to manage jobs, review verified workers, and release escrow-secured payments.',
+      steps: [
+        { n: '1', title: 'Sign in', detail: 'Work email + password' },
+        { n: '2', title: 'Manage hiring', detail: 'Jobs, shortlist & offers' },
+        { n: '3', title: 'Pay safely', detail: 'Escrow release after you hire' },
+      ],
+    },
   },
 } as const;
 
-type Variant = keyof typeof COPY;
+type Audience = keyof typeof COPY;
+type Variant = keyof typeof COPY.worker;
 
-/** Left / top trust panel for worker auth — Option A split layout. */
-export default function SignupJourneyPanel({ variant = 'signup' }: { variant?: Variant }) {
-  const copy = COPY[variant];
+/** Left / top trust panel for worker or employer auth — Option A split layout. */
+export default function SignupJourneyPanel({
+  variant = 'signup',
+  audience = 'worker',
+}: {
+  variant?: Variant;
+  audience?: Audience;
+}) {
+  const copy = COPY[audience][variant];
   const BadgeIcon = copy.BadgeIcon;
+  const trust = TRUST[audience];
+  const mobileBadge = audience === 'employer' ? 'Employer' : 'Worker';
 
   return (
     <aside className="relative flex shrink-0 flex-col overflow-hidden bg-[hsl(230_25%_10%)] text-white md:h-full md:w-[44%] lg:w-[46%]">
@@ -60,7 +102,7 @@ export default function SignupJourneyPanel({ variant = 'signup' }: { variant?: V
             <span className="font-heading text-sm font-bold tracking-tight">SafeWorkGlobal</span>
           </Link>
           <span className="rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/70">
-            Worker
+            {mobileBadge}
           </span>
         </div>
         <div className="px-4 pb-3 pt-3">
@@ -126,7 +168,7 @@ export default function SignupJourneyPanel({ variant = 'signup' }: { variant?: V
         </div>
 
         <div className="mt-8 flex flex-wrap gap-x-4 gap-y-2 border-t border-white/10 pt-5 text-xs text-white/55 lg:gap-x-5">
-          {TRUST.map(({ icon: Icon, label }) => (
+          {trust.map(({ icon: Icon, label }) => (
             <span key={label} className="inline-flex items-center gap-1.5">
               <Icon className="h-3.5 w-3.5 text-primary" />
               {label}
