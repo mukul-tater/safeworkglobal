@@ -1,6 +1,7 @@
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectLabel,
   SelectTrigger,
@@ -23,14 +24,16 @@ export default function WorkerLanguageSwitcher() {
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="end" className="min-w-[11.5rem]">
-        <SelectLabel className="pl-2 pr-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          App Language
-        </SelectLabel>
-        {WORKER_LOCALES.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
+        <SelectGroup>
+          <SelectLabel className="pl-2 pr-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            App Language
+          </SelectLabel>
+          {WORKER_LOCALES.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
       </SelectContent>
     </Select>
   );
