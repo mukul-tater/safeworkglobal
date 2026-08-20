@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Star, Trash2, User, FileText, GitCompare, Plus, Handshake, Shield } from "lucide-react";
+import { Star, Trash2, User, FileText, GitCompare, Plus, Handshake } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import EmployerFlowStepper from "@/components/employer/EmployerFlowStepper";
 import SendJobRequestDialog from "@/components/employer/SendJobRequestDialog";
@@ -201,7 +201,7 @@ export default function WorkerShortlist() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold">Worker Shortlist</h1>
-            <p className="text-sm text-muted-foreground mt-1">Pick a candidate and click <strong>Hire & Open Escrow</strong> to start the secure payment.</p>
+            <p className="text-sm text-muted-foreground mt-1">Pick a candidate and send an offer to hire them.</p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -320,11 +320,10 @@ export default function WorkerShortlist() {
                 <Button
                   size="sm"
                   className="w-full mb-2 gap-1"
-                  onClick={() => navigate(`/employer/escrow?workerId=${worker.worker_id}`)}
+                  onClick={() => navigate('/employer/offers')}
                 >
                   <Handshake className="h-4 w-4" />
-                  Hire & Open Escrow
-                  <Shield className="h-3.5 w-3.5 opacity-80" />
+                  Hire
                 </Button>
                 <SendJobRequestDialog
                   workerId={worker.worker_id}

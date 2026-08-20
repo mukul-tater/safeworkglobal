@@ -57,13 +57,6 @@ export default function EmployerHomeSections() {
       desc: "Send offers and manage signed contracts in one place.",
       cta: "Manage contracts",
     },
-    {
-      to: "/employer/escrow",
-      icon: ShieldCheck,
-      title: "Payments",
-      desc: "Track hiring payments and invoices in one place.",
-      cta: "View payments",
-    },
   ];
 
   const valueProps = [

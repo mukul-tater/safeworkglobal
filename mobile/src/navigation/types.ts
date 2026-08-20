@@ -57,7 +57,6 @@ export type EmployerStackParamList = {
   EmployerFormalities: undefined;
   EmployerContracts: undefined;
   EmployerContractHistory: undefined;
-  EmployerEscrow: undefined;
   EmployerCompliance: undefined;
   EmployerReports: undefined;
   EmployerMessaging: undefined;

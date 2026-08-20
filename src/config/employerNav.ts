@@ -1,4 +1,4 @@
-import { LayoutDashboard, User, Building2, PlusCircle, Briefcase, Users, Bookmark, UserCheck, Star, Calendar, FileSignature, FileCheck, Shield, History, BarChart3, MessageSquare } from "lucide-react";
+import { LayoutDashboard, User, Building2, PlusCircle, Briefcase, Users, Bookmark, UserCheck, Star, Calendar, FileSignature, FileCheck, History, BarChart3, MessageSquare } from "lucide-react";
 import type { NavGroup } from "@/components/layout/DashboardSidebar";
 
 export const employerNavGroups: NavGroup[] = [
@@ -36,13 +36,11 @@ export const employerNavGroups: NavGroup[] = [
       { path: "/employer/formalities", icon: FileCheck, label: "Formalities" },
       { path: "/employer/contracts", icon: FileSignature, label: "Contracts" },
       { path: "/employer/contract-history", icon: History, label: "Contract History" },
-      { path: "/employer/escrow", icon: Shield, label: "Payments (soon)" },
     ],
   },
   {
     label: "Reports",
     items: [
-      { path: "/employer/compliance", icon: FileCheck, label: "Compliance" },
       { path: "/employer/reports", icon: BarChart3, label: "Analytics" },
       { path: "/employer/messaging", icon: MessageSquare, label: "Messages" },
     ],

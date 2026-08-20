@@ -45,7 +45,6 @@ const routeLabels: BreadcrumbConfig = {
   "manage-formalities": "Manage Formalities",
   "contract-management": "Contract Management",
   payments: "Payments",
-  "escrow-payments": "Escrow Payments",
   reports: "Reports",
   "compliance-reports": "Compliance Reports",
   "company-profile": "Company Profile",

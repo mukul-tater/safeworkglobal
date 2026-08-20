@@ -24,7 +24,6 @@ import EmployerOffersScreen from '../screens/employer/EmployerOffersScreen';
 import EmployerFormalitiesScreen from '../screens/employer/EmployerFormalitiesScreen';
 import EmployerContractsScreen from '../screens/employer/EmployerContractsScreen';
 import EmployerContractHistoryScreen from '../screens/employer/EmployerContractHistoryScreen';
-import EmployerEscrowScreen from '../screens/employer/EmployerEscrowScreen';
 import EmployerComplianceScreen from '../screens/employer/EmployerComplianceScreen';
 import EmployerReportsScreen from '../screens/employer/EmployerReportsScreen';
 import EmployerMessagingScreen from '../screens/employer/EmployerMessagingScreen';
@@ -49,7 +48,6 @@ const screens = {
   EmployerFormalities: EmployerFormalitiesScreen,
   EmployerContracts: EmployerContractsScreen,
   EmployerContractHistory: EmployerContractHistoryScreen,
-  EmployerEscrow: EmployerEscrowScreen,
   EmployerCompliance: EmployerComplianceScreen,
   EmployerReports: EmployerReportsScreen,
   EmployerMessaging: EmployerMessagingScreen,

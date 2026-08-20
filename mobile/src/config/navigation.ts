@@ -43,8 +43,6 @@ export const employerNavItems: NavItem[] = [
   { name: 'EmployerFormalities', label: 'Formalities', group: 'Operations' },
   { name: 'EmployerContracts', label: 'Contracts', group: 'Operations' },
   { name: 'EmployerContractHistory', label: 'Contract History', group: 'Operations' },
-  { name: 'EmployerEscrow', label: 'Payments', group: 'Operations' },
-  { name: 'EmployerCompliance', label: 'Compliance', group: 'Reports' },
   { name: 'EmployerReports', label: 'Analytics', group: 'Reports' },
   { name: 'EmployerMessaging', label: 'Messages', group: 'Reports' },
 ];

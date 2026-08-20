@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Check, Search, Briefcase, Rocket, Star, Handshake, Shield } from "lucide-react";
+import { Check, Search, Briefcase, Rocket, Star, Handshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type EmployerFlowStep =
@@ -8,8 +8,7 @@ export type EmployerFlowStep =
   | "post"
   | "pilot"
   | "shortlist"
-  | "hire"
-  | "escrow";
+  | "hire";
 
 const STEPS: Array<{ key: EmployerFlowStep; label: string; icon: any; to: string }> = [
   { key: "signup", label: "Sign up", icon: Check, to: "/employer/dashboard" },
@@ -18,7 +17,6 @@ const STEPS: Array<{ key: EmployerFlowStep; label: string; icon: any; to: string
   { key: "pilot", label: "Start Pilot", icon: Rocket, to: "/employer/pilot-offer" },
   { key: "shortlist", label: "Shortlist", icon: Star, to: "/employer/shortlist" },
   { key: "hire", label: "Hire", icon: Handshake, to: "/employer/offers" },
-  { key: "escrow", label: "Escrow Release", icon: Shield, to: "/employer/escrow" },
 ];
 
 interface Props {

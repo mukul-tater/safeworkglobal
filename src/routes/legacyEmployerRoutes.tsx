@@ -16,7 +16,6 @@ import EmployerEditJob from '@/pages/employer/EditJob';
 import SearchWorkers from '@/pages/employer/SearchWorkers';
 import EmployerInterviews from '@/pages/employer/InterviewScheduling';
 import EmployerOffers from '@/pages/employer/OfferManagement';
-import EmployerEscrow from '@/pages/employer/EscrowPayments';
 import EmployerCompliance from '@/pages/employer/ComplianceReports';
 import EmployerMessaging from '@/pages/employer/EmployerMessaging';
 import EmployerSavedSearches from '@/pages/employer/SavedSearches';
@@ -59,7 +58,7 @@ export const legacyEmployerRoutes = (
     {employerRoute('/employer/search-workers', <SearchWorkers />)}
     {employerRoute('/employer/interviews', <EmployerInterviews />)}
     {employerRoute('/employer/offers', <EmployerOffers />)}
-    {employerRoute('/employer/escrow', <EmployerEscrow />)}
+    <Route path="/employer/escrow" element={<Navigate to="/employer/dashboard" replace />} />
     {employerRoute('/employer/compliance', <EmployerCompliance />)}
     {employerRoute('/employer/messaging', <EmployerMessaging />)}
     {employerRoute('/employer/saved-searches', <EmployerSavedSearches />)}

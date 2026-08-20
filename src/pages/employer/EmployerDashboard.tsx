@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import BackgroundVerificationCard from "@/components/employer/BackgroundVerificationCard";
-import EscrowQuickActions from "@/components/employer/EscrowQuickActions";
 import QuickStatsRow from "@/components/employer/QuickStatsRow";
 import RecentActivityFeed from "@/components/employer/RecentActivityFeed";
 import ShortlistedCandidatesCard from "@/components/employer/ShortlistedCandidatesCard";
@@ -154,7 +153,7 @@ export default function EmployerDashboard() {
 
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold mb-1">Welcome back, {profile?.full_name || 'Employer'}!</h1>
-        <p className="text-muted-foreground text-sm">Manage your job postings, hiring pipeline, and payments</p>
+        <p className="text-muted-foreground text-sm">Manage your job postings and hiring pipeline</p>
       </div>
 
       {/* Quick Stats Row */}
@@ -166,11 +165,6 @@ export default function EmployerDashboard() {
         offers={offers.length}
         hired={applications.filter((a: any) => a.status === 'HIRED' || a.status === 'APPROVED').length}
       />
-
-      {/* Escrow Payment Widget */}
-      <div className="my-6">
-        <EscrowQuickActions payments={payments} />
-      </div>
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-2 gap-4 mb-6">
