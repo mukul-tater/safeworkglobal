@@ -44,11 +44,12 @@ export interface CandidateAcknowledgements {
   falseDocConsequences: boolean;
   agreeMedicalAndTesting: boolean;
   transparentCharges: boolean;
+  twoYearEmploymentCommitment: boolean;
 }
 
 export type EnHi = { en: string; hi: string };
 
-/** The 8 mandatory acknowledgements — shared by the form and the completed review. */
+/** The mandatory acknowledgements — shared by the form and the completed review. */
 export const CANDIDATE_ACKNOWLEDGEMENT_ITEMS: ReadonlyArray<{
   key: keyof CandidateAcknowledgements;
   text: string;
@@ -93,6 +94,11 @@ export const CANDIDATE_ACKNOWLEDGEMENT_ITEMS: ReadonlyArray<{
     key: 'transparentCharges',
     text: 'I have been informed that applicable recruitment/service charges will be disclosed transparently and handled through the authorized process.',
     textHi: 'मुझे बताया गया है कि लागू भर्ती/सेवा शुल्क पारदर्शी रूप से बताए जाएँगे और अधिकृत प्रक्रिया से लिए जाएँगे।',
+  },
+  {
+    key: 'twoYearEmploymentCommitment',
+    text: 'I agree to comply with my 2-year employment commitment and understand that if I voluntarily leave before completing the agreed period, I may be liable for any applicable penalty or legally recoverable costs specified in my employment contract and applicable law.',
+    textHi: 'मैं अपनी 2-वर्षीय रोजगार प्रतिबद्धता का पालन करने के लिए सहमत हूँ, और समझता/समझती हूँ कि यदि मैं सहमत अवधि पूरी करने से पहले स्वेच्छा से नौकरी छोड़ता/छोड़ती हूँ, तो मैं अपने रोजगार अनुबंध और लागू कानून में बताए गए दंड या कानूनी रूप से वसूली योग्य खर्चों के लिए उत्तरदायी हो सकता/सकती हूँ।',
   },
 ];
 
@@ -243,8 +249,8 @@ export const PRE_JOURNEY_COPY = {
   ack: {
     title: { en: '4. Worker Understanding', hi: '4. श्रमिक की सहमति' },
     desc: {
-      en: 'Candidate Acknowledgement — Before allowing entry into the next stage, all 8 checkboxes are mandatory.',
-      hi: 'उम्मीदवार स्वीकृति — अगले चरण में जाने से पहले सभी 8 बॉक्स अनिवार्य हैं।',
+      en: 'Candidate Acknowledgement — Before allowing entry into the next stage, all 9 checkboxes are mandatory.',
+      hi: 'उम्मीदवार स्वीकृति — अगले चरण में जाने से पहले सभी 9 बॉक्स अनिवार्य हैं।',
     },
   },
   summary: {

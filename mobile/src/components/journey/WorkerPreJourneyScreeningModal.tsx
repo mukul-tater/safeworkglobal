@@ -150,7 +150,10 @@ export default function WorkerPreJourneyScreeningModal({
     const res = validateStep4(ack);
     if (!res.isValid) {
       setErrors(res.errors);
-      Alert.alert('Required', 'You must accept all 8 mandatory candidate acknowledgements before proceeding.');
+      Alert.alert(
+        'Required',
+        `You must accept all ${CANDIDATE_ACKNOWLEDGEMENT_ITEMS.length} mandatory candidate acknowledgements before proceeding.`,
+      );
       return;
     }
 
@@ -167,16 +170,9 @@ export default function WorkerPreJourneyScreeningModal({
   };
 
   const selectAllAcknowledgements = () => {
-    setAck({
-      noJobGuarantee: true,
-      subjectToEmployerReqs: true,
-      subjectToVisaClearance: true,
-      tradeTestNoGuarantee: true,
-      agreeGenuineInfo: true,
-      falseDocConsequences: true,
-      agreeMedicalAndTesting: true,
-      transparentCharges: true,
-    });
+    const next = { ...ack };
+    for (const item of CANDIDATE_ACKNOWLEDGEMENT_ITEMS) next[item.key] = true;
+    setAck(next);
     setErrors({});
   };
 

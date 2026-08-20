@@ -1,11 +1,12 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
-import type {
+import {
   WorkerPreJourneyDeclaration,
   ValidationResult,
   MedicalFitnessDeclaration,
   PreviousOverseasEmploymentDeclaration,
   RecruitmentAgentExperienceDeclaration,
   CandidateAcknowledgements,
+  CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
 } from '../types/declarations.types';
 
 const supabase: any = supabaseTyped;
@@ -55,6 +56,7 @@ export const INITIAL_ACKNOWLEDGEMENTS: CandidateAcknowledgements = {
   falseDocConsequences: false,
   agreeMedicalAndTesting: false,
   transparentCharges: false,
+  twoYearEmploymentCommitment: false,
 };
 
 export function validateStep1(medical: MedicalFitnessDeclaration): ValidationResult {
@@ -137,27 +139,12 @@ export function validateStep3(recruitment: RecruitmentAgentExperienceDeclaration
 
 export function validateStep4(ack: CandidateAcknowledgements): ValidationResult {
   const errors: Record<string, string> = {};
-  if (!ack.noJobGuarantee) errors.noJobGuarantee = 'Required';
-  if (!ack.subjectToEmployerReqs) errors.subjectToEmployerReqs = 'Required';
-  if (!ack.subjectToVisaClearance) errors.subjectToVisaClearance = 'Required';
-  if (!ack.tradeTestNoGuarantee) errors.tradeTestNoGuarantee = 'Required';
-  if (!ack.agreeGenuineInfo) errors.agreeGenuineInfo = 'Required';
-  if (!ack.falseDocConsequences) errors.falseDocConsequences = 'Required';
-  if (!ack.agreeMedicalAndTesting) errors.agreeMedicalAndTesting = 'Required';
-  if (!ack.transparentCharges) errors.transparentCharges = 'Required';
+  for (const item of CANDIDATE_ACKNOWLEDGEMENT_ITEMS) {
+    if (!ack[item.key]) errors[item.key] = 'Required';
+  }
 
-  const allChecked =
-    ack.noJobGuarantee &&
-    ack.subjectToEmployerReqs &&
-    ack.subjectToVisaClearance &&
-    ack.tradeTestNoGuarantee &&
-    ack.agreeGenuineInfo &&
-    ack.falseDocConsequences &&
-    ack.agreeMedicalAndTesting &&
-    ack.transparentCharges;
-
-  if (!allChecked) {
-    errors._general = 'All 8 candidate acknowledgements must be accepted before starting your journey.';
+  if (Object.keys(errors).length > 0) {
+    errors._general = `All ${CANDIDATE_ACKNOWLEDGEMENT_ITEMS.length} candidate acknowledgements must be accepted before starting your journey.`;
   }
 
   return { isValid: Object.keys(errors).length === 0, errors };
