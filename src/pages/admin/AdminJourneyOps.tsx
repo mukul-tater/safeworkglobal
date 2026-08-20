@@ -274,6 +274,25 @@ export default function AdminJourneyOps() {
             Status: <strong>{(tab === 'trade_test' ? r.trade_test_status : r.medical_status) || 'pending'}</strong>
             {' · '}Scheduled: {fmt(tab === 'trade_test' ? r.trade_test_scheduled_at : r.medical_scheduled_at)}
           </div>
+          {tab === 'medical' && (
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+              {(r.medical_blood_report_url || r.medical_result_url) && (
+                <a className="text-primary underline" href={r.medical_blood_report_url || r.medical_result_url} target="_blank" rel="noreferrer">
+                  Blood report
+                </a>
+              )}
+              {r.medical_xray_report_url && (
+                <a className="text-primary underline" href={r.medical_xray_report_url} target="_blank" rel="noreferrer">
+                  X-ray report
+                </a>
+              )}
+              {r.medical_xray_photo_url && (
+                <a className="text-primary underline" href={r.medical_xray_photo_url} target="_blank" rel="noreferrer">
+                  X-ray photo
+                </a>
+              )}
+            </div>
+          )}
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-xs">Date &amp; time</Label>

@@ -418,6 +418,48 @@ export default function CompletedStepReview({
           </div>
         )}
 
+        {stepId === 'medical' && (() => {
+          const docs = [
+            {
+              document_name: 'Blood report',
+              document_type: 'medical_blood_report',
+              file_url: row.medical_blood_report_url || row.medical_result_url || '',
+              verification_status: row.medical_status,
+            },
+            {
+              document_name: 'X-ray report',
+              document_type: 'medical_xray_report',
+              file_url: row.medical_xray_report_url || '',
+              verification_status: row.medical_status,
+            },
+            {
+              document_name: 'X-ray photo',
+              document_type: 'medical_xray_photo',
+              file_url: row.medical_xray_photo_url || '',
+              verification_status: row.medical_status,
+            },
+          ].filter((d) => d.file_url);
+          const passed = row.medical_status === 'passed';
+          return (
+            <div className="space-y-4">
+              <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                <Detail label="Medical status" value={passed ? 'Passed' : row.medical_status || 'Submitted'} />
+                <Detail label="Centre" value={row.medical_place || '—'} />
+              </dl>
+              {docs.length > 0 && (
+                <div>
+                  <SectionLabel>Documents on file</SectionLabel>
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {docs.map((doc) => (
+                      <DocumentTile key={`${doc.document_type}-${doc.file_url}`} doc={doc} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {stepId === 'payment' && (() => {
           const waived = !row.razorpay_payment_id && paymentRecord?.provider === 'pilot_waive';
           return (
@@ -464,7 +506,7 @@ export default function CompletedStepReview({
         })()}
 
         {!stepId ||
-        !['essentials', 'test1', 'skill_proof', 'identity', 'test2', 'payment'].includes(stepId) ? (
+        !['essentials', 'test1', 'skill_proof', 'identity', 'test2', 'payment', 'medical'].includes(stepId) ? (
           <p className="text-sm text-muted-foreground">
             You've finished this step. SafeWork has everything it needs here.
           </p>

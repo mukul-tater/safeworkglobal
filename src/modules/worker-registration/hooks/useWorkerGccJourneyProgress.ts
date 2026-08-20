@@ -140,12 +140,10 @@ export function useWorkerGccJourneyProgress() {
       void load();
     };
     window.addEventListener("swg-verification-updated", onUpdated);
-    window.addEventListener("focus", onUpdated);
 
     return () => {
       cancelled = true;
       window.removeEventListener("swg-verification-updated", onUpdated);
-      window.removeEventListener("focus", onUpdated);
     };
   }, [user?.id, profile?.id]);
 

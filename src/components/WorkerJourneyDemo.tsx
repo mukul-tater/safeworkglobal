@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Video,
   Wrench,
+  Stethoscope,
   Info,
   CheckCircle2,
   XCircle,
@@ -123,8 +124,18 @@ const STEPS: JourneyStep[] = [
     ],
   },
   {
-    id: "travel",
+    id: "medical",
     number: 7,
+    title: "Medical Test",
+    shortTitle: "Medical Test",
+    description:
+      "Complete the medical examination and upload blood and X-ray documents from an approved centre.",
+    icon: Stethoscope,
+    bullets: ["Medical blood report", "X-ray report", "X-ray photo"],
+  },
+  {
+    id: "travel",
+    number: 8,
     title: "Travel — Visa & Flight",
     shortTitle: "Travel",
     description:
@@ -132,7 +143,6 @@ const STEPS: JourneyStep[] = [
     icon: Plane,
     bullets: [
       "Visa documentation & filing support",
-      "Medical & compliance checks as required",
       "Flight booking coordination",
       "Pre-departure guidance",
     ],

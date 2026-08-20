@@ -18,6 +18,7 @@ import {
   approveMedical,
   approveTradeTest,
   markPaymentPaid,
+  medicalTestDocumentsComplete,
   recordInterviewScore,
 } from '@/modules/worker-verification/services/verificationService';
 import { displayableEmail } from '@/lib/workerAuthEmail';
@@ -43,6 +44,9 @@ type Row = {
   state: string | null;
   medical_status: string | null;
   medical_result_url: string | null;
+  medical_blood_report_url: string | null;
+  medical_xray_report_url: string | null;
+  medical_xray_photo_url: string | null;
   bond_status: string | null;
   payment_status: string | null;
   full_name?: string | null;
@@ -274,24 +278,47 @@ export default function AdminVerificationQueue() {
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
                     Status: {r.medical_status || 'pending'}
-                    {r.medical_result_url ? (
-                      <>
-                        {' · '}
-                        <a
-                          className="text-primary underline"
-                          href={r.medical_result_url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          View upload
-                        </a>
-                      </>
-                    ) : (
-                      ' · No upload yet'
-                    )}
                   </p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
+                    {(r.medical_blood_report_url || r.medical_result_url) ? (
+                      <a
+                        className="text-primary underline"
+                        href={r.medical_blood_report_url || r.medical_result_url || '#'}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Blood report
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">Blood report missing</span>
+                    )}
+                    {r.medical_xray_report_url ? (
+                      <a
+                        className="text-primary underline"
+                        href={r.medical_xray_report_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        X-ray report
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">X-ray report missing</span>
+                    )}
+                    {r.medical_xray_photo_url ? (
+                      <a
+                        className="text-primary underline"
+                        href={r.medical_xray_photo_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        X-ray photo
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground">X-ray photo missing</span>
+                    )}
+                  </div>
                   <Button
-                    disabled={actingId === r.user_id || !r.medical_result_url}
+                    disabled={actingId === r.user_id || !medicalTestDocumentsComplete(r)}
                     onClick={() =>
                       void run(r.user_id, () => approveMedical(r.user_id), 'Medical passed')
                     }

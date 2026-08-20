@@ -51,7 +51,7 @@ const roles: {
 export default function AuthScreen({ route }: Props) {
   const initialMode = route.params?.mode ?? 'login';
   const roleHint = route.params?.role;
-  const { login, signup, assignRole } = useAuth();
+  const { login, signup, assignRole, loginWithGoogle } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [loading, setLoading] = useState(false);
@@ -133,6 +133,16 @@ export default function AuthScreen({ route }: Props) {
       }
     }
     setLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    const result = await loginWithGoogle();
+    setLoading(false);
+    if (!result.success && !result.cancelled) {
+      setError(result.error ?? 'Google sign-in failed');
+    }
   };
 
   return (
@@ -273,6 +283,25 @@ export default function AuthScreen({ route }: Props) {
           fullWidth
         />
 
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={handleGoogleSignIn}
+          disabled={loading}
+          style={({ pressed }) => [
+            styles.googleBtn,
+            pressed && styles.googleBtnPressed,
+            loading && styles.googleBtnDisabled,
+          ]}
+        >
+          <Text style={styles.googleBtnText}>Continue with Google</Text>
+        </Pressable>
+
         <Text style={styles.footerHint}>
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
           <Text
@@ -390,6 +419,44 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     color: colors.primary,
+    fontWeight: '600',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    ...typography.caption,
+    color: colors.mutedForeground,
+    marginHorizontal: spacing.sm,
+    textTransform: 'uppercase',
+  },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  googleBtnPressed: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  googleBtnDisabled: {
+    opacity: 0.6,
+  },
+  googleBtnText: {
+    ...typography.button,
+    color: colors.foreground,
     fontWeight: '600',
   },
   linkBtn: { alignSelf: 'flex-end', marginBottom: spacing.sm },

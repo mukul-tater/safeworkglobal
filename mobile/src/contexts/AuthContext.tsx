@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Linking } from 'react-native';
 import type { Session, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { assertEnvConfigured } from '../config/env';
 import { supabase } from '../integrations/supabase/client';
+import { completeGoogleAuthFromUrl, signInWithGoogleMobile } from '../services/googleAuthService';
 import { displayableEmail, workerAuthEmailFromIdentifier } from '../lib/workerAuthEmail';
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner';
@@ -28,6 +30,7 @@ interface AuthContextType {
   profileLoading: boolean;
   needsRoleSelection: boolean;
   login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string; cancelled?: boolean }>;
   signup: (data: {
     email: string;
     password: string;
@@ -104,6 +107,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error(e);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleUrl = ({ url }: { url: string }) => {
+      void completeGoogleAuthFromUrl(url);
+    };
+    const sub = Linking.addEventListener('url', handleUrl);
+    void Linking.getInitialURL().then((url) => {
+      if (url) void completeGoogleAuthFromUrl(url);
+    });
+    return () => sub.remove();
   }, []);
 
   const fetchUserRole = async (userId: string) => {
@@ -276,6 +290,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const res = await signInWithGoogleMobile();
+      if (!res.success) {
+        if (res.cancelled) return { success: false, cancelled: true };
+        return { success: false, error: res.error || 'Google sign-in failed' };
+      }
+      const {
+        data: { session: currentSession },
+      } = await supabase.auth.getSession();
+      if (currentSession?.user) {
+        setUser(currentSession.user);
+        setSession(currentSession);
+        await fetchOrCreateProfile(currentSession.user, ++loadGenerationRef.current);
+      }
+      return { success: true };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Google sign-in failed',
+      };
+    }
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -386,6 +424,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profileLoading,
         needsRoleSelection,
         login,
+        loginWithGoogle,
         signup,
         logout,
         hasRole,

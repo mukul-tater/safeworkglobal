@@ -863,16 +863,38 @@ export async function submitTradeTestResult(
   return data as WorkerVerification;
 }
 
-/** Worker uploads result; admin must pass to advance. */
+export type MedicalTestDocuments = {
+  bloodReportUrl: string;
+  xrayReportUrl: string;
+  xrayPhotoUrl: string;
+};
+
+export function medicalTestDocumentsComplete(row: {
+  medical_blood_report_url?: string | null;
+  medical_xray_report_url?: string | null;
+  medical_xray_photo_url?: string | null;
+  medical_result_url?: string | null;
+}): boolean {
+  return Boolean(
+    (row.medical_blood_report_url || row.medical_result_url) &&
+      row.medical_xray_report_url &&
+      row.medical_xray_photo_url,
+  );
+}
+
+/** Worker uploads blood report, X-ray report, and X-ray photo; admin must pass to advance. */
 export async function submitMedicalResult(
   userId: string,
-  resultUrl: string,
+  docs: MedicalTestDocuments,
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
-      medical_result_url: resultUrl,
+      medical_blood_report_url: docs.bloodReportUrl,
+      medical_xray_report_url: docs.xrayReportUrl,
+      medical_xray_photo_url: docs.xrayPhotoUrl,
+      medical_result_url: docs.bloodReportUrl,
       medical_status: 'scheduled',
       updated_at: new Date().toISOString(),
     })
@@ -903,6 +925,9 @@ export async function approveTradeTest(userId: string): Promise<WorkerVerificati
 /** Admin — pass medical and move to bond. */
 export async function approveMedical(userId: string): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
+  if (!medicalTestDocumentsComplete(row)) {
+    throw new Error('Worker must upload blood report, X-ray report, and X-ray photo');
+  }
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
@@ -1045,6 +1070,9 @@ export async function resetVerificationJourney(userId: string): Promise<WorkerVe
       trade_test_reporting_window: null,
       trade_test_booked_at: null,
       medical_result_url: null,
+      medical_blood_report_url: null,
+      medical_xray_report_url: null,
+      medical_xray_photo_url: null,
       razorpay_payment_id: null,
       razorpay_order_id: null,
       bond_status: 'pending',

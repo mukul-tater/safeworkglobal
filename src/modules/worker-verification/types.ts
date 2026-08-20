@@ -43,6 +43,9 @@ export interface WorkerVerification {
   trade_test_reporting_window: string | null;
   trade_test_booked_at: string | null;
   medical_result_url: string | null;
+  medical_blood_report_url: string | null;
+  medical_xray_report_url: string | null;
+  medical_xray_photo_url: string | null;
   razorpay_payment_id: string | null;
   razorpay_order_id: string | null;
   bond_status: string | null;

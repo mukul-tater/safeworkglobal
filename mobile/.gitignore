@@ -87,6 +87,8 @@ android/local.properties
 android/app/build/
 android/build/
 android/.gradle/
+android/.kotlin/
+android/.cxx/
 ios/build/
 ios/Pods/
 *.apk
@@ -94,3 +96,9 @@ ios/Pods/
 *.ipa
 releases/
 vendor/bundle/
+
+# Google / Firebase client configs (per-developer; do not commit)
+google-services.json
+**/google-services.json
+GoogleService-Info.plist
+**/GoogleService-Info.plist

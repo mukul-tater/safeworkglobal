@@ -31,11 +31,18 @@ mobile/.tools/
 mobile/android/local.properties
 mobile/android/app/build/
 mobile/android/build/
+mobile/android/.gradle/
+mobile/android/.kotlin/
+mobile/android/.cxx/
 mobile/ios/build/
 mobile/releases/
 mobile/**/*.apk
 mobile/**/*.aab
 mobile/**/*.ipa
+
+# Google / Firebase client configs (per-developer; do not commit)
+**/google-services.json
+**/GoogleService-Info.plist
 
 # Firebase / GCP service accounts
 firebase-service-account.json
@@ -57,13 +64,27 @@ docs/DEMO_LOGIN_CREDENTIALS.md
 # Cursor MCP (may contain client IDs / local paths)
 .cursor/mcp.json
 
+# Supabase CLI local
+supabase/.temp/
+supabase/.branches/
+
+# Tooling caches
+.eslintcache
+*.tsbuildinfo
+coverage/
+.turbo/
+.vite/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.iml
+.gradle/
