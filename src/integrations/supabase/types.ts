@@ -4914,6 +4914,22 @@ export type Database = {
           years_of_experience: number
         }[]
       }
+      get_worker_quiz_items: {
+        Args: { p_skill: string }
+        Returns: {
+          active: boolean
+          created_at: string
+          id: string
+          image_url: string
+          options: Json
+          question: string
+          question_hi: string
+          region: string
+          skill_code: string
+          sort_order: number
+          youtube_url: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5020,6 +5036,14 @@ export type Database = {
       resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
+      submit_worker_quiz: {
+        Args: { p_answers: Json }
+        Returns: {
+          correct_count: number
+          score: number
+          total_count: number
+        }[]
+      }
       verify_lsp_launch: {
         Args: {
           p_emitra_id?: string
