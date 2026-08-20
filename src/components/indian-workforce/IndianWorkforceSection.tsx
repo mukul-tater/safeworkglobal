@@ -9,6 +9,9 @@ import { tradeCategories } from "./data";
 import HindiText from "./HindiText";
 import WorkerPhotoCollage from "./WorkerPhotoCollage";
 import TradeCategoryCard from "./TradeCategoryCard";
+import ManyMoreTradeCard from "./ManyMoreTradeCard";
+
+const HOME_TRADE_PREVIEW_COUNT = 7;
 
 export default function IndianWorkforceSection() {
   const navigate = useNavigate();
@@ -100,9 +103,10 @@ export default function IndianWorkforceSection() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4">
-            {tradeCategories.map((trade, index) => (
+            {tradeCategories.slice(0, HOME_TRADE_PREVIEW_COUNT).map((trade, index) => (
               <TradeCategoryCard key={trade.id} trade={trade} index={index} />
             ))}
+            <ManyMoreTradeCard index={HOME_TRADE_PREVIEW_COUNT} />
           </div>
         </div>
 
