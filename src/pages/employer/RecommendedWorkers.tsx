@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Sparkles, MapPin, Briefcase, Wallet, Star, Eye, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { fetchEmployerWorkers } from "@/services/employerWorkerAccessService";
 import {
   rankWorkers,
   resolveTemplate,
