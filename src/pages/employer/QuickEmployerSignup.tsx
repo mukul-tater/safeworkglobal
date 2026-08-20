@@ -128,7 +128,7 @@ export default function QuickEmployerSignup() {
             </div>
             <h1 className="text-2xl font-bold font-heading mb-1">Hire Workers</h1>
             <p className="text-sm text-muted-foreground">
-              Verified workers, escrow-secured payments — no upfront fees.
+              Verified workers, no upfront fees.
             </p>
             <p className="text-xs text-muted-foreground mt-1">Takes less than 2 minutes</p>
           </div>
