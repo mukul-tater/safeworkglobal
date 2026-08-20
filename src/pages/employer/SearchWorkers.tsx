@@ -15,6 +15,7 @@ import WorkerComparisonDrawer, { type CompareWorker } from '@/components/employe
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { fetchEmployerVisibleFields, fetchEmployerWorkers, toVisibilityMap, type FieldVisibilityMap } from '@/services/employerWorkerAccessService';
 import { Link } from 'react-router-dom';
 import { WorkerListSkeleton } from '@/components/ui/page-skeleton';
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
