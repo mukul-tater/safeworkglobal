@@ -603,7 +603,6 @@ export default function WorkerVerificationPage() {
       const answers = quizItems.map((item) => ({
         quiz_item_id: item.id,
         answer: Boolean(quizAnswers[item.id]),
-        expected: item.expected_answer,
       }));
       const next = await submitQuiz(user.id, answers);
       const normalized = normalizeVerificationStage(
