@@ -28,6 +28,41 @@ export const indianMobileOptional = z
   .refine((v) => !v || isValidIndianMobile(v), 'Enter a valid 10-digit Indian mobile number')
   .transform((v) => (v ? normalizeIndianMobile(v) : ''));
 
+/** UAE mobile: 9 digits starting with 5 (after +971 / 00971 / 0). */
+export const UAE_MOBILE_REGEX = /^5\d{8}$/;
+
+export function normalizeUaeMobile(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  if (digits.startsWith('00971')) return digits.slice(5);
+  if (digits.startsWith('971')) return digits.slice(3);
+  if (digits.startsWith('0') && digits.length === 10) return digits.slice(1);
+  return digits;
+}
+
+export function toUaeE164(value: string): string {
+  const national = normalizeUaeMobile(value);
+  return national ? `+971${national}` : '';
+}
+
+export function isValidUaeMobile(value: string): boolean {
+  return UAE_MOBILE_REGEX.test(normalizeUaeMobile(value));
+}
+
+export const uaeMobileRequired = z
+  .string()
+  .trim()
+  .min(1, 'UAE mobile number is required')
+  .refine(isValidUaeMobile, 'Enter a valid UAE mobile number (e.g. 50 123 4567)')
+  .transform(toUaeE164);
+
+export const uaeMobileOptional = z
+  .string()
+  .trim()
+  .optional()
+  .or(z.literal(''))
+  .refine((v) => !v || isValidUaeMobile(v), 'Enter a valid UAE mobile number (e.g. 50 123 4567)')
+  .transform((v) => (v ? toUaeE164(v) : ''));
+
 export const personNameRequired = z
   .string()
   .trim()

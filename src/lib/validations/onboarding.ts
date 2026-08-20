@@ -54,7 +54,7 @@ export const quickEmployerSignupSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-/** Step 2 of /employer/quick-signup — business details. Role is always Owner. */
+/** Legacy step 2 of older employer onboarding — kept for EmployerOnboarding.tsx. */
 export const quickEmployerStep2Schema = z.object({
   mobile: indianMobileRequired,
   companyName: z.string().trim().min(2, 'Company name is required').max(100),

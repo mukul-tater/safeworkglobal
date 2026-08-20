@@ -9,6 +9,7 @@ export const employerNavGroups: NavGroup[] = [
       { path: "/employer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { path: "/employer/profile", icon: User, label: "My Profile" },
       { path: "/employer/company", icon: Building2, label: "Company & KYC" },
+      { path: "/employer/requirement", icon: Briefcase, label: "Manpower requirement" },
     ],
   },
   {

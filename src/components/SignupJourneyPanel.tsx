@@ -45,11 +45,13 @@ const COPY = {
     signup: {
       badge: 'Employer signup',
       BadgeIcon: Building2,
-      headline: 'Hire verified talent the safe way',
-      body: 'Create a free company account, post jobs, and hire skill-verified workers — no large upfront recruiter fees. Pay only after you hire.',
+      headline: 'Build Your Workforce in India. Grow Your Business in the UAE.',
+      body: 'Tell us your manpower requirement. SafeWork Global helps UAE employers source, screen and skill-verify skilled workers from India.',
       steps: [
-        { n: '1', title: 'Create account', detail: 'Name, work email & password' },
-        { n: '2', title: 'Business details', detail: 'Company, locations & finish' },
+        { n: '1', title: 'Company', detail: 'Licence, emirate and activity' },
+        { n: '2', title: 'Contact', detail: 'Authorized representative' },
+        { n: '3', title: 'Workforce', detail: 'Roles, numbers and skills' },
+        { n: '4', title: 'Partnership', detail: 'SafeWork commercial model' },
       ],
     },
     login: {
@@ -143,7 +145,7 @@ export default function SignupJourneyPanel({
         </div>
         <div className="px-4 pb-3 pt-3">
           <p className="font-heading text-base font-bold leading-snug">{copy.headline}</p>
-          <div className={`mt-3 grid gap-1.5 ${copy.steps.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          <div className={`mt-3 grid gap-1.5 ${copy.steps.length >= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {copy.steps.map((step, i) => (
               <div
                 key={step.n}
@@ -181,6 +183,11 @@ export default function SignupJourneyPanel({
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/60 lg:text-[15px]">
             {copy.body}
           </p>
+          {audience === 'employer' && variant === 'signup' && (
+            <p className="mt-2 text-xs font-medium text-white/45">
+              भारत से Skilled Workforce | Skilled Workforce from India
+            </p>
+          )}
 
           <ol className="mt-8 space-y-4 lg:mt-10 lg:space-y-5">
             {copy.steps.map((step, i) => (

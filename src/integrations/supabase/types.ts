@@ -829,6 +829,27 @@ export type Database = {
           office_address: string | null
           office_state: string | null
           onboarding_completed: boolean | null
+          additional_contact_number: string | null
+          business_email: string | null
+          commercial_notes: string | null
+          company_profile_path: string | null
+          company_type: string | null
+          contact_designation: string | null
+          contact_full_name: string | null
+          declaration_accurate: boolean
+          declaration_authorized: boolean
+          declaration_contact_ok: boolean
+          declaration_regulations: boolean
+          emirate: string | null
+          linkedin_url: string | null
+          partnership_model: string | null
+          preferred_communication: string | null
+          requirement_reference_id: string | null
+          requirement_submitted_at: string | null
+          trade_licence_path: string | null
+          trade_name: string | null
+          uae_mobile: string | null
+          whatsapp_number: string | null
           payment_method_preference: string | null
           preferred_countries: string[] | null
           provides_ppe: string | null
@@ -867,6 +888,27 @@ export type Database = {
           office_address?: string | null
           office_state?: string | null
           onboarding_completed?: boolean | null
+          additional_contact_number?: string | null
+          business_email?: string | null
+          commercial_notes?: string | null
+          company_profile_path?: string | null
+          company_type?: string | null
+          contact_designation?: string | null
+          contact_full_name?: string | null
+          declaration_accurate?: boolean
+          declaration_authorized?: boolean
+          declaration_contact_ok?: boolean
+          declaration_regulations?: boolean
+          emirate?: string | null
+          linkedin_url?: string | null
+          partnership_model?: string | null
+          preferred_communication?: string | null
+          requirement_reference_id?: string | null
+          requirement_submitted_at?: string | null
+          trade_licence_path?: string | null
+          trade_name?: string | null
+          uae_mobile?: string | null
+          whatsapp_number?: string | null
           payment_method_preference?: string | null
           preferred_countries?: string[] | null
           provides_ppe?: string | null
@@ -905,6 +947,27 @@ export type Database = {
           office_address?: string | null
           office_state?: string | null
           onboarding_completed?: boolean | null
+          additional_contact_number?: string | null
+          business_email?: string | null
+          commercial_notes?: string | null
+          company_profile_path?: string | null
+          company_type?: string | null
+          contact_designation?: string | null
+          contact_full_name?: string | null
+          declaration_accurate?: boolean
+          declaration_authorized?: boolean
+          declaration_contact_ok?: boolean
+          declaration_regulations?: boolean
+          emirate?: string | null
+          linkedin_url?: string | null
+          partnership_model?: string | null
+          preferred_communication?: string | null
+          requirement_reference_id?: string | null
+          requirement_submitted_at?: string | null
+          trade_licence_path?: string | null
+          trade_name?: string | null
+          uae_mobile?: string | null
+          whatsapp_number?: string | null
           payment_method_preference?: string | null
           preferred_countries?: string[] | null
           provides_ppe?: string | null
@@ -918,6 +981,60 @@ export type Database = {
           work_locations?: string[] | null
           worker_type_needed?: string | null
           workers_required?: number | null
+        }
+        Relationships: []
+      }
+      employer_manpower_requirements: {
+        Row: {
+          additional_requirements: string | null
+          created_at: string
+          employer_user_id: string
+          experience: string | null
+          gender: string
+          id: string
+          joining_date: string | null
+          location: string
+          number_of_workers: number
+          project_duration: string | null
+          project_name: string | null
+          sort_order: number
+          technical_skills: string[]
+          trade: string
+          updated_at: string
+        }
+        Insert: {
+          additional_requirements?: string | null
+          created_at?: string
+          employer_user_id: string
+          experience?: string | null
+          gender?: string
+          id?: string
+          joining_date?: string | null
+          location?: string
+          number_of_workers: number
+          project_duration?: string | null
+          project_name?: string | null
+          sort_order?: number
+          technical_skills?: string[]
+          trade: string
+          updated_at?: string
+        }
+        Update: {
+          additional_requirements?: string | null
+          created_at?: string
+          employer_user_id?: string
+          experience?: string | null
+          gender?: string
+          id?: string
+          joining_date?: string | null
+          location?: string
+          number_of_workers?: number
+          project_duration?: string | null
+          project_name?: string | null
+          sort_order?: number
+          technical_skills?: string[]
+          trade?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4921,6 +5038,10 @@ export type Database = {
       admin_verify_worker_kyc: {
         Args: { p_approved: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
+      }
+      assign_employer_requirement_ref: {
+        Args: { p_user_id: string }
+        Returns: string
       }
       assign_initial_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
