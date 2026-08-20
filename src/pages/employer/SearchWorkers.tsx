@@ -410,6 +410,13 @@ export default function SearchWorkers() {
             </div>
           )}
 
+          {!loading && hiddenFieldNote && (
+            <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3" /> {hiddenFieldNote}
+            </p>
+          )}
+
+
           {loading ? (
             <WorkerListSkeleton count={4} />
           ) : sortedWorkers.length === 0 ? (
