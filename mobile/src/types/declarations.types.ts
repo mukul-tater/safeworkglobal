@@ -99,3 +99,22 @@ export interface ValidationResult {
   isValid: boolean;
   errors: Record<string, string>;
 }
+
+/** Shown before medical questions — keep original ID documents in hand. */
+export const ORIGINAL_DOCS_READY_NOTICE = {
+  badgeEn: 'Before you begin',
+  badgeHi: 'शुरू करने से पहले',
+  titleEn: 'Keep your original documents with you',
+  titleHi: 'अपने मूल दस्तावेज़ अपने पास रखें',
+  bodyEn:
+    'Before you start the worker journey and continue filling this form, keep your original PAN card, Aadhaar card, and passport with you and available.',
+  bodyHi:
+    'वर्कर जर्नी शुरू करने और यह फॉर्म भरना जारी रखने से पहले, अपना मूल पैन कार्ड, आधार कार्ड और पासपोर्ट अपने पास तैयार रखें।',
+  items: [
+    { en: 'Original PAN card', hi: 'मूल पैन कार्ड' },
+    { en: 'Original Aadhaar card', hi: 'मूल आधार कार्ड' },
+    { en: 'Original passport', hi: 'मूल पासपोर्ट' },
+  ],
+  continueEn: 'I have them with me — Continue',
+  continueHi: 'ये दस्तावेज़ मेरे पास हैं — आगे बढ़ें',
+} as const;

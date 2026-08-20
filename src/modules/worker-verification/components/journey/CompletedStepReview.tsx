@@ -6,6 +6,7 @@ import {
   Copy,
   ExternalLink,
   FileText,
+  Info,
   Lock,
   Star,
   XCircle,
@@ -19,6 +20,7 @@ import { displayableEmail } from '@/lib/workerAuthEmail';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
 import {
   ASSESSMENT_FEE_INCLUSIONS,
+  MEDICAL_TEST_SCREENING_NOTE,
   QUIZ_PASS_SCORE,
   type GccNavStepId,
 } from '@/modules/worker-verification/constants';
@@ -450,6 +452,10 @@ export default function CompletedStepReview({
           const passed = row.medical_status === 'passed';
           return (
             <div className="space-y-4">
+              <div className="flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2.5">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <p className="text-sm text-foreground">{MEDICAL_TEST_SCREENING_NOTE}</p>
+              </div>
               <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
                 <Detail label="Medical status" value={passed ? 'Passed' : row.medical_status || 'Submitted'} />
                 <Detail label="Centre" value={row.medical_place || '—'} />

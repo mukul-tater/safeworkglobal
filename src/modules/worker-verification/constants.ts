@@ -133,6 +133,10 @@ export const ASSESSMENT_FEE_INCLUSIONS = [
   'Pre-departure assistance',
 ] as const;
 
+/** Shown on the logged-in worker Medical test step (not the homepage demo). */
+export const MEDICAL_TEST_SCREENING_NOTE =
+  'The standard screening tests for everyone include a blood test for HIV and a chest X-ray/screening for Tuberculosis (TB). You can complete these at any nearest laboratory.';
+
 export type VerificationStage =
   | 'essentials'
   | 'quiz'

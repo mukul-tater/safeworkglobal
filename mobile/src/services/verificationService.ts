@@ -38,12 +38,15 @@ export const JOURNEY_STEPS: { id: VerificationStage; label: string; description:
   { id: 'awaiting_interview', label: 'Test 2', description: 'Video interview' },
   { id: 'awaiting_payment', label: 'Payment', description: 'Assessment fee' },
   { id: 'trade_test', label: 'Trade test', description: 'Physical skill assessment' },
-  { id: 'medical', label: 'Medical', description: 'Fitness clearance' },
+  { id: 'medical', label: 'Medical', description: 'HIV blood test & TB chest X-ray at any nearest laboratory' },
   { id: 'bond', label: 'Bond', description: 'Stamp paper / eStamp' },
   { id: 'pdot', label: 'PDOT', description: 'Pre-departure orientation' },
   { id: 'deployment', label: 'Deployment', description: 'Travel & placement' },
   { id: 'gcc_ready', label: 'GCC ready', description: 'Eligible to apply for jobs' },
 ];
+
+export const MEDICAL_TEST_SCREENING_NOTE =
+  'The standard screening tests for everyone include a blood test for HIV and a chest X-ray/screening for Tuberculosis (TB). You can complete these at any nearest laboratory.';
 
 export const EDUCATION_LEVELS = [
   'Below 10th',

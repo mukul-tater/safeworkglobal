@@ -11,6 +11,9 @@ import {
   ChevronLeft,
   Loader2,
   Info,
+  CreditCard,
+  Fingerprint,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
+  ORIGINAL_DOCS_READY_NOTICE,
   type MedicalFitnessDeclaration,
   type PreviousOverseasEmploymentDeclaration,
   type RecruitmentAgentExperienceDeclaration,
@@ -47,10 +51,10 @@ interface Props {
   onCompleted: (decl: WorkerPreJourneyDeclaration) => void;
 }
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 0 | 1 | 2 | 3 | 4;
 
 export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompleted }: Props) {
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>(0);
   const [medical, setMedical] = useState<MedicalFitnessDeclaration>(INITIAL_MEDICAL);
   const [overseas, setOverseas] = useState<PreviousOverseasEmploymentDeclaration>(INITIAL_OVERSEAS);
   const [recruitment, setRecruitment] = useState<RecruitmentAgentExperienceDeclaration>(INITIAL_RECRUITMENT);
@@ -62,6 +66,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
 
   const handleNextStep = () => {
     setErrors({});
+    if (step === 0) {
+      setStep(1);
+      return;
+    }
     if (step === 1) {
       const res = validateStep1(medical);
       if (!res.isValid) {
@@ -91,7 +99,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
 
   const handlePrevStep = () => {
     setErrors({});
-    if (step > 1) setStep((step - 1) as Step);
+    if (step > 0) setStep((step - 1) as Step);
   };
 
   const handleSubmit = async () => {
@@ -136,22 +144,43 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
         <CardHeader className="border-b border-border/60 bg-muted/30 pb-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-semibold">
-                  Pre-Journey Validation & Declarations
-                </Badge>
-                <span className="text-xs font-medium text-muted-foreground">Step {step} of 4</span>
-              </div>
-              <CardTitle className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-                Worker Pre-Placement Declarations
-              </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground sm:text-sm">
-                Before starting your worker journey, please complete these mandatory health, overseas work, recruitment fee, and candidate compliance checks.
-              </CardDescription>
+              {step === 0 ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-semibold">
+                      {ORIGINAL_DOCS_READY_NOTICE.badgeEn}
+                    </Badge>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {ORIGINAL_DOCS_READY_NOTICE.badgeHi}
+                    </span>
+                  </div>
+                  <CardTitle className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                    {ORIGINAL_DOCS_READY_NOTICE.titleEn}
+                  </CardTitle>
+                  <p className="mt-1 text-base font-semibold text-foreground">
+                    {ORIGINAL_DOCS_READY_NOTICE.titleHi}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-semibold">
+                      Pre-Journey Validation & Declarations
+                    </Badge>
+                    <span className="text-xs font-medium text-muted-foreground">Step {step} of 4</span>
+                  </div>
+                  <CardTitle className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                    Worker Pre-Placement Declarations
+                  </CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground sm:text-sm">
+                    Before starting your worker journey, please complete these mandatory health, overseas work, recruitment fee, and candidate compliance checks.
+                  </CardDescription>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Stepper bar */}
+          {step > 0 && (
           <div className="mt-4 grid grid-cols-4 gap-1.5 sm:gap-2">
             {[
               { num: 1, label: 'Medical & Fitness', icon: Stethoscope },
@@ -186,10 +215,49 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               );
             })}
           </div>
+          )}
         </CardHeader>
 
         {/* Content Body */}
         <CardContent className="max-h-[68vh] overflow-y-auto p-4 sm:p-6 space-y-6">
+          {step === 0 && (
+            <div className="space-y-5">
+              <Alert className="border-primary/30 bg-primary/5">
+                <Info className="h-4 w-4 text-primary" />
+                <AlertTitle className="text-sm font-semibold text-foreground">
+                  {ORIGINAL_DOCS_READY_NOTICE.bodyEn}
+                </AlertTitle>
+                <AlertDescription className="mt-2 text-sm leading-relaxed text-foreground">
+                  {ORIGINAL_DOCS_READY_NOTICE.bodyHi}
+                </AlertDescription>
+              </Alert>
+
+              <ul className="space-y-2">
+                {[
+                  { icon: CreditCard, ...ORIGINAL_DOCS_READY_NOTICE.items[0] },
+                  { icon: Fingerprint, ...ORIGINAL_DOCS_READY_NOTICE.items[1] },
+                  { icon: BookOpen, ...ORIGINAL_DOCS_READY_NOTICE.items[2] },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <li
+                      key={item.en}
+                      className="flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3"
+                    >
+                      <div className="rounded-lg bg-primary/10 p-2">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{item.en}</p>
+                        <p className="text-sm text-muted-foreground">{item.hi}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
           {/* STEP 1: Medical & Fitness */}
           {step === 1 && (
             <div className="space-y-6">
@@ -801,7 +869,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
         {/* Footer Actions */}
         <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 p-4">
           <div>
-            {step > 1 && (
+            {step > 0 && (
               <Button
                 type="button"
                 variant="outline"
@@ -815,7 +883,16 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
           </div>
 
           <div className="flex items-center gap-2">
-            {step < 4 ? (
+            {step === 0 ? (
+              <Button
+                type="button"
+                onClick={handleNextStep}
+                className="h-auto flex-col gap-0.5 bg-primary px-4 py-2.5 text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm"
+              >
+                <span className="text-sm">{ORIGINAL_DOCS_READY_NOTICE.continueEn}</span>
+                <span className="text-xs font-medium opacity-90">{ORIGINAL_DOCS_READY_NOTICE.continueHi}</span>
+              </Button>
+            ) : step < 4 ? (
               <Button
                 type="button"
                 onClick={handleNextStep}

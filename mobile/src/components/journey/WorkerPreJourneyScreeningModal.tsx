@@ -17,9 +17,14 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
+  CreditCard,
+  Fingerprint,
+  BookOpen,
+  Info,
 } from 'lucide-react-native';
 import {
   CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
+  ORIGINAL_DOCS_READY_NOTICE,
   type MedicalFitnessDeclaration,
   type PreviousOverseasEmploymentDeclaration,
   type RecruitmentAgentExperienceDeclaration,
@@ -50,7 +55,7 @@ interface Props {
   existingDeclaration?: WorkerPreJourneyDeclaration | null;
 }
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 0 | 1 | 2 | 3 | 4;
 
 export default function WorkerPreJourneyScreeningModal({
   userId,
@@ -59,7 +64,7 @@ export default function WorkerPreJourneyScreeningModal({
   onCompleted,
   existingDeclaration,
 }: Props) {
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>(0);
   const [medical, setMedical] = useState<MedicalFitnessDeclaration>(
     existingDeclaration?.medical || INITIAL_MEDICAL,
   );
@@ -79,6 +84,10 @@ export default function WorkerPreJourneyScreeningModal({
 
   const handleNextStep = () => {
     setErrors({});
+    if (step === 0) {
+      setStep(1);
+      return;
+    }
     if (step === 1) {
       const res = validateStep1(medical);
       if (!res.isValid) {
@@ -108,7 +117,7 @@ export default function WorkerPreJourneyScreeningModal({
 
   const handlePrevStep = () => {
     setErrors({});
-    if (step > 1) setStep((step - 1) as Step);
+    if (step > 0) setStep((step - 1) as Step);
   };
 
   const handleSubmit = async () => {
@@ -152,15 +161,20 @@ export default function WorkerPreJourneyScreeningModal({
         {/* Top Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Badge label={`Step ${step} of 4`} tone="primary" />
-            <Text style={styles.headerTitle}>Pre-Journey Screening</Text>
+            <Badge
+              label={step === 0 ? ORIGINAL_DOCS_READY_NOTICE.badgeEn : `Step ${step} of 4`}
+              tone="primary"
+            />
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {step === 0 ? 'Documents ready' : 'Pre-Journey Screening'}
+            </Text>
           </View>
           <Pressable onPress={onClose} style={styles.closeBtn}>
             <X size={20} color={colors.foreground} />
           </Pressable>
         </View>
 
-        {/* Stepper Tabs */}
+        {step > 0 && (
         <View style={styles.stepperContainer}>
           {[
             { num: 1, label: 'Medical', icon: Stethoscope },
@@ -198,9 +212,41 @@ export default function WorkerPreJourneyScreeningModal({
             );
           })}
         </View>
+        )}
 
         {/* Form Body */}
         <ScrollView contentContainerStyle={styles.scrollContent}>
+          {step === 0 && (
+            <View style={styles.stepBox}>
+              <Text style={styles.docsHiTitle}>{ORIGINAL_DOCS_READY_NOTICE.titleHi}</Text>
+              <View style={styles.docsNotice}>
+                <View style={styles.docsNoticeHeader}>
+                  <Info size={18} color={colors.worker} />
+                  <Text style={styles.docsEnBody}>{ORIGINAL_DOCS_READY_NOTICE.bodyEn}</Text>
+                </View>
+                <Text style={styles.docsHiBody}>{ORIGINAL_DOCS_READY_NOTICE.bodyHi}</Text>
+              </View>
+              {[
+                { Icon: CreditCard, ...ORIGINAL_DOCS_READY_NOTICE.items[0] },
+                { Icon: Fingerprint, ...ORIGINAL_DOCS_READY_NOTICE.items[1] },
+                { Icon: BookOpen, ...ORIGINAL_DOCS_READY_NOTICE.items[2] },
+              ].map((item) => {
+                const DocIcon = item.Icon;
+                return (
+                  <View key={item.en} style={styles.docRow}>
+                    <View style={styles.docIcon}>
+                      <DocIcon size={18} color={colors.worker} />
+                    </View>
+                    <View style={styles.docTextWrap}>
+                      <Text style={styles.docEn}>{item.en}</Text>
+                      <Text style={styles.docHi}>{item.hi}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
           {/* STEP 1 */}
           {step === 1 && (
             <View style={styles.stepBox}>
@@ -668,12 +714,20 @@ export default function WorkerPreJourneyScreeningModal({
 
         {/* Footer buttons */}
         <View style={styles.footer}>
-          {step > 1 ? (
+          {step > 0 ? (
             <View style={styles.footerBtn}>
               <Button title="Back" onPress={handlePrevStep} variant="outline" fullWidth />
             </View>
           ) : null}
-          {step < 4 ? (
+          {step === 0 ? (
+            <View style={styles.footerBtnWide}>
+              <Button
+                title="Continue · आगे बढ़ें"
+                onPress={handleNextStep}
+                fullWidth
+              />
+            </View>
+          ) : step < 4 ? (
             <View style={styles.footerBtn}>
               <Button title="Next step" onPress={handleNextStep} fullWidth />
             </View>
@@ -897,5 +951,69 @@ const styles = StyleSheet.create({
   },
   footerBtn: {
     flex: 1,
+  },
+  footerBtnWide: {
+    flex: 1,
+  },
+  docsHiTitle: {
+    ...typography.h3,
+    color: colors.foreground,
+    marginBottom: spacing.sm,
+  },
+  docsNotice: {
+    borderWidth: 1,
+    borderColor: colors.worker,
+    backgroundColor: colors.workerLight,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  docsNoticeHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  docsEnBody: {
+    ...typography.body,
+    color: colors.foreground,
+    flex: 1,
+    fontWeight: '600',
+  },
+  docsHiBody: {
+    ...typography.body,
+    color: colors.foreground,
+    lineHeight: 22,
+  },
+  docRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  docIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.workerLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  docTextWrap: {
+    flex: 1,
+  },
+  docEn: {
+    ...typography.body,
+    fontWeight: '700',
+    color: colors.foreground,
+  },
+  docHi: {
+    ...typography.bodySm,
+    color: colors.mutedForeground,
+    marginTop: 2,
   },
 });

@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
   Calendar, CreditCard, Stethoscope, FileSignature, RotateCcw, ShieldCheck, Wrench,
-  GraduationCap, Plane, Download, Truck, Lock, AlertTriangle, UserRound, ClipboardList,
+  GraduationCap, Plane, Download, Truck, Lock, AlertTriangle, UserRound, ClipboardList, Info,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -23,6 +23,7 @@ import { displayableEmail, isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail
 import {
   ASSESSMENT_FEE_INR,
   ASSESSMENT_FEE_INCLUSIONS,
+  MEDICAL_TEST_SCREENING_NOTE,
   educationOptionsForTenthPass,
   ecrFromTenthPass,
   GCC_JOURNEY_NAV_STEPS,
@@ -2045,7 +2046,7 @@ export default function WorkerVerificationPage() {
                 <div>
                   <h2 className="font-semibold">Medical test</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Upload your blood report, X-ray report, and X-ray photo from an approved centre.
+                    Upload your blood report, X-ray report, and X-ray photo from any nearest laboratory.
                     {!tradeNeeded && (
                       <> Physical trade test is not required for{' '}
                         <span className="font-medium text-foreground">{row.primary_skill}</span>.
@@ -2053,6 +2054,10 @@ export default function WorkerVerificationPage() {
                     )}
                   </p>
                 </div>
+              </div>
+              <div className="flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2.5">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <p className="text-sm text-foreground">{MEDICAL_TEST_SCREENING_NOTE}</p>
               </div>
               {waitingReview && (
                 <p className="text-sm rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
@@ -2088,7 +2093,7 @@ export default function WorkerVerificationPage() {
               <div className="grid gap-4 sm:grid-cols-1">
                 <MedicalFileField
                   label="Medical blood report"
-                  hint="Lab blood test report (image or PDF)."
+                  hint="HIV blood test report from any nearest laboratory (image or PDF)."
                   accept="image/*,.pdf,application/pdf"
                   file={medicalBloodFile}
                   existingUrl={bloodUrl}
@@ -2097,7 +2102,7 @@ export default function WorkerVerificationPage() {
                 />
                 <MedicalFileField
                   label="X-ray report"
-                  hint="Radiologist X-ray report (image or PDF)."
+                  hint="TB chest X-ray report from any nearest laboratory (image or PDF)."
                   accept="image/*,.pdf,application/pdf"
                   file={medicalXrayReportFile}
                   existingUrl={xrayReportUrl}
@@ -2106,7 +2111,7 @@ export default function WorkerVerificationPage() {
                 />
                 <MedicalFileField
                   label="X-ray photo"
-                  hint="Chest X-ray image from the medical centre."
+                  hint="Chest X-ray image for Tuberculosis (TB) screening."
                   accept="image/*"
                   file={medicalXrayPhotoFile}
                   existingUrl={xrayPhotoUrl}

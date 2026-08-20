@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   EDUCATION_LEVELS,
   JOURNEY_STEPS,
+  MEDICAL_TEST_SCREENING_NOTE,
   PRIMARY_SKILLS,
   acceptTerms,
   getOrCreateVerification,
@@ -320,6 +321,19 @@ export default function WorkerVerificationScreen() {
               अभी पासपोर्ट नहीं है? आप फिर भी ट्रेड टेस्ट दे सकते हैं। विदेश यात्रा के लिए वैध पासपोर्ट आवश्यक है।
             </Text>
             <Button title="Submit KYC" onPress={onSubmitKyc} loading={saving} fullWidth />
+          </Card>
+        ) : null}
+
+        {row?.stage === 'medical' ? (
+          <Card>
+            <SectionTitle
+              title="Medical test"
+              subtitle="Complete screening at any nearest laboratory"
+            />
+            <Text style={styles.body}>{MEDICAL_TEST_SCREENING_NOTE}</Text>
+            <Text style={styles.hint}>
+              Upload your HIV blood report, TB chest X-ray report, and X-ray photo on the web journey.
+            </Text>
           </Card>
         ) : null}
 
