@@ -89,6 +89,13 @@ export default function SearchWorkers() {
   const [sortBy, setSortBy] = useState<string>('best_match');
   const [visibleFields, setVisibleFields] = useState<FieldVisibilityMap>({});
 
+  const hiddenFieldNote = useMemo(() => {
+    const restricted = ['mobile', 'email', 'expected_salary', 'passport', 'aadhaar', 'pan', 'medical']
+      .filter(k => visibleFields[k] === false);
+    if (Object.keys(visibleFields).length === 0 || restricted.length === 0) return null;
+    return 'Some worker details are not shared with your account.';
+  }, [visibleFields]);
+
   useEffect(() => {
     loadWorkers();
     if (user) loadShortlistedWorkers();
