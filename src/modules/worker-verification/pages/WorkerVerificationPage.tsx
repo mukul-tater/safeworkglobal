@@ -76,6 +76,10 @@ import CompletedStepReview, {
   type KycDocument,
 } from '@/modules/worker-verification/components/journey/CompletedStepReview';
 import { phaseForStage } from '@/modules/worker-verification/journey/phases';
+import WorkerPreJourneyScreeningModal from '@/modules/worker-verification/components/journey/WorkerPreJourneyScreeningModal';
+import WorkerDeclarationsSummary from '@/modules/worker-verification/components/journey/WorkerDeclarationsSummary';
+import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
+import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
 
 function tradeTestAssignmentLabel(a: AssessmentRow): string {
   if (a.status === 'completed') {
@@ -189,6 +193,8 @@ export default function WorkerVerificationPage() {
   const [selectedTradeCenterId, setSelectedTradeCenterId] = useState('');
   const [tradeAssessment, setTradeAssessment] = useState<AssessmentRow | null>(null);
   const [medicalResultFile, setMedicalResultFile] = useState<File | null>(null);
+  const [declaration, setDeclaration] = useState<WorkerPreJourneyDeclaration | null>(null);
+  const [showDeclarationModal, setShowDeclarationModal] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -201,6 +207,11 @@ export default function WorkerVerificationPage() {
         stage: normalizeVerificationStage(vRaw.stage, vRaw.trade_test_required),
       };
       setRow(v);
+      const decl = await getWorkerDeclarations(user.id);
+      setDeclaration(decl);
+      if (!decl) {
+        setShowDeclarationModal(true);
+      }
       // Never prefill synthetic mobile-auth emails — worker types a real contact email
       setEmail(displayableEmail(v.email) || displayableEmail(profile?.email) || '');
       setCity(v.city || '');
@@ -779,8 +790,21 @@ export default function WorkerVerificationPage() {
 
   return (
     <WorkerPortalLayout>
+      <WorkerPreJourneyScreeningModal
+        userId={user?.id || ''}
+        isOpen={showDeclarationModal}
+        onCompleted={(decl) => {
+          setDeclaration(decl);
+          setShowDeclarationModal(false);
+          notifyVerificationUpdated();
+        }}
+      />
       <div className="mx-auto max-w-5xl space-y-5">
         <JourneyHero stage={stage} subheading={heroSubheading} />
+
+        {declaration && (
+          <WorkerDeclarationsSummary declaration={declaration} />
+        )}
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
           <div className="min-w-0 space-y-5">
