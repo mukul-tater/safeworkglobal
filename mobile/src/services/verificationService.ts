@@ -68,6 +68,21 @@ export const PRIMARY_SKILLS = [
   'Other',
 ] as const;
 
+function ecrFromTenthPass(tenthPass: boolean) {
+  if (tenthPass) {
+    return {
+      tenth_pass_confirmed: true,
+      ecr_category: 'ECNR' as const,
+      ecr_status: 'not_required' as const,
+    };
+  }
+  return {
+    tenth_pass_confirmed: false,
+    ecr_category: 'ECR' as const,
+    ecr_status: 'required' as const,
+  };
+}
+
 export async function getOrCreateVerification(userId: string): Promise<WorkerVerification> {
   const { data: existing, error: fetchErr } = await supabase
     .from('worker_verification')
@@ -109,6 +124,7 @@ export async function saveEssentials(
     state: string;
     education_level: string;
     primary_skill: string;
+    tenth_pass: boolean;
   },
 ): Promise<WorkerVerification> {
   const email = input.email.trim().toLowerCase();
@@ -117,8 +133,9 @@ export async function saveEssentials(
   }
 
   const row = await getOrCreateVerification(userId);
+  const ecr = ecrFromTenthPass(input.tenth_pass);
 
-  await supabase.from('worker_profiles').upsert(
+  const { error: profileErr } = await supabase.from('worker_profiles').upsert(
     {
       user_id: userId,
       current_city: input.city,
@@ -126,9 +143,13 @@ export async function saveEssentials(
       primary_skill: input.primary_skill,
       primary_work_type: input.primary_skill,
       experience_range: input.education_level,
+      tenth_pass_confirmed: ecr.tenth_pass_confirmed,
+      ecr_category: ecr.ecr_category,
+      ecr_status: ecr.ecr_status,
     },
     { onConflict: 'user_id' },
   );
+  if (profileErr) throw new Error(profileErr.message);
 
   await supabase.from('profiles').update({ email }).eq('id', userId);
 

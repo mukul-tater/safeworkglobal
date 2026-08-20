@@ -22,7 +22,8 @@ import { indianStates } from '@/lib/validations/partner';
 import { displayableEmail, isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import {
   ASSESSMENT_FEE_INR,
-  EDUCATION_LEVELS,
+  educationOptionsForTenthPass,
+  ecrFromTenthPass,
   GCC_JOURNEY_NAV_STEPS,
   DEPLOYMENT_CHECKLIST,
   VERIFICATION_STAGE_LABELS,
@@ -147,6 +148,8 @@ export default function WorkerVerificationPage() {
   const [state, setState] = useState('');
   const [education, setEducation] = useState('');
   const [primarySkill, setPrimarySkill] = useState('');
+  const [tenthPass, setTenthPass] = useState<boolean | null>(null);
+  const [ecrCategory, setEcrCategory] = useState<string | null>(null);
 
   const [quizItems, setQuizItems] = useState<SkillQuizItem[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, boolean | undefined>>({});
@@ -218,13 +221,32 @@ export default function WorkerVerificationPage() {
 
       const { data: wp } = await supabase
         .from('worker_profiles')
-        .select('kyc_status, pan_number, aadhaar_last4, passport_number')
+        .select('kyc_status, pan_number, aadhaar_last4, passport_number, ecr_status, ecr_category')
         .eq('user_id', user.id)
         .maybeSingle();
       const kycStatus = String((wp as any)?.kyc_status || 'not_started');
       const kycOk = kycStatus === 'submitted' || kycStatus === 'verified';
       setKycDone(kycOk);
       setKycStatusValue(kycStatus);
+
+      const savedCategory = String((wp as any)?.ecr_category || '');
+      const savedStatus = String((wp as any)?.ecr_status || '');
+      if (savedCategory === 'ECNR' || savedStatus === 'not_required') {
+        setTenthPass(true);
+        setEcrCategory('ECNR');
+      } else if (savedCategory === 'ECR' || savedStatus === 'required') {
+        setTenthPass(false);
+        setEcrCategory('ECR');
+      } else if (v.education_level === 'Below 10th') {
+        setTenthPass(false);
+        setEcrCategory(null);
+      } else if (v.education_level) {
+        setTenthPass(true);
+        setEcrCategory(null);
+      } else {
+        setTenthPass(null);
+        setEcrCategory(null);
+      }
 
       if (kycOk || kycStatus === 'rejected') {
         const { data: docs } = await supabase
@@ -457,6 +479,10 @@ export default function WorkerVerificationPage() {
       toast.error('Fill all essentials fields');
       return;
     }
+    if (tenthPass === null) {
+      toast.error('Select whether you have passed Class 10');
+      return;
+    }
     setSaving(true);
     try {
       const next = await saveEssentials(user.id, {
@@ -465,8 +491,10 @@ export default function WorkerVerificationPage() {
         state,
         education_level: education,
         primary_skill: primarySkill,
+        tenth_pass: tenthPass,
       });
       setRow(next);
+      setEcrCategory(ecrFromTenthPass(tenthPass).ecr_category);
       notifyVerificationUpdated();
       await refreshProfile();
       const items = await loadQuizItems(primarySkill);
@@ -768,6 +796,8 @@ export default function WorkerVerificationPage() {
             kycDocs={kycDocs}
             paymentRecord={paymentRecord}
             identity={{ pan: panNumber, aadhaarLast4: aadhaarOnFile, passport: passportNumber }}
+            ecrCategory={ecrCategory}
+            tenthPass={tenthPass}
             onGoToCurrent={clearJourneyQuery}
           >
             {viewingJourney === 'skill_proof' && (
@@ -839,7 +869,7 @@ export default function WorkerVerificationPage() {
           <StageActionShell
             icon={UserRound}
             title="Your major details"
-            description="Name and mobile are already saved. Confirm your email, then add your location, education, and one primary skill."
+            description="Name and mobile are already saved. Confirm your email, then add Class 10 status, location, education, and one primary skill."
             timeEstimate="Takes 2–3 minutes"
             footer={
               <Button className="w-full sm:w-auto" onClick={() => void onSaveEssentials()} disabled={saving}>
@@ -869,6 +899,40 @@ export default function WorkerVerificationPage() {
                     Signup used mobile login. Enter a real email so we can reach you for interviews and updates.
                   </p>
                 </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Have you passed Class 10 (matric)? *</Label>
+                  <RadioGroup
+                    value={tenthPass === null ? '' : tenthPass ? 'yes' : 'no'}
+                    onValueChange={(v) => {
+                      const passed = v === 'yes';
+                      setTenthPass(passed);
+                      setEcrCategory(ecrFromTenthPass(passed).ecr_category);
+                      if (!passed) setEducation('Below 10th');
+                      else if (education === 'Below 10th') setEducation('');
+                    }}
+                    className="flex flex-wrap gap-6 pt-1"
+                  >
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <RadioGroupItem value="yes" id="tenth-pass-yes" />
+                      Yes — 10th pass
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                      <RadioGroupItem value="no" id="tenth-pass-no" />
+                      No — below 10th
+                    </label>
+                  </RadioGroup>
+                  {tenthPass !== null && (
+                    <p className="text-xs text-muted-foreground">
+                      You will be categorised as{' '}
+                      <span className="font-semibold text-foreground">
+                        {tenthPass
+                          ? 'ECNR — no emigration clearance required'
+                          : 'ECR — emigration clearance required'}
+                      </span>
+                      .
+                    </p>
+                  )}
+                </div>
                 <div className="space-y-1.5">
                   <Label>City *</Label>
                   <Input value={city} onChange={(e) => setCity(e.target.value)} />
@@ -886,10 +950,14 @@ export default function WorkerVerificationPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Education *</Label>
-                  <Select value={education} onValueChange={setEducation}>
+                  <Select
+                    value={education}
+                    onValueChange={setEducation}
+                    disabled={tenthPass === false}
+                  >
                     <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                     <SelectContent>
-                      {EDUCATION_LEVELS.map((e) => (
+                      {educationOptionsForTenthPass(tenthPass).map((e) => (
                         <SelectItem key={e} value={e}>{e}</SelectItem>
                       ))}
                     </SelectContent>

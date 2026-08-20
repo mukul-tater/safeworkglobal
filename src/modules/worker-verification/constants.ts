@@ -70,6 +70,32 @@ export const EDUCATION_LEVELS = [
   'Other',
 ] as const;
 
+/** Indian workers who passed Class 10 are ECNR; below 10th are ECR. */
+export function ecrFromTenthPass(tenthPass: boolean): {
+  tenth_pass_confirmed: boolean;
+  ecr_category: 'ECNR' | 'ECR';
+  ecr_status: 'not_required' | 'required';
+} {
+  if (tenthPass) {
+    return {
+      tenth_pass_confirmed: true,
+      ecr_category: 'ECNR',
+      ecr_status: 'not_required',
+    };
+  }
+  return {
+    tenth_pass_confirmed: false,
+    ecr_category: 'ECR',
+    ecr_status: 'required',
+  };
+}
+
+export function educationOptionsForTenthPass(tenthPass: boolean | null): readonly string[] {
+  if (tenthPass === true) return EDUCATION_LEVELS.filter((level) => level !== 'Below 10th');
+  if (tenthPass === false) return EDUCATION_LEVELS.filter((level) => level === 'Below 10th');
+  return EDUCATION_LEVELS;
+}
+
 /** Video interview score at or above this historically skipped trade test — skill list is primary now. */
 export const INTERVIEW_TRADE_TEST_THRESHOLD = 70;
 

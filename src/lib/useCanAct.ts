@@ -12,7 +12,7 @@ export interface CanActResult {
 
 /**
  * Minimum-to-act gating per role:
- *  - worker:   full name + mobile + 10th-pass confirmed + state + primary skill
+ *  - worker:   full name + mobile + ECR/ECNR category (from Class 10 answer) + primary skill
  *  - employer: company name + contact name + email + company country
  *  - partner:  full name + mobile + centre name + state
  */
@@ -33,12 +33,14 @@ export function useCanAct(role: ActRole): CanActResult {
       if (role === 'worker') {
         const { data } = await (supabase as any)
           .from('worker_profiles')
-          .select('tenth_pass_confirmed, primary_skill')
+          .select('ecr_status, primary_skill')
           .eq('user_id', user.id)
           .maybeSingle();
         if (!profile?.full_name) missing.push('full name');
         if (!profile?.phone) missing.push('mobile number');
-        if (!data?.tenth_pass_confirmed) missing.push('10th-pass confirmation');
+        if (data?.ecr_status !== 'required' && data?.ecr_status !== 'not_required') {
+          missing.push('Class 10 / ECR category');
+        }
         if (!data?.primary_skill) missing.push('primary skill');
       } else if (role === 'employer') {
         const { data } = await (supabase as any)

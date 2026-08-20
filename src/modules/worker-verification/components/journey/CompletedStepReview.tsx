@@ -49,6 +49,8 @@ interface Props {
   kycDocs: KycDocument[];
   paymentRecord: AssessmentPaymentRecord | null;
   identity: { pan: string; aadhaarLast4: string; passport: string };
+  ecrCategory?: string | null;
+  tenthPass?: boolean | null;
   onGoToCurrent: () => void;
   /** Extra interactive block, e.g. add-more-media uploader. */
   children?: ReactNode;
@@ -233,6 +235,8 @@ export default function CompletedStepReview({
   kycDocs,
   paymentRecord,
   identity,
+  ecrCategory,
+  tenthPass,
   onGoToCurrent,
   children,
 }: Props) {
@@ -291,6 +295,14 @@ export default function CompletedStepReview({
               value={[row.city, row.state].filter(Boolean).join(', ') || '—'}
             />
             <Detail label="Education" value={row.education_level || '—'} />
+            <Detail
+              label="Class 10"
+              value={tenthPass === true ? 'Passed' : tenthPass === false ? 'Not passed' : '—'}
+            />
+            <Detail
+              label="ECR category"
+              value={ecrCategory === 'ECNR' ? 'ECNR (no clearance required)' : ecrCategory === 'ECR' ? 'ECR (clearance required)' : '—'}
+            />
             <Detail label="Primary skill" value={row.primary_skill || '—'} />
           </dl>
         )}

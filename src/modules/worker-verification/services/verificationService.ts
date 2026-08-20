@@ -12,6 +12,7 @@ import {
   ASSESSMENT_FEE_INR,
   QUIZ_PASS_SCORE,
   WORKER_TERMS_VERSION,
+  ecrFromTenthPass,
   normalizeVerificationStage,
   skillRequiresTradeTest,
 } from '../constants';
@@ -66,6 +67,7 @@ export async function saveEssentials(
     state: string;
     education_level: string;
     primary_skill: string;
+    tenth_pass: boolean;
   },
 ): Promise<WorkerVerification> {
   const email = input.email.trim().toLowerCase();
@@ -74,8 +76,9 @@ export async function saveEssentials(
   }
 
   const row = await getOrCreateVerification(userId);
+  const ecr = ecrFromTenthPass(input.tenth_pass);
 
-  await supabase
+  const { error: profileErr } = await supabase
     .from('worker_profiles')
     .upsert(
       {
@@ -85,9 +88,13 @@ export async function saveEssentials(
         primary_skill: input.primary_skill,
         primary_work_type: input.primary_skill,
         experience_range: input.education_level,
+        tenth_pass_confirmed: ecr.tenth_pass_confirmed,
+        ecr_category: ecr.ecr_category,
+        ecr_status: ecr.ecr_status,
       },
       { onConflict: 'user_id' },
     );
+  if (profileErr) throw new Error(profileErr.message);
 
   await supabase.from('profiles').update({ email }).eq('id', userId);
 
@@ -1049,6 +1056,16 @@ export async function resetVerificationJourney(userId: string): Promise<WorkerVe
     .single();
 
   if (error) throw new Error(error.message);
+
+  await supabase
+    .from('worker_profiles')
+    .update({
+      tenth_pass_confirmed: false,
+      ecr_category: null,
+      ecr_status: null,
+    })
+    .eq('user_id', userId);
+
   return data as WorkerVerification;
 }
 

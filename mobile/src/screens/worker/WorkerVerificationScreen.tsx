@@ -39,6 +39,7 @@ export default function WorkerVerificationScreen() {
   const [stateName, setStateName] = useState('');
   const [education, setEducation] = useState<string>(EDUCATION_LEVELS[2]);
   const [skill, setSkill] = useState<string>(PRIMARY_SKILLS[0]);
+  const [tenthPass, setTenthPass] = useState<boolean | null>(null);
   const [pan, setPan] = useState('');
   const [aadhaar, setAadhaar] = useState('');
   const [passport, setPassport] = useState('');
@@ -54,6 +55,8 @@ export default function WorkerVerificationScreen() {
       setStateName(data.state || '');
       setEducation(data.education_level || EDUCATION_LEVELS[2]);
       setSkill(data.primary_skill || PRIMARY_SKILLS[0]);
+      if (data.education_level === 'Below 10th') setTenthPass(false);
+      else if (data.education_level) setTenthPass(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load journey');
     } finally {
@@ -83,6 +86,10 @@ export default function WorkerVerificationScreen() {
 
   const onSaveEssentials = async () => {
     if (!user?.id) return;
+    if (tenthPass === null) {
+      Alert.alert('Required', 'Select whether you have passed Class 10.');
+      return;
+    }
     setSaving(true);
     try {
       const updated = await saveEssentials(user.id, {
@@ -91,6 +98,7 @@ export default function WorkerVerificationScreen() {
         state: stateName,
         education_level: education,
         primary_skill: skill,
+        tenth_pass: tenthPass,
       });
       setRow(updated);
       Alert.alert('Saved', 'Essentials saved. Continue to the next journey step.');
@@ -196,9 +204,44 @@ export default function WorkerVerificationScreen() {
             <Input label="Contact email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
             <Input label="City" value={city} onChangeText={setCity} />
             <Input label="State" value={stateName} onChangeText={setStateName} />
+            <Text style={styles.chipLabel}>Have you passed Class 10 (matric)?</Text>
+            <View style={styles.chips}>
+              {(
+                [
+                  { value: true, label: 'Yes — 10th pass (ECNR)' },
+                  { value: false, label: 'No — below 10th (ECR)' },
+                ] as const
+              ).map((option) => (
+                <Pressable
+                  key={option.label}
+                  onPress={() => {
+                    setTenthPass(option.value);
+                    if (!option.value) setEducation('Below 10th');
+                    else if (education === 'Below 10th') setEducation('10th Pass');
+                  }}
+                  style={[styles.chip, tenthPass === option.value && styles.chipActive]}
+                >
+                  <Text style={[styles.chipText, tenthPass === option.value && styles.chipTextActive]}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {tenthPass !== null ? (
+              <Text style={styles.body}>
+                {tenthPass
+                  ? 'You will be categorised as ECNR — no emigration clearance required.'
+                  : 'You will be categorised as ECR — emigration clearance required.'}
+              </Text>
+            ) : null}
             <Text style={styles.chipLabel}>Education</Text>
             <View style={styles.chips}>
-              {EDUCATION_LEVELS.map((level) => (
+              {(tenthPass === false
+                ? EDUCATION_LEVELS.filter((level) => level === 'Below 10th')
+                : tenthPass === true
+                  ? EDUCATION_LEVELS.filter((level) => level !== 'Below 10th')
+                  : EDUCATION_LEVELS
+              ).map((level) => (
                 <Pressable
                   key={level}
                   onPress={() => setEducation(level)}
