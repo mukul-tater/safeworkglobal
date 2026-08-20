@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { colors } from '../theme/colors';
 import { radius, spacing } from '../theme/spacing';
 import { Button, LoadingView } from '../components/ui';
+import { LanguagePicker, useI18n } from '../i18n';
 
 type ScreenMap = Record<string, React.ComponentType<any>>;
 
@@ -24,6 +25,7 @@ export function createPortalDrawer<T extends Record<string, object | undefined>>
 
   function CustomDrawerContent(props: any) {
     const { logout, profile } = useAuth();
+    const { t } = useI18n();
     const insets = useSafeAreaInsets();
     const grouped = navItems.reduce<Record<string, NavItem[]>>((acc, item) => {
       acc[item.group] = acc[item.group] ?? [];
@@ -71,7 +73,10 @@ export function createPortalDrawer<T extends Record<string, object | undefined>>
         ))}
 
         <View style={styles.logoutWrap}>
-          <Button title="Sign Out" variant="outline" onPress={() => logout()} />
+          <View style={styles.langWrap}>
+            <LanguagePicker />
+          </View>
+          <Button title={t('nav.signOut')} variant="outline" onPress={() => logout()} />
         </View>
       </DrawerContentScrollView>
     );
@@ -159,7 +164,8 @@ const styles = StyleSheet.create({
   },
   drawerLabel: { fontSize: 15, fontWeight: '600', marginLeft: -8 },
   drawerItem: { marginHorizontal: spacing.sm, borderRadius: radius.md },
-  logoutWrap: { margin: spacing.lg, marginTop: spacing.xxl },
+  logoutWrap: { margin: spacing.lg, marginTop: spacing.xxl, gap: spacing.md },
+  langWrap: { alignItems: 'flex-start' },
   header: {
     backgroundColor: colors.surface,
     borderBottomWidth: 1,

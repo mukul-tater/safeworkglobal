@@ -1,6 +1,9 @@
-import type { WorkerLocale } from "@/modules/worker-registration/i18n/types";
+import type { AppLocale } from "./locales";
+import { fillCatalog } from "./locales";
+import { indicOverlays } from "./indic";
 
-export type AppLocale = WorkerLocale;
+export type { AppLocale };
+
 export type AppMessageKey = keyof typeof en;
 
 const en = {
@@ -335,7 +338,20 @@ const hi: Record<AppMessageKey, string> = {
   "contact.another": "एक और पूछताछ भेजें",
 };
 
-export const appMessages: Record<AppLocale, Record<AppMessageKey, string>> = { en, hi };
+export const appMessages: Record<AppLocale, Record<AppMessageKey, string>> = {
+  en,
+  hi,
+  bn: fillCatalog(en, indicOverlays.bn),
+  or: fillCatalog(en, indicOverlays.or),
+  gu: fillCatalog(en, indicOverlays.gu),
+  kn: fillCatalog(en, indicOverlays.kn),
+  ml: fillCatalog(en, indicOverlays.ml),
+  mr: fillCatalog(en, indicOverlays.mr),
+  pa: fillCatalog(en, indicOverlays.pa),
+  ta: fillCatalog(en, indicOverlays.ta),
+  te: fillCatalog(en, indicOverlays.te),
+  ur: fillCatalog(en, indicOverlays.ur),
+};
 
 export function interpolate(template: string, params?: Record<string, string | number>) {
   if (!params) return template;

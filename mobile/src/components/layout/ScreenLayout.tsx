@@ -15,12 +15,13 @@ import {
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import AppHeader from './AppHeader';
+import LanguagePicker from '../../i18n/LanguagePicker';
 
 type ScreenLayoutProps = {
   children: React.ReactNode;
   variant?: 'tab' | 'stack' | 'full' | 'modal';
   scrollable?: boolean;
-  header?: boolean | { title?: string; subtitle?: string };
+  header?: boolean | { title?: string; subtitle?: string; right?: React.ReactNode };
   keyboard?: boolean;
   style?: ViewStyle;
   contentStyle?: ViewStyle;
@@ -53,6 +54,7 @@ export default function ScreenLayout({
 
   const showHeader = header === true || (typeof header === 'object' && header !== null);
   const headerProps = typeof header === 'object' ? header : {};
+  const languageControl = headerProps.right ?? <LanguagePicker compact />;
 
   const body = scrollable ? (
     <ScrollView
@@ -81,7 +83,13 @@ export default function ScreenLayout({
   return (
     <SafeAreaView style={[styles.screen, style]} edges={safeEdges}>
       {variant === 'tab' && showHeader ? (
-        <AppHeader title={headerProps.title} subtitle={headerProps.subtitle} />
+        <AppHeader title={headerProps.title} subtitle={headerProps.subtitle} right={languageControl} />
+      ) : null}
+      {variant === 'tab' && !showHeader ? (
+        <View style={styles.langBar}>{languageControl}</View>
+      ) : null}
+      {variant === 'full' && showHeader ? (
+        <AppHeader title={headerProps.title} subtitle={headerProps.subtitle} right={languageControl} />
       ) : null}
       {wrappedBody}
     </SafeAreaView>
@@ -95,6 +103,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   body: { flex: 1 },
+  langBar: {
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
   scrollContent: {
     padding: spacing.lg,
     paddingBottom: spacing.xxxl,

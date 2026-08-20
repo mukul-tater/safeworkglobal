@@ -14,6 +14,7 @@ import {
 } from "../i18n/translations";
 import {
   WORKER_LOCALE_STORAGE_KEY,
+  isWorkerLocale,
   type TranslationParams,
   type WorkerLocale,
 } from "../i18n/types";
@@ -29,7 +30,7 @@ const WorkerLanguageContext = createContext<WorkerLanguageContextValue | null>(n
 function readStoredLocale(): WorkerLocale {
   try {
     const stored = localStorage.getItem(WORKER_LOCALE_STORAGE_KEY);
-    if (stored === "en" || stored === "hi") return stored;
+    if (isWorkerLocale(stored)) return stored;
   } catch {
     // ignore
   }
@@ -54,7 +55,7 @@ export function WorkerLanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.lang = locale === "hi" ? "hi" : "en";
+    document.documentElement.lang = locale;
   }, [locale]);
 
   const t = useCallback(

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ import { InfoScreen } from '../components/DataListScreen';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { RA_DISCLOSURE, SAFEWORK_CONTACT } from '../config/workerSupport';
+import { LanguagePicker, useI18n } from '../i18n';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<PublicStackParamList>();
@@ -43,6 +44,7 @@ function TermsScreen() {
 
 function MainTabs() {
   const insets = useSafeAreaInsets();
+  const { t } = useI18n();
   const tabHeight = 56 + insets.bottom;
 
   return (
@@ -65,7 +67,7 @@ function MainTabs() {
         name="Home"
         component={HomeScreen as React.ComponentType<any>}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: t('nav.home'),
           tabBarIcon: ({ color, size, focused }) => (
             <Home color={color} size={size} strokeWidth={focused ? 2.5 : 2} />
           ),
@@ -75,7 +77,7 @@ function MainTabs() {
         name="Jobs"
         component={JobsScreen as React.ComponentType<any>}
         options={{
-          tabBarLabel: 'Jobs',
+          tabBarLabel: t('nav.jobs'),
           tabBarIcon: ({ color, size, focused }) => (
             <Search color={color} size={size} strokeWidth={focused ? 2.5 : 2} />
           ),
@@ -85,7 +87,7 @@ function MainTabs() {
         name="Auth"
         component={AuthScreen as React.ComponentType<any>}
         options={{
-          tabBarLabel: 'Account',
+          tabBarLabel: t('nav.account'),
           tabBarIcon: ({ color, size, focused }) => (
             <User color={color} size={size} strokeWidth={focused ? 2.5 : 2} />
           ),
@@ -96,6 +98,7 @@ function MainTabs() {
 }
 
 export default function PublicNavigator() {
+  const { t } = useI18n();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -104,16 +107,21 @@ export default function PublicNavigator() {
         headerTitleStyle: styles.stackTitle,
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.background },
+        headerRight: () => (
+          <View style={styles.headerRight}>
+            <LanguagePicker compact />
+          </View>
+        ),
       }}
     >
       <Stack.Screen name="Home" component={MainTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: 'Job Details' }} />
-      <Stack.Screen name="About" component={AboutScreen} />
-      <Stack.Screen name="Contact" component={ContactScreen} />
-      <Stack.Screen name="Faq" component={FaqScreen} options={{ title: 'FAQ' }} />
-      <Stack.Screen name="CountryInsights" component={CountryInsightsScreen} options={{ title: 'Country Insights' }} />
-      <Stack.Screen name="Privacy" component={PrivacyScreen} />
-      <Stack.Screen name="Terms" component={TermsScreen} />
+      <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: t('jobs.details') }} />
+      <Stack.Screen name="About" component={AboutScreen} options={{ title: t('nav.about') }} />
+      <Stack.Screen name="Contact" component={ContactScreen} options={{ title: t('nav.contact') }} />
+      <Stack.Screen name="Faq" component={FaqScreen} options={{ title: t('nav.faq') }} />
+      <Stack.Screen name="CountryInsights" component={CountryInsightsScreen} options={{ title: t('nav.insights') }} />
+      <Stack.Screen name="Privacy" component={PrivacyScreen} options={{ title: t('nav.privacy') }} />
+      <Stack.Screen name="Terms" component={TermsScreen} options={{ title: t('nav.terms') }} />
     </Stack.Navigator>
   );
 }
@@ -137,5 +145,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 17,
     color: colors.text,
+  },
+  headerRight: {
+    marginRight: spacing.sm,
   },
 });

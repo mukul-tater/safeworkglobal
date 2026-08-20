@@ -15,6 +15,7 @@ import { radius, spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Button, Card, Input, SectionTitle } from '../../components/ui';
+import { useI18n } from '../../i18n';
 
 const ENQUIRY_ROLES = [
   { value: 'worker', label: 'Worker' },
@@ -36,6 +37,7 @@ async function openUrl(url: string) {
 }
 
 export default function ContactScreen() {
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
@@ -101,8 +103,8 @@ export default function ContactScreen() {
   return (
     <ScreenLayout variant="stack" scrollable keyboard>
       <SectionTitle
-        title="Need help with overseas employment?"
-        subtitle="Worker registration, skill verification, employer enquiries, and partnerships."
+        title={t('contact.title')}
+        subtitle={t('contact.subtitle')}
       />
 
       <Card>
@@ -146,15 +148,15 @@ export default function ContactScreen() {
 
       {submitted ? (
         <Card>
-          <Text style={styles.label}>Enquiry received</Text>
+          <Text style={styles.label}>{t('contact.received')}</Text>
           <Text style={styles.body}>
-            Thank you. Our team will review your message and get back to you shortly.
+            {t('contact.thanks')}
           </Text>
-          <Button title="Send another enquiry" variant="outline" onPress={() => setSubmitted(false)} />
+          <Button title={t('contact.another')} variant="outline" onPress={() => setSubmitted(false)} />
         </Card>
       ) : (
         <Card>
-          <SectionTitle title="Send an enquiry" />
+          <SectionTitle title={t('contact.enquiry')} />
           <Input label="Name" value={name} onChangeText={setName} autoCapitalize="words" placeholder="Your name" />
           <Input
             label="Mobile"
@@ -191,7 +193,7 @@ export default function ContactScreen() {
             placeholder="Tell us briefly what you need"
             multiline
           />
-          <Button title="Send enquiry" onPress={handleSubmit} loading={loading} fullWidth />
+          <Button title={t('contact.send')} onPress={handleSubmit} loading={loading} fullWidth />
         </Card>
       )}
     </ScreenLayout>

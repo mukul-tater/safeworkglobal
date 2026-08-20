@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Platform, StatusBar, StyleSheet } from 'react-native';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { NetworkProvider } from './src/contexts/NetworkContext';
+import { LocaleProvider } from './src/i18n';
 import RootNavigator from './src/navigation/RootNavigator';
 import { colors } from './src/theme/colors';
 
@@ -13,12 +14,14 @@ function App() {
       <SafeAreaProvider>
         <ErrorBoundary>
           <NetworkProvider>
+            <LocaleProvider>
             <StatusBar
               barStyle="dark-content"
               backgroundColor={colors.surface}
               translucent={Platform.OS === 'android'}
             />
             <RootNavigator />
+            </LocaleProvider>
           </NetworkProvider>
         </ErrorBoundary>
       </SafeAreaProvider>

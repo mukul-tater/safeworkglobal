@@ -18,6 +18,7 @@ import { navigationTheme } from '../theme/navigation';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
+import { useI18n } from '../i18n';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const queryClient = new QueryClient({
@@ -67,6 +68,7 @@ function AppNavigation() {
     needsRoleSelection,
     isMobileVerified,
   } = useAuth();
+  const { t } = useI18n();
 
   if (!ENV.isConfigured) {
     return <ConfigErrorScreen />;
@@ -87,7 +89,7 @@ function AppNavigation() {
         : role ?? 'unknown';
 
   if (loading || (isAuthenticated && profileLoading)) {
-    return <LoadingView message="Starting SafeWork Global..." />;
+    return <LoadingView message={t('starting')} />;
   }
 
   return (

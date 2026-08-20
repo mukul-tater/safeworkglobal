@@ -11,35 +11,25 @@ import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { Button, Card, Input, SectionTitle } from '../../components/ui';
+import { useI18n } from '../../i18n';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Home'>;
 
-const features = [
-  { icon: Shield, label: 'No agent fees' },
-  { icon: Briefcase, label: 'Verified employers' },
-  { icon: BadgeCheck, label: 'Skill-tested profiles' },
-];
-
-const trustPoints = [
-  {
-    icon: BadgeCheck,
-    title: 'Verified jobs only',
-    description: 'Every employer and job listing is checked before it goes live.',
-  },
-  {
-    icon: Wrench,
-    title: 'Your skills, proven',
-    description: 'Skill test, trade test, and medical checks build a profile employers can trust.',
-  },
-  {
-    icon: FileCheck,
-    title: 'Everything in writing',
-    description: 'You see job terms, salary, and deductions in a written contract before you travel.',
-  },
-];
-
 export default function HomeScreen({ navigation }: Props) {
+  const { t } = useI18n();
   const [searchKeyword, setSearchKeyword] = useState('');
+
+  const features = [
+    { icon: Shield, label: t('home.noAgentFees') },
+    { icon: Briefcase, label: t('home.verifiedEmployers') },
+    { icon: BadgeCheck, label: t('home.skillTested') },
+  ];
+
+  const trustPoints = [
+    { icon: BadgeCheck, title: t('home.t1'), description: t('home.t1d') },
+    { icon: Wrench, title: t('home.t2'), description: t('home.t2d') },
+    { icon: FileCheck, title: t('home.t4'), description: t('home.t4d') },
+  ];
 
   const handleSearch = () => {
     navigation.navigate('Jobs', {
@@ -55,24 +45,24 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <ScreenLayout variant="tab" scrollable contentStyle={styles.content}>
       <HeroBanner
-        title="Indian Skills. Global Opportunities."
-        hindiTitle="🇮🇳 भारत का हुनर, दुनिया में पहचान।"
-        values="Safe • Verified • Transparent • Compliant"
-        subtitle="We verify your documents and skills, then connect you to overseas employers through licensed recruitment partners."
+        title={`${t('hero.title1')} ${t('hero.title2')}`}
+        hindiTitle={t('hero.title3')}
+        values={t('hero.values')}
+        subtitle={t('hero.body')}
       >
-        <Text style={styles.heroMeta}>Verified employers · Skill-tested profile · Licensed partner deployment</Text>
+        <Text style={styles.heroMeta}>{t('hero.trust')}</Text>
         <View style={styles.searchRow}>
           <View style={styles.searchField}>
             <Input
               compact
-              placeholder="Search jobs, skills, location..."
+              placeholder={t('hero.searchPlaceholder')}
               value={searchKeyword}
               onChangeText={setSearchKeyword}
               icon={<Search size={18} color={colors.textMuted} />}
             />
           </View>
           <View style={styles.searchBtn}>
-            <Button title="Go" onPress={handleSearch} size="sm" />
+            <Button title={t('hero.go')} onPress={handleSearch} size="sm" />
           </View>
         </View>
       </HeroBanner>
@@ -84,7 +74,7 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
           <View>
             <Text style={styles.statValue}>UAE</Text>
-            <Text style={styles.statLabel}>Verified jobs</Text>
+            <Text style={styles.statLabel}>{t('home.verifiedJobs')}</Text>
           </View>
         </View>
         <View style={styles.statDivider} />
@@ -93,8 +83,8 @@ export default function HomeScreen({ navigation }: Props) {
             <Wrench size={20} color={colors.primary} />
           </View>
           <View>
-            <Text style={styles.statValue}>Skills</Text>
-            <Text style={styles.statLabel}>Verified & trade-tested</Text>
+            <Text style={styles.statValue}>{t('home.skills')}</Text>
+            <Text style={styles.statLabel}>{t('home.skillsSub')}</Text>
           </View>
         </View>
       </View>
@@ -109,8 +99,8 @@ export default function HomeScreen({ navigation }: Props) {
       </View>
 
       <SectionTitle
-        title="We verify workers and their skills"
-        subtitle="भारत का हुनर, दुनिया के अवसर।"
+        title={t('home.verifyTitle')}
+        subtitle={t('home.verifySub')}
       />
       <View style={styles.tradeRow}>
         {HOME_TRADES.map((trade) => (
@@ -121,40 +111,40 @@ export default function HomeScreen({ navigation }: Props) {
         ))}
       </View>
       <Button
-        title="Browse UAE jobs"
+        title={t('home.browseUae')}
         variant="outline"
         fullWidth
         onPress={() => navigation.navigate('Jobs', { country: 'UAE' })}
       />
 
-      <SectionTitle title="Get Started" subtitle="Choose your portal to continue" />
+      <SectionTitle title={t('home.getStarted')} subtitle={t('home.choosePortal')} />
 
       <RoleCard
-        title="Workers"
-        description="Create a free profile, verify your skills, and get matched with verified Gulf employers."
+        title={t('home.workers')}
+        description={t('home.workersDesc')}
         icon={<HardHat color={colors.worker} size={22} />}
         iconBg={colors.workerLight}
-        actionLabel="Worker sign in"
+        actionLabel={t('home.workerSignIn')}
         onPress={() => navigation.navigate('Auth', { mode: 'login', role: 'worker' })}
       />
       <RoleCard
-        title="Employers"
-        description="Hire skill-tested, document-verified Indian workers — no large upfront recruiter fees."
+        title={t('home.employers')}
+        description={t('home.employersDesc')}
         icon={<Briefcase color={colors.employer} size={22} />}
         iconBg={colors.employerLight}
-        actionLabel="Employer sign in"
+        actionLabel={t('home.employerSignIn')}
         onPress={() => navigation.navigate('Auth', { mode: 'login', role: 'employer' })}
       />
       <RoleCard
-        title="Partners"
-        description="E-Mitra, ITI, licensed RA, and consultants — onboard verified workers from your centre."
+        title={t('home.partners')}
+        description={t('home.partnersDesc')}
         icon={<Users color={colors.partner} size={22} />}
         iconBg={colors.partnerLight}
-        actionLabel="Partner sign in"
+        actionLabel={t('home.partnerSignIn')}
         onPress={() => navigation.navigate('Auth', { mode: 'login', role: 'partner' })}
       />
 
-      <SectionTitle title="Why SafeWork Global" subtitle="Replacing unsafe agents with a compliance-first platform" />
+      <SectionTitle title={t('home.why')} subtitle={t('home.whySub')} />
       {trustPoints.map((point) => {
         const Icon = point.icon;
         return (
@@ -171,36 +161,36 @@ export default function HomeScreen({ navigation }: Props) {
       })}
 
       <View style={styles.quickActions}>
-        <Button title="Browse UAE Jobs" variant="outline" fullWidth onPress={() => navigation.navigate('Jobs', { country: 'UAE' })} />
+        <Button title={t('home.browseUae')} variant="outline" fullWidth onPress={() => navigation.navigate('Jobs', { country: 'UAE' })} />
         <Button
-          title="Create Free Account"
+          title={t('home.createAccount')}
           variant="secondary"
           fullWidth
           onPress={() => navigation.navigate('Auth', { mode: 'signup' })}
         />
         <View style={styles.legalRow}>
           <Pressable onPress={() => openPublic('About')}>
-            <Text style={styles.legalLink}>About Us</Text>
+            <Text style={styles.legalLink}>{t('nav.about')}</Text>
           </Pressable>
           <Text style={styles.legalDot}>·</Text>
           <Pressable onPress={() => openPublic('Faq')}>
-            <Text style={styles.legalLink}>FAQ</Text>
+            <Text style={styles.legalLink}>{t('nav.faq')}</Text>
           </Pressable>
           <Text style={styles.legalDot}>·</Text>
           <Pressable onPress={() => openPublic('CountryInsights')}>
-            <Text style={styles.legalLink}>UAE Insights</Text>
+            <Text style={styles.legalLink}>{t('nav.insights')}</Text>
           </Pressable>
           <Text style={styles.legalDot}>·</Text>
           <Pressable onPress={() => openPublic('Contact')}>
-            <Text style={styles.legalLink}>Contact</Text>
+            <Text style={styles.legalLink}>{t('nav.contact')}</Text>
           </Pressable>
           <Text style={styles.legalDot}>·</Text>
           <Pressable onPress={() => openPublic('Privacy')}>
-            <Text style={styles.legalLink}>Privacy</Text>
+            <Text style={styles.legalLink}>{t('nav.privacy')}</Text>
           </Pressable>
           <Text style={styles.legalDot}>·</Text>
           <Pressable onPress={() => openPublic('Terms')}>
-            <Text style={styles.legalLink}>Terms</Text>
+            <Text style={styles.legalLink}>{t('nav.terms')}</Text>
           </Pressable>
         </View>
       </View>

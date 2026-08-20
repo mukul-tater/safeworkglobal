@@ -18,6 +18,7 @@ import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { Card, Input, LoadingView } from '../../components/ui';
+import { useI18n } from '../../i18n';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Jobs'>;
 type SortOption = 'recent' | 'salary-high' | 'salary-low';
@@ -25,6 +26,7 @@ type SortOption = 'recent' | 'salary-high' | 'salary-low';
 const POPULAR_COUNTRIES = ['UAE'];
 
 export default function JobsScreen({ navigation }: Props) {
+  const { t } = useI18n();
   const route = useRoute<RouteProp<PublicStackParamList, 'Jobs'>>();
   const [jobs, setJobs] = useState<JobListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,7 @@ export default function JobsScreen({ navigation }: Props) {
     });
   }, [jobs, keyword, country, sort]);
 
-  if (loading) return <LoadingView message="Loading jobs..." />;
+  if (loading) return <LoadingView message={t('jobs.loading')} />;
 
   return (
     <ScreenLayout variant="tab" contentStyle={styles.screenContent}>
@@ -113,27 +115,27 @@ export default function JobsScreen({ navigation }: Props) {
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.pageTitle}>Find Your Next Opportunity</Text>
+            <Text style={styles.pageTitle}>{t('jobs.title')}</Text>
             <Text style={styles.pageSubtitle}>
-              Browse verified UAE jobs from checked employers
+              {t('jobs.subtitle')}
             </Text>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <Card elevated style={styles.searchCard}>
               <Input
-                placeholder="Search title, skill, or location"
+                placeholder={t('jobs.searchPlaceholder')}
                 value={keyword}
                 onChangeText={setKeyword}
                 icon={<Search size={18} color={colors.textMuted} />}
               />
               <Input
-                placeholder="Destination (UAE)"
+                placeholder={t('jobs.destPlaceholder')}
                 value={country}
                 onChangeText={setCountry}
                 icon={<MapPin size={18} color={colors.textMuted} />}
               />
 
-              <Text style={styles.filterLabel}>Popular destinations</Text>
+              <Text style={styles.filterLabel}>{t('jobs.popular')}</Text>
               <View style={styles.chipRow}>
                 {POPULAR_COUNTRIES.map((name) => {
                   const active = country.toLowerCase() === name.toLowerCase();
@@ -154,7 +156,7 @@ export default function JobsScreen({ navigation }: Props) {
 
             <View style={styles.resultsRow}>
               <Text style={styles.resultsCount}>
-                {filtered.length} {filtered.length === 1 ? 'job' : 'jobs'} found
+                {filtered.length === 1 ? t('jobs.foundOne') : t('jobs.found', { count: filtered.length })}
               </Text>
               <View style={styles.sortRow}>
                 <SlidersHorizontal size={14} color={colors.mutedForeground} />
@@ -172,10 +174,10 @@ export default function JobsScreen({ navigation }: Props) {
                 >
                   <Text style={styles.sortText}>
                     {sort === 'recent'
-                      ? 'Most recent'
+                      ? t('jobs.sortRecent')
                       : sort === 'salary-high'
-                        ? 'Salary: high to low'
-                        : 'Salary: low to high'}
+                        ? t('jobs.sortHigh')
+                        : t('jobs.sortLow')}
                   </Text>
                 </Pressable>
               </View>
@@ -185,8 +187,8 @@ export default function JobsScreen({ navigation }: Props) {
         ListEmptyComponent={
           <Card elevated={false} style={styles.emptyCard}>
             <Briefcase size={32} color={colors.textLight} style={styles.emptyIcon} />
-            <Text style={styles.emptyTitle}>No jobs found</Text>
-            <Text style={styles.emptySubtitle}>Try adjusting your search. Jobs are listed for UAE.</Text>
+            <Text style={styles.emptyTitle}>{t('jobs.empty')}</Text>
+            <Text style={styles.emptySubtitle}>{t('jobs.emptySub')}</Text>
           </Card>
         }
         renderItem={({ item }) => (

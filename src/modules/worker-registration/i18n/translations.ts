@@ -1,3 +1,5 @@
+import { fillCatalog } from "@/i18n/locales";
+import { indicWorkerOverlays } from "./indicWorker";
 import type { TranslationParams, WorkerLocale } from "./types";
 
 export type TranslationKey = keyof typeof en;
@@ -205,6 +207,16 @@ const hi: Record<TranslationKey, string> = {
 export const workerTranslations: Record<WorkerLocale, Record<TranslationKey, string>> = {
   en,
   hi,
+  bn: fillCatalog(en, indicWorkerOverlays.bn),
+  or: fillCatalog(en, indicWorkerOverlays.or),
+  gu: fillCatalog(en, indicWorkerOverlays.gu),
+  kn: fillCatalog(en, indicWorkerOverlays.kn),
+  ml: fillCatalog(en, indicWorkerOverlays.ml),
+  mr: fillCatalog(en, indicWorkerOverlays.mr),
+  pa: fillCatalog(en, indicWorkerOverlays.pa),
+  ta: fillCatalog(en, indicWorkerOverlays.ta),
+  te: fillCatalog(en, indicWorkerOverlays.te),
+  ur: fillCatalog(en, indicWorkerOverlays.ur),
 };
 
 export function interpolate(template: string, params?: TranslationParams): string {

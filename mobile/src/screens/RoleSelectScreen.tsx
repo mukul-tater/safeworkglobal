@@ -9,41 +9,43 @@ import { typography } from '../theme/typography';
 import HeroBanner from '../components/HeroBanner';
 import ScreenLayout from '../components/layout/ScreenLayout';
 import { Button, Card, IconCircle } from '../components/ui';
-
-const roles: {
-  value: AppRole;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  bg: string;
-}[] = [
-  {
-    value: 'worker',
-    label: 'Worker',
-    description: 'Verify your skills and get matched with verified Gulf employers.',
-    icon: <HardHat color={colors.worker} size={22} />,
-    bg: colors.workerLight,
-  },
-  {
-    value: 'employer',
-    label: 'Employer',
-    description: 'Hire skill-tested Indian workers for UAE roles — pay only after you hire.',
-    icon: <Briefcase color={colors.employer} size={22} />,
-    bg: colors.employerLight,
-  },
-  {
-    value: 'partner',
-    label: 'Partner',
-    description: 'E-Mitra, ITI, MEA licensed RA, or consultant — register workers from your centre.',
-    icon: <Users color={colors.partner} size={22} />,
-    bg: colors.partnerLight,
-  },
-];
+import { useI18n } from '../i18n';
 
 export default function RoleSelectScreen() {
+  const { t } = useI18n();
   const { assignRole } = useAuth();
   const [loading, setLoading] = useState<AppRole | null>(null);
   const [error, setError] = useState('');
+
+  const roles: {
+    value: AppRole;
+    label: string;
+    description: string;
+    icon: React.ReactNode;
+    bg: string;
+  }[] = [
+    {
+      value: 'worker',
+      label: t('auth.worker'),
+      description: t('role.workerDesc'),
+      icon: <HardHat color={colors.worker} size={22} />,
+      bg: colors.workerLight,
+    },
+    {
+      value: 'employer',
+      label: t('auth.employer'),
+      description: t('role.employerDesc'),
+      icon: <Briefcase color={colors.employer} size={22} />,
+      bg: colors.employerLight,
+    },
+    {
+      value: 'partner',
+      label: t('auth.partner'),
+      description: t('role.partnerDesc'),
+      icon: <Users color={colors.partner} size={22} />,
+      bg: colors.partnerLight,
+    },
+  ];
 
   const handleSelect = async (role: AppRole) => {
     setLoading(role);
@@ -57,12 +59,12 @@ export default function RoleSelectScreen() {
     <ScreenLayout
       variant="full"
       scrollable
-      header={{ title: 'SafeWork Global', subtitle: 'Complete your setup' }}
+      header={{ title: 'SafeWork Global', subtitle: t('role.setup') }}
     >
       <HeroBanner
         compact
-        title="Choose your role"
-        subtitle="Select how you'll use SafeWork Global to get the right dashboard and features."
+        title={t('role.choose')}
+        subtitle={t('role.subtitle')}
       />
 
       {roles.map((role) => (
@@ -71,7 +73,7 @@ export default function RoleSelectScreen() {
           <Text style={styles.roleTitle}>{role.label}</Text>
           <Text style={styles.roleDesc}>{role.description}</Text>
           <Button
-            title={`Continue as ${role.label}`}
+            title={t('role.continueAs', { name: role.label })}
             onPress={() => handleSelect(role.value)}
             loading={loading === role.value}
           />

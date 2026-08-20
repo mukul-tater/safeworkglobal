@@ -14,6 +14,7 @@ import { radius, spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Button, Card, Input, SectionTitle } from '../../components/ui';
+import { useI18n } from '../../i18n';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Faq'>;
 
@@ -65,6 +66,7 @@ function FaqItemCard({ item }: { item: FaqEntry }) {
 }
 
 export default function FaqScreen({ navigation }: Props) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [topic, setTopic] = useState(FAQ_GROUPS[0]?.id ?? 'workers');
   const normalized = query.trim().toLowerCase();
@@ -84,7 +86,7 @@ export default function FaqScreen({ navigation }: Props) {
   return (
     <ScreenLayout variant="stack" scrollable keyboard>
       <SectionTitle
-        title="Frequently Asked Questions"
+        title={t('faq.title')}
         subtitle="श्रमिकों के लिए अक्सर पूछे जाने वाले प्रश्न"
       />
       <Input

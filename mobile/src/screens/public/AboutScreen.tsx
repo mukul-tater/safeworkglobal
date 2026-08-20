@@ -6,6 +6,7 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Card, SectionTitle } from '../../components/ui';
+import { useI18n } from '../../i18n';
 
 const PRINCIPLES = [
   'Skill-first, not CV-first',
@@ -15,9 +16,10 @@ const PRINCIPLES = [
 ];
 
 export default function AboutScreen() {
+  const { t } = useI18n();
   return (
     <ScreenLayout variant="stack" scrollable>
-      <SectionTitle title="About SafeWork Global" subtitle="हमारे बारे में" />
+      <SectionTitle title={t('about.title')} subtitle={t('nav.about')} />
       <Card>
         <Text style={styles.hindiHero}>भारत का हुनर, दुनिया के रोज़गार।</Text>
         <Text style={styles.englishHero}>Indian Skills. Global Opportunities.</Text>

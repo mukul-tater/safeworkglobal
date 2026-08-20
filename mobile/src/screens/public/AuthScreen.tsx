@@ -11,68 +11,12 @@ import { typography } from '../../theme/typography';
 import { BrandLogo } from '../../components/layout/AppHeader';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Button, Card, Input, SegmentedControl } from '../../components/ui';
+import { useI18n } from '../../i18n';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Auth'>;
 
-const roles: {
-  value: AppRole;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  bg: string;
-  accent: string;
-}[] = [
-  {
-    value: 'worker',
-    label: 'Worker',
-    description: 'Verify skills and get matched with Gulf employers',
-    icon: <HardHat color={colors.worker} size={20} />,
-    bg: colors.workerLight,
-    accent: colors.worker,
-  },
-  {
-    value: 'employer',
-    label: 'Employer',
-    description: 'Hire skill-verified Indian workers for UAE roles',
-    icon: <Briefcase color={colors.employer} size={20} />,
-    bg: colors.employerLight,
-    accent: colors.employer,
-  },
-  {
-    value: 'partner',
-    label: 'Partner',
-    description: 'E-Mitra, ITI, licensed RA, or consultant',
-    icon: <Users color={colors.partner} size={20} />,
-    bg: colors.partnerLight,
-    accent: colors.partner,
-  },
-];
-
-const AUTH_COPY: Record<
-  AppRole,
-  { loginTitle: string; loginBody: string; signupTitle: string; signupBody: string }
-> = {
-  worker: {
-    loginTitle: 'Welcome back — continue the safe way',
-    loginBody: 'Sign in to pick up your verification journey and access verified Gulf opportunities — no agent fees.',
-    signupTitle: 'Start your overseas career the safe way',
-    signupBody: 'Create a free profile, verify your skills, and get matched with verified Gulf employers — no large upfront agent commission.',
-  },
-  employer: {
-    loginTitle: 'Welcome back — hire with confidence',
-    loginBody: 'Sign in to manage jobs, review verified workers, and hire skill-tested talent.',
-    signupTitle: 'Hire verified talent the safe way',
-    signupBody: 'Create a free company account, post jobs, and hire skill-verified workers — no large upfront recruiter fees. Pay only after you hire.',
-  },
-  partner: {
-    loginTitle: 'Welcome back — continue as a partner',
-    loginBody: 'Sign in to manage workers, assessments, placements and payouts from your partner portal.',
-    signupTitle: 'Grow with the SafeWork partner network',
-    signupBody: 'Apply as E-Mitra, ITI, licensed RA or consultant — onboard verified workers and earn through the platform.',
-  },
-};
-
 export default function AuthScreen({ route }: Props) {
+  const { t } = useI18n();
   const initialMode = route.params?.mode ?? 'login';
   const roleHint = route.params?.role;
   const { login, signup, assignRole, loginWithGoogle } = useAuth();
@@ -89,6 +33,64 @@ export default function AuthScreen({ route }: Props) {
 
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  const roles: {
+    value: AppRole;
+    label: string;
+    description: string;
+    icon: React.ReactNode;
+    bg: string;
+    accent: string;
+  }[] = [
+    {
+      value: 'worker',
+      label: t('auth.worker'),
+      description: t('auth.workerDesc'),
+      icon: <HardHat color={colors.worker} size={20} />,
+      bg: colors.workerLight,
+      accent: colors.worker,
+    },
+    {
+      value: 'employer',
+      label: t('auth.employer'),
+      description: t('auth.employerDesc'),
+      icon: <Briefcase color={colors.employer} size={20} />,
+      bg: colors.employerLight,
+      accent: colors.employer,
+    },
+    {
+      value: 'partner',
+      label: t('auth.partner'),
+      description: t('auth.partnerDesc'),
+      icon: <Users color={colors.partner} size={20} />,
+      bg: colors.partnerLight,
+      accent: colors.partner,
+    },
+  ];
+
+  const AUTH_COPY: Record<
+    AppRole,
+    { loginTitle: string; loginBody: string; signupTitle: string; signupBody: string }
+  > = {
+    worker: {
+      loginTitle: t('auth.workerLoginTitle'),
+      loginBody: t('auth.signInBody'),
+      signupTitle: t('auth.workerSignupTitle'),
+      signupBody: t('auth.signUpBody'),
+    },
+    employer: {
+      loginTitle: t('auth.employerLoginTitle'),
+      loginBody: t('auth.signInBody'),
+      signupTitle: t('auth.employerSignupTitle'),
+      signupBody: t('auth.signUpBody'),
+    },
+    partner: {
+      loginTitle: t('auth.partnerLoginTitle'),
+      loginBody: t('auth.signInBody'),
+      signupTitle: t('auth.partnerSignupTitle'),
+      signupBody: t('auth.signUpBody'),
+    },
+  };
 
   const handleForgotPassword = async () => {
     setError('');
@@ -179,8 +181,8 @@ export default function AuthScreen({ route }: Props) {
               ? AUTH_COPY[role].loginTitle
               : AUTH_COPY[role].signupTitle
             : mode === 'login'
-              ? 'Welcome back'
-              : 'Create your account'}
+              ? t('auth.welcomeBack')
+              : t('auth.createAccount')}
         </Text>
         <Text style={styles.heroSubtitle}>
           {role
@@ -188,16 +190,16 @@ export default function AuthScreen({ route }: Props) {
               ? AUTH_COPY[role].loginBody
               : AUTH_COPY[role].signupBody
             : mode === 'login'
-              ? 'Sign in to your SafeWork Global account'
-              : 'Verified employers, skill-tested profiles, and licensed partner deployment.'}
+              ? t('auth.signInBody')
+              : t('auth.signUpBody')}
         </Text>
       </View>
 
       <Card elevated style={styles.formCard}>
         <SegmentedControl
           options={[
-            { value: 'login', label: 'Sign In' },
-            { value: 'signup', label: 'Sign Up' },
+            { value: 'login', label: t('auth.signIn') },
+            { value: 'signup', label: t('auth.signUp') },
           ]}
           value={mode}
           onChange={setMode}
@@ -211,7 +213,7 @@ export default function AuthScreen({ route }: Props) {
 
         {mode === 'signup' ? (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Select your role</Text>
+            <Text style={styles.sectionLabel}>{t('auth.selectRole')}</Text>
             <View style={styles.roleList}>
               {roles.map((item) => {
                 const selected = role === item.value;
@@ -246,15 +248,15 @@ export default function AuthScreen({ route }: Props) {
             </View>
 
             <Input
-              label="Full Name"
+              label={t('auth.fullName')}
               value={fullName}
               onChangeText={setFullName}
               autoCapitalize="words"
-              placeholder="Your full name"
+              placeholder={t('auth.fullNamePlaceholder')}
               accessibilityLabel="Full name"
             />
             <Input
-              label="Phone"
+              label={t('auth.phone')}
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
@@ -272,7 +274,7 @@ export default function AuthScreen({ route }: Props) {
                   {acceptedTerms ? <Check size={12} color="#fff" /> : null}
                 </View>
                 <Text style={styles.termsText}>
-                  I agree to SafeWork worker terms, privacy policy, and fair recruitment rules.
+                  {t('auth.terms')}
                 </Text>
               </Pressable>
             ) : null}
@@ -280,7 +282,7 @@ export default function AuthScreen({ route }: Props) {
         ) : null}
 
         <Input
-          label={mode === 'login' ? 'Email or mobile' : 'Email'}
+          label={mode === 'login' ? t('auth.emailOrMobile') : t('auth.email')}
           value={email}
           onChangeText={setEmail}
           keyboardType={mode === 'login' ? 'default' : 'email-address'}
@@ -289,11 +291,11 @@ export default function AuthScreen({ route }: Props) {
           accessibilityLabel={mode === 'login' ? 'Email or mobile' : 'Email'}
         />
         <Input
-          label="Password"
+          label={t('auth.password')}
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
-          placeholder="Min 6 characters"
+          placeholder={t('auth.passwordPlaceholder')}
           accessibilityLabel="Password"
         />
         <Pressable
@@ -301,16 +303,16 @@ export default function AuthScreen({ route }: Props) {
           onPress={() => setShowPassword((v) => !v)}
           style={styles.linkBtn}
         >
-          <Text style={styles.linkText}>{showPassword ? 'Hide password' : 'Show password'}</Text>
+          <Text style={styles.linkText}>{showPassword ? t('auth.hidePassword') : t('auth.showPassword')}</Text>
         </Pressable>
         {mode === 'login' ? (
           <Pressable accessibilityRole="button" onPress={handleForgotPassword} style={styles.linkBtn}>
-            <Text style={styles.linkText}>Forgot password?</Text>
+            <Text style={styles.linkText}>{t('auth.forgot')}</Text>
           </Pressable>
         ) : null}
 
         <Button
-          title={mode === 'login' ? 'Sign In' : 'Create Account'}
+          title={mode === 'login' ? t('auth.signIn') : t('home.createAccount')}
           onPress={handleSubmit}
           loading={loading}
           size="lg"
@@ -319,7 +321,7 @@ export default function AuthScreen({ route }: Props) {
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
+          <Text style={styles.dividerText}>{t('auth.or')}</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -333,11 +335,11 @@ export default function AuthScreen({ route }: Props) {
             loading && styles.googleBtnDisabled,
           ]}
         >
-          <Text style={styles.googleBtnText}>Continue with Google</Text>
+          <Text style={styles.googleBtnText}>{t('auth.google')}</Text>
         </Pressable>
 
         <Text style={styles.footerHint}>
-          {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+          {mode === 'login' ? t('auth.noAccount') : t('auth.haveAccount')}
           <Text
             style={styles.footerLink}
             onPress={() => {
@@ -345,7 +347,7 @@ export default function AuthScreen({ route }: Props) {
               setMode(mode === 'login' ? 'signup' : 'login');
             }}
           >
-            {mode === 'login' ? 'Sign up' : 'Sign in'}
+            {mode === 'login' ? t('auth.signUp') : t('auth.signIn')}
           </Text>
         </Text>
       </Card>
