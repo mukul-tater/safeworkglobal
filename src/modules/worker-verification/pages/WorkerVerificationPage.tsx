@@ -314,10 +314,14 @@ export default function WorkerVerificationPage() {
   const [medicalXrayPhotoFile, setMedicalXrayPhotoFile] = useState<File | null>(null);
   const [declaration, setDeclaration] = useState<WorkerPreJourneyDeclaration | null>(null);
   const [showDeclarationModal, setShowDeclarationModal] = useState(false);
+  const loadGen = useRef(0);
+  const completedDeclRef = useRef<WorkerPreJourneyDeclaration | null>(null);
+  const initialLoadDone = useRef(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
-    setLoading(true);
+    const gen = ++loadGen.current;
+    if (!initialLoadDone.current) setLoading(true);
     setLoadError(null);
     try {
       const vRaw = await getOrCreateVerification(user.id);
@@ -325,10 +329,18 @@ export default function WorkerVerificationPage() {
         ...vRaw,
         stage: normalizeVerificationStage(vRaw.stage, vRaw.trade_test_required),
       };
+      if (gen !== loadGen.current) return;
       setRow(v);
       const decl = await getWorkerDeclarations(user.id);
-      setDeclaration(decl);
-      if (!decl) {
+      if (gen !== loadGen.current) return;
+      const completed =
+        decl?.completed_at ? decl : completedDeclRef.current?.completed_at ? completedDeclRef.current : null;
+      if (completed?.completed_at) {
+        completedDeclRef.current = completed;
+        setDeclaration(completed);
+        setShowDeclarationModal(false);
+      } else {
+        setDeclaration(null);
         setShowDeclarationModal(true);
       }
       // Never prefill synthetic mobile-auth emails — worker types a real contact email
@@ -451,14 +463,18 @@ export default function WorkerVerificationPage() {
         }
       }
     } catch (e) {
+      if (gen !== loadGen.current) return;
       const msg = e instanceof Error ? e.message : 'Failed to load verification';
       setLoadError(msg);
       setRow(null);
       toast.error(msg);
     } finally {
-      setLoading(false);
+      if (gen === loadGen.current) {
+        initialLoadDone.current = true;
+        setLoading(false);
+      }
     }
-  }, [user?.id, user, profile?.email]);
+  }, [user?.id, profile?.email]);
 
   useEffect(() => {
     void load();
@@ -925,6 +941,7 @@ export default function WorkerVerificationPage() {
         userId={user?.id || ''}
         isOpen={showDeclarationModal}
         onCompleted={(decl) => {
+          completedDeclRef.current = decl;
           setDeclaration(decl);
           setShowDeclarationModal(false);
           notifyVerificationUpdated();

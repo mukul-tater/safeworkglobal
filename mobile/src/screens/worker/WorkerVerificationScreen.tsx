@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -35,6 +35,8 @@ export default function WorkerVerificationScreen() {
   const { profile, user } = useAuth();
   const [row, setRow] = useState<WorkerVerification | null>(null);
   const [declaration, setDeclaration] = useState<WorkerPreJourneyDeclaration | null>(null);
+  const completedDeclRef = useRef<WorkerPreJourneyDeclaration | null>(null);
+  const loadGen = useRef(0);
   const [declModalOpen, setDeclModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,14 +55,28 @@ export default function WorkerVerificationScreen() {
 
   const load = useCallback(async () => {
     if (!user?.id) return;
+    const gen = ++loadGen.current;
     try {
       setError('');
       const [data, declData] = await Promise.all([
         getOrCreateVerification(user.id),
         getWorkerDeclarations(user.id),
       ]);
+      if (gen !== loadGen.current) return;
       setRow(data);
-      setDeclaration(declData);
+      const completed =
+        declData?.completed_at
+          ? declData
+          : completedDeclRef.current?.completed_at
+            ? completedDeclRef.current
+            : null;
+      if (completed?.completed_at) {
+        completedDeclRef.current = completed;
+        setDeclaration(completed);
+        setDeclModalOpen(false);
+      } else {
+        setDeclaration(null);
+      }
       setEmail(data.email || profile?.email || '');
       setCity(data.city || '');
       setStateName(data.state || '');
@@ -69,10 +85,13 @@ export default function WorkerVerificationScreen() {
       if (data.education_level === 'Below 10th') setTenthPass(false);
       else if (data.education_level) setTenthPass(true);
     } catch (e) {
+      if (gen !== loadGen.current) return;
       setError(e instanceof Error ? e.message : 'Failed to load journey');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (gen === loadGen.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, [user?.id, profile?.email]);
 
@@ -358,6 +377,7 @@ export default function WorkerVerificationScreen() {
             isOpen={declModalOpen}
             onClose={() => setDeclModalOpen(false)}
             onCompleted={(declRes) => {
+              completedDeclRef.current = declRes;
               setDeclaration(declRes);
               setDeclModalOpen(false);
             }}

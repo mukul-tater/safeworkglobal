@@ -264,8 +264,6 @@ export async function saveWorkerDeclarations(
     /* ignore */
   }
 
-  // Try writing to dedicated table
-  let dbSuccess = false;
   try {
     const { data, error } = await supabase
       .from('worker_pre_journey_declarations')
@@ -284,15 +282,11 @@ export async function saveWorkerDeclarations(
       .select('*')
       .maybeSingle();
 
-    if (!error && data) {
-      dbSuccess = true;
-      declRecord.id = data.id;
-    }
+    if (!error && data?.id) declRecord.id = data.id;
   } catch {
-    /* ignore error if table is missing */
+    /* table might not exist yet */
   }
 
-  // Also update worker_verification metadata as fallback
   try {
     await supabase
       .from('worker_verification')
