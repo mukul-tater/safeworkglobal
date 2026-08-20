@@ -31,7 +31,6 @@ import {
   employerOnboardingStep3Schema,
 } from '@/lib/validations/onboarding';
 
-const EMPLOYER_ROLES = ['Owner', 'HR', 'Supervisor', 'Contractor'];
 const BUSINESS_TYPES = ['Construction', 'Industrial', 'Contractor', 'Vendor', 'Other'];
 const COMPANY_SIZES = ['1-10', '10-50', '50-200', '200+'];
 const WORKER_TYPES = ['Helper', 'Skilled', 'Supervisor'];
@@ -60,7 +59,6 @@ export default function EmployerOnboarding() {
   const [email, setEmail] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [country, setCountry] = useState('');
-  const [employerRole, setEmployerRole] = useState('');
 
   // Step 2
   const [businessType, setBusinessType] = useState('');
@@ -99,7 +97,7 @@ export default function EmployerOnboarding() {
       mobile,
       companyName,
       country,
-      employerRole,
+      employerRole: 'Owner',
       businessType,
       companySize,
       workLocations,
@@ -125,7 +123,7 @@ export default function EmployerOnboarding() {
       safetyLevel,
     }),
     [
-      fullName, mobile, companyName, country, employerRole, businessType, companySize,
+      fullName, mobile, companyName, country, businessType, companySize,
       workLocations, officeAddress, officeState, cinNumber, taxInfoNumber, hiringRoles,
       workerTypeNeeded, workersRequired, jobType, preferredCountries, expectedStartDate,
       salaryType, salaryAmount, idType, idNumber, paymentMethod, billingAddress, gstNumber,
@@ -170,7 +168,7 @@ export default function EmployerOnboarding() {
           mobile: profile?.phone || '',
           companyName: '',
           country: '',
-          employerRole: '',
+          employerRole: 'Owner',
           businessType: '',
           companySize: '',
           workLocations: [],
@@ -204,7 +202,7 @@ export default function EmployerOnboarding() {
         mobile: profile?.phone || '',
         companyName: (ep.company_name as string) || '',
         country: (ep.country as string) || '',
-        employerRole: (ep.employer_role as string) || '',
+        employerRole: 'Owner',
         businessType: (ep.business_type as string) || '',
         companySize: (ep.company_size as string) || '',
         workLocations: (ep.work_locations as string[]) || [],
@@ -232,7 +230,6 @@ export default function EmployerOnboarding() {
 
       setCompanyName(next.companyName);
       setCountry(next.country);
-      setEmployerRole(next.employerRole);
       setBusinessType(next.businessType);
       setCompanySize(next.companySize);
       setWorkLocations(next.workLocations);
@@ -289,7 +286,7 @@ export default function EmployerOnboarding() {
     setPreferredCountries(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]);
   };
 
-  const canProceedStep1 = fullName.trim() && mobile.trim() && companyName.trim() && country && employerRole;
+  const canProceedStep1 = fullName.trim() && mobile.trim() && companyName.trim() && country;
   const canProceedStep2 = businessType && companySize;
   const canProceedStep3 = hiringRoles.length > 0 && workerTypeNeeded && workersRequired;
 
@@ -300,7 +297,6 @@ export default function EmployerOnboarding() {
         mobile,
         companyName,
         country,
-        employerRole,
       });
       if (!result.success) {
         setStepErrors(result.errors);
@@ -350,7 +346,7 @@ export default function EmployerOnboarding() {
           user_id: user.id,
           company_name: companyName || null,
           country: country || null,
-          employer_role: employerRole || null,
+          employer_role: 'Owner',
           business_type: businessType || null,
           company_size: companySize || null,
           work_locations: workLocations.length > 0 ? workLocations : [],
@@ -458,29 +454,16 @@ export default function EmployerOnboarding() {
                   <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g. ABC Constructions" />
                   {stepErrors.companyName && <p className="text-sm text-destructive">{stepErrors.companyName}</p>}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Country *</Label>
-                    <Select value={country} onValueChange={setCountry}>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent>
-                        {filteredCountries.map(c => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Your Role *</Label>
-                    <Select value={employerRole} onValueChange={setEmployerRole}>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent>
-                        {EMPLOYER_ROLES.map(r => (
-                          <SelectItem key={r} value={r}>{r}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-1.5">
+                  <Label>Country *</Label>
+                  <Select value={country} onValueChange={setCountry}>
+                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {filteredCountries.map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </>
             )}

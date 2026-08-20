@@ -49,8 +49,7 @@ const COPY = {
       body: 'Create a free company account, post jobs, and hire skill-verified workers — no large upfront recruiter fees. Pay only after you hire.',
       steps: [
         { n: '1', title: 'Create account', detail: 'Name, work email & password' },
-        { n: '2', title: 'Business details', detail: 'Company, role & locations' },
-        { n: '3', title: 'Hiring needs', detail: 'Roles, verification & pay' },
+        { n: '2', title: 'Business details', detail: 'Company, locations & finish' },
       ],
     },
     login: {
@@ -144,7 +143,7 @@ export default function SignupJourneyPanel({
         </div>
         <div className="px-4 pb-3 pt-3">
           <p className="font-heading text-base font-bold leading-snug">{copy.headline}</p>
-          <div className="mt-3 grid grid-cols-3 gap-1.5">
+          <div className={`mt-3 grid gap-1.5 ${copy.steps.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {copy.steps.map((step, i) => (
               <div
                 key={step.n}
