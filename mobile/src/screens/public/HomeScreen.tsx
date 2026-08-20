@@ -117,7 +117,7 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={styles.protectionContent}>
           <Text style={styles.protectionTitle}>Salary Protection Promise</Text>
           <Text style={styles.protectionDesc}>
-            Verified employers, escrow payments, and dedicated dispute support for every placement.
+            Verified employers, transparent process, and dedicated support for every placement.
           </Text>
         </View>
       </Card>

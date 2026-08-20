@@ -17,6 +17,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendRoot = path.resolve(__dirname, '../backend');
 const dbPath = path.join(backendRoot, 'data/workers.db');
 
+if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DESTRUCTIVE_RESET !== 'true') {
+  console.error('❌ ERROR: Destructive backend resets are disabled in production environment!');
+  process.exit(1);
+}
+
 let Database;
 try {
   Database = require(path.join(backendRoot, 'node_modules/better-sqlite3'));

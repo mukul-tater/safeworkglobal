@@ -82,6 +82,13 @@ class SeedService {
   }
 
   async seedDemoAccounts(): Promise<SeedResult> {
+    if (import.meta.env.PROD) {
+      return {
+        success: false,
+        message: 'Demo account seeding is disabled in production environment.',
+      };
+    }
+
     const errors: string[] = [];
     
     // Check if already seeded

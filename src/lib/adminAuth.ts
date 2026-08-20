@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 export const WHITELISTED_ADMIN_EMAILS = [
   'admin@safeworkglobal.com',
   'ops@safeworkglobal.com',
-  'admin@safeworkglobal.demo',
 ] as const;
 
 export function isWhitelistedAdminEmail(email: string): boolean {

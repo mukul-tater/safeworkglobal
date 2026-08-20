@@ -14,6 +14,11 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
+if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DESTRUCTIVE_RESET !== 'true') {
+  console.error('❌ ERROR: Destructive data resets are disabled in production environment!');
+  process.exit(1);
+}
+
 const KEEP_ADMIN_EMAILS = new Set([
   'gurpreetsinghelectrician@gmail.com',
   'kailash@safeworkglobal.com',

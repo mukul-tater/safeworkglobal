@@ -20,6 +20,10 @@ import {
   submitIdentity,
   type WorkerVerification,
 } from '../../services/verificationService';
+import { getWorkerDeclarations } from '../../services/declarationService';
+import type { WorkerPreJourneyDeclaration } from '../../types/declarations.types';
+import WorkerDeclarationsSummary from '../../components/journey/WorkerDeclarationsSummary';
+import WorkerPreJourneyScreeningModal from '../../components/journey/WorkerPreJourneyScreeningModal';
 import { colors } from '../../theme/colors';
 import { radius, spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -29,6 +33,8 @@ import { Badge, Button, Card, Input, LoadingView, SectionTitle } from '../../com
 export default function WorkerVerificationScreen() {
   const { profile, user } = useAuth();
   const [row, setRow] = useState<WorkerVerification | null>(null);
+  const [declaration, setDeclaration] = useState<WorkerPreJourneyDeclaration | null>(null);
+  const [declModalOpen, setDeclModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,8 +54,12 @@ export default function WorkerVerificationScreen() {
     if (!user?.id) return;
     try {
       setError('');
-      const data = await getOrCreateVerification(user.id);
+      const [data, declData] = await Promise.all([
+        getOrCreateVerification(user.id),
+        getWorkerDeclarations(user.id),
+      ]);
       setRow(data);
+      setDeclaration(declData);
       setEmail(data.email || profile?.email || '');
       setCity(data.city || '');
       setStateName(data.state || '');
@@ -187,6 +197,30 @@ export default function WorkerVerificationScreen() {
           );
         })}
 
+        {/* Pre-Journey Screening Declarations */}
+        {declaration?.completed_at ? (
+          <WorkerDeclarationsSummary
+            declaration={declaration}
+            onEdit={() => setDeclModalOpen(true)}
+          />
+        ) : (
+          <Card>
+            <SectionTitle
+              title="Pre-journey screening declarations"
+              subtitle="Mandatory health, overseas work, recruitment fee & candidate compliance checks"
+            />
+            <Text style={styles.body}>
+              Before starting your journey, please declare your medical fitness, previous overseas work,
+              agent history, and accept 8 candidate legal acknowledgements.
+            </Text>
+            <Button
+              title="Complete screening declarations"
+              onPress={() => setDeclModalOpen(true)}
+              fullWidth
+            />
+          </Card>
+        )}
+
         {!row?.terms_accepted_at ? (
           <Card>
             <SectionTitle title="Accept terms" subtitle="Required before essentials" />
@@ -291,6 +325,19 @@ export default function WorkerVerificationScreen() {
             </Text>
           </Card>
         )}
+
+        {user?.id ? (
+          <WorkerPreJourneyScreeningModal
+            userId={user.id}
+            isOpen={declModalOpen}
+            onClose={() => setDeclModalOpen(false)}
+            onCompleted={(declRes) => {
+              setDeclaration(declRes);
+              setDeclModalOpen(false);
+            }}
+            existingDeclaration={declaration}
+          />
+        ) : null}
       </ScrollView>
     </ScreenLayout>
   );
