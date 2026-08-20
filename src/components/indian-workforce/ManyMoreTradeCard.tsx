@@ -31,9 +31,9 @@ export default function ManyMoreTradeCard({ index }: ManyMoreTradeCardProps) {
       transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.28), ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <Link
-        to="/job-categories"
+        to="/jobs"
         className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        aria-label="View all job categories"
+        aria-label="View all jobs"
       >
         <div className="relative aspect-[16/10] overflow-hidden">
           <div className="grid h-full w-full grid-cols-2 grid-rows-2">
@@ -77,7 +77,7 @@ export default function ManyMoreTradeCard({ index }: ManyMoreTradeCardProps) {
 
           <div className="mt-auto pt-3">
             <span className="inline-flex items-center gap-1 text-[11px] font-medium tracking-wide text-primary">
-              View all categories
+              View all jobs
               <ArrowRight
                 className="h-3 w-3 transition-transform group-hover:translate-x-0.5"
                 strokeWidth={2.5}
