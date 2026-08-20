@@ -24,9 +24,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import HindiText from '@/components/indian-workforce/HindiText';
 import {
   CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
   ORIGINAL_DOCS_READY_NOTICE,
+  PRE_JOURNEY_COPY,
+  type EnHi,
   type MedicalFitnessDeclaration,
   type PreviousOverseasEmploymentDeclaration,
   type RecruitmentAgentExperienceDeclaration,
@@ -52,6 +56,34 @@ interface Props {
 }
 
 type Step = 0 | 1 | 2 | 3 | 4;
+
+function EnHiLine({
+  copy,
+  enClassName,
+  hiClassName,
+}: {
+  copy: EnHi;
+  enClassName?: string;
+  hiClassName?: string;
+}) {
+  return (
+    <span className="block">
+      <span className={cn('block font-semibold text-foreground leading-snug', enClassName)}>{copy.en}</span>
+      <HindiText className={cn('mt-0.5 block text-xs text-muted-foreground leading-snug', hiClassName)}>
+        {copy.hi}
+      </HindiText>
+    </span>
+  );
+}
+
+function ChoiceLabel({ copy }: { copy: EnHi }) {
+  return (
+    <span className="flex flex-col items-center gap-0.5 text-center leading-tight">
+      <span>{copy.en}</span>
+      <HindiText className="text-[11px] font-medium opacity-80">{copy.hi}</HindiText>
+    </span>
+  );
+}
 
 export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompleted }: Props) {
   const [step, setStep] = useState<Step>(0);
@@ -157,23 +189,29 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                   <CardTitle className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
                     {ORIGINAL_DOCS_READY_NOTICE.titleEn}
                   </CardTitle>
-                  <p className="mt-1 text-base font-semibold text-foreground">
+                  <HindiText className="mt-1 text-base font-semibold text-muted-foreground">
                     {ORIGINAL_DOCS_READY_NOTICE.titleHi}
-                  </p>
+                  </HindiText>
                 </>
               ) : (
                 <>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-semibold">
-                      Pre-Journey Validation & Declarations
+                      {PRE_JOURNEY_COPY.headerBadge.en}
                     </Badge>
-                    <span className="text-xs font-medium text-muted-foreground">Step {step} of 4</span>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Step {step} of 4 · चरण {step} / 4
+                    </span>
                   </div>
                   <CardTitle className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-                    Worker Pre-Placement Declarations
+                    {PRE_JOURNEY_COPY.headerTitle.en}
                   </CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground sm:text-sm">
-                    Before starting your worker journey, please complete these mandatory health, overseas work, recruitment fee, and candidate compliance checks.
+                  <HindiText className="mt-1 text-sm font-medium text-muted-foreground">
+                    {PRE_JOURNEY_COPY.headerTitle.hi}
+                  </HindiText>
+                  <CardDescription className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
+                    <span className="block">{PRE_JOURNEY_COPY.headerDesc.en}</span>
+                    <HindiText className="mt-0.5 text-xs">{PRE_JOURNEY_COPY.headerDesc.hi}</HindiText>
                   </CardDescription>
                 </>
               )}
@@ -183,10 +221,10 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
           {step > 0 && (
           <div className="mt-4 grid grid-cols-4 gap-1.5 sm:gap-2">
             {[
-              { num: 1, label: 'Medical & Fitness', icon: Stethoscope },
-              { num: 2, label: 'Overseas Work', icon: Globe2 },
-              { num: 3, label: 'Agent & Fees', icon: UserCheck },
-              { num: 4, label: 'Acknowledgements', icon: FileCheck2 },
+              { num: 1, label: PRE_JOURNEY_COPY.nav[0], icon: Stethoscope },
+              { num: 2, label: PRE_JOURNEY_COPY.nav[1], icon: Globe2 },
+              { num: 3, label: PRE_JOURNEY_COPY.nav[2], icon: UserCheck },
+              { num: 4, label: PRE_JOURNEY_COPY.nav[3], icon: FileCheck2 },
             ].map((s) => {
               const Icon = s.icon;
               const isActive = step === s.num;
@@ -210,7 +248,14 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                     {isPast ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                     <span className="hidden sm:inline">Step {s.num}</span>
                   </div>
-                  <span className="truncate text-[10px] font-medium sm:text-xs">{s.label}</span>
+                  <span className="truncate text-[10px] font-medium sm:text-xs">{s.label.en}</span>
+                  <HindiText
+                    className={`truncate text-[9px] font-medium sm:text-[10px] ${
+                      isActive ? 'text-primary-foreground/80' : ''
+                    }`}
+                  >
+                    {s.label.hi}
+                  </HindiText>
                 </button>
               );
             })}
@@ -227,8 +272,8 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 <AlertTitle className="text-sm font-semibold text-foreground">
                   {ORIGINAL_DOCS_READY_NOTICE.bodyEn}
                 </AlertTitle>
-                <AlertDescription className="mt-2 text-sm leading-relaxed text-foreground">
-                  {ORIGINAL_DOCS_READY_NOTICE.bodyHi}
+                <AlertDescription className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  <HindiText>{ORIGINAL_DOCS_READY_NOTICE.bodyHi}</HindiText>
                 </AlertDescription>
               </Alert>
 
@@ -249,7 +294,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground">{item.en}</p>
-                        <p className="text-sm text-muted-foreground">{item.hi}</p>
+                        <HindiText className="mt-0.5 text-sm text-muted-foreground">{item.hi}</HindiText>
                       </div>
                     </li>
                   );
@@ -264,23 +309,27 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
                   <Stethoscope className="h-5 w-5 text-primary" />
-                  1. Medical & Fitness
+                  {PRE_JOURNEY_COPY.medical.title.en}
                 </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Declare your physical suitability for overseas skilled trade work.
-                </p>
+                <HindiText className="mt-0.5 text-sm text-muted-foreground">
+                  {PRE_JOURNEY_COPY.medical.title.hi}
+                </HindiText>
+                <p className="mt-1 text-xs text-muted-foreground">{PRE_JOURNEY_COPY.medical.desc.en}</p>
+                <HindiText className="mt-0.5 text-xs text-muted-foreground">
+                  {PRE_JOURNEY_COPY.medical.desc.hi}
+                </HindiText>
               </div>
 
               {/* Question 1 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  1. Do you consider yourself physically fit to perform the essential duties of the trade/job you are applying for?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.medical.q1} enClassName="text-sm" />
                 </Label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { val: 'yes', label: 'Yes' },
-                    { val: 'no', label: 'No' },
-                    { val: 'not_sure', label: 'Not Sure' },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'not_sure', copy: PRE_JOURNEY_COPY.notSure },
                   ].map((opt) => (
                     <label
                       key={opt.val}
@@ -298,7 +347,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         onChange={() => setMedical({ ...medical, fitForDuties: opt.val as any })}
                         className="sr-only"
                       />
-                      {opt.label}
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -310,16 +359,16 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               {/* Question 2 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  2. Do you have any medical condition or physical limitation that you believe may prevent you from safely performing the essential duties of the job?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.medical.q2} enClassName="text-sm" />
                 </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes — Please provide relevant information' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yesMedical },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-start rounded-lg border p-3 text-sm font-medium transition-all ${
+                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-sm font-medium transition-all ${
                         medical.hasMedicalCondition === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -333,7 +382,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         onChange={() => setMedical({ ...medical, hasMedicalCondition: opt.val as any })}
                         className="sr-only"
                       />
-                      <span className="ml-1">{opt.label}</span>
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -343,7 +392,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
 
                 {medical.hasMedicalCondition === 'yes' && (
                   <div className="mt-3 space-y-1.5 animate-in fade-in slide-in-from-top-1">
-                    <Label className="text-xs font-medium text-foreground">Medical Details & Information</Label>
+                    <Label className="text-xs font-medium text-foreground">
+                      <EnHiLine copy={PRE_JOURNEY_COPY.medical.details} enClassName="text-xs" />
+                    </Label>
                     <Textarea
                       placeholder="Please specify any medical condition, physical limitation, or ongoing treatment..."
                       value={medical.medicalConditionDetails || ''}
@@ -361,10 +412,14 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200">
                 <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 <AlertTitle className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                  Medical Fitness Disclaimer
+                  {PRE_JOURNEY_COPY.medical.disclaimerTitle.en}
                 </AlertTitle>
+                <HindiText className="mt-0.5 text-[11px] font-medium text-amber-800/80 dark:text-amber-200/80">
+                  {PRE_JOURNEY_COPY.medical.disclaimerTitle.hi}
+                </HindiText>
                 <AlertDescription className="mt-1 text-xs leading-relaxed">
-                  This declaration does not replace the medical examination required by the employer, destination country or applicable authorities. Final medical fitness will be determined through the applicable medical examination process.
+                  <span className="block">{PRE_JOURNEY_COPY.medical.disclaimerBody.en}</span>
+                  <HindiText className="mt-1 text-xs">{PRE_JOURNEY_COPY.medical.disclaimerBody.hi}</HindiText>
                 </AlertDescription>
               </Alert>
             </div>
@@ -376,22 +431,26 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
                   <Globe2 className="h-5 w-5 text-primary" />
-                  2. Previous Overseas Employment
+                  {PRE_JOURNEY_COPY.overseas.title.en}
                 </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Tell us about your prior work experience outside India and immigration history.
-                </p>
+                <HindiText className="mt-0.5 text-sm text-muted-foreground">
+                  {PRE_JOURNEY_COPY.overseas.title.hi}
+                </HindiText>
+                <p className="mt-1 text-xs text-muted-foreground">{PRE_JOURNEY_COPY.overseas.desc.en}</p>
+                <HindiText className="mt-0.5 text-xs text-muted-foreground">
+                  {PRE_JOURNEY_COPY.overseas.desc.hi}
+                </HindiText>
               </div>
 
               {/* Question 3 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  3. Have you previously worked outside India?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q3} enClassName="text-sm" />
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
                   ].map((opt) => (
                     <label
                       key={opt.val}
@@ -415,7 +474,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         }
                         className="sr-only"
                       />
-                      {opt.label}
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -427,16 +486,14 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               {/* Question 4 — GCC return */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  4. Are you a GCC return worker?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q4} enClassName="text-sm" />
                 </Label>
-                <p className="text-xs text-muted-foreground">
-                  Have you previously worked in a GCC country (UAE, Saudi Arabia, Qatar, Kuwait, Oman or Bahrain)
-                  and returned to India?
-                </p>
+                <p className="text-xs text-muted-foreground">{PRE_JOURNEY_COPY.overseas.q4Hint.en}</p>
+                <HindiText className="text-xs text-muted-foreground">{PRE_JOURNEY_COPY.overseas.q4Hint.hi}</HindiText>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
                   ].map((opt) => (
                     <label
                       key={opt.val}
@@ -461,7 +518,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         }
                         className="sr-only"
                       />
-                      {opt.label}
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -472,11 +529,16 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 {(overseas.workedOutsideIndia === 'yes' || overseas.gccReturn === 'yes') && (
                   <div className="mt-4 space-y-3 rounded-lg bg-muted/40 p-3 sm:p-4 border border-border/50 animate-in fade-in">
                     <p className="text-xs font-bold text-foreground uppercase tracking-wider">
-                      Details of Previous Overseas Employment
+                      {PRE_JOURNEY_COPY.overseas.details.en}
                     </p>
+                    <HindiText className="text-[11px] text-muted-foreground">
+                      {PRE_JOURNEY_COPY.overseas.details.hi}
+                    </HindiText>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <Label className="text-xs">Country</Label>
+                        <Label className="text-xs">
+                          <EnHiLine copy={PRE_JOURNEY_COPY.overseas.country} enClassName="text-xs" />
+                        </Label>
                         <Input
                           placeholder="e.g. UAE, Saudi Arabia, Qatar"
                           value={overseas.overseasDetails?.country || ''}
@@ -491,7 +553,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         {errors.country && <p className="text-[11px] text-destructive">{errors.country}</p>}
                       </div>
                       <div>
-                        <Label className="text-xs">Employer Name</Label>
+                        <Label className="text-xs">
+                          <EnHiLine copy={PRE_JOURNEY_COPY.overseas.employer} enClassName="text-xs" />
+                        </Label>
                         <Input
                           placeholder="e.g. Al Habtoor Contracting"
                           value={overseas.overseasDetails?.employer || ''}
@@ -506,7 +570,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         {errors.employer && <p className="text-[11px] text-destructive">{errors.employer}</p>}
                       </div>
                       <div>
-                        <Label className="text-xs">Job / Trade</Label>
+                        <Label className="text-xs">
+                          <EnHiLine copy={PRE_JOURNEY_COPY.overseas.jobTrade} enClassName="text-xs" />
+                        </Label>
                         <Input
                           placeholder="e.g. Electrician, Pipe Fitter"
                           value={overseas.overseasDetails?.jobTrade || ''}
@@ -521,7 +587,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         {errors.jobTrade && <p className="text-[11px] text-destructive">{errors.jobTrade}</p>}
                       </div>
                       <div>
-                        <Label className="text-xs">Duration & Year</Label>
+                        <Label className="text-xs">
+                          <EnHiLine copy={PRE_JOURNEY_COPY.overseas.durationYear} enClassName="text-xs" />
+                        </Label>
                         <div className="grid grid-cols-2 gap-2 mt-1">
                           <Input
                             placeholder="Duration (e.g. 2 yrs)"
@@ -558,12 +626,12 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               {/* Question 5 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  5. Have you previously been deported, removed or repatriated from another country?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q5} enClassName="text-sm" />
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes — Details' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yesDetails },
                   ].map((opt) => (
                     <label
                       key={opt.val}
@@ -581,7 +649,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         onChange={() => setOverseas({ ...overseas, beenDeported: opt.val as any })}
                         className="sr-only"
                       />
-                      {opt.label}
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -589,7 +657,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
 
                 {overseas.beenDeported === 'yes' && (
                   <div className="mt-3 space-y-1 animate-in fade-in">
-                    <Label className="text-xs font-medium">Deportation / Repatriation Details</Label>
+                    <Label className="text-xs font-medium">
+                      <EnHiLine copy={PRE_JOURNEY_COPY.overseas.deportedDetails} enClassName="text-xs" />
+                    </Label>
                     <Textarea
                       placeholder="Please specify country, year, and reason for deportation or repatriation..."
                       value={overseas.deportedDetails || ''}
@@ -604,12 +674,12 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               {/* Question 6 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  6. Have you ever been refused entry, refused a work visa, or had an employment/residence visa cancelled by another country?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q6} enClassName="text-sm" />
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes — Details' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yesDetails },
                   ].map((opt) => (
                     <label
                       key={opt.val}
@@ -627,7 +697,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         onChange={() => setOverseas({ ...overseas, refusedVisaOrEntry: opt.val as any })}
                         className="sr-only"
                       />
-                      {opt.label}
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -635,7 +705,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
 
                 {overseas.refusedVisaOrEntry === 'yes' && (
                   <div className="mt-3 space-y-1 animate-in fade-in">
-                    <Label className="text-xs font-medium">Visa Refusal Details</Label>
+                    <Label className="text-xs font-medium">
+                      <EnHiLine copy={PRE_JOURNEY_COPY.overseas.visaDetails} enClassName="text-xs" />
+                    </Label>
                     <Textarea
                       placeholder="Please specify country, visa type, and reason for visa refusal or cancellation..."
                       value={overseas.refusedVisaDetails || ''}
@@ -650,12 +722,12 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               {/* Question 7 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  7. Have you ever overstayed a visa or violated immigration rules in another country?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q7} enClassName="text-sm" />
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes — Details' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yesDetails },
                   ].map((opt) => (
                     <label
                       key={opt.val}
@@ -673,7 +745,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         onChange={() => setOverseas({ ...overseas, overstayedVisa: opt.val as any })}
                         className="sr-only"
                       />
-                      {opt.label}
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -681,7 +753,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
 
                 {overseas.overstayedVisa === 'yes' && (
                   <div className="mt-3 space-y-1 animate-in fade-in">
-                    <Label className="text-xs font-medium">Immigration Overstay Details</Label>
+                    <Label className="text-xs font-medium">
+                      <EnHiLine copy={PRE_JOURNEY_COPY.overseas.overstayDetails} enClassName="text-xs" />
+                    </Label>
                     <Textarea
                       placeholder="Please specify country, duration of overstay, and how it was resolved..."
                       value={overseas.overstayedDetails || ''}
@@ -701,22 +775,26 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
                   <UserCheck className="h-5 w-5 text-primary" />
-                  3. Previous Recruitment / Agent Experience
+                  {PRE_JOURNEY_COPY.recruitment.title.en}
                 </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Help SafeWork protect you against unauthorized agency fees, fraud, or duplicate recruitment.
-                </p>
+                <HindiText className="mt-0.5 text-sm text-muted-foreground">
+                  {PRE_JOURNEY_COPY.recruitment.title.hi}
+                </HindiText>
+                <p className="mt-1 text-xs text-muted-foreground">{PRE_JOURNEY_COPY.recruitment.desc.en}</p>
+                <HindiText className="mt-0.5 text-xs text-muted-foreground">
+                  {PRE_JOURNEY_COPY.recruitment.desc.hi}
+                </HindiText>
               </div>
 
               {/* Question 8 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  8. Have you previously registered with another overseas recruitment agency/agent for this job or another overseas job?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.recruitment.q8} enClassName="text-sm" />
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
                   ].map((opt) => (
                     <label
                       key={opt.val}
@@ -734,7 +812,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         onChange={() => setRecruitment({ ...recruitment, registeredWithOtherAgency: opt.val as any })}
                         className="sr-only"
                       />
-                      {opt.label}
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -744,7 +822,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
 
                 {recruitment.registeredWithOtherAgency === 'yes' && (
                   <div className="mt-3 space-y-1 animate-in fade-in">
-                    <Label className="text-xs font-medium">Agency / Agent Details (Optional)</Label>
+                    <Label className="text-xs font-medium">
+                      <EnHiLine copy={PRE_JOURNEY_COPY.recruitment.agencyDetails} enClassName="text-xs" />
+                    </Label>
                     <Input
                       placeholder="e.g. Agency name, location or contact details..."
                       value={recruitment.agencyDetails || ''}
@@ -758,12 +838,12 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               {/* Question 9 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  9. Have you already paid money to any person/agency for an overseas job related to this application?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.recruitment.q9} enClassName="text-sm" />
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes — Amount / Details' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yesAmount },
                   ].map((opt) => (
                     <label
                       key={opt.val}
@@ -781,7 +861,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         onChange={() => setRecruitment({ ...recruitment, paidMoneyForJob: opt.val as any })}
                         className="sr-only"
                       />
-                      {opt.label}
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -789,7 +869,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
 
                 {recruitment.paidMoneyForJob === 'yes' && (
                   <div className="mt-3 space-y-1 animate-in fade-in">
-                    <Label className="text-xs font-medium">Amount & Payment Details</Label>
+                    <Label className="text-xs font-medium">
+                      <EnHiLine copy={PRE_JOURNEY_COPY.recruitment.paidDetails} enClassName="text-xs" />
+                    </Label>
                     <Textarea
                       placeholder="Please specify amount paid (in INR), person/agent name, receipt status, and purpose..."
                       value={recruitment.paidAmountDetails || ''}
@@ -804,12 +886,12 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               {/* Question 10 */}
               <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
                 <Label className="text-sm font-semibold text-foreground leading-snug">
-                  10. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
+                  <EnHiLine copy={PRE_JOURNEY_COPY.recruitment.q10} enClassName="text-sm" />
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes — Details' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yesDetails },
                   ].map((opt) => (
                     <label
                       key={opt.val}
@@ -827,7 +909,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         onChange={() => setRecruitment({ ...recruitment, promisedGuaranteedJobForMoney: opt.val as any })}
                         className="sr-only"
                       />
-                      {opt.label}
+                      <ChoiceLabel copy={opt.copy} />
                     </label>
                   ))}
                 </div>
@@ -837,7 +919,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
 
                 {recruitment.promisedGuaranteedJobForMoney === 'yes' && (
                   <div className="mt-3 space-y-1 animate-in fade-in">
-                    <Label className="text-xs font-medium">Promise Details</Label>
+                    <Label className="text-xs font-medium">
+                      <EnHiLine copy={PRE_JOURNEY_COPY.recruitment.promiseDetails} enClassName="text-xs" />
+                    </Label>
                     <Textarea
                       placeholder="Please describe who promised the job/visa, amount requested or paid, and details..."
                       value={recruitment.promisedJobDetails || ''}
@@ -858,28 +942,36 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 <div>
                   <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
                     <FileCheck2 className="h-5 w-5 text-primary" />
-                    4. Worker Understanding
+                    {PRE_JOURNEY_COPY.ack.title.en}
                   </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Candidate Acknowledgement — Before allowing entry into the next stage, all 8 checkboxes are mandatory.
-                  </p>
+                  <HindiText className="mt-0.5 text-sm text-muted-foreground">
+                    {PRE_JOURNEY_COPY.ack.title.hi}
+                  </HindiText>
+                  <p className="mt-1 text-xs text-muted-foreground">{PRE_JOURNEY_COPY.ack.desc.en}</p>
+                  <HindiText className="mt-0.5 text-xs text-muted-foreground">{PRE_JOURNEY_COPY.ack.desc.hi}</HindiText>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={selectAllAcknowledgements}
-                  className="shrink-0 text-xs gap-1 border-primary/40 text-primary hover:bg-primary/10"
+                  className="shrink-0 h-auto flex-col gap-0 text-xs border-primary/40 text-primary hover:bg-primary/10 py-1.5"
                 >
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Select All Declarations
+                  <span className="inline-flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {PRE_JOURNEY_COPY.selectAll.en}
+                  </span>
+                  <HindiText className="text-[10px] font-medium opacity-80">{PRE_JOURNEY_COPY.selectAll.hi}</HindiText>
                 </Button>
               </div>
 
               {errors._general && (
                 <Alert variant="destructive" className="py-2.5">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle className="text-xs font-bold">Incomplete Declarations</AlertTitle>
+                  <AlertTitle className="text-xs font-bold">
+                    {PRE_JOURNEY_COPY.incomplete.en}
+                    <HindiText className="mt-0.5 font-medium">{PRE_JOURNEY_COPY.incomplete.hi}</HindiText>
+                  </AlertTitle>
                   <AlertDescription className="text-xs">{errors._general}</AlertDescription>
                 </Alert>
               )}
@@ -909,6 +1001,9 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                         <span className="text-xs sm:text-sm font-medium leading-normal text-foreground">
                           {item.text}
                         </span>
+                        <HindiText className="mt-0.5 text-xs text-muted-foreground leading-snug">
+                          {item.textHi}
+                        </HindiText>
                       </div>
                     </label>
                   );
@@ -927,9 +1022,13 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
                 variant="outline"
                 onClick={handlePrevStep}
                 disabled={saving}
-                className="gap-1 text-xs sm:text-sm"
+                className="h-auto gap-1 text-xs sm:text-sm py-2"
               >
-                <ChevronLeft className="h-4 w-4" /> Back
+                <ChevronLeft className="h-4 w-4" />
+                <span className="flex flex-col items-start leading-tight">
+                  <span>{PRE_JOURNEY_COPY.back.en}</span>
+                  <HindiText className="text-[10px] font-medium opacity-80">{PRE_JOURNEY_COPY.back.hi}</HindiText>
+                </span>
               </Button>
             )}
           </div>
@@ -948,24 +1047,36 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
               <Button
                 type="button"
                 onClick={handleNextStep}
-                className="gap-1 bg-primary text-primary-foreground hover:bg-primary/90 text-xs sm:text-sm font-semibold shadow-sm"
+                className="h-auto gap-1 bg-primary text-primary-foreground hover:bg-primary/90 text-xs sm:text-sm font-semibold shadow-sm py-2"
               >
-                Next Step <ChevronRight className="h-4 w-4" />
+                <span className="flex flex-col items-end leading-tight">
+                  <span>{PRE_JOURNEY_COPY.next.en}</span>
+                  <HindiText className="text-[10px] font-medium opacity-90">{PRE_JOURNEY_COPY.next.hi}</HindiText>
+                </span>
+                <ChevronRight className="h-4 w-4" />
               </Button>
             ) : (
               <Button
                 type="button"
                 onClick={handleSubmit}
                 disabled={saving}
-                className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20"
+                className="h-auto gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20 py-2"
               >
                 {saving ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Saving Declarations...
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="flex flex-col items-start leading-tight">
+                      <span>{PRE_JOURNEY_COPY.saving.en}</span>
+                      <HindiText className="text-[10px] font-medium opacity-90">{PRE_JOURNEY_COPY.saving.hi}</HindiText>
+                    </span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="h-4 w-4" /> Validate & Start Worker Journey
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="flex flex-col items-start leading-tight">
+                      <span>{PRE_JOURNEY_COPY.submit.en}</span>
+                      <HindiText className="text-[10px] font-medium opacity-90">{PRE_JOURNEY_COPY.submit.hi}</HindiText>
+                    </span>
                   </>
                 )}
               </Button>

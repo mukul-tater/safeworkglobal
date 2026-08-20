@@ -14,8 +14,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
+  PRE_JOURNEY_COPY,
   type WorkerPreJourneyDeclaration,
 } from '@/modules/worker-verification/types/declarations.types';
+import HindiText from '@/components/indian-workforce/HindiText';
 
 interface Props {
   declaration: WorkerPreJourneyDeclaration;
@@ -62,8 +64,11 @@ export default function WorkerDeclarationsSummary({ declaration, className }: Pr
             <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <div className="min-w-0">
               <CardTitle className="text-sm font-bold text-foreground">
-                Pre-Journey Declarations & Screening Verified
+                {PRE_JOURNEY_COPY.summary.title.en}
               </CardTitle>
+              <HindiText className="text-xs text-muted-foreground">
+                {PRE_JOURNEY_COPY.summary.title.hi}
+              </HindiText>
               <p className="text-xs text-muted-foreground">
                 Completed on {formattedDate} • {acceptedCount}/{CANDIDATE_ACKNOWLEDGEMENT_ITEMS.length}{' '}
                 Candidate Acknowledgements Verified
@@ -127,7 +132,7 @@ export default function WorkerDeclarationsSummary({ declaration, className }: Pr
                 value={formatYesNo(declaration.overseas?.workedOutsideIndia)}
               />
               <Detail
-                label="GCC return"
+                label="GCC return / GCC रिटर्न"
                 value={formatYesNo(declaration.overseas?.gccReturn)}
               />
               {(declaration.overseas?.workedOutsideIndia === 'yes' ||
@@ -240,6 +245,7 @@ export default function WorkerDeclarationsSummary({ declaration, className }: Pr
                         [{idx + 1}]
                       </span>
                       {item.text}
+                      <HindiText className="mt-0.5 text-xs text-muted-foreground">{item.textHi}</HindiText>
                     </span>
                   </li>
                 );

@@ -25,6 +25,7 @@ import {
 import {
   CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
   ORIGINAL_DOCS_READY_NOTICE,
+  PRE_JOURNEY_COPY,
   type MedicalFitnessDeclaration,
   type PreviousOverseasEmploymentDeclaration,
   type RecruitmentAgentExperienceDeclaration,
@@ -56,6 +57,30 @@ interface Props {
 }
 
 type Step = 0 | 1 | 2 | 3 | 4;
+
+function EnHi({ en, hi }: { en: string; hi: string }) {
+  return (
+    <View>
+      <Text style={styles.questionEn}>{en}</Text>
+      <Text style={styles.hindiLine}>{hi}</Text>
+    </View>
+  );
+}
+
+function ChipLabel({ en, hi, active }: { en: string; hi: string; active: boolean }) {
+  return (
+    <View style={styles.chipLabel}>
+      <Text style={[styles.chipText, active && styles.chipTextActive]}>{en}</Text>
+      <Text style={[styles.chipHindi, active && styles.chipHindiActive]}>{hi}</Text>
+    </View>
+  );
+}
+
+function choiceCopy(val: string) {
+  if (val === 'yes') return PRE_JOURNEY_COPY.yes;
+  if (val === 'not_sure') return PRE_JOURNEY_COPY.notSure;
+  return PRE_JOURNEY_COPY.no;
+}
 
 export default function WorkerPreJourneyScreeningModal({
   userId,
@@ -165,9 +190,14 @@ export default function WorkerPreJourneyScreeningModal({
               label={step === 0 ? ORIGINAL_DOCS_READY_NOTICE.badgeEn : `Step ${step} of 4`}
               tone="primary"
             />
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {step === 0 ? 'Documents ready' : 'Pre-Journey Screening'}
-            </Text>
+            <View style={styles.headerCopy}>
+              <Text style={styles.headerTitle} numberOfLines={2}>
+                {step === 0 ? ORIGINAL_DOCS_READY_NOTICE.titleEn : PRE_JOURNEY_COPY.headerTitle.en}
+              </Text>
+              <Text style={styles.headerHindi} numberOfLines={1}>
+                {step === 0 ? ORIGINAL_DOCS_READY_NOTICE.titleHi : PRE_JOURNEY_COPY.headerTitle.hi}
+              </Text>
+            </View>
           </View>
           <Pressable onPress={onClose} style={styles.closeBtn}>
             <X size={20} color={colors.foreground} />
@@ -177,10 +207,10 @@ export default function WorkerPreJourneyScreeningModal({
         {step > 0 && (
         <View style={styles.stepperContainer}>
           {[
-            { num: 1, label: 'Medical', icon: Stethoscope },
-            { num: 2, label: 'Overseas', icon: Globe },
-            { num: 3, label: 'Agent & Fees', icon: UserCheck },
-            { num: 4, label: 'Candidate Ack', icon: FileCheck },
+            { num: 1, label: PRE_JOURNEY_COPY.nav[0], icon: Stethoscope },
+            { num: 2, label: PRE_JOURNEY_COPY.nav[1], icon: Globe },
+            { num: 3, label: PRE_JOURNEY_COPY.nav[2], icon: UserCheck },
+            { num: 4, label: PRE_JOURNEY_COPY.nav[3], icon: FileCheck },
           ].map((s) => {
             const Icon = s.icon;
             const isActive = step === s.num;
@@ -206,7 +236,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ]}
                   numberOfLines={1}
                 >
-                  {s.label}
+                  {s.label.en}
                 </Text>
               </Pressable>
             );
@@ -250,30 +280,30 @@ export default function WorkerPreJourneyScreeningModal({
           {/* STEP 1 */}
           {step === 1 && (
             <View style={styles.stepBox}>
-              <Text style={styles.sectionHeader}>Medical & Physical Fitness</Text>
-              <Text style={styles.sectionDesc}>
-                Declare your physical suitability for overseas skilled trade work.
-              </Text>
+            <Text style={styles.sectionHeader}>{PRE_JOURNEY_COPY.medical.title.en}</Text>
+              <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.medical.title.hi}</Text>
+              <Text style={styles.sectionDesc}>{PRE_JOURNEY_COPY.medical.desc.en}</Text>
+              <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.medical.desc.hi}</Text>
 
               {/* Question 1 */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>
-                  1. Do you consider yourself physically fit to perform the essential duties of the trade/job?
-                </Text>
+                <EnHi en={PRE_JOURNEY_COPY.medical.q1.en} hi={PRE_JOURNEY_COPY.medical.q1.hi} />
                 <View style={styles.chipGroup}>
                   {[
-                    { val: 'yes', label: 'Yes' },
-                    { val: 'no', label: 'No' },
-                    { val: 'not_sure', label: 'Not Sure' },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'not_sure', copy: PRE_JOURNEY_COPY.notSure },
                   ].map((opt) => (
                     <Pressable
                       key={opt.val}
                       onPress={() => setMedical({ ...medical, fitForDuties: opt.val as any })}
                       style={[styles.chip, medical.fitForDuties === opt.val && styles.chipActive]}
                     >
-                      <Text style={[styles.chipText, medical.fitForDuties === opt.val && styles.chipTextActive]}>
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={opt.copy.en}
+                        hi={opt.copy.hi}
+                        active={medical.fitForDuties === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -282,27 +312,22 @@ export default function WorkerPreJourneyScreeningModal({
 
               {/* Question 2 */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>
-                  2. Do you have any medical condition or physical limitation that may prevent safe job execution?
-                </Text>
+                <EnHi en={PRE_JOURNEY_COPY.medical.q2.en} hi={PRE_JOURNEY_COPY.medical.q2.hi} />
                 <View style={styles.chipGroup}>
                   {[
-                    { val: 'no', label: 'No' },
-                    { val: 'yes', label: 'Yes' },
+                    { val: 'no', copy: PRE_JOURNEY_COPY.no },
+                    { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
                   ].map((opt) => (
                     <Pressable
                       key={opt.val}
                       onPress={() => setMedical({ ...medical, hasMedicalCondition: opt.val as any })}
                       style={[styles.chip, medical.hasMedicalCondition === opt.val && styles.chipActive]}
                     >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          medical.hasMedicalCondition === opt.val && styles.chipTextActive,
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={opt.copy.en}
+                        hi={opt.copy.hi}
+                        active={medical.hasMedicalCondition === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -325,10 +350,10 @@ export default function WorkerPreJourneyScreeningModal({
               </Card>
 
               <Card elevated={false} style={styles.infoNotice}>
-                <Text style={styles.infoNoticeTitle}>Medical Disclaimer</Text>
-                <Text style={styles.infoNoticeText}>
-                  This self-declaration does not replace official medical exams required by the destination country or employer.
-                </Text>
+                <Text style={styles.infoNoticeTitle}>{PRE_JOURNEY_COPY.medical.disclaimerTitle.en}</Text>
+                <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.medical.disclaimerTitle.hi}</Text>
+                <Text style={styles.infoNoticeText}>{PRE_JOURNEY_COPY.medical.disclaimerBody.en}</Text>
+                <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.medical.disclaimerBody.hi}</Text>
               </Card>
             </View>
           )}
@@ -336,14 +361,14 @@ export default function WorkerPreJourneyScreeningModal({
           {/* STEP 2 */}
           {step === 2 && (
             <View style={styles.stepBox}>
-              <Text style={styles.sectionHeader}>Previous Overseas Employment & Immigration</Text>
-              <Text style={styles.sectionDesc}>
-                Tell us about your prior work experience outside India and immigration history.
-              </Text>
+              <Text style={styles.sectionHeader}>{PRE_JOURNEY_COPY.overseas.title.en}</Text>
+              <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.overseas.title.hi}</Text>
+              <Text style={styles.sectionDesc}>{PRE_JOURNEY_COPY.overseas.desc.en}</Text>
+              <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.overseas.desc.hi}</Text>
 
               {/* Worked outside India */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>3. Have you previously worked outside India?</Text>
+                <EnHi en={PRE_JOURNEY_COPY.overseas.q3.en} hi={PRE_JOURNEY_COPY.overseas.q3.hi} />
                 <View style={styles.chipGroup}>
                   {[
                     { val: 'no', label: 'No' },
@@ -360,14 +385,11 @@ export default function WorkerPreJourneyScreeningModal({
                       }
                       style={[styles.chip, overseas.workedOutsideIndia === opt.val && styles.chipActive]}
                     >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          overseas.workedOutsideIndia === opt.val && styles.chipTextActive,
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={choiceCopy(opt.val).en}
+                        hi={choiceCopy(opt.val).hi}
+                        active={overseas.workedOutsideIndia === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -376,11 +398,9 @@ export default function WorkerPreJourneyScreeningModal({
 
               {/* GCC return */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>4. Are you a GCC return worker?</Text>
-                <Text style={styles.sectionDesc}>
-                  Have you previously worked in a GCC country (UAE, Saudi Arabia, Qatar, Kuwait, Oman or Bahrain)
-                  and returned to India?
-                </Text>
+                <EnHi en={PRE_JOURNEY_COPY.overseas.q4.en} hi={PRE_JOURNEY_COPY.overseas.q4.hi} />
+                <Text style={styles.sectionDesc}>{PRE_JOURNEY_COPY.overseas.q4Hint.en}</Text>
+                <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.overseas.q4Hint.hi}</Text>
                 <View style={styles.chipGroup}>
                   {[
                     { val: 'no', label: 'No' },
@@ -397,14 +417,11 @@ export default function WorkerPreJourneyScreeningModal({
                       }
                       style={[styles.chip, overseas.gccReturn === opt.val && styles.chipActive]}
                     >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          overseas.gccReturn === opt.val && styles.chipTextActive,
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={choiceCopy(opt.val).en}
+                        hi={choiceCopy(opt.val).hi}
+                        active={overseas.gccReturn === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -479,9 +496,7 @@ export default function WorkerPreJourneyScreeningModal({
 
               {/* Deported */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>
-                  5. Have you ever been deported, removed or repatriated from another country?
-                </Text>
+                <EnHi en={PRE_JOURNEY_COPY.overseas.q5.en} hi={PRE_JOURNEY_COPY.overseas.q5.hi} />
                 <View style={styles.chipGroup}>
                   {[
                     { val: 'no', label: 'No' },
@@ -492,9 +507,11 @@ export default function WorkerPreJourneyScreeningModal({
                       onPress={() => setOverseas({ ...overseas, beenDeported: opt.val as any })}
                       style={[styles.chip, overseas.beenDeported === opt.val && styles.chipActive]}
                     >
-                      <Text style={[styles.chipText, overseas.beenDeported === opt.val && styles.chipTextActive]}>
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={choiceCopy(opt.val).en}
+                        hi={choiceCopy(opt.val).hi}
+                        active={overseas.beenDeported === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -512,9 +529,7 @@ export default function WorkerPreJourneyScreeningModal({
 
               {/* Visa Refusal */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>
-                  6. Have you ever been refused entry, refused a work visa, or had a visa cancelled?
-                </Text>
+                <EnHi en={PRE_JOURNEY_COPY.overseas.q6.en} hi={PRE_JOURNEY_COPY.overseas.q6.hi} />
                 <View style={styles.chipGroup}>
                   {[
                     { val: 'no', label: 'No' },
@@ -525,14 +540,11 @@ export default function WorkerPreJourneyScreeningModal({
                       onPress={() => setOverseas({ ...overseas, refusedVisaOrEntry: opt.val as any })}
                       style={[styles.chip, overseas.refusedVisaOrEntry === opt.val && styles.chipActive]}
                     >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          overseas.refusedVisaOrEntry === opt.val && styles.chipTextActive,
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={choiceCopy(opt.val).en}
+                        hi={choiceCopy(opt.val).hi}
+                        active={overseas.refusedVisaOrEntry === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -550,9 +562,7 @@ export default function WorkerPreJourneyScreeningModal({
 
               {/* Overstayed */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>
-                  7. Have you ever overstayed a visa or violated immigration rules in another country?
-                </Text>
+                <EnHi en={PRE_JOURNEY_COPY.overseas.q7.en} hi={PRE_JOURNEY_COPY.overseas.q7.hi} />
                 <View style={styles.chipGroup}>
                   {[
                     { val: 'no', label: 'No' },
@@ -563,14 +573,11 @@ export default function WorkerPreJourneyScreeningModal({
                       onPress={() => setOverseas({ ...overseas, overstayedVisa: opt.val as any })}
                       style={[styles.chip, overseas.overstayedVisa === opt.val && styles.chipActive]}
                     >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          overseas.overstayedVisa === opt.val && styles.chipTextActive,
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={choiceCopy(opt.val).en}
+                        hi={choiceCopy(opt.val).hi}
+                        active={overseas.overstayedVisa === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -591,16 +598,14 @@ export default function WorkerPreJourneyScreeningModal({
           {/* STEP 3 */}
           {step === 3 && (
             <View style={styles.stepBox}>
-              <Text style={styles.sectionHeader}>Agent History & Recruitment Fees</Text>
-              <Text style={styles.sectionDesc}>
-                Help SafeWork protect you against unauthorized agency fees, fraud, or duplicate recruitment.
-              </Text>
+              <Text style={styles.sectionHeader}>{PRE_JOURNEY_COPY.recruitment.title.en}</Text>
+              <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.recruitment.title.hi}</Text>
+              <Text style={styles.sectionDesc}>{PRE_JOURNEY_COPY.recruitment.desc.en}</Text>
+              <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.recruitment.desc.hi}</Text>
 
               {/* Registered with other agency */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>
-                  8. Have you previously registered with another recruitment agency/agent for this job?
-                </Text>
+                <EnHi en={PRE_JOURNEY_COPY.recruitment.q8.en} hi={PRE_JOURNEY_COPY.recruitment.q8.hi} />
                 <View style={styles.chipGroup}>
                   {[
                     { val: 'no', label: 'No' },
@@ -611,14 +616,11 @@ export default function WorkerPreJourneyScreeningModal({
                       onPress={() => setRecruitment({ ...recruitment, registeredWithOtherAgency: opt.val as any })}
                       style={[styles.chip, recruitment.registeredWithOtherAgency === opt.val && styles.chipActive]}
                     >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          recruitment.registeredWithOtherAgency === opt.val && styles.chipTextActive,
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={choiceCopy(opt.val).en}
+                        hi={choiceCopy(opt.val).hi}
+                        active={recruitment.registeredWithOtherAgency === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -637,9 +639,7 @@ export default function WorkerPreJourneyScreeningModal({
 
               {/* Paid Money */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>
-                  9. Have you already paid money to any person/agency for an overseas job related to this application?
-                </Text>
+                <EnHi en={PRE_JOURNEY_COPY.recruitment.q9.en} hi={PRE_JOURNEY_COPY.recruitment.q9.hi} />
                 <View style={styles.chipGroup}>
                   {[
                     { val: 'no', label: 'No' },
@@ -650,14 +650,11 @@ export default function WorkerPreJourneyScreeningModal({
                       onPress={() => setRecruitment({ ...recruitment, paidMoneyForJob: opt.val as any })}
                       style={[styles.chip, recruitment.paidMoneyForJob === opt.val && styles.chipActive]}
                     >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          recruitment.paidMoneyForJob === opt.val && styles.chipTextActive,
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={choiceCopy(opt.val).en}
+                        hi={choiceCopy(opt.val).hi}
+                        active={recruitment.paidMoneyForJob === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -675,9 +672,7 @@ export default function WorkerPreJourneyScreeningModal({
 
               {/* Promised job for money */}
               <Card elevated={false}>
-                <Text style={styles.questionText}>
-                  10. Has anyone promised you a guaranteed overseas job, visa or deployment in exchange for money?
-                </Text>
+                <EnHi en={PRE_JOURNEY_COPY.recruitment.q10.en} hi={PRE_JOURNEY_COPY.recruitment.q10.hi} />
                 <View style={styles.chipGroup}>
                   {[
                     { val: 'no', label: 'No' },
@@ -693,14 +688,11 @@ export default function WorkerPreJourneyScreeningModal({
                         recruitment.promisedGuaranteedJobForMoney === opt.val && styles.chipActive,
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          recruitment.promisedGuaranteedJobForMoney === opt.val && styles.chipTextActive,
-                        ]}
-                      >
-                        {opt.label}
-                      </Text>
+                      <ChipLabel
+                        en={choiceCopy(opt.val).en}
+                        hi={choiceCopy(opt.val).hi}
+                        active={recruitment.promisedGuaranteedJobForMoney === opt.val}
+                      />
                     </Pressable>
                   ))}
                 </View>
@@ -725,12 +717,14 @@ export default function WorkerPreJourneyScreeningModal({
             <View style={styles.stepBox}>
               <View style={styles.ackHeaderRow}>
                 <View style={styles.flex}>
-                  <Text style={styles.sectionHeader}>Candidate Acknowledgements</Text>
-                  <Text style={styles.sectionDesc}>All 8 acknowledgements are mandatory before deployment.</Text>
+                  <Text style={styles.sectionHeader}>{PRE_JOURNEY_COPY.ack.title.en}</Text>
+                  <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.ack.title.hi}</Text>
+                  <Text style={styles.sectionDesc}>{PRE_JOURNEY_COPY.ack.desc.en}</Text>
+                  <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.ack.desc.hi}</Text>
                 </View>
                 <Pressable onPress={selectAllAcknowledgements} style={styles.selectAllBtn}>
                   <CheckCircle2 size={16} color={colors.worker} />
-                  <Text style={styles.selectAllText}>Select All</Text>
+                  <Text style={styles.selectAllText}>{PRE_JOURNEY_COPY.selectAll.en}</Text>
                 </Pressable>
               </View>
 
@@ -747,7 +741,10 @@ export default function WorkerPreJourneyScreeningModal({
                     <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
                       {isChecked ? <CheckCircle2 size={16} color={colors.surface} /> : null}
                     </View>
-                    <Text style={styles.ackItemText}>{item.text}</Text>
+                    <View style={styles.ackTextWrap}>
+                      <Text style={styles.ackItemText}>{item.text}</Text>
+                      <Text style={styles.hindiLine}>{item.textHi}</Text>
+                    </View>
                   </Pressable>
                 );
               })}
@@ -759,7 +756,7 @@ export default function WorkerPreJourneyScreeningModal({
         <View style={styles.footer}>
           {step > 0 ? (
             <View style={styles.footerBtn}>
-              <Button title="Back" onPress={handlePrevStep} variant="outline" fullWidth />
+              <Button title={`${PRE_JOURNEY_COPY.back.en} · ${PRE_JOURNEY_COPY.back.hi}`} onPress={handlePrevStep} variant="outline" fullWidth />
             </View>
           ) : null}
           {step === 0 ? (
@@ -772,11 +769,11 @@ export default function WorkerPreJourneyScreeningModal({
             </View>
           ) : step < 4 ? (
             <View style={styles.footerBtn}>
-              <Button title="Next step" onPress={handleNextStep} fullWidth />
+              <Button title={`${PRE_JOURNEY_COPY.next.en} · ${PRE_JOURNEY_COPY.next.hi}`} onPress={handleNextStep} fullWidth />
             </View>
           ) : (
             <View style={styles.footerBtn}>
-              <Button title="Submit declarations" onPress={handleSubmit} loading={saving} fullWidth />
+              <Button title={`${PRE_JOURNEY_COPY.submit.en}`} onPress={handleSubmit} loading={saving} fullWidth />
             </View>
           )}
         </View>
@@ -803,9 +800,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    flex: 1,
+    paddingRight: spacing.sm,
+  },
+  headerCopy: {
+    flex: 1,
   },
   headerTitle: {
     ...typography.h3,
+    color: colors.foreground,
+  },
+  headerHindi: {
+    ...typography.bodySm,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  questionEn: {
+    ...typography.body,
+    fontWeight: '600',
     color: colors.foreground,
   },
   closeBtn: {
@@ -866,12 +878,6 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     marginTop: -spacing.xs,
   },
-  questionText: {
-    ...typography.body,
-    fontWeight: '600',
-    color: colors.foreground,
-    marginBottom: spacing.sm,
-  },
   chipGroup: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -896,6 +902,24 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: colors.worker,
     fontWeight: '700',
+  },
+  chipLabel: {
+    alignItems: 'center',
+  },
+  chipHindi: {
+    ...typography.bodySm,
+    fontSize: 11,
+    color: colors.mutedForeground,
+    marginTop: 2,
+  },
+  chipHindiActive: {
+    color: colors.worker,
+  },
+  hindiLine: {
+    ...typography.bodySm,
+    color: colors.mutedForeground,
+    marginTop: 2,
+    marginBottom: spacing.sm,
   },
   subInputContainer: {
     marginTop: spacing.md,
@@ -981,8 +1005,10 @@ const styles = StyleSheet.create({
   ackItemText: {
     ...typography.bodySm,
     color: colors.foreground,
+    flexShrink: 1,
+  },
+  ackTextWrap: {
     flex: 1,
-    lineHeight: 18,
   },
   footer: {
     flexDirection: 'row',

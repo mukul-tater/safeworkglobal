@@ -163,9 +163,12 @@ export default function WorkerDeclarationsSummary({ declaration, onEdit }: Props
               {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.map((item, idx) => (
                 <View key={item.key} style={styles.ackRow}>
                   <CheckCircle2 size={16} color={colors.success} />
-                  <Text style={styles.ackItemText}>
-                    [{idx + 1}] {item.text}
-                  </Text>
+                  <View style={styles.ackItemWrap}>
+                    <Text style={styles.ackItemText}>
+                      [{idx + 1}] {item.text}
+                    </Text>
+                    <Text style={styles.ackItemHi}>{item.textHi}</Text>
+                  </View>
                 </View>
               ))}
             </View>
@@ -284,6 +287,13 @@ const styles = StyleSheet.create({
   ackItemText: {
     ...typography.bodySm,
     color: colors.foreground,
+  },
+  ackItemWrap: {
     flex: 1,
+  },
+  ackItemHi: {
+    ...typography.bodySm,
+    color: colors.mutedForeground,
+    marginTop: 2,
   },
 });
