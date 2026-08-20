@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import EmployerFlowStepper from "@/components/employer/EmployerFlowStepper";
 import SendJobRequestDialog from "@/components/employer/SendJobRequestDialog";
 import { Send } from "lucide-react";
+import { fetchEmployerWorkers, type EmployerWorkerRow } from "@/services/employerWorkerAccessService";
 
 interface ShortlistedWorker {
   id: string;
