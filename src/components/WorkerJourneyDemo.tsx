@@ -94,7 +94,7 @@ const STEPS: JourneyStep[] = [
     ],
     branch: {
       pass: "Trade test required → pay fee, then book nearest center",
-      fail: "No trade test → direct employer interview",
+      fail: "Retest available after a few days",
     },
   },
   {
@@ -128,7 +128,7 @@ const STEPS: JourneyStep[] = [
     title: "Medical Test",
     shortTitle: "Medical Test",
     description:
-      "Complete the medical examination and upload blood and X-ray documents from an approved centre.",
+      "The standard screening tests for everyone include a blood test for HIV and a chest X-ray/screening for Tuberculosis (TB).",
     icon: Stethoscope,
     bullets: ["Medical blood report", "X-ray report", "X-ray photo"],
   },
