@@ -31,6 +31,7 @@ export const adminNavGroups: NavGroup[] = [
       { path: "/admin/users", icon: Users, label: "All Users" },
       { path: "/admin/workers", icon: HardHat, label: "Workers" },
       { path: "/admin/employers", icon: Building2, label: "Employers" },
+      { path: "/admin/employer-access", icon: Shield, label: "Employer Access" },
       { path: "/admin/partners", icon: Store, label: "Partners" },
       { path: "/admin/partner-workers", icon: UserCog, label: "E-Mitra Workers" },
       { path: "/admin/partner-rewards", icon: IndianRupee, label: "Partner Rewards" },
