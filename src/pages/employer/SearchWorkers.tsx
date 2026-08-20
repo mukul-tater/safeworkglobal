@@ -126,32 +126,35 @@ export default function SearchWorkers() {
   const loadWorkers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('list_public_workers', { p_limit: 100 });
-      if (error) throw error;
-      const formatted: Worker[] = (data || []).map((w: any) => ({
-        id: w.user_id,
-        full_name: w.display_name || 'Worker',
+      const [rows, fields] = await Promise.all([
+        fetchEmployerWorkers({ limit: 100 }),
+        fetchEmployerVisibleFields().catch(() => []),
+      ]);
+      setVisibleFields(toVisibilityMap(fields));
+      const formatted: Worker[] = rows.map((w) => ({
+        id: w.worker_user_id,
+        full_name: w.full_name || 'Worker',
         avatar_url: w.avatar_url,
         nationality: w.nationality,
         current_location: w.current_location,
         years_of_experience: w.years_of_experience != null ? Number(w.years_of_experience) : null,
-        expected_salary_min: null,
-        expected_salary_max: null,
-        currency: 'INR',
+        expected_salary_min: w.expected_salary_min != null ? Number(w.expected_salary_min) : null,
+        expected_salary_max: w.expected_salary_max != null ? Number(w.expected_salary_max) : null,
+        currency: w.currency || 'INR',
         availability: w.availability,
         has_passport: !!w.has_passport,
-        has_visa: !!w.has_visa,
-        primary_work_type: w.primary_work_type,
+        has_visa: false,
+        primary_work_type: w.trade,
         skill_level: w.skill_level,
-        skills: (w.top_skills || []).map((s: string) => ({ skill_name: s })),
-        video_url: w.video_url || null,
-        verified_documents: w.verified_documents || [],
-        certifications_count: w.certifications_count || 0,
+        skills: (w.skills || []).map((s: string) => ({ skill_name: s })),
+        video_url: null,
+        verified_documents: [],
+        certifications_count: 0,
         languages: w.languages || [],
         open_to_relocation: !!w.open_to_relocation,
-        preferred_shift: w.preferred_shift,
+        preferred_shift: null,
         ecr_status: w.ecr_status,
-        last_active_at: w.last_active_at,
+        last_active_at: null,
       }));
       setAllWorkers(formatted);
       setWorkers(formatted);
