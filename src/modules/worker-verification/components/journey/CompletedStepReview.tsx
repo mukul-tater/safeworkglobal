@@ -17,7 +17,11 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
-import { QUIZ_PASS_SCORE, type GccNavStepId } from '@/modules/worker-verification/constants';
+import {
+  ASSESSMENT_FEE_INCLUSIONS,
+  QUIZ_PASS_SCORE,
+  type GccNavStepId,
+} from '@/modules/worker-verification/constants';
 
 export interface KycDocument {
   document_name: string;
@@ -202,7 +206,11 @@ export function KycRecordSummary({
           value={identity.aadhaarLast4 ? `XXXX XXXX ${identity.aadhaarLast4}` : '—'}
           mono
         />
-        <Detail label="Passport number" value={maskPassport(identity.passport)} mono />
+        <Detail
+          label="Passport number"
+          value={identity.passport ? maskPassport(identity.passport) : 'Not provided'}
+          mono={Boolean(identity.passport)}
+        />
         <Detail label={verified ? 'Verified on' : 'Submitted on'} value={formatDate(submittedOn)} />
       </dl>
 
@@ -359,7 +367,7 @@ export default function CompletedStepReview({
                 </p>
                 <p className="mt-1 text-xs text-foreground">
                   {row.kyc_rejection_reason ||
-                    'Some details did not match. Re-check your PAN, Aadhaar and passport, then upload clear photos again.'}
+                    'Some details did not match. Re-check your PAN, Aadhaar and passport photos, then upload clear photos again.'}
                 </p>
                 <Button size="sm" className="mt-3" onClick={onGoToCurrent}>
                   Re-submit documents
@@ -495,6 +503,17 @@ export default function CompletedStepReview({
                     <Detail label="SafeWork receipt ID" value={paymentRecord.id} mono copyable />
                   )}
                 </dl>
+              </div>
+              <div>
+                <SectionLabel>What this fee covers</SectionLabel>
+                <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                  {ASSESSMENT_FEE_INCLUSIONS.map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-sm text-foreground">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
               <p className="text-xs text-muted-foreground">
                 {waived

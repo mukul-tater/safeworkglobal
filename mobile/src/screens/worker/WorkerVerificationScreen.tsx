@@ -307,14 +307,14 @@ export default function WorkerVerificationScreen() {
             <Input label="PAN" value={pan} onChangeText={setPan} autoCapitalize="characters" />
             <Input label="Aadhaar last 4" value={aadhaar} onChangeText={setAadhaar} keyboardType="number-pad" maxLength={4} />
             <Input
-              label="Passport number (optional for trade test)"
+              label="Passport number (optional)"
               value={passport}
               onChangeText={setPassport}
               autoCapitalize="characters"
             />
             <Text style={styles.hint}>
-              Don't have a passport yet? You can still appear for the trade test. A valid passport is
-              required later for emigration clearance and international travel.
+              Passport (if available). If you have a passport, upload first page and last page
+              photos on the web journey. Don't have a passport yet? You can still continue.
             </Text>
             <Text style={styles.hintHi}>
               अभी पासपोर्ट नहीं है? आप फिर भी ट्रेड टेस्ट दे सकते हैं। विदेश यात्रा के लिए वैध पासपोर्ट आवश्यक है।

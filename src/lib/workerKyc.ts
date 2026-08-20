@@ -1,7 +1,11 @@
 const KYC_DOCUMENT_TYPES = new Set([
   'passport',
+  'passport_front',
+  'passport_last',
   'id_card',
   'aadhaar',
+  'aadhaar_front',
+  'aadhaar_back',
   'pan',
   'national_id',
   'visa',

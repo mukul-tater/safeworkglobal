@@ -1,7 +1,4 @@
--- Allow PAN / Aadhaar document types used by Identity (KYC).
--- The original CHECK only allowed: resume, passport, visa, certificate, id_proof, other
--- which caused KYC uploads with type 'pan' / 'aadhaar' to fail.
--- Run in Supabase SQL Editor.
+-- Identity KYC uploads: passport first/last page as distinct document types.
 
 ALTER TABLE public.worker_documents
   DROP CONSTRAINT IF EXISTS worker_documents_document_type_check;

@@ -34,7 +34,7 @@ export const JOURNEY_STEPS: { id: VerificationStage; label: string; description:
   { id: 'essentials', label: 'Essentials', description: 'Contact, skill, education, location' },
   { id: 'quiz', label: 'Test 1', description: 'Skill knowledge quiz' },
   { id: 'media', label: 'Skill proof', description: 'Upload work photos / video' },
-  { id: 'identity', label: 'Identity (KYC)', description: 'Aadhaar / PAN / passport' },
+  { id: 'identity', label: 'Identity (KYC)', description: 'PAN, Aadhaar, passport if available' },
   { id: 'awaiting_interview', label: 'Test 2', description: 'Video interview' },
   { id: 'awaiting_payment', label: 'Payment', description: 'Assessment fee' },
   { id: 'trade_test', label: 'Trade test', description: 'Physical skill assessment' },

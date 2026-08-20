@@ -82,6 +82,58 @@ import WorkerPreJourneyScreeningModal from '@/modules/worker-verification/compon
 import WorkerDeclarationsSummary from '@/modules/worker-verification/components/journey/WorkerDeclarationsSummary';
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
+import PassportRequirementInfo from '@/components/worker/PassportRequirementInfo';
+
+const KYC_DOC_TYPES = [
+  'pan',
+  'aadhaar',
+  'aadhaar_front',
+  'aadhaar_back',
+  'passport',
+  'passport_front',
+  'passport_last',
+  'id_proof',
+];
+
+function kycTypeFallbacks(docType: string): string[] {
+  if (docType === 'pan') return ['pan', 'id_proof'];
+  if (docType === 'aadhaar_front') return ['aadhaar_front', 'aadhaar', 'id_proof'];
+  if (docType === 'aadhaar_back') return ['aadhaar_back', 'aadhaar', 'id_proof'];
+  if (docType === 'passport_front') return ['passport_front', 'passport', 'id_proof'];
+  if (docType === 'passport_last') return ['passport_last', 'passport', 'id_proof'];
+  if (docType === 'aadhaar' || docType === 'passport') return [docType, 'id_proof'];
+  return [docType];
+}
+
+function KycPhotoField({
+  label,
+  required,
+  file,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  required?: boolean;
+  file: File | null;
+  disabled?: boolean;
+  onChange: (file: File | null) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label>
+        {label}
+        {required ? ' *' : ''}
+      </Label>
+      <Input
+        type="file"
+        accept="image/*,.pdf"
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.files?.[0] || null)}
+      />
+      {file && <p className="text-xs text-success">✓ {file.name}</p>}
+    </div>
+  );
+}
 
 function tradeTestAssignmentLabel(a: AssessmentRow): string {
   if (a.status === 'completed') {
@@ -240,9 +292,12 @@ export default function WorkerVerificationPage() {
   const [bondTracking, setBondTracking] = useState('');
   const [bondTemplate, setBondTemplate] = useState<BondTemplate | null>(null);
   const [passportNumber, setPassportNumber] = useState('');
+  const [hasPassport, setHasPassport] = useState(false);
   const [panFile, setPanFile] = useState<File | null>(null);
-  const [aadhaarFile, setAadhaarFile] = useState<File | null>(null);
-  const [passportFile, setPassportFile] = useState<File | null>(null);
+  const [aadhaarFrontFile, setAadhaarFrontFile] = useState<File | null>(null);
+  const [aadhaarBackFile, setAadhaarBackFile] = useState<File | null>(null);
+  const [passportFrontFile, setPassportFrontFile] = useState<File | null>(null);
+  const [passportLastFile, setPassportLastFile] = useState<File | null>(null);
   const [kycConsent, setKycConsent] = useState(false);
   const [forceIdentity, setForceIdentity] = useState(false);
   const [kycDone, setKycDone] = useState(false);
@@ -295,7 +350,7 @@ export default function WorkerVerificationPage() {
 
       const { data: wp } = await supabase
         .from('worker_profiles')
-        .select('kyc_status, pan_number, aadhaar_last4, passport_number, ecr_status, ecr_category')
+        .select('kyc_status, pan_number, aadhaar_last4, passport_number, has_passport, ecr_status, ecr_category')
         .eq('user_id', user.id)
         .maybeSingle();
       const kycStatus = String((wp as any)?.kyc_status || 'not_started');
@@ -327,7 +382,7 @@ export default function WorkerVerificationPage() {
           .from('worker_documents')
           .select('document_name, document_type, file_url, verification_status, uploaded_at')
           .eq('worker_id', user.id)
-          .in('document_type', ['pan', 'aadhaar', 'passport', 'id_proof'])
+          .in('document_type', KYC_DOC_TYPES)
           .order('uploaded_at', { ascending: false });
         // A rejected re-upload keeps the old row, so show only the newest per document.
         const latest = new Map<string, KycDocument>();
@@ -340,7 +395,10 @@ export default function WorkerVerificationPage() {
       }
       if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
       if ((wp as any)?.aadhaar_last4) setAadhaarOnFile(String((wp as any).aadhaar_last4));
-      if ((wp as any)?.passport_number) setPassportNumber(String((wp as any).passport_number));
+      const savedPassport = String((wp as any)?.passport_number || '');
+      const savedHasPassport = Boolean((wp as any)?.has_passport) || Boolean(savedPassport);
+      setHasPassport(savedHasPassport);
+      setPassportNumber(savedPassport);
       if (v.payment_status === 'paid' || v.paid_at) {
         const { data: pay } = await supabase
           .from('worker_assessment_payments')
@@ -442,7 +500,8 @@ export default function WorkerVerificationPage() {
   const onSubmitIdentity = async () => {
     if (!user?.id) return;
     const pan = panNumber.trim().toUpperCase();
-    const passport = passportNumber.trim().toUpperCase();
+    const passport = hasPassport ? passportNumber.trim().toUpperCase() : '';
+    const hasPassportInput = hasPassport;
     if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
       toast.error('Enter a valid PAN (e.g. ABCDE1234F)');
       return;
@@ -452,13 +511,19 @@ export default function WorkerVerificationPage() {
       toast.error('Enter your full 12-digit Aadhaar number');
       return;
     }
-    if (!/^[A-Z0-9]{6,9}$/.test(passport)) {
-      toast.error('Enter a valid passport number');
+    if (!panFile || !aadhaarFrontFile || !aadhaarBackFile) {
+      toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
       return;
     }
-    if (!panFile || !aadhaarFile || !passportFile) {
-      toast.error('Upload PAN, Aadhaar, and Passport photos');
-      return;
+    if (hasPassportInput) {
+      if (!/^[A-Z0-9]{6,9}$/.test(passport)) {
+        toast.error('Enter a valid passport number, or leave passport blank to continue');
+        return;
+      }
+      if (!passportFrontFile || !passportLastFile) {
+        toast.error('Upload passport first page and last page photos');
+        return;
+      }
     }
     if (!kycConsent) {
       toast.error('Please accept the KYC consent');
@@ -494,11 +559,8 @@ export default function WorkerVerificationPage() {
         if (urlErr || !signed?.signedUrl) {
           throw new Error(urlErr?.message || 'Could not create document URL');
         }
-        // Prefer typed doc; fall back to id_proof if DB CHECK not yet updated.
-        const tryTypes =
-          docType === 'pan' || docType === 'aadhaar' || docType === 'passport'
-            ? [docType, 'id_proof']
-            : [docType];
+        // Prefer typed doc; fall back if DB CHECK is not yet updated.
+        const tryTypes = kycTypeFallbacks(docType);
         let lastErr: Error | null = null;
         for (const type of tryTypes) {
           const { error: dbErr } = await supabase.from('worker_documents').insert({
@@ -518,20 +580,26 @@ export default function WorkerVerificationPage() {
         if (lastErr) throw lastErr;
       };
 
-      await uploadDoc(panFile, 'pan', 'PAN Card');
-      await uploadDoc(aadhaarFile, 'aadhaar', 'Aadhaar Card');
-      await uploadDoc(passportFile, 'passport', 'Passport');
+      await uploadDoc(panFile, 'pan', 'PAN Card Front');
+      await uploadDoc(aadhaarFrontFile, 'aadhaar_front', 'Aadhaar Card Front');
+      await uploadDoc(aadhaarBackFile, 'aadhaar_back', 'Aadhaar Card Back');
+      if (hasPassportInput && passportFrontFile && passportLastFile) {
+        await uploadDoc(passportFrontFile, 'passport_front', 'Passport First Page');
+        await uploadDoc(passportLastFile, 'passport_last', 'Passport Last Page');
+      }
 
       const next = await completeIdentityKyc(user.id, {
         panNumber: pan,
         aadhaarNumber: aadhaar,
-        passportNumber: passport,
+        passportNumber: hasPassportInput ? passport : undefined,
       });
       setRow(next);
       setForceIdentity(false);
       setPanFile(null);
-      setAadhaarFile(null);
-      setPassportFile(null);
+      setAadhaarFrontFile(null);
+      setAadhaarBackFile(null);
+      setPassportFrontFile(null);
+      setPassportLastFile(null);
       notifyVerificationUpdated();
       toast.success('Identity submitted — SafeWork will verify your documents before the video interview');
       await load();
@@ -1282,11 +1350,21 @@ export default function WorkerVerificationPage() {
           <StageWaitingShell
             icon={ShieldCheck}
             title="We're verifying your identity"
-            body="Your PAN, Aadhaar and passport are submitted. SafeWork reviews them before scheduling your video interview."
+            body={
+              passportNumber
+                ? 'Your PAN, Aadhaar and passport are submitted. SafeWork reviews them before scheduling your video interview.'
+                : 'Your PAN and Aadhaar are submitted. You can add a passport later before travel. SafeWork reviews your documents before scheduling your video interview.'
+            }
             expected="Usually within a few hours"
             notifyNote="You'll get an SMS and an app notification the moment verification is done — no need to keep this page open."
             timeline={[
-              { label: 'Identity documents submitted', detail: 'PAN, Aadhaar & Passport uploaded', status: 'done' },
+              {
+                label: 'Identity documents submitted',
+                detail: passportNumber
+                  ? 'PAN, Aadhaar & Passport uploaded'
+                  : 'PAN & Aadhaar uploaded',
+                status: 'done',
+              },
               { label: 'SafeWork verifying your documents', status: 'current' },
               { label: 'Video interview scheduled', status: 'pending' },
             ]}
@@ -1316,7 +1394,7 @@ export default function WorkerVerificationPage() {
           <StageActionShell
             icon={ShieldCheck}
             title="Identity (KYC)"
-            description="Required before applying to jobs. Enter your PAN, full Aadhaar and Passport number, and upload a photo of each. SafeWork verifies these before your video interview is scheduled."
+            description="Required before applying to jobs. Upload PAN front, Aadhaar front and back, and passport pages if you have one. SafeWork verifies these before your video interview is scheduled."
             timeEstimate="Takes 5–7 minutes"
             footer={
               <Button onClick={() => void onSubmitIdentity()} disabled={saving}>
@@ -1334,7 +1412,7 @@ export default function WorkerVerificationPage() {
                       <p className="mt-0.5">
                         {row.kyc_rejection_reason
                           ? row.kyc_rejection_reason
-                          : 'Some details did not match. Please re-check your PAN, Aadhaar and passport, then upload clear photos again.'}
+                          : 'Some details did not match. Please re-check your PAN, Aadhaar and passport photos, then upload clear photos again.'}
                       </p>
                     </div>
                   </div>
@@ -1364,7 +1442,7 @@ export default function WorkerVerificationPage() {
                 </div>
               )}
 
-              <div className="grid sm:grid-cols-3 gap-3">
+              <div className="grid sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>PAN Number *</Label>
                   <Input
@@ -1375,6 +1453,16 @@ export default function WorkerVerificationPage() {
                     disabled={saving}
                   />
                 </div>
+                <KycPhotoField
+                  label="PAN Card Front Photo"
+                  required
+                  file={panFile}
+                  disabled={saving}
+                  onChange={setPanFile}
+                />
+              </div>
+
+              <div className="space-y-3">
                 <div className="space-y-1.5">
                   <Label>Aadhaar Number *</Label>
                   <Input
@@ -1391,50 +1479,82 @@ export default function WorkerVerificationPage() {
                       : 'Stored securely and used only for emigration paperwork'}
                   </p>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Passport Number *</Label>
-                  <Input
-                    value={passportNumber}
-                    onChange={(e) =>
-                      setPassportNumber(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9))
-                    }
-                    placeholder="A1234567"
-                    maxLength={9}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <KycPhotoField
+                    label="Aadhaar Card Front Photo"
+                    required
+                    file={aadhaarFrontFile}
                     disabled={saving}
+                    onChange={setAadhaarFrontFile}
+                  />
+                  <KycPhotoField
+                    label="Aadhaar Card Back Photo"
+                    required
+                    file={aadhaarBackFile}
+                    disabled={saving}
+                    onChange={setAadhaarBackFile}
                   />
                 </div>
               </div>
-              <div className="grid sm:grid-cols-3 gap-3">
-                <div className="space-y-1.5">
-                  <Label>PAN Card Photo *</Label>
-                  <Input
-                    type="file"
-                    accept="image/*,.pdf"
+
+              <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
+                <p className="text-sm font-medium text-foreground inline-flex items-center gap-1.5">
+                  Passport (if available)
+                  <PassportRequirementInfo />
+                </p>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={hasPassport}
                     disabled={saving}
-                    onChange={(e) => setPanFile(e.target.files?.[0] || null)}
+                    onChange={(e) => {
+                      const next = e.target.checked;
+                      setHasPassport(next);
+                      if (!next) {
+                        setPassportNumber('');
+                        setPassportFrontFile(null);
+                        setPassportLastFile(null);
+                      }
+                    }}
                   />
-                  {panFile && <p className="text-xs text-success">✓ {panFile.name}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Aadhaar Card Photo *</Label>
-                  <Input
-                    type="file"
-                    accept="image/*,.pdf"
-                    disabled={saving}
-                    onChange={(e) => setAadhaarFile(e.target.files?.[0] || null)}
-                  />
-                  {aadhaarFile && <p className="text-xs text-success">✓ {aadhaarFile.name}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Passport Photo *</Label>
-                  <Input
-                    type="file"
-                    accept="image/*,.pdf"
-                    disabled={saving}
-                    onChange={(e) => setPassportFile(e.target.files?.[0] || null)}
-                  />
-                  {passportFile && <p className="text-xs text-success">✓ {passportFile.name}</p>}
-                </div>
+                  I have a valid passport
+                </label>
+                {hasPassport ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Passport Number *</Label>
+                      <Input
+                        value={passportNumber}
+                        onChange={(e) =>
+                          setPassportNumber(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 9))
+                        }
+                        placeholder="A1234567"
+                        maxLength={9}
+                        disabled={saving}
+                      />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <KycPhotoField
+                        label="Passport First Page Photo"
+                        required
+                        file={passportFrontFile}
+                        disabled={saving}
+                        onChange={setPassportFrontFile}
+                      />
+                      <KycPhotoField
+                        label="Passport Last Page Photo"
+                        required
+                        file={passportLastFile}
+                        disabled={saving}
+                        onChange={setPassportLastFile}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Upload a clear photo of the first page and the last page of your passport.
+                    </p>
+                  </>
+                ) : null}
               </div>
               <label className="flex items-start gap-2 text-xs cursor-pointer">
                 <input

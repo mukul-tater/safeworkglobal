@@ -332,7 +332,8 @@ export async function completeMediaStep(userId: string): Promise<WorkerVerificat
 }
 
 /**
- * KYC — PAN + full Aadhaar number + passport number + document photos.
+ * KYC — PAN + full Aadhaar number + document photos.
+ * Passport number is optional: workers can continue without one and add it later.
  * Stays on the identity stage: an admin must verify KYC before the video
  * interview can be scheduled (admin_verify_worker_kyc advances the stage).
  */
@@ -341,7 +342,7 @@ export async function completeIdentityKyc(
   opts: {
     panNumber: string;
     aadhaarNumber: string;
-    passportNumber: string;
+    passportNumber?: string;
     nextStageIfCurrentIdentity?: boolean;
   },
 ): Promise<WorkerVerification> {
@@ -352,14 +353,15 @@ export async function completeIdentityKyc(
   }
 
   const now = new Date().toISOString();
-  const passport = opts.passportNumber.trim().toUpperCase();
+  const passport = (opts.passportNumber || '').trim().toUpperCase();
+  const hasPassport = /^[A-Z0-9]{6,9}$/.test(passport);
   const kycPayload = {
     user_id: userId,
     pan_number: opts.panNumber.trim().toUpperCase(),
     aadhaar_number: aadhaar,
     aadhaar_last4: aadhaar.slice(-4),
-    passport_number: passport,
-    has_passport: true,
+    passport_number: hasPassport ? passport : null,
+    has_passport: hasPassport,
     kyc_status: 'submitted',
     kyc_consent_at: now,
     kyc_submitted_at: now,

@@ -59,10 +59,10 @@ const STEPS: StepDef[] = [
     icon: FileText,
     description: "Upload your ID and photo documents.",
     bullets: [
-      { label: "Aadhaar", icon: FileText },
-      { label: "Passport (if you have)", icon: FileText },
+      { label: "PAN (front)", icon: FileText },
+      { label: "Aadhaar (front & back)", icon: FileText },
+      { label: "Passport first & last page (if you have)", icon: FileText },
       { label: "Photograph", icon: FileText },
-      { label: "Experience / education", icon: FileText },
     ],
     cta: { label: "Upload documents", to: "/worker/documents" },
   },
