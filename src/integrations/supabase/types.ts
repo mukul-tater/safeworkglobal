@@ -3666,34 +3666,52 @@ export type Database = {
       }
       trade_test_centers: {
         Row: {
+          address: string | null
           city: string
+          contact_name: string | null
+          contact_phone: string | null
           created_at: string
           id: string
+          instructions: string | null
           is_active: boolean
+          maps_url: string | null
           name: string
           partner_id: string | null
+          pincode: string | null
           reporting_window: string
           state: string
           updated_at: string
         }
         Insert: {
+          address?: string | null
           city: string
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           id: string
+          instructions?: string | null
           is_active?: boolean
+          maps_url?: string | null
           name: string
           partner_id?: string | null
+          pincode?: string | null
           reporting_window?: string
           state: string
           updated_at?: string
         }
         Update: {
+          address?: string | null
           city?: string
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           id?: string
+          instructions?: string | null
           is_active?: boolean
+          maps_url?: string | null
           name?: string
           partner_id?: string | null
+          pincode?: string | null
           reporting_window?: string
           state?: string
           updated_at?: string
@@ -4608,6 +4626,7 @@ export type Database = {
           interview_score: number | null
           interview_status: string
           interviewer_user_id: string | null
+          interviewer_name: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -4679,6 +4698,7 @@ export type Database = {
           interview_score?: number | null
           interview_status?: string
           interviewer_user_id?: string | null
+          interviewer_name?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: string
           kyc_verified_at?: string | null
@@ -4750,6 +4770,7 @@ export type Database = {
           interview_score?: number | null
           interview_status?: string
           interviewer_user_id?: string | null
+          interviewer_name?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: string
           kyc_verified_at?: string | null
@@ -5129,6 +5150,7 @@ export type Database = {
           interview_score: number | null
           interview_status: string
           interviewer_user_id: string | null
+          interviewer_name: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5209,6 +5231,7 @@ export type Database = {
           interview_score: number | null
           interview_status: string
           interviewer_user_id: string | null
+          interviewer_name: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5586,6 +5609,7 @@ export type Database = {
           interview_score: number | null
           interview_status: string
           interviewer_user_id: string | null
+          interviewer_name: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5666,6 +5690,7 @@ export type Database = {
           interview_score: number | null
           interview_status: string
           interviewer_user_id: string | null
+          interviewer_name: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null

@@ -45,6 +45,12 @@ export type TradeTestCenterRow = {
   partner_id: string | null;
   reporting_window: string;
   is_active: boolean;
+  address: string | null;
+  pincode: string | null;
+  contact_name: string | null;
+  contact_phone: string | null;
+  maps_url: string | null;
+  instructions: string | null;
 };
 
 export type AssessmentRow = {
@@ -100,6 +106,14 @@ export type AssessmentRow = {
   worker_phone?: string | null;
   worker_email?: string | null;
   center_name?: string | null;
+  center_city?: string | null;
+  center_state?: string | null;
+  center_address?: string | null;
+  center_pincode?: string | null;
+  center_contact_name?: string | null;
+  center_contact_phone?: string | null;
+  center_maps_url?: string | null;
+  center_instructions?: string | null;
   primary_skill?: string | null;
 };
 

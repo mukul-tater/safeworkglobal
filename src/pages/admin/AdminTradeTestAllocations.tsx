@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertTriangle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRADE_TEST_REPORTING_WINDOW } from '@/data/tradeTestCenters';
 import {
@@ -24,11 +24,32 @@ import {
   listWorkersNeedingAllocation,
   qualityReviewAssessment,
   signedEvidenceUrl,
+  updateTradeTestCenter,
 } from '@/modules/trade-test/services/assessmentService';
 import type { AssessmentOutcome, AssessmentRow, AssessmentScoresRow, TradeTestCenterRow } from '@/modules/trade-test/types';
 import { SOP_SCORE_FIELDS } from '@/modules/trade-test/types';
 
 type Tab = 'allocate' | 'review';
+
+type CenterDraft = {
+  address: string;
+  pincode: string;
+  contact_name: string;
+  contact_phone: string;
+  maps_url: string;
+  instructions: string;
+};
+
+function draftFromCenter(c: TradeTestCenterRow): CenterDraft {
+  return {
+    address: c.address || '',
+    pincode: c.pincode || '',
+    contact_name: c.contact_name || '',
+    contact_phone: c.contact_phone || '',
+    maps_url: c.maps_url || '',
+    instructions: c.instructions || '',
+  };
+}
 
 export default function AdminTradeTestAllocations() {
   const [tab, setTab] = useState<Tab>('allocate');
@@ -41,6 +62,10 @@ export default function AdminTradeTestAllocations() {
   const [centerByWorker, setCenterByWorker] = useState<Record<string, string>>({});
   const [partnerByWorker, setPartnerByWorker] = useState<Record<string, string>>({});
   const [dateByWorker, setDateByWorker] = useState<Record<string, string>>({});
+  const [instrByWorker, setInstrByWorker] = useState<Record<string, string>>({});
+  const [centerDrafts, setCenterDrafts] = useState<Record<string, CenterDraft>>({});
+  const [editingCenterId, setEditingCenterId] = useState<string | null>(null);
+  const [savingCenterId, setSavingCenterId] = useState<string | null>(null);
   const [notesById, setNotesById] = useState<Record<string, string>>({});
   const [selectedReview, setSelectedReview] = useState<string | null>(null);
   const [reviewScores, setReviewScores] = useState<AssessmentScoresRow | null>(null);
@@ -57,6 +82,13 @@ export default function AdminTradeTestAllocations() {
       ]);
       setWorkers(w);
       setCenters(c);
+      setCenterDrafts((prev) => {
+        const next = { ...prev };
+        for (const row of c) {
+          if (!next[row.id]) next[row.id] = draftFromCenter(row);
+        }
+        return next;
+      });
       setPartners(p);
       setReviewRows(r);
 
@@ -115,12 +147,38 @@ export default function AdminTradeTestAllocations() {
     })();
   }, [selectedReview]);
 
+  const onSaveCenter = async (centerId: string) => {
+    const draft = centerDrafts[centerId];
+    if (!draft) return;
+    setSavingCenterId(centerId);
+    try {
+      await updateTradeTestCenter(centerId, {
+        address: draft.address.trim() || null,
+        pincode: draft.pincode.trim() || null,
+        contact_name: draft.contact_name.trim() || null,
+        contact_phone: draft.contact_phone.trim() || null,
+        maps_url: draft.maps_url.trim() || null,
+        instructions: draft.instructions.trim() || null,
+      });
+      toast.success('Centre details saved — workers will see this address');
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not save centre');
+    } finally {
+      setSavingCenterId(null);
+    }
+  };
+
   const onAllocate = async (userId: string, verificationId: string) => {
     const centerId = centerByWorker[userId];
     const appointmentDate = dateByWorker[userId];
     if (!centerId || !appointmentDate) {
       toast.error('Pick centre and appointment date');
       return;
+    }
+    const center = centers.find((c) => c.id === centerId);
+    if (!center?.address?.trim()) {
+      toast.warning('This centre has no street address yet — add it in Centre details so the worker can find it.');
     }
     setActing(userId);
     try {
@@ -131,6 +189,7 @@ export default function AdminTradeTestAllocations() {
         appointmentDate,
         reportingWindow: TRADE_TEST_REPORTING_WINDOW,
         partnerId: partnerByWorker[userId] || undefined,
+        instructions: instrByWorker[userId]?.trim() || undefined,
       });
       toast.success('Candidate allocated — waiting for centre accept');
       await load();
@@ -188,6 +247,118 @@ export default function AdminTradeTestAllocations() {
           </div>
         ) : tab === 'allocate' ? (
           <div className="space-y-3">
+            {centers.length > 0 && (
+              <Card>
+                <CardContent className="p-4 space-y-3">
+                  <div>
+                    <p className="font-medium">Centre details</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Address and contact shown to the worker after allocation. Partner company names stay hidden.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {centers.map((c) => {
+                      const draft = centerDrafts[c.id] || draftFromCenter(c);
+                      const open = editingCenterId === c.id;
+                      const missingAddress = !(c.address || '').trim();
+                      const patchDraft = (key: keyof CenterDraft, value: string) =>
+                        setCenterDrafts((prev) => ({
+                          ...prev,
+                          [c.id]: { ...(prev[c.id] || draftFromCenter(c)), [key]: value },
+                        }));
+                      return (
+                        <div key={c.id} className="rounded-lg border">
+                          <button
+                            type="button"
+                            className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm"
+                            onClick={() => setEditingCenterId((id) => (id === c.id ? null : c.id))}
+                          >
+                            <span>
+                              <span className="font-medium">{c.name}</span>
+                              <span className="text-muted-foreground">
+                                {' '}
+                                · {c.city}, {c.state}
+                              </span>
+                              {missingAddress && (
+                                <span className="ml-2 text-xs text-amber-700 dark:text-amber-400">
+                                  No street address
+                                </span>
+                              )}
+                            </span>
+                            <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground ${open ? 'rotate-180' : ''}`} />
+                          </button>
+                          {open && (
+                            <div className="border-t p-3 space-y-3">
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-1.5 sm:col-span-2">
+                                  <Label>Street address</Label>
+                                  <Input
+                                    value={draft.address}
+                                    onChange={(e) => patchDraft('address', e.target.value)}
+                                    placeholder="Building, road, area"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label>PIN code</Label>
+                                  <Input
+                                    value={draft.pincode}
+                                    onChange={(e) => patchDraft('pincode', e.target.value)}
+                                    placeholder="302001"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label>Maps URL</Label>
+                                  <Input
+                                    value={draft.maps_url}
+                                    onChange={(e) => patchDraft('maps_url', e.target.value)}
+                                    placeholder="https://maps.google.com/…"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label>Contact name</Label>
+                                  <Input
+                                    value={draft.contact_name}
+                                    onChange={(e) => patchDraft('contact_name', e.target.value)}
+                                    placeholder="Centre coordinator"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label>Contact phone</Label>
+                                  <Input
+                                    value={draft.contact_phone}
+                                    onChange={(e) => patchDraft('contact_phone', e.target.value)}
+                                    placeholder="10-digit mobile"
+                                  />
+                                </div>
+                                <div className="space-y-1.5 sm:col-span-2">
+                                  <Label>Default instructions</Label>
+                                  <Textarea
+                                    rows={2}
+                                    value={draft.instructions}
+                                    onChange={(e) => patchDraft('instructions', e.target.value)}
+                                    placeholder="Bring original Aadhaar. Report between 9:00 AM and 10:00 AM."
+                                  />
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                disabled={savingCenterId === c.id}
+                                onClick={() => void onSaveCenter(c.id)}
+                              >
+                                {savingCenterId === c.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                                ) : null}
+                                Save centre details
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {workers.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center text-muted-foreground text-sm">
@@ -268,6 +439,17 @@ export default function AdminTradeTestAllocations() {
                           Report {TRADE_TEST_REPORTING_WINDOW}
                         </p>
                       </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Instructions for this worker (optional)</Label>
+                      <Textarea
+                        rows={2}
+                        value={instrByWorker[w.user_id] || ''}
+                        onChange={(e) =>
+                          setInstrByWorker((prev) => ({ ...prev, [w.user_id]: e.target.value }))
+                        }
+                        placeholder="Override centre default — gate, documents, reporting notes…"
+                      />
                     </div>
                     <Button
                       size="sm"

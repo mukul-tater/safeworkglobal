@@ -1030,6 +1030,7 @@ export async function resetVerificationJourney(userId: string): Promise<WorkerVe
       trade_test_center_name: null,
       trade_test_reporting_window: null,
       trade_test_booked_at: null,
+      interviewer_name: null,
       medical_result_url: null,
       medical_blood_report_url: null,
       medical_xray_report_url: null,

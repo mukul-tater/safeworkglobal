@@ -70,7 +70,12 @@ async function enrichAssessments(rows: AssessmentRow[]): Promise<AssessmentRow[]
   const [{ data: profiles }, { data: centers }, { data: vers }] = await Promise.all([
     supabase.from('profiles').select('id, full_name, phone, email').in('id', workerIds),
     centerIds.length
-      ? supabase.from('trade_test_centers').select('id, name').in('id', centerIds)
+      ? supabase
+          .from('trade_test_centers')
+          .select(
+            'id, name, city, state, address, pincode, contact_name, contact_phone, maps_url, instructions',
+          )
+          .in('id', centerIds)
       : Promise.resolve({ data: [] }),
     verIds.length
       ? supabase.from('worker_verification').select('id, primary_skill').in('id', verIds)
@@ -90,6 +95,14 @@ async function enrichAssessments(rows: AssessmentRow[]): Promise<AssessmentRow[]
       worker_name: p?.full_name || null,
       worker_phone: p?.phone || null,
       center_name: (c as any)?.name || r.location || null,
+      center_city: (c as any)?.city || null,
+      center_state: (c as any)?.state || null,
+      center_address: (c as any)?.address || null,
+      center_pincode: (c as any)?.pincode || null,
+      center_contact_name: (c as any)?.contact_name || null,
+      center_contact_phone: (c as any)?.contact_phone || null,
+      center_maps_url: (c as any)?.maps_url || null,
+      center_instructions: (c as any)?.instructions || null,
       primary_skill: (v as any)?.primary_skill || null,
       worker_email: displayableEmail(p?.email) || null,
     } as AssessmentRow);
@@ -102,6 +115,45 @@ export async function listTradeTestCenters(activeOnly = true): Promise<TradeTest
   const { data, error } = await q;
   if (error) throw new Error(error.message);
   return (data || []) as TradeTestCenterRow[];
+}
+
+export async function updateTradeTestCenter(
+  centerId: string,
+  patch: {
+    address?: string | null;
+    pincode?: string | null;
+    contact_name?: string | null;
+    contact_phone?: string | null;
+    maps_url?: string | null;
+    instructions?: string | null;
+  },
+): Promise<void> {
+  const { error } = await supabase
+    .from('trade_test_centers')
+    .update({
+      address: patch.address ?? null,
+      pincode: patch.pincode ?? null,
+      contact_name: patch.contact_name ?? null,
+      contact_phone: patch.contact_phone ?? null,
+      maps_url: patch.maps_url ?? null,
+      instructions: patch.instructions ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', centerId);
+  if (error) throw new Error(error.message);
+}
+
+function centerPlaceLine(center: {
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  name?: string | null;
+}): string {
+  const parts = [center.address, center.city, center.state, center.pincode]
+    .map((x) => (x || '').trim())
+    .filter(Boolean);
+  return parts.join(', ') || center.name || '';
 }
 
 export async function listWorkersNeedingAllocation(): Promise<
@@ -182,6 +234,8 @@ export async function allocateAssessment(input: {
   reportingWindow?: string;
   /** Override / set SSVN partner for the centre when allocating. */
   partnerId?: string;
+  /** Per-worker note shown on the journey (falls back to centre instructions). */
+  instructions?: string;
 }): Promise<AssessmentRow> {
   const { data: center, error: cErr } = await supabase
     .from('trade_test_centers')
@@ -221,6 +275,10 @@ export async function allocateAssessment(input: {
     .single();
   if (error) throw new Error(error.message);
 
+  const workerInstructions =
+    (input.instructions || '').trim() || (center.instructions || '').trim() || null;
+  const place = centerPlaceLine(center);
+
   const { error: vErr } = await supabase
     .from('worker_verification')
     .update({
@@ -229,6 +287,9 @@ export async function allocateAssessment(input: {
       trade_test_center_name: center.name,
       trade_test_reporting_window: window,
       trade_test_booked_at: new Date().toISOString(),
+      trade_test_scheduled_at: scheduledAt,
+      trade_test_place: place || center.name,
+      trade_test_instructions: workerInstructions,
       trade_test_status: 'scheduled',
       updated_at: new Date().toISOString(),
     })

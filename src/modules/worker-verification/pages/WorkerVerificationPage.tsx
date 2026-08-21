@@ -16,6 +16,7 @@ import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
   Calendar, CreditCard, Stethoscope, RotateCcw, ShieldCheck, Wrench,
   GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList, Info,
+  MapPin, Phone, ExternalLink,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -258,6 +259,14 @@ function formatWhen(iso: string | null | undefined): string {
   if (!iso) return '';
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('en-IN');
+}
+
+function formatAppointmentDate(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = iso.length <= 10 ? new Date(`${iso}T00:00:00`) : new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ''
+    : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /**
@@ -996,6 +1005,7 @@ export default function WorkerVerificationPage() {
             identity={{ pan: panNumber, aadhaarLast4: aadhaarOnFile, passport: passportNumber, passportExpiry }}
             ecrCategory={ecrCategory}
             tenthPass={tenthPass}
+            tradeAssessment={tradeAssessment}
             onGoToCurrent={clearJourneyQuery}
           >
             {viewingJourney === 'skill_proof' && (
@@ -1616,7 +1626,9 @@ export default function WorkerVerificationPage() {
             title="Test 2 — Video interview"
             body={
               row.interview_scheduled_at
-                ? `Your video interview is scheduled for ${formatWhen(row.interview_scheduled_at)}. Join on time from a quiet place with a good network.`
+                ? `Join on time from a quiet place with a good network.${
+                    row.interviewer_name ? ` ${row.interviewer_name} will interview you.` : ''
+                  }`
                 : row.interview_status === 'rejected'
                   ? 'Your last interview was not approved. SafeWork will reschedule a new interview — the new date will appear here.'
                   : 'SafeWork will schedule your video interview and assign an interviewer. The date, time and joining link appear here.'
@@ -1627,12 +1639,30 @@ export default function WorkerVerificationPage() {
               { label: 'Identity verified', status: 'done' },
               {
                 label: row.interview_scheduled_at ? 'Interview scheduled' : 'SafeWork assigning an interviewer',
-                detail: row.interview_scheduled_at ? formatWhen(row.interview_scheduled_at) : undefined,
+                detail: row.interview_scheduled_at
+                  ? `${formatWhen(row.interview_scheduled_at)}${
+                      row.interviewer_name ? ` · ${row.interviewer_name}` : ''
+                    }`
+                  : undefined,
                 status: 'current',
               },
               { label: 'Attend the video interview', status: 'pending' },
             ]}
           >
+            {row.interview_scheduled_at && (
+              <div className="rounded-xl border border-border bg-muted/30 px-3 py-3 text-sm space-y-1 text-left">
+                {row.interviewer_name && (
+                  <p>
+                    <span className="text-muted-foreground">Interviewer: </span>
+                    <span className="font-medium">{row.interviewer_name}</span>
+                  </p>
+                )}
+                <p>
+                  <span className="text-muted-foreground">When: </span>
+                  <span className="font-medium">{formatWhen(row.interview_scheduled_at)}</span>
+                </p>
+              </div>
+            )}
             {row.interview_meeting_url && (
               <Button asChild>
                 <a href={row.interview_meeting_url} target="_blank" rel="noreferrer">
@@ -1885,26 +1915,94 @@ export default function WorkerVerificationPage() {
                   <p className="text-sm font-medium">
                     {tradeAssessment.center_name || row.trade_test_center_name || 'Trade test centre'}
                   </p>
-                  {(tradeAssessment.appointment_date || tradeAssessment.scheduled_at) && (
+                  {(tradeAssessment.center_city || tradeAssessment.center_state || tradeAssessment.center_pincode) && (
                     <p className="text-sm text-muted-foreground">
-                      Appointment:{' '}
-                      {tradeAssessment.appointment_date ||
-                        (tradeAssessment.scheduled_at
-                          ? new Date(tradeAssessment.scheduled_at).toLocaleDateString()
-                          : '')}
+                      {[tradeAssessment.center_city, tradeAssessment.center_state, tradeAssessment.center_pincode]
+                        .filter(Boolean)
+                        .join(', ')}
                     </p>
+                  )}
+                  {tradeAssessment.center_address && (
+                    <p className="flex items-start gap-2 text-sm text-foreground">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span>{tradeAssessment.center_address}</span>
+                    </p>
+                  )}
+                  {(tradeAssessment.center_contact_name || tradeAssessment.center_contact_phone) && (
+                    <p className="flex items-start gap-2 text-sm text-foreground">
+                      <Phone className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span>
+                        {[tradeAssessment.center_contact_name, tradeAssessment.center_contact_phone]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </p>
+                  )}
+                  {(tradeAssessment.appointment_date || tradeAssessment.scheduled_at) && (
+                    <p className="text-sm">
+                      <span className="text-muted-foreground">Appointment: </span>
+                      <span className="font-medium">
+                        {formatAppointmentDate(
+                          tradeAssessment.appointment_date || tradeAssessment.scheduled_at,
+                        )}
+                      </span>
+                    </p>
+                  )}
+                  {(row.trade_test_instructions || tradeAssessment.center_instructions) && (
+                    <p className="text-xs text-muted-foreground whitespace-pre-line">
+                      {row.trade_test_instructions || tradeAssessment.center_instructions}
+                    </p>
+                  )}
+                  {tradeAssessment.center_maps_url && (
+                    <Button asChild variant="outline" size="sm">
+                      <a href={tradeAssessment.center_maps_url} target="_blank" rel="noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                        Open in Maps
+                      </a>
+                    </Button>
                   )}
                   <p className="text-sm text-foreground">{tradeTestAssignmentLabel(tradeAssessment)}</p>
                   <p className="text-xs text-muted-foreground">
                     Centre names are location-based. Partner company names are not shown here.
                   </p>
                 </div>
+              ) : row.trade_test_place || row.trade_test_scheduled_at || row.trade_test_instructions ? (
+                <div className="rounded-xl border border-border bg-muted/30 px-3 py-3 text-sm space-y-1">
+                  {tradeAssessment?.status === 'centre_rejected' && (
+                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                      Previous centre declined — SafeWork will reassign you.
+                    </p>
+                  )}
+                  {row.trade_test_place && (
+                    <p>
+                      <span className="text-muted-foreground">Centre: </span>
+                      <span className="font-medium">{row.trade_test_place}</span>
+                    </p>
+                  )}
+                  {row.trade_test_scheduled_at && (
+                    <p>
+                      <span className="text-muted-foreground">When: </span>
+                      <span className="font-medium">{formatWhen(row.trade_test_scheduled_at)}</span>
+                    </p>
+                  )}
+                  {row.trade_test_reporting_window && (
+                    <p>
+                      <span className="text-muted-foreground">Reporting window: </span>
+                      <span className="font-medium">{row.trade_test_reporting_window}</span>
+                    </p>
+                  )}
+                  {row.trade_test_instructions && (
+                    <p className="text-xs text-muted-foreground whitespace-pre-line">
+                      {row.trade_test_instructions}
+                    </p>
+                  )}
+                </div>
               ) : (
                 <div className="rounded-lg border border-dashed p-4 space-y-2">
                   <p className="text-sm font-medium">Waiting for SafeWork allocation</p>
                   <p className="text-xs text-muted-foreground">
                     An admin will assign you to a centre near{' '}
-                    {row.state || 'your state'}. You will see the location, appointment date, and
+                    {row.state || 'your state'}. You will see the full address, appointment date, and
                     reporting window here once allocated.
                   </p>
                   {tradeAssessment?.status === 'centre_rejected' && (

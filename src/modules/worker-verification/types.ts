@@ -57,6 +57,7 @@ export interface WorkerVerification {
   interview_scheduled_at: string | null;
   interview_meeting_url: string | null;
   interviewer_user_id: string | null;
+  interviewer_name: string | null;
   interview_status: string | null;
   interview_attempts: number | null;
   trade_test_scheduled_at: string | null;

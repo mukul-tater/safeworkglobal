@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
+import type { AssessmentRow } from '@/modules/trade-test/types';
 import {
   ASSESSMENT_FEE_INCLUSIONS,
   MEDICAL_TEST_SCREENING_NOTE,
@@ -57,6 +58,7 @@ interface Props {
   identity: { pan: string; aadhaarLast4: string; passport: string; passportExpiry?: string | null };
   ecrCategory?: string | null;
   tenthPass?: boolean | null;
+  tradeAssessment?: AssessmentRow | null;
   onGoToCurrent: () => void;
   /** Extra interactive block, e.g. add-more-media uploader. */
   children?: ReactNode;
@@ -251,6 +253,7 @@ export default function CompletedStepReview({
   identity,
   ecrCategory,
   tenthPass,
+  tradeAssessment,
   onGoToCurrent,
   children,
 }: Props) {
@@ -419,6 +422,7 @@ export default function CompletedStepReview({
                 label="Interviewed on"
                 value={formatDate(row.interview_rated_at || row.interview_scheduled_at)}
               />
+              <Detail label="Interviewer" value={row.interviewer_name || '—'} />
               <Detail label="Attempt" value={String(row.interview_attempts ?? 1)} />
             </dl>
             {row.interview_notes && (
@@ -431,6 +435,84 @@ export default function CompletedStepReview({
             )}
           </div>
         )}
+
+        {stepId === 'test3' && (() => {
+          const centreName =
+            tradeAssessment?.center_name ||
+            row.trade_test_center_name ||
+            row.trade_test_place ||
+            '—';
+          const address =
+            tradeAssessment?.center_address ||
+            (row.trade_test_place && row.trade_test_place !== centreName
+              ? row.trade_test_place
+              : null);
+          return (
+          <div className="space-y-4">
+            <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              <Detail label="Centre" value={centreName} />
+              <Detail
+                label="Appointment"
+                value={formatDate(
+                  tradeAssessment?.appointment_date ||
+                    tradeAssessment?.scheduled_at ||
+                    row.trade_test_scheduled_at,
+                )}
+              />
+              <Detail
+                label="Reporting window"
+                value={
+                  tradeAssessment?.reporting_window ||
+                  row.trade_test_reporting_window ||
+                  '—'
+                }
+              />
+              <Detail
+                label="City / state"
+                value={
+                  [tradeAssessment?.center_city, tradeAssessment?.center_state, tradeAssessment?.center_pincode]
+                    .filter(Boolean)
+                    .join(', ') || row.state || '—'
+                }
+              />
+            </dl>
+            {address && (
+              <div>
+                <SectionLabel>Address</SectionLabel>
+                <p className="mt-1.5 text-sm text-foreground">{address}</p>
+              </div>
+            )}
+            {(tradeAssessment?.center_contact_name || tradeAssessment?.center_contact_phone) && (
+              <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+                <Detail
+                  label="Contact"
+                  value={
+                    [tradeAssessment?.center_contact_name, tradeAssessment?.center_contact_phone]
+                      .filter(Boolean)
+                      .join(' · ') || '—'
+                  }
+                />
+              </dl>
+            )}
+            {(row.trade_test_instructions || tradeAssessment?.center_instructions) && (
+              <div>
+                <SectionLabel>Instructions</SectionLabel>
+                <p className="mt-1.5 whitespace-pre-line text-sm text-foreground">
+                  {row.trade_test_instructions || tradeAssessment?.center_instructions}
+                </p>
+              </div>
+            )}
+            {tradeAssessment?.center_maps_url && (
+              <Button asChild variant="outline" size="sm">
+                <a href={tradeAssessment.center_maps_url} target="_blank" rel="noreferrer">
+                  <ExternalLink className="mr-1 h-3.5 w-3.5" />
+                  Open in Maps
+                </a>
+              </Button>
+            )}
+          </div>
+          );
+        })()}
 
         {stepId === 'medical' && (() => {
           const docs = [
