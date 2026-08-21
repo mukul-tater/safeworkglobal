@@ -11,10 +11,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { signInWithGoogle } from '@/lib/googleAuth';
 import { clearPendingOAuthRole, setPendingOAuthRole } from '@/lib/oauthRedirect';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function EmployerLoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, role, isMobileVerified } = useAuth();
+  const { login, isAuthenticated, role, isMobileVerified, loading: authLoading, profileLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,10 +24,19 @@ export default function EmployerLoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (authLoading || profileLoading) return;
     if (isAuthenticated && role === 'employer') {
       navigate(isMobileVerified ? '/employer/dashboard' : '/employer/bind-mobile', { replace: true });
     }
-  }, [isAuthenticated, role, isMobileVerified, navigate]);
+  }, [isAuthenticated, role, isMobileVerified, navigate, authLoading, profileLoading]);
+
+  if (authLoading || googleLoading || (isAuthenticated && (profileLoading || role === 'employer'))) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <LoadingSpinner size="lg" text="Signing you in..." />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +74,7 @@ export default function EmployerLoginPage() {
     try {
       setPendingOAuthRole('employer');
       const result = await signInWithGoogle('google', {
-        next: '/auth',
+        next: '/dashboard',
       });
       if (result.error) {
         clearPendingOAuthRole();

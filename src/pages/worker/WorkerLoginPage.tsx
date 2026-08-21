@@ -18,6 +18,7 @@ import TermsAgreeRow from '@/components/TermsAgreeRow';
 import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 import SignupJourneyPanel from '@/components/SignupJourneyPanel';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 type LoginMethod = 'mobile' | 'email';
 
@@ -34,7 +35,7 @@ async function resolveAuthEmail(identifier: string): Promise<string | null> {
  */
 export default function WorkerLoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, role, isMobileVerified, profileLoading } = useAuth();
+  const { login, isAuthenticated, role, isMobileVerified, profileLoading, loading: authLoading } = useAuth();
   const [method, setMethod] = useState<LoginMethod>('mobile');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
@@ -46,11 +47,19 @@ export default function WorkerLoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (profileLoading) return;
+    if (authLoading || profileLoading) return;
     if (isAuthenticated && role === 'worker') {
       navigate(isMobileVerified ? '/worker/dashboard' : '/worker/bind-mobile', { replace: true });
     }
-  }, [isAuthenticated, role, isMobileVerified, profileLoading, navigate]);
+  }, [isAuthenticated, role, isMobileVerified, profileLoading, authLoading, navigate]);
+
+  if (authLoading || (isAuthenticated && (profileLoading || role === 'worker'))) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/40">
+        <LoadingSpinner size="lg" text="Signing you in..." />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

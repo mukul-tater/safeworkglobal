@@ -67,6 +67,7 @@ export default function Auth() {
     profile,
     isMobileVerified,
     user,
+    loading: authLoading,
   } = useAuth();
   const [view, setView] = useState<AuthView>(
     modeHint === 'signup' ? 'role-select' : 'login'
@@ -205,7 +206,7 @@ export default function Auth() {
     try {
       setPendingOAuthRole(chosenRole);
       const result = await signInWithGoogle('google', {
-        next: '/auth',
+        next: '/dashboard',
       });
       if (result.error) {
         clearPendingOAuthRole();
@@ -413,6 +414,24 @@ export default function Auth() {
       {label}
     </Button>
   );
+
+  // Signed-in (or still hydrating after Google) — never paint the login form.
+  const continuing =
+    authLoading ||
+    googleLoading ||
+    !!assigningRole ||
+    (isAuthenticated && !needsRoleSelection && (profileLoading || !!role));
+
+  if (continuing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-muted-foreground">Signing you in...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

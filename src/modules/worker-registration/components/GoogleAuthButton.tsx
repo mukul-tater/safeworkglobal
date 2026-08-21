@@ -28,7 +28,7 @@ export default function GoogleAuthButton({
       onBeforeOAuth?.();
       setPendingOAuthRole(role);
       const result = await signInWithGoogle('google', {
-        next: '/auth',
+        next: '/dashboard',
       });
       if (result.error) {
         clearPendingOAuthRole();

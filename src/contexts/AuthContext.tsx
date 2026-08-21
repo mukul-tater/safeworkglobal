@@ -3,6 +3,7 @@ import { redirectToPublicHome } from '@/lib/signOut';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { displayableEmail } from '@/lib/workerAuthEmail';
+import { hasOAuthCallbackInUrl } from '@/lib/oauthRedirect';
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner' | 'interviewer';
 
@@ -125,6 +126,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** Prevents tab-focus / token events from re-fetching and remounting the whole app. */
   const loadedUserIdRef = useRef<string | null>(null);
   const loadGenerationRef = useRef(0);
+  const oauthWaitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearOAuthWaitTimer = () => {
+    if (oauthWaitTimerRef.current) {
+      clearTimeout(oauthWaitTimerRef.current);
+      oauthWaitTimerRef.current = null;
+    }
+  };
+
+  const keepLoadingForOAuthCallback = () => {
+    clearOAuthWaitTimer();
+    oauthWaitTimerRef.current = setTimeout(() => {
+      oauthWaitTimerRef.current = null;
+      setLoading(false);
+    }, 8000);
+  };
 
   const fetchUserRole = async (userId: string) => {
     const { data, error } = await supabase
@@ -284,17 +301,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setRole(null);
           setProfile(null);
           setHasResolvedRole(false);
+          setProfileLoading(false);
           setLoading(false);
           return;
         }
 
         if (!nextSession?.user) {
-          setLoading(false);
+          // PKCE / hash exchange is still in flight. Stay in loading so
+          // ProtectedRoute does not bounce to a login page.
+          if (hasOAuthCallbackInUrl()) {
+            keepLoadingForOAuthCallback();
+          } else {
+            setLoading(false);
+          }
           return;
         }
 
         setSession(nextSession);
         setUser(nextSession.user);
+        clearOAuthWaitTimer();
 
         // Re-hydrate OTP-verified flag after remount / new tab of same session.
         if (readMobileVerifiedSession(nextSession.user.id)) {
@@ -328,20 +353,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => {
           void loadUserData(existing.user);
         }, 0);
+        setLoading(false);
+        return;
       }
 
-      setLoading(false);
+      // No session yet. If this is an OAuth return, keep loading until
+      // SIGNED_IN fires — otherwise every portal flashes its login page.
+      if (hasOAuthCallbackInUrl()) {
+        keepLoadingForOAuthCallback();
+      } else {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearOAuthWaitTimer();
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
+      // Keep ProtectedRoute on a spinner until SIGNED_IN commits the session.
+      // Otherwise navigate-to-dashboard races and flashes the login page.
+      setLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) return { success: false, error: error.message };
+      if (error) {
+        setLoading(false);
+        return { success: false, error: error.message };
+      }
       return { success: true };
     } catch (error) {
+      setLoading(false);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Login failed',

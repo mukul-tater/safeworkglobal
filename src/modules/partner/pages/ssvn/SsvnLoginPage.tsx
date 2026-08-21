@@ -35,7 +35,7 @@ export default function SsvnLoginPage() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
-  const { login, isAuthenticated, role } = useAuth();
+  const { login, isAuthenticated, role, loading: authLoading, profileLoading } = useAuth();
   const firebaseOtp = useFirebasePhoneOtp();
   const nextPath = searchParams.get('next') || '';
   const portal = lockedPartnerFromPath(pathname) ?? LOCKED_PARTNER_PORTALS.SSVN;
@@ -77,6 +77,7 @@ export default function SsvnLoginPage() {
   };
 
   useEffect(() => {
+    if (authLoading || profileLoading) return;
     if (!isAuthenticated || role !== 'partner') return;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -89,7 +90,7 @@ export default function SsvnLoginPage() {
       }
       navigate(afterLoginPath(), { replace: true });
     })();
-  }, [isAuthenticated, role, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, role, navigate, authLoading, profileLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (step !== 'otp') return;
@@ -245,6 +246,14 @@ export default function SsvnLoginPage() {
     navigate(afterLoginPath(), { replace: true });
     setLoading(false);
   };
+
+  if (authLoading || (isAuthenticated && profileLoading && !role)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <AuthSplitLayout audience="partner" variant="login">

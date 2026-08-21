@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   consumePendingOAuthRedirect,
   peekPendingOAuthRole,
+  resolvePostOAuthPath,
+  clearPendingOAuthRole,
 } from '@/lib/oauthRedirect';
 
 /**
@@ -13,22 +15,43 @@ import {
  * page" logic must be global, not tied to the home page.
  */
 export default function OAuthLandingHandler() {
-  const { loading, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated, role, profileLoading, needsRoleSelection } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const handled = useRef(false);
 
   useEffect(() => {
     if (loading || !isAuthenticated || handled.current) return;
+    // Role may still be fetching — wait so we send new Google users to role
+    // select instead of a login form, and existing users to /dashboard.
+    if (profileLoading && !role) return;
 
     const next = consumePendingOAuthRedirect();
     const pendingRole = peekPendingOAuthRole();
-    const target = next ?? (pendingRole ? '/auth' : null);
+
+    if (needsRoleSelection) {
+      handled.current = true;
+      if (location.pathname !== '/auth') navigate('/auth', { replace: true });
+      return;
+    }
+
+    const target = resolvePostOAuthPath(next, pendingRole);
     if (!target) return;
 
     handled.current = true;
+    if (pendingRole && role && pendingRole === role) {
+      clearPendingOAuthRole();
+    }
     if (target !== location.pathname) navigate(target, { replace: true });
-  }, [loading, isAuthenticated, navigate, location.pathname]);
+  }, [
+    loading,
+    isAuthenticated,
+    profileLoading,
+    role,
+    needsRoleSelection,
+    navigate,
+    location.pathname,
+  ]);
 
   return null;
 }

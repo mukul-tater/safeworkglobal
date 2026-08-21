@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { hasOAuthCallbackInUrl, peekPendingOAuthRedirect, peekPendingOAuthRole } from "@/lib/oauthRedirect";
 
 export default function Dashboard() {
   const { user, role, isAuthenticated, loading, profileLoading, needsRoleSelection } = useAuth();
@@ -12,8 +13,12 @@ export default function Dashboard() {
     // Still loading auth — wait
     if (loading) return;
 
-    // Not logged in → go to auth
+    // OAuth return still hydrating (or we have a pending hop). Do not bounce
+    // to /auth — that is the login-form flash after Google sign-in.
     if (!isAuthenticated) {
+      if (hasOAuthCallbackInUrl() || peekPendingOAuthRedirect() || peekPendingOAuthRole()) {
+        return;
+      }
       navigate("/auth", { replace: true });
       return;
     }

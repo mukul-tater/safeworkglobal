@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, role, refreshRole } = useAuth();
+  const { login, isAuthenticated, role, refreshRole, loading: authLoading, profileLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
@@ -33,10 +33,22 @@ export default function AdminLoginPage() {
   const [resetError, setResetError] = useState('');
 
   useEffect(() => {
+    if (authLoading || profileLoading) return;
     if (isAuthenticated && role === 'admin') {
       navigate('/admin/dashboard', { replace: true });
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, role, navigate, authLoading, profileLoading]);
+
+  if (authLoading || (isAuthenticated && (profileLoading || role === 'admin'))) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-muted-foreground">Signing you in...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -24,7 +24,7 @@ import { hasValidLspSession } from '@/modules/lsp/services/lspSession';
 export default function EmitraLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, isAuthenticated, role, refreshRole } = useAuth();
+  const { login, isAuthenticated, role, refreshRole, loading: authLoading, profileLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
@@ -43,10 +43,19 @@ export default function EmitraLoginPage() {
   };
 
   useEffect(() => {
+    if (authLoading || profileLoading) return;
     if (isAuthenticated && role === 'partner') {
       navigate(afterLoginPath(), { replace: true });
     }
-  }, [isAuthenticated, role, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, role, navigate, authLoading, profileLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (authLoading || (isAuthenticated && (profileLoading || role === 'partner'))) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

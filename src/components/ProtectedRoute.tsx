@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { bindMobilePath, MOBILE_OTP_ROLES } from '@/lib/mobileVerification';
+import { hasOAuthCallbackInUrl } from '@/lib/oauthRedirect';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -42,7 +43,8 @@ export default function ProtectedRoute({
   }, [isAuthenticated, role, user?.id]);
 
   // Initial auth only. Do not unmount the app on later profile refreshes (tab focus).
-  if (loading) {
+  // Also wait out the Google/PKCE callback so we never bounce to a login form.
+  if (loading || hasOAuthCallbackInUrl()) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

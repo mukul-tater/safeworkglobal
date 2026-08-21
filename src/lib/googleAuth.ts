@@ -63,7 +63,9 @@ export async function signInWithGoogle(
   }
 
   const origin = window.location.origin;
-  const intended = opts?.next ?? opts?.redirect_uri ?? '/auth';
+  // `/dashboard` is an unprotected spinner that routes by role. Never use a
+  // login-form path here — that is what flashed the login page after Google.
+  const intended = opts?.next ?? opts?.redirect_uri ?? '/dashboard';
   setPendingOAuthRedirect(intended);
 
   if (shouldUseLovableOAuthBroker()) {

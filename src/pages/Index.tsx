@@ -14,6 +14,8 @@ import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ScrollReveal from "@/components/ScrollReveal";
 import { useAuth } from "@/contexts/AuthContext";
+import { peekPendingOAuthRedirect, peekPendingOAuthRole, hasOAuthCallbackInUrl } from "@/lib/oauthRedirect";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const Index = () => {
   const { loading, profileLoading, role, isAuthenticated } = useAuth();
@@ -22,8 +24,19 @@ const Index = () => {
   // Wait for role only on cold start. If role is already known, never blank
   // the page when profileLoading flickers (tab focus / token refresh).
   const waitingForRole = isAuthenticated && !role && (loading || profileLoading);
-  const isEmployer = !waitingForRole && role === "employer";
-  const showDefaultHome = !waitingForRole && role !== "employer";
+  const oauthReturning =
+    (loading || !isAuthenticated || waitingForRole) &&
+    (hasOAuthCallbackInUrl() || !!peekPendingOAuthRedirect() || !!peekPendingOAuthRole());
+  const isEmployer = !waitingForRole && !oauthReturning && role === "employer";
+  const showDefaultHome = !waitingForRole && !oauthReturning && role !== "employer";
+
+  if (oauthReturning) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <LoadingSpinner size="lg" text="Signing you in..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-16 md:pb-0 overflow-x-hidden">
