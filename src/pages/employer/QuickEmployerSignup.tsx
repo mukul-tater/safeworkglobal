@@ -215,9 +215,8 @@ export default function QuickEmployerSignup() {
         });
       }
 
-      toast.success("Account created. Tell us about your company.");
-      setScreen("form");
-      setSection(1);
+      toast.success("Account created. Verify your mobile number to continue.");
+      navigate("/employer/bind-mobile", { replace: true });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Signup failed";
       setError(message);

@@ -39,7 +39,7 @@ export const JOURNEY_STEPS: { id: VerificationStage; label: string; description:
   { id: 'awaiting_payment', label: 'Payment', description: 'Assessment fee' },
   { id: 'trade_test', label: 'Trade test', description: 'Physical skill assessment' },
   { id: 'medical', label: 'Medical', description: 'HIV blood test & TB chest X-ray at any nearest laboratory' },
-  { id: 'bond', label: 'Bond', description: 'Stamp paper / eStamp' },
+  { id: 'bond', label: 'Bond & Security', description: 'Stamp paper, courier and security cheques' },
   { id: 'pdot', label: 'PDOT', description: 'Pre-departure orientation' },
   { id: 'deployment', label: 'Deployment', description: 'Travel & placement' },
   { id: 'gcc_ready', label: 'GCC ready', description: 'Eligible to apply for jobs' },

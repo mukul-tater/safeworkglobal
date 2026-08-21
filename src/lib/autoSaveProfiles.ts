@@ -4,6 +4,8 @@ import type { EmployerProfileFormData, WorkerProfileFormData } from '@/lib/valid
 export type WorkerProfileAutoSaveData = WorkerProfileFormData & {
   nationality: string;
   availability: string;
+  registered_state?: string;
+  registered_city?: string;
 };
 
 export async function saveWorkerProfilePartial(userId: string, data: WorkerProfileAutoSaveData) {
@@ -41,6 +43,37 @@ export async function saveWorkerProfilePartial(userId: string, data: WorkerProfi
   );
 
   if (workerError) throw workerError;
+
+  if (data.registered_state !== undefined) {
+    const state = data.registered_state.trim();
+    const city = (data.registered_city || '').trim();
+    const location = [city, state].filter(Boolean).join(', ') || null;
+    const { error: wvErr } = await supabase
+      .from('worker_verification')
+      .update({
+        state: state || null,
+        city: city || null,
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq('user_id', userId);
+    if (wvErr) throw wvErr;
+
+    const { error: locErr } = await supabase
+      .from('worker_profiles')
+      .update({ current_location: location, current_city: city || null } as never)
+      .eq('user_id', userId);
+    if (locErr) throw locErr;
+
+    await supabase
+      .from('worker_bond_security')
+      .update({
+        state_confirmed: false,
+        state_confirmed_at: null,
+        confirmed_state: state || null,
+      } as never)
+      .eq('user_id', userId)
+      .in('status', ['pending', 'in_progress', 'resubmission_required', 'rejected']);
+  }
 }
 
 export async function saveEmployerProfilePartial(userId: string, data: EmployerProfileFormData) {

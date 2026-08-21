@@ -11,12 +11,13 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Phone, Mail, Store } from 'lucide-react';
 import { toast } from 'sonner';
-import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { partnerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
+import DevOtpHint from '@/components/DevOtpHint';
 import { isPartnerOperational, getPartnerProfile } from '../services/emitraService';
 import { hasValidLspSession } from '@/modules/lsp/services/lspSession';
 import AuthSplitLayout from '@/components/AuthSplitLayout';
@@ -303,6 +304,7 @@ export default function EmitraLoginPage() {
                   Enter the SMS OTP sent to{' '}
                   <span className="font-medium text-foreground">+91 {mobile}</span>
                 </p>
+                <DevOtpHint />
                 <div className="flex justify-center py-1">
                   <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                     <InputOTPGroup>

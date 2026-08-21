@@ -77,7 +77,7 @@ function AppNavigation() {
   const needsBindMobile =
     isAuthenticated &&
     !needsRoleSelection &&
-    role === 'worker' &&
+    (role === 'worker' || role === 'employer' || role === 'partner') &&
     !isMobileVerified;
 
   const navKey = !isAuthenticated

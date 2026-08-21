@@ -1,5 +1,6 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
+import { isDevOtpBypassEnabled } from '@/lib/otpConfig';
 
 /**
  * Firebase web config is public (safe in the browser).
@@ -58,6 +59,7 @@ export function getFirebaseAuth(): Auth {
  */
 export function redirectToPhoneAuthHost(): boolean {
   if (typeof window === 'undefined') return false;
+  if (isDevOtpBypassEnabled()) return false;
   const host = window.location.hostname.toLowerCase();
   const canonicalHost =
     host === 'localhost'

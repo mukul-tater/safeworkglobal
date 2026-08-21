@@ -11,7 +11,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
@@ -26,6 +26,7 @@ import {
 import { lockedPartnerFromPath, LOCKED_PARTNER_PORTALS } from '../../config/partnerPortalRoutes';
 import AuthSplitLayout from '@/components/AuthSplitLayout';
 import { cn } from '@/lib/utils';
+import DevOtpHint from '@/components/DevOtpHint';
 
 type Method = 'mobile' | 'email';
 type Step = 'credentials' | 'otp';
@@ -320,6 +321,7 @@ export default function SsvnLoginPage() {
               Enter the SMS OTP sent to{' '}
               <span className="font-medium text-foreground">+91 {mobile}</span>
             </p>
+            <DevOtpHint />
             <div className="flex justify-center py-1">
               <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                 <InputOTPGroup>

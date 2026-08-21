@@ -436,6 +436,8 @@ export type Database = {
           title: string
           updated_at: string
           version: string
+          worker_cheque_amount: number | null
+          guarantor_cheque_amount: number | null
         }
         Insert: {
           active?: boolean
@@ -448,6 +450,8 @@ export type Database = {
           title?: string
           updated_at?: string
           version: string
+          worker_cheque_amount?: number | null
+          guarantor_cheque_amount?: number | null
         }
         Update: {
           active?: boolean
@@ -460,6 +464,8 @@ export type Database = {
           title?: string
           updated_at?: string
           version?: string
+          worker_cheque_amount?: number | null
+          guarantor_cheque_amount?: number | null
         }
         Relationships: []
       }
@@ -4577,6 +4583,7 @@ export type Database = {
           bond_couriered_at: string | null
           bond_received_at: string | null
           bond_status: string | null
+          bond_rejection_reason: string | null
           bond_template_id: string | null
           city: string | null
           created_at: string

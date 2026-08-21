@@ -1,0 +1,18 @@
+---
+description: Prod Razorpay still uses test keys — remind to switch to live keys before real charges.
+alwaysApply: true
+---
+
+# Razorpay: prod is still on test keys
+
+Verified 21 Aug 2026: production (`safeworkglobal.com` → `razorpay-assessment` edge function) is configured with **Razorpay test keys** (`rzp_test_…`), not live (`rzp_live_…`).
+
+The user asked to be **reminded to switch to production/live keys**.
+
+When working on payments, worker journey checkout, go-live, launch, or Razorpay:
+
+- Remind: swap `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` on the `razorpay-assessment` edge function to `rzp_live_…` keys.
+- Do not put the secret in `VITE_` / frontend env. Checkout `key_id` comes from `create_order`.
+- After switching, confirm Checkout no longer shows the TEST MODE banner.
+
+Do not nag on unrelated tasks. One short reminder is enough when the topic is in scope.

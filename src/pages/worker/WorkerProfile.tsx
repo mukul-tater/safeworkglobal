@@ -1,6 +1,6 @@
 import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +34,7 @@ import type { ReactNode } from "react";
 import { displayableEmail, formatIndianMobile, isWorkerMobileAuthEmail } from "@/lib/workerAuthEmail";
 import { getGoogleEmailFromUser } from "@/modules/worker-verification/lib/connectGoogleEmail";
 import { Badge } from "@/components/ui/badge";
+import { indianStates } from "@/lib/validations/partner";
 
 const NATIONALITIES = [
   'India', 'Bangladesh', 'Pakistan', 'Nepal', 'Sri Lanka', 'Philippines',
@@ -50,10 +51,14 @@ const AVAILABILITY_OPTIONS = [
 
 export default function WorkerProfile() {
   const { user, profile, refreshProfile } = useAuth();
+  const [searchParams] = useSearchParams();
+  const fromBond = searchParams.get('from') === 'bond';
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [nationality, setNationality] = useState<string>("");
   const [availability, setAvailability] = useState<string>("");
+  const [registeredState, setRegisteredState] = useState<string>("");
+  const [registeredCity, setRegisteredCity] = useState<string>("");
   const [contactEmail, setContactEmail] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
 
@@ -95,8 +100,10 @@ export default function WorkerProfile() {
       expected_salary_max: formValues.expected_salary_max ?? 0,
       nationality,
       availability,
+      registered_state: registeredState,
+      registered_city: registeredCity,
     }),
-    [formValues, nationality, availability],
+    [formValues, nationality, availability, registeredState, registeredCity],
   );
 
   const handleAutoSave = useCallback(
@@ -128,6 +135,16 @@ export default function WorkerProfile() {
           .maybeSingle();
 
         if (error) throw error;
+
+        const { data: verification } = await supabase
+          .from('worker_verification')
+          .select('state, city')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        const nextState = String((verification as { state?: string | null } | null)?.state || '');
+        const nextCity = String((verification as { city?: string | null } | null)?.city || '');
+        setRegisteredState(nextState);
+        setRegisteredCity(nextCity);
 
         // Set form values from profiles table
         if (profile) {
@@ -164,6 +181,8 @@ export default function WorkerProfile() {
           expected_salary_max: workerProfile?.expected_salary_max || 0,
           nationality: workerProfile?.nationality || '',
           availability: workerProfile?.availability || '',
+          registered_state: nextState,
+          registered_city: nextCity,
         });
       } catch (error) {
         console.error('Error loading worker profile:', error);
@@ -181,9 +200,21 @@ export default function WorkerProfile() {
 
     try {
       setSaving(true);
-      await saveWorkerProfilePartial(user.id, { ...data, nationality, availability });
+      await saveWorkerProfilePartial(user.id, {
+        ...data,
+        nationality,
+        availability,
+        registered_state: registeredState,
+        registered_city: registeredCity,
+      });
       await refreshProfile();
-      markReady({ ...data, nationality, availability });
+      markReady({
+        ...data,
+        nationality,
+        availability,
+        registered_state: registeredState,
+        registered_city: registeredCity,
+      });
       toast.success("Profile updated successfully!");
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -210,6 +241,16 @@ export default function WorkerProfile() {
   return layout(
     <div className="max-w-3xl mx-auto">
       <PortalBreadcrumb currentPageTitle="Profile" />
+
+      {fromBond ? (
+        <div className="mb-4 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+          <p className="font-medium">Update your registered state, then return to Bond &amp; Security.</p>
+          <p className="mt-0.5 text-muted-foreground">राज्य अपडेट करने के बाद Bond &amp; Security पर लौटें और राज्य की पुष्टि करें।</p>
+          <Button asChild variant="outline" size="sm" className="mt-2">
+            <Link to="/worker/journey">Back to Bond &amp; Security</Link>
+          </Button>
+        </div>
+      ) : null}
 
       {/* Profile hero */}
       <div className="mb-6 rounded-xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 shadow-sm overflow-hidden">
@@ -391,6 +432,33 @@ export default function WorkerProfile() {
               {errors.phone && (
                 <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
               )}
+            </div>
+
+            <div>
+              <Label>Registered state *</Label>
+              <Select value={registeredState} onValueChange={setRegisteredState}>
+                <SelectTrigger className="mt-1.5 h-11">
+                  <SelectValue placeholder="Select your state / UT" />
+                </SelectTrigger>
+                <SelectContent>
+                  {indianStates.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Used for Bond &amp; Security stamp paper value.</p>
+            </div>
+
+            <div>
+              <Label htmlFor="registered_city">City</Label>
+              <Input
+                id="registered_city"
+                className="mt-1.5 h-11"
+                value={registeredCity}
+                onChange={(e) => setRegisteredCity(e.target.value)}
+              />
             </div>
 
             <div className="sm:col-span-2">

@@ -20,7 +20,6 @@ import {
   createBondTemplate,
   listBondTemplates,
   listInterviewers,
-  markBondReceived,
   markPdotCompleted,
   reviewWorkerKyc,
   scheduleWorkerAssessment,
@@ -30,6 +29,7 @@ import {
   updateDeploymentChecklist,
 } from '@/modules/worker-verification/services/verificationService';
 import type { BondTemplate } from '@/modules/worker-verification/types';
+import AdminBondSecurityReview from '@/pages/admin/AdminBondSecurityReview';
 
 type OpsTab = 'kyc' | 'interview' | 'trade_test' | 'medical' | 'bond' | 'pdot' | 'deployment';
 
@@ -38,7 +38,7 @@ const TABS: { value: OpsTab; label: string }[] = [
   { value: 'interview', label: 'Interviews' },
   { value: 'trade_test', label: 'Trade test' },
   { value: 'medical', label: 'Medical' },
-  { value: 'bond', label: 'Bond' },
+  { value: 'bond', label: 'Bond & Security' },
   { value: 'pdot', label: 'PDOT' },
   { value: 'deployment', label: 'Deployment' },
 ];
@@ -65,7 +65,14 @@ export default function AdminJourneyOps() {
     { user_id: string; full_name: string | null; email: string | null }[]
   >([]);
   const [templates, setTemplates] = useState<BondTemplate[]>([]);
-  const [tplForm, setTplForm] = useState({ version: '', title: '', address: '', instructions: '' });
+  const [tplForm, setTplForm] = useState({
+    version: '',
+    title: '',
+    address: '',
+    instructions: '',
+    workerChequeAmount: '',
+    guarantorChequeAmount: '',
+  });
   const [tplFile, setTplFile] = useState<File | null>(null);
 
   const setField = (id: string, key: string, value: string) =>
@@ -348,25 +355,17 @@ export default function AdminJourneyOps() {
 
     if (tab === 'bond') {
       return (
-        <div className="space-y-2">
-          <div className="text-xs text-muted-foreground">
-            Bond status: <strong>{r.bond_status || 'pending'}</strong> · Courier tracking:{' '}
-            <strong>{r.bond_courier_tracking || '—'}</strong>
-          </div>
-          <Button
-            size="sm"
-            disabled={busy || !r.bond_courier_tracking}
-            onClick={() => void run(r.user_id, () => markBondReceived(r.user_id), 'Bond marked received')}
-          >
-            {busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-            Mark original received
-          </Button>
-          {!r.bond_courier_tracking && (
-            <p className="text-xs text-muted-foreground">
-              Waiting for the worker to courier the signed bond and enter a tracking number.
-            </p>
-          )}
-        </div>
+        <AdminBondSecurityReview
+          userId={r.user_id}
+          workerName={r.full_name}
+          workerId={r.user_id}
+          state={r.state}
+          bondStatus={r.bond_status}
+          busy={busy}
+          onDone={async () => {
+            await load();
+          }}
+        />
       );
     }
 
@@ -425,7 +424,7 @@ export default function AdminJourneyOps() {
             </Button>
             <Button
               size="sm"
-              disabled={busy || r.bond_status !== 'approved'}
+              disabled={busy || r.bond_status !== 'approved' || !r.bond_received_at}
               onClick={() =>
                 void run(
                   r.user_id,
@@ -443,9 +442,9 @@ export default function AdminJourneyOps() {
             value={field(r.user_id, 'proof')}
             onChange={(e) => setField(r.user_id, 'proof', e.target.value)}
           />
-          {r.bond_status !== 'approved' && (
-            <p className="text-xs text-amber-600">Bond must be received before PDOT completion.</p>
-          )}
+          {r.bond_status !== 'approved' || !r.bond_received_at ? (
+            <p className="text-xs text-amber-600">Bond documents must be approved and the original received before PDOT completion.</p>
+          ) : null}
         </div>
       );
     }
@@ -571,6 +570,20 @@ export default function AdminJourneyOps() {
             value={tplForm.instructions}
             onChange={(e) => setTplForm((f) => ({ ...f, instructions: e.target.value }))}
           />
+          <div className="grid sm:grid-cols-2 gap-2">
+            <Input
+              type="number"
+              placeholder="Worker cheque amount (optional)"
+              value={tplForm.workerChequeAmount}
+              onChange={(e) => setTplForm((f) => ({ ...f, workerChequeAmount: e.target.value }))}
+            />
+            <Input
+              type="number"
+              placeholder="Guarantor cheque amount (optional)"
+              value={tplForm.guarantorChequeAmount}
+              onChange={(e) => setTplForm((f) => ({ ...f, guarantorChequeAmount: e.target.value }))}
+            />
+          </div>
           <Input
             type="file"
             accept="application/pdf"
@@ -592,9 +605,18 @@ export default function AdminJourneyOps() {
                   courierAddress: tplForm.address,
                   instructions: tplForm.instructions,
                   file: tplFile,
+                  workerChequeAmount: tplForm.workerChequeAmount ? Number(tplForm.workerChequeAmount) : null,
+                  guarantorChequeAmount: tplForm.guarantorChequeAmount ? Number(tplForm.guarantorChequeAmount) : null,
                 });
                 toast.success('Bond template uploaded and set active');
-                setTplForm({ version: '', title: '', address: '', instructions: '' });
+                setTplForm({
+                  version: '',
+                  title: '',
+                  address: '',
+                  instructions: '',
+                  workerChequeAmount: '',
+                  guarantorChequeAmount: '',
+                });
                 setTplFile(null);
                 setTemplates(await listBondTemplates());
               } catch (e) {

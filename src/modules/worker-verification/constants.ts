@@ -178,7 +178,7 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   trade_test: 'Test 3 — Physical trade test',
   medical: 'Medical test',
   tests: 'Test 3 — Physical trade test',
-  bond: 'Bond',
+  bond: 'Bond & Security',
   pdot: 'PDOT training',
   deployment: 'Deployment',
   gcc_ready: 'GCC ready',
@@ -267,7 +267,7 @@ export const GCC_JOURNEY_NAV_STEPS: {
     navLabel: 'Medical test',
     stages: ['medical'],
   },
-  { id: 'bond', label: 'Bond', shortLabel: 'Bond', navLabel: 'Bond', stages: ['bond'] },
+  { id: 'bond', label: 'Bond & Security', shortLabel: 'Bond', navLabel: 'Bond & Security', stages: ['bond'] },
   {
     id: 'pdot',
     label: 'PDOT training',

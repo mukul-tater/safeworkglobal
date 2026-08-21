@@ -240,6 +240,8 @@ export async function createBondTemplate(input: {
   courierAddress: string;
   instructions?: string;
   file: File;
+  workerChequeAmount?: number | null;
+  guarantorChequeAmount?: number | null;
 }): Promise<void> {
   const ext = input.file.name.split('.').pop() || 'pdf';
   const path = `bond-templates/${input.version.replace(/\s+/g, '-')}-${Date.now()}.${ext}`;
@@ -259,6 +261,8 @@ export async function createBondTemplate(input: {
     file_url: signed.signedUrl,
     courier_address: input.courierAddress.trim(),
     instructions: input.instructions?.trim() || null,
+    worker_cheque_amount: input.workerChequeAmount ?? null,
+    guarantor_cheque_amount: input.guarantorChequeAmount ?? null,
     active: true,
   } as never);
   if (error) throw new Error(error.message);
@@ -953,69 +957,13 @@ export async function markTestsPassed(userId: string): Promise<WorkerVerificatio
   throw new Error('Admin must approve trade/medical results');
 }
 
-/** Worker submits bond for admin review — does not grant GCC ready. */
-export async function submitBond(
-  userId: string,
-  method: 'estamp' | 'emitra' | 'physical_upload',
-  stampDocUrl?: string,
-  videoProofUrl?: string,
-): Promise<WorkerVerification> {
-  if (!stampDocUrl?.trim() || !videoProofUrl?.trim()) {
-    throw new Error('Stamp paper and video proof uploads are required');
-  }
-  const row = await getOrCreateVerification(userId);
-  const { error: bondErr } = await supabase.from('worker_bonds').insert({
-    user_id: userId,
-    method,
-    stamp_doc_url: stampDocUrl,
-    video_proof_url: videoProofUrl,
-    status: 'submitted',
+/** Admin — approve bond documents. Does not skip PDOT; original must still be marked received. */
+export async function approveBond(userId: string): Promise<void> {
+  await rpc('admin_review_bond_security', {
+    p_user_id: userId,
+    p_action: 'approve',
+    p_reason: null,
   });
-  if (bondErr) throw new Error(bondErr.message);
-
-  const { data, error } = await supabase
-    .from('worker_verification')
-    .update({
-      bond_status: 'submitted',
-      stage: 'bond',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', row.id)
-    .select('*')
-    .single();
-  if (error) throw new Error(error.message);
-
-  return data as WorkerVerification;
-}
-
-/** Admin — approve bond and mark GCC ready. */
-export async function approveBond(userId: string): Promise<WorkerVerification> {
-  const row = await getOrCreateVerification(userId);
-  const { data, error } = await supabase
-    .from('worker_verification')
-    .update({
-      bond_status: 'approved',
-      stage: 'gcc_ready',
-      gcc_ready_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', row.id)
-    .select('*')
-    .single();
-  if (error) throw new Error(error.message);
-
-  await supabase
-    .from('worker_profiles')
-    .update({ onboarding_completed: true, onboarded_at: new Date().toISOString() })
-    .eq('user_id', userId);
-
-  await supabase
-    .from('worker_bonds')
-    .update({ status: 'approved', updated_at: new Date().toISOString() })
-    .eq('user_id', userId)
-    .eq('status', 'submitted');
-
-  return data as WorkerVerification;
 }
 
 export function stageIndex(stage: VerificationStage): number {
@@ -1044,6 +992,8 @@ export async function resetVerificationJourney(userId: string): Promise<WorkerVe
   await supabase.from('worker_verification_interviews').delete().eq('user_id', userId);
   await supabase.from('worker_assessment_payments').delete().eq('user_id', userId);
   await supabase.from('worker_bonds').delete().eq('user_id', userId);
+  await supabase.from('worker_bond_security_files').delete().eq('user_id', userId);
+  await supabase.from('worker_bond_security').delete().eq('user_id', userId);
 
   const row = await getOrCreateVerification(userId);
   const { data, error } = await supabase
@@ -1082,6 +1032,7 @@ export async function resetVerificationJourney(userId: string): Promise<WorkerVe
       razorpay_payment_id: null,
       razorpay_order_id: null,
       bond_status: 'pending',
+      bond_rejection_reason: null,
       gcc_ready_at: null,
       updated_at: new Date().toISOString(),
     })

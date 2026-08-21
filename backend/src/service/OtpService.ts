@@ -24,7 +24,14 @@ function isMockAllowed(): boolean {
   return process.env.OTP_ALLOW_MOCK === 'true';
 }
 
+function isDevBypass(): boolean {
+  if (process.env.OTP_ALLOW_MOCK === 'false') return false;
+  if (process.env.NODE_ENV === 'production' && process.env.OTP_ALLOW_MOCK !== 'true') return false;
+  return process.env.NODE_ENV !== 'production' || process.env.OTP_ALLOW_MOCK === 'true';
+}
+
 function assertProviderConfigured(): void {
+  if (isDevBypass()) return;
   const provider = getProvider();
   if (provider === 'fast2sms' && process.env.FAST2SMS_API_KEY) return;
   if (provider === 'msg91' && process.env.MSG91_AUTH_KEY && process.env.MSG91_TEMPLATE_ID) return;
@@ -37,13 +44,33 @@ function assertProviderConfigured(): void {
   });
 }
 
+export type OtpPurpose = 'registration' | 'guarantor_bond';
+
 export class OtpService {
   private readonly pending = new Map<string, OtpRecord>();
   private readonly verifiedTokens = new Map<string, VerifiedToken>();
 
+  private purposeKey(purpose: OtpPurpose, mobileNumber: string): string {
+    return `${purpose}:${mobileNumber}`;
+  }
+
   async sendOtp(mobileNumber: string): Promise<{ demo?: boolean; message: string }> {
     assertProviderConfigured();
     const provider = getProvider();
+
+    if (isDevBypass()) {
+      const code = '123456';
+      this.pending.set(mobileNumber, {
+        code,
+        expiresAt: Date.now() + OTP_TTL_MS,
+        attempts: 0,
+      });
+      console.info(`[OTP dev] ${mobileNumber} — use 123456 or any 6-digit code`);
+      return {
+        demo: true,
+        message: 'Dev mode: enter 123456 or any 6-digit OTP',
+      };
+    }
 
     if (provider === 'msg91') {
       await this.msg91SendOtp(mobileNumber);
@@ -72,6 +99,12 @@ export class OtpService {
 
   verifyOtp(mobileNumber: string, otp: string): { otpToken: string; expiresInSeconds: number } {
     assertProviderConfigured();
+    const normalized = otp.replace(/\D/g, '');
+    if (isDevBypass() && /^\d{6}$/.test(normalized)) {
+      this.pending.delete(mobileNumber);
+      return this.issueRegistrationToken(mobileNumber);
+    }
+
     const provider = getProvider();
 
     if (provider === 'msg91') {
@@ -95,13 +128,119 @@ export class OtpService {
     }
 
     const normalized = otp.replace(/\D/g, '');
-    // Never accept arbitrary codes — even in mock, the logged code must match.
+    if (isDevBypass() && /^\d{6}$/.test(normalized)) {
+      this.pending.delete(mobileNumber);
+      return this.issueRegistrationToken(mobileNumber);
+    }
+
+    // Never accept arbitrary codes in production — the sent code must match.
     if (normalized !== record.code) {
       throw new ValidationException({ otp: ['Invalid OTP. Please try again.'] });
     }
 
     this.pending.delete(mobileNumber);
     return this.issueRegistrationToken(mobileNumber);
+  }
+
+  async sendGuarantorOtp(mobileNumber: string): Promise<{ demo?: boolean; message: string }> {
+    return this.sendOtpWithKey(this.purposeKey('guarantor_bond', mobileNumber), mobileNumber);
+  }
+
+  async verifyGuarantorOtp(mobileNumber: string, otp: string): Promise<{ verified: true }> {
+    if (getProvider() === 'msg91' && !isDevBypass()) {
+      await this.msg91CheckOtp(mobileNumber, otp);
+      this.pending.delete(this.purposeKey('guarantor_bond', mobileNumber));
+      return { verified: true };
+    }
+    this.verifyOtpWithKey(this.purposeKey('guarantor_bond', mobileNumber), otp);
+    return { verified: true };
+  }
+
+  private async sendOtpWithKey(
+    key: string,
+    mobileNumber: string
+  ): Promise<{ demo?: boolean; message: string }> {
+    assertProviderConfigured();
+    const provider = getProvider();
+
+    if (isDevBypass()) {
+      const code = '123456';
+      this.pending.set(key, {
+        code,
+        expiresAt: Date.now() + OTP_TTL_MS,
+        attempts: 0,
+      });
+      console.info(`[OTP guarantor] ${mobileNumber} — use 123456 or any 6-digit code`);
+      return {
+        demo: true,
+        message: 'Dev mode: enter 123456 or any 6-digit OTP',
+      };
+    }
+
+    if (provider === 'msg91') {
+      await this.msg91SendOtp(mobileNumber);
+      this.pending.set(key, {
+        code: 'msg91',
+        expiresAt: Date.now() + OTP_TTL_MS,
+        attempts: 0,
+      });
+      return { message: 'OTP sent to the guarantor mobile number' };
+    }
+
+    const code = this.generateCode();
+    this.pending.set(key, {
+      code,
+      expiresAt: Date.now() + OTP_TTL_MS,
+      attempts: 0,
+    });
+
+    await this.sendSms(mobileNumber, code);
+
+    if (provider === 'mock' && isMockAllowed()) {
+      console.info(`[OTP guarantor mock] ${mobileNumber} => ${code}`);
+      return {
+        demo: true,
+        message: 'OTP sent (dev mode — use the code from server logs).',
+      };
+    }
+
+    return { message: 'OTP sent to the guarantor mobile number' };
+  }
+
+  private verifyOtpWithKey(key: string, otp: string): void {
+    assertProviderConfigured();
+    const normalized = otp.replace(/\D/g, '');
+    if (isDevBypass() && /^\d{6}$/.test(normalized)) {
+      this.pending.delete(key);
+      return;
+    }
+
+    const provider = getProvider();
+    if (provider === 'msg91') {
+      // MSG91 verify is async in the registration path; keep local attempt tracking here.
+      const record = this.pending.get(key);
+      if (!record) {
+        throw new ValidationException({ otp: ['OTP expired or not requested. Tap Send OTP again.'] });
+      }
+    }
+
+    const record = this.pending.get(key);
+    if (!record) {
+      throw new ValidationException({ otp: ['OTP expired or not requested. Tap Send OTP again.'] });
+    }
+    if (Date.now() > record.expiresAt) {
+      this.pending.delete(key);
+      throw new ValidationException({ otp: ['OTP expired. Request a new one.'] });
+    }
+    record.attempts += 1;
+    if (record.attempts > MAX_ATTEMPTS) {
+      this.pending.delete(key);
+      throw new ValidationException({ otp: ['Too many attempts. Request a new OTP.'] });
+    }
+    if (provider !== 'msg91' && normalized !== record.code) {
+      throw new ValidationException({ otp: ['Invalid OTP. Please try again.'] });
+    }
+    this.pending.delete(key);
   }
 
   issueRegistrationToken(mobileNumber: string): { otpToken: string; expiresInSeconds: number } {
@@ -198,10 +337,7 @@ export class OtpService {
     }
   }
 
-  private async msg91VerifyOtp(
-    mobileNumber: string,
-    otp: string
-  ): { otpToken: string; expiresInSeconds: number } {
+  private async msg91CheckOtp(mobileNumber: string, otp: string): Promise<void> {
     const params = new URLSearchParams({
       otp: otp.replace(/\D/g, ''),
       mobile: `91${mobileNumber}`,
@@ -215,7 +351,13 @@ export class OtpService {
     if (!response.ok || body.type === 'error') {
       throw new ValidationException({ otp: [body.message || 'Invalid OTP. Please try again.'] });
     }
+  }
 
+  private async msg91VerifyOtp(
+    mobileNumber: string,
+    otp: string
+  ): Promise<{ otpToken: string; expiresInSeconds: number }> {
+    await this.msg91CheckOtp(mobileNumber, otp);
     return this.issueRegistrationToken(mobileNumber);
   }
 }

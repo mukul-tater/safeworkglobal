@@ -32,7 +32,7 @@ import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '../hooks/useFirebasePhoneOtp';
-import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 
 const phoneRegex = /^[6-9]\d{9}$/;
 

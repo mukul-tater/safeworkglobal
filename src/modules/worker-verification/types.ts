@@ -49,6 +49,7 @@ export interface WorkerVerification {
   razorpay_payment_id: string | null;
   razorpay_order_id: string | null;
   bond_status: string | null;
+  bond_rejection_reason?: string | null;
   gcc_ready_at: string | null;
   kyc_status: string | null;
   kyc_verified_at: string | null;
@@ -108,6 +109,8 @@ export interface BondTemplate {
   courier_address: string;
   instructions: string | null;
   active: boolean;
+  worker_cheque_amount?: number | null;
+  guarantor_cheque_amount?: number | null;
 }
 
 export interface SkillQuizConfig {

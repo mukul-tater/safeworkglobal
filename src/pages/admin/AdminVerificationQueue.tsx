@@ -14,13 +14,13 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ASSESSMENT_FEE_INR } from '@/modules/worker-verification/constants';
 import {
-  approveBond,
   approveMedical,
   approveTradeTest,
   markPaymentPaid,
   medicalTestDocumentsComplete,
   recordInterviewScore,
 } from '@/modules/worker-verification/services/verificationService';
+import AdminBondSecurityReview from '@/pages/admin/AdminBondSecurityReview';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 
 type QueueTab =
@@ -129,7 +129,7 @@ export default function AdminVerificationQueue() {
     >
       <h1 className="text-2xl md:text-3xl font-bold mb-2">Verification queue</h1>
       <p className="text-sm text-muted-foreground mb-4">
-        Score interviews, confirm payments, review trade/medical uploads, and approve bonds.
+        Score interviews, confirm payments, review trade/medical uploads, and review bond & security packs.
       </p>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as QueueTab)} className="mb-4">
@@ -329,14 +329,17 @@ export default function AdminVerificationQueue() {
               )}
 
               {tab === 'bond' && (
-                <Button
-                  disabled={actingId === r.user_id}
-                  onClick={() =>
-                    void run(r.user_id, () => approveBond(r.user_id), 'Bond approved — GCC ready')
-                  }
-                >
-                  Approve bond & mark GCC ready
-                </Button>
+                <AdminBondSecurityReview
+                  userId={r.user_id}
+                  workerName={r.full_name}
+                  workerId={r.user_id}
+                  state={r.state}
+                  bondStatus={r.bond_status}
+                  busy={actingId === r.user_id}
+                  onDone={async () => {
+                    await load();
+                  }}
+                />
               )}
             </Card>
           ))}

@@ -161,6 +161,44 @@ export class WorkerController {
     }
   };
 
+  sendGuarantorOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const parsed = sendOtpSchema.safeParse(req.body);
+      if (!parsed.success) {
+        throw new ValidationException(formatZodErrors(parsed.error));
+      }
+
+      const result = await otpService.sendGuarantorOtp(parsed.data.mobileNumber);
+      const body: ApiSuccessResponseDto<typeof result> = {
+        success: true,
+        data: result,
+        message: result.message,
+      };
+      res.json(body);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  verifyGuarantorOtp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const parsed = verifyOtpSchema.safeParse(req.body);
+      if (!parsed.success) {
+        throw new ValidationException(formatZodErrors(parsed.error));
+      }
+
+      const result = await otpService.verifyGuarantorOtp(parsed.data.mobileNumber, parsed.data.otp);
+      const body: ApiSuccessResponseDto<typeof result> = {
+        success: true,
+        data: result,
+        message: 'Guarantor mobile verified',
+      };
+      res.json(body);
+    } catch (err) {
+      next(err);
+    }
+  };
+
   getDistricts = (req: Request, res: Response, next: NextFunction): void => {
     try {
       const stateId = Number(req.params.stateId);

@@ -25,6 +25,14 @@ import { lockedPartnerFromPath } from "@/modules/partner/config/partnerPortalRou
 import AuthSplitLayout from "@/components/AuthSplitLayout";
 import FormStepPills from "@/components/FormStepPills";
 import { cn } from "@/lib/utils";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import {
+  useFirebasePhoneOtp,
+  WORKER_OTP_RECAPTCHA_BTN_ID,
+} from "@/modules/worker-registration/hooks/useFirebasePhoneOtp";
+import DevOtpHint from "@/components/DevOtpHint";
+import { getFirebaseAuth } from "@/lib/firebase";
+import { signOut as firebaseSignOut } from "firebase/auth";
 
 interface PartnerType {
   id: string;
@@ -44,7 +52,12 @@ export default function PartnerRegisterLegacy() {
   const subtitle = portal?.subtitle ?? "Join the SafeWork Global partner network";
   const signInLabel = portal?.signInLabel ?? "Partner sign in";
   const [types, setTypes] = useState<PartnerType[]>([]);
+  const firebaseOtp = useFirebasePhoneOtp();
   const [saving, setSaving] = useState(false);
+  const [otpBusy, setOtpBusy] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpStep, setOtpStep] = useState(false);
+  const [mobileVerified, setMobileVerified] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState({
@@ -145,14 +158,66 @@ export default function PartnerRegisterLegacy() {
     await assignRole("partner").catch(() => {});
     await (supabase as any)
       .from("profiles")
-      .update({ phone: digits, full_name: form.owner_name || form.company_name })
+      .update({ phone: digits, full_name: form.owner_name || form.company_name, mobile_verified: true })
       .eq("id", after.id);
     return after.id;
+  };
+
+  const requestOtp = async () => {
+    const digits = form.mobile.replace(/\D/g, "");
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      toast.error("Enter a valid 10-digit mobile number");
+      return;
+    }
+    if (!firebaseOtp.isAvailable) {
+      toast.error("SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.");
+      return;
+    }
+    setOtpBusy(true);
+    try {
+      await firebaseOtp.sendOtp(digits);
+      setOtpStep(true);
+      setOtp("");
+      setMobileVerified(false);
+      toast.success(`Verification code sent to +91 ${digits}`);
+    } catch (e) {
+      firebaseOtp.resetRecaptcha();
+      toast.error(e instanceof Error ? e.message : "Failed to send OTP");
+    } finally {
+      setOtpBusy(false);
+    }
+  };
+
+  const confirmOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error("Enter the 6-digit OTP");
+      return;
+    }
+    setOtpBusy(true);
+    try {
+      await firebaseOtp.verifyOtp(otp);
+      try {
+        if (!firebaseOtp.devBypass) await firebaseSignOut(getFirebaseAuth());
+      } catch {
+        /* ignore */
+      }
+      setMobileVerified(true);
+      setOtpStep(false);
+      toast.success("Mobile verified");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Invalid OTP");
+    } finally {
+      setOtpBusy(false);
+    }
   };
 
   const submit = async () => {
     if (!form.partner_type_id || !form.company_name || !form.mobile) {
       toast.error("Fill required fields (company, mobile, partner type)");
+      return;
+    }
+    if (!mobileVerified) {
+      toast.error("Verify your mobile number with OTP first");
       return;
     }
     setSaving(true);
@@ -163,7 +228,7 @@ export default function PartnerRegisterLegacy() {
       const digits = form.mobile.replace(/\D/g, "");
       await (supabase as any)
         .from("profiles")
-        .update({ phone: digits })
+        .update({ phone: digits, mobile_verified: true })
         .eq("id", userId);
 
       const { data: partner, error } = await (supabase as any)
@@ -352,15 +417,53 @@ export default function PartnerRegisterLegacy() {
             <Label>Owner name</Label>
             <Input className="h-11" value={form.owner_name} onChange={(e) => set("owner_name", e.target.value)} />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 sm:col-span-2">
             <Label>Mobile *</Label>
-            <Input
-              className="h-11"
-              inputMode="numeric"
-              maxLength={10}
-              value={form.mobile}
-              onChange={(e) => set("mobile", e.target.value.replace(/\D/g, ""))}
-            />
+            <div className="flex gap-2">
+              <Input
+                className="h-11"
+                inputMode="numeric"
+                maxLength={10}
+                value={form.mobile}
+                onChange={(e) => {
+                  set("mobile", e.target.value.replace(/\D/g, ""));
+                  setMobileVerified(false);
+                  setOtpStep(false);
+                }}
+                disabled={mobileVerified}
+              />
+              <Button
+                id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                type="button"
+                variant={mobileVerified ? "outline" : "default"}
+                className="h-11 shrink-0"
+                disabled={otpBusy || mobileVerified}
+                onClick={() => void requestOtp()}
+              >
+                {otpBusy && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                {mobileVerified ? "Verified" : "Send OTP"}
+              </Button>
+            </div>
+            {otpStep && !mobileVerified && (
+              <div className="space-y-2 pt-1">
+                <DevOtpHint />
+                <div className="flex flex-wrap items-center gap-2">
+                  <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                  <Button type="button" size="sm" disabled={otpBusy || otp.length !== 6} onClick={() => void confirmOtp()}>
+                    Verify
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label>Email {!isAuthenticated ? "(recommended)" : ""}</Label>

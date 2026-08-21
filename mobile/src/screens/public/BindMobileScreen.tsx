@@ -72,7 +72,7 @@ export default function BindMobileScreen() {
     <ScreenLayout variant="full" scrollable keyboard header={{ title: 'Verify mobile' }}>
       <SectionTitle
         title="Bind your mobile"
-        subtitle="Workers must verify a phone number before using the portal."
+        subtitle="Verify a phone number before using the app. In local dev you can use 123456 or any 6-digit OTP."
       />
       <Card>
         {step === 'phone' ? (

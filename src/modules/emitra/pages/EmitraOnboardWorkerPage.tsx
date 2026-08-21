@@ -17,7 +17,7 @@ import { emitraNavGroups, emitraProfileMenu } from '../config/emitraNav';
 import { WORKER_SKILLS } from '../config/constants';
 import { indianStates } from '@/lib/validations/partner';
 import { isValidIndianMobile } from '@/lib/validations/common';
-import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,

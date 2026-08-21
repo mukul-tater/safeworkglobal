@@ -22,7 +22,7 @@ import {
 import { toast } from 'sonner';
 import { useMaxReachedStep } from '@/components/FormStepPills';
 import { indianStates } from '@/lib/validations/partner';
-import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,

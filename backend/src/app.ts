@@ -43,6 +43,8 @@ export function createApp() {
   app.post('/api/workers/otp/send', workerController.sendOtp);
   app.post('/api/workers/otp/verify', workerController.verifyOtp);
   app.post('/api/workers/otp/verify-firebase', workerController.verifyFirebaseOtp);
+  app.post('/api/bond/guarantor-otp/send', workerController.sendGuarantorOtp);
+  app.post('/api/bond/guarantor-otp/verify', workerController.verifyGuarantorOtp);
   app.post('/api/workers/register', workerController.register);
   app.post('/api/workers/login', workerController.login);
   app.post('/api/workers/google-auth', workerController.googleAuth);

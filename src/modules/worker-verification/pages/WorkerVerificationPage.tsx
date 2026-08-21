@@ -14,8 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
-  Calendar, CreditCard, Stethoscope, FileSignature, RotateCcw, ShieldCheck, Wrench,
-  GraduationCap, Plane, Download, Truck, Lock, AlertTriangle, UserRound, ClipboardList, Info,
+  Calendar, CreditCard, Stethoscope, RotateCcw, ShieldCheck, Wrench,
+  GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList, Info,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -47,8 +47,6 @@ import {
   loadQuizItems,
   resetVerificationJourney,
   saveEssentials,
-  submitBond,
-  submitBondTracking,
   medicalTestDocumentsComplete,
   submitMedicalResult,
   submitQuiz,
@@ -59,6 +57,7 @@ import {
   waiveAssessmentInterviewPilot,
   waiveAssessmentPaymentPilot,
 } from '@/modules/worker-verification/services/verificationService';
+import BondSecurityStage from '@/modules/worker-verification/components/bond-security/BondSecurityStage';
 import {
   TRADE_TEST_REPORTING_WINDOW,
   TRADE_TEST_REPORTING_WINDOW_HINT,
@@ -281,16 +280,12 @@ export default function WorkerVerificationPage() {
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
-  const [bondMethod, setBondMethod] = useState<'estamp' | 'emitra' | 'physical_upload'>('estamp');
-  const [bondStampFile, setBondStampFile] = useState<File | null>(null);
-  const [bondVideoFile, setBondVideoFile] = useState<File | null>(null);
   const [resetting, setResetting] = useState(false);
   const showDevReset = isJourneyResetEnabled();
 
   const [panNumber, setPanNumber] = useState('');
   const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [aadhaarOnFile, setAadhaarOnFile] = useState('');
-  const [bondTracking, setBondTracking] = useState('');
   const [bondTemplate, setBondTemplate] = useState<BondTemplate | null>(null);
   const [passportNumber, setPassportNumber] = useState('');
   const [hasPassport, setHasPassport] = useState(false);
@@ -424,7 +419,6 @@ export default function WorkerVerificationPage() {
         setPaymentRecord(null);
       }
 
-      if (v.bond_courier_tracking) setBondTracking(String(v.bond_courier_tracking));
       if (v.stage === 'bond') {
         try {
           setBondTemplate(await loadActiveBondTemplate());
@@ -2189,184 +2183,17 @@ export default function WorkerVerificationPage() {
           );
         })()}
 
-        {!viewingCompletedStep && stage === 'bond' && (
-          <Card className="overflow-hidden shadow-sm">
-            <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-start gap-3 border-b border-border/60 pb-4">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                  <FileSignature className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="font-semibold">Candidate bond</h2>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    Download the bond, print it, sign it, and courier the original to SafeWork. Then enter your courier tracking number below.
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
-                {bondTemplate ? (
-                  <>
-                    <Button asChild variant="outline" size="sm">
-                      <a href={bondTemplate.file_url} target="_blank" rel="noreferrer">
-                        <Download className="h-4 w-4 mr-1" />
-                        Download bond ({bondTemplate.version})
-                      </a>
-                    </Button>
-                    <div className="text-xs text-muted-foreground whitespace-pre-line">
-                      <p className="font-medium text-foreground">Courier the signed original to:</p>
-                      {bondTemplate.courier_address}
-                      {bondTemplate.instructions ? `\n\n${bondTemplate.instructions}` : ''}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    SafeWork is preparing your bond document — it will appear here for download shortly.
-                  </p>
-                )}
-              </div>
-
-              {row.bond_received_at ? (
-                <p className="text-sm rounded-lg border border-success/30 bg-success/5 px-3 py-2">
-                  Bond original received by SafeWork. Next: PDOT training.
-                </p>
-              ) : row.bond_courier_tracking ? (
-                <p className="text-sm text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2">
-                  Tracking submitted ({row.bond_courier_tracking}) — SafeWork will confirm once the original arrives.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  <Label>Courier tracking number *</Label>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      value={bondTracking}
-                      onChange={(e) => setBondTracking(e.target.value.toUpperCase().slice(0, 40))}
-                      placeholder="e.g. AWB123456789"
-                      disabled={saving}
-                    />
-                    <Button
-                      disabled={saving || bondTracking.trim().length < 5}
-                      onClick={async () => {
-                        setSaving(true);
-                        try {
-                          await submitBondTracking(bondTracking.trim());
-                          notifyVerificationUpdated();
-                          toast.success('Tracking number submitted');
-                          await load();
-                        } catch (e) {
-                          toast.error(e instanceof Error ? e.message : 'Could not submit tracking');
-                        } finally {
-                          setSaving(false);
-                        }
-                      }}
-                    >
-                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Truck className="h-4 w-4 mr-1" />}
-                      Submit tracking
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <details className="text-sm">
-                <summary className="cursor-pointer text-muted-foreground">
-                  Optional — upload a scan of the signed bond
-                </summary>
-                <div className="pt-3 space-y-3">
-              <RadioGroup
-                value={bondMethod}
-                onValueChange={(v) => setBondMethod(v as typeof bondMethod)}
-                className="space-y-2"
-              >
-                {(
-                  [
-                    { id: 'estamp', label: 'eStamp online' },
-                    { id: 'emitra', label: 'Nearest E-Mitra partner' },
-                    { id: 'physical_upload', label: 'Upload signed stamp paper' },
-                  ] as const
-                ).map((m) => (
-                  <label
-                    key={m.id}
-                    className={cn(
-                      'flex items-center gap-3 p-3 rounded-lg border cursor-pointer',
-                      bondMethod === m.id ? 'border-primary bg-primary/5' : 'border-border',
-                    )}
-                  >
-                    <RadioGroupItem value={m.id} />
-                    <span className="text-sm font-medium">{m.label}</span>
-                  </label>
-                ))}
-              </RadioGroup>
-              {row.bond_status === 'submitted' ? (
-                <p className="text-sm text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2">
-                  Bond submitted — SafeWork will review and mark you GCC ready.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label>Stamp paper / agreement PDF or photo *</Label>
-                    <Input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      onChange={(e) => setBondStampFile(e.target.files?.[0] ?? null)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Video recording proof *</Label>
-                    <Input
-                      type="file"
-                      accept="video/*"
-                      onChange={(e) => setBondVideoFile(e.target.files?.[0] ?? null)}
-                    />
-                  </div>
-                  <Button
-                    disabled={saving}
-                    onClick={async () => {
-                      if (!user?.id) return;
-                      if (!bondStampFile || !bondVideoFile) {
-                        toast.error('Upload stamp paper and video proof before submitting');
-                        return;
-                      }
-                      setSaving(true);
-                      try {
-                        const stampPath = `${user.id}/bond/stamp-${Date.now()}-${bondStampFile.name}`;
-                        const videoPath = `${user.id}/bond/video-${Date.now()}-${bondVideoFile.name}`;
-                        const { error: stampErr } = await supabase.storage
-                          .from(DOCS_BUCKET)
-                          .upload(stampPath, bondStampFile, { upsert: true });
-                        if (stampErr) throw stampErr;
-                        const { error: videoErr } = await supabase.storage
-                          .from(STORAGE_BUCKET)
-                          .upload(videoPath, bondVideoFile, { upsert: true });
-                        if (videoErr) throw videoErr;
-                        const { data: stampPub } = supabase.storage.from(DOCS_BUCKET).getPublicUrl(stampPath);
-                        const { data: videoPub } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(videoPath);
-                        const next = await submitBond(
-                          user.id,
-                          bondMethod,
-                          stampPub.publicUrl,
-                          videoPub.publicUrl,
-                        );
-                        setRow(next);
-                        setBondStampFile(null);
-                        setBondVideoFile(null);
-                        notifyVerificationUpdated();
-                        toast.success('Bond submitted — waiting for admin approval');
-                      } catch (e) {
-                        toast.error(e instanceof Error ? e.message : 'Failed');
-                      } finally {
-                        setSaving(false);
-                      }
-                    }}
-                  >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                    Submit bond for review
-                  </Button>
-                </div>
-              )}
-                </div>
-              </details>
-            </CardContent>
-          </Card>
+        {!viewingCompletedStep && stage === 'bond' && user?.id && (
+          <BondSecurityStage
+            userId={user.id}
+            workerPhone={profile?.phone}
+            verification={row}
+            template={bondTemplate}
+            onChanged={() => {
+              notifyVerificationUpdated();
+              void load();
+            }}
+          />
         )}
 
         {!viewingCompletedStep && stage === 'pdot' && (
