@@ -1,8 +1,8 @@
 import QuickWorkerSignup from "@/pages/worker/QuickWorkerSignup";
 
 /**
- * Approved partners (except employers, who are a different role) add workers
- * through the same independent worker signup + /worker/journey flow.
+ * Partners add a worker with the same account form as independent signup
+ * (name, email, mobile OTP, password), then return to My Workers.
  */
 export default function PartnerAddWorkerPage() {
   return <QuickWorkerSignup assistedByPartner />;

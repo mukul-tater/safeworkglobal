@@ -6,10 +6,25 @@ import {
 import { acceptTerms } from '@/modules/worker-verification/services/verificationService';
 import { parkPartnerSession } from '@/modules/partner/lib/partnerAssistedWorker';
 
+async function attachWorkerToCallingPartner(input: {
+  workerUserId: string;
+  fullName: string;
+  mobile: string;
+  email: string;
+}) {
+  const { error } = await (supabase as any).rpc('partner_attach_registered_worker', {
+    p_worker_user_id: input.workerUserId,
+    p_full_name: input.fullName,
+    p_mobile: input.mobile,
+    p_email: input.email,
+  });
+  if (error) throw new Error(error.message);
+}
+
 export type WorkerSource =
   | { type: 'organic' }
-  | { type: 'emitra'; partnerProfileId: string }
-  | { type: 'partner' };
+  | { type: 'emitra'; partnerProfileId: string; orgId?: string }
+  | { type: 'partner'; orgId?: string };
 
 export type CreateVerifiedWorkerInput = {
   fullName: string;
@@ -116,6 +131,14 @@ export async function createVerifiedWorkerAccount(
       if (!userId) {
         throw new Error('Account was created, but confirmation status could not be read.');
       }
+      if (input.preserveCallerSession) {
+        await attachWorkerToCallingPartner({
+          workerUserId: userId,
+          fullName: input.fullName.trim(),
+          mobile: digits,
+          email: authEmail,
+        });
+      }
       return {
         userId,
         authEmail,
@@ -149,12 +172,14 @@ export async function createVerifiedWorkerAccount(
       .join(', ');
 
     const partnerSourced = source.type === 'emitra' || source.type === 'partner';
+    const orgId = source.type === 'organic' ? null : source.orgId ?? null;
     const workerProfilePayload: Record<string, unknown> = {
       user_id: user.id,
       country,
       nationality: country,
       source_type: source.type,
       source_partner_id: source.type === 'emitra' ? source.partnerProfileId : null,
+      added_by_org_id: orgId,
       onboarded_at: partnerSourced ? new Date().toISOString() : null,
       // eMitra OTP-verified onboarding is trusted — worker can log in immediately.
       // Trigger only forces pending when status is null / not_required.

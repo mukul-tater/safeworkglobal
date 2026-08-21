@@ -14,6 +14,8 @@ type WorkerRow = {
   user_id: string; primary_work_type: string | null; current_location: string | null;
   review_status: string; review_rejection_reason: string | null; review_notes: string | null;
   created_at: string;
+  full_name?: string | null;
+  phone?: string | null;
   profile?: { full_name: string | null; phone: string | null } | null;
   reward?: { status: string; amount: number } | null;
   hired?: boolean;
@@ -110,12 +112,12 @@ function Inner() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold">{w.profile?.full_name || 'Worker'}</h3>
+                    <h3 className="font-semibold">{w.profile?.full_name || w.full_name || 'Worker'}</h3>
                     {reviewBadge(w.review_status)}
                     {w.hired && <Badge variant="default">Placed</Badge>}
                     {w.reward && <Badge variant="secondary">₹{Number(w.reward.amount).toLocaleString('en-IN')} {w.reward.status}</Badge>}
                   </div>
-                  <p className="text-sm text-muted-foreground">{w.profile?.phone} · {w.primary_work_type} · {w.current_location}</p>
+                  <p className="text-sm text-muted-foreground">{w.profile?.phone || w.phone} · {w.primary_work_type} · {w.current_location}</p>
                   <p className="text-xs text-muted-foreground">Registered {new Date(w.created_at).toLocaleDateString()}</p>
                   {w.review_status === 'rejected' && w.review_rejection_reason && (
                     <div className="mt-2 text-xs text-destructive bg-destructive/5 border border-destructive/20 rounded p-2">

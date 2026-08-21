@@ -40,8 +40,8 @@ type Props = {
 /**
  * Worker signup — Name + Email + Mobile (Firebase SMS OTP) + Password + T&C.
  * Continues to /worker/journey for essentials and skill verification.
- * Partners use the same path (including before admin approval); their session
- * is parked so they can return to the partner portal after the journey.
+ * Partners use the same account form (name, email, mobile OTP, password),
+ * then return to My Workers. The worker later signs in to continue their journey.
  */
 export default function QuickWorkerSignup({ assistedByPartner = false }: Props) {
   const navigate = useNavigate();
@@ -96,6 +96,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
           setPartnerCtx({
             allowed: true,
             returnTo: '/partner/dashboard',
+            myWorkersPath: '/partner/my-workers',
             source: { type: 'partner' },
             status: null,
           });
@@ -197,18 +198,18 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
         ...(partnerAssisted
           ? {
               preserveCallerSession: true,
-              restoreCallerAfterSuccess: false,
-              partnerReturnTo: partnerCtx?.returnTo,
+              restoreCallerAfterSuccess: true,
+              partnerReturnTo: partnerCtx?.myWorkersPath || '/partner/my-workers',
             }
           : {}),
       });
       if (created.requiresEmailConfirmation) {
         toast.success(
           partnerAssisted
-            ? 'Worker account created. They must confirm email, then sign in to continue the journey.'
+            ? 'Worker account created. They should confirm email, then they can sign in.'
             : 'Account created. Check your email to confirm your account, then sign in.',
         );
-        navigate(partnerAssisted ? (partnerCtx?.returnTo || '/partner/dashboard') : '/worker/login', {
+        navigate(partnerAssisted ? (partnerCtx?.myWorkersPath || '/partner/my-workers') : '/worker/login', {
           replace: true,
         });
         return;
@@ -216,16 +217,19 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       // Persist flag BEFORE navigation so ProtectedRoute does not bounce to
       // /worker/bind-mobile (signup OTP already verified this number).
       // Pass userId — AuthContext user may not be set yet after signIn.
-      markMobileVerified(created.mobile, created.userId);
+      if (!partnerAssisted) {
+        markMobileVerified(created.mobile, created.userId);
+        await refreshRole();
+        await refreshProfile();
+        markMobileVerified(created.mobile, created.userId);
+        toast.success('Welcome to SafeWorkGlobal!');
+        navigate('/worker/journey', { replace: true });
+        return;
+      }
       await refreshRole();
       await refreshProfile();
-      markMobileVerified(created.mobile, created.userId);
-      toast.success(
-        partnerAssisted
-          ? 'Worker account created. Continue their onboarding journey.'
-          : 'Welcome to SafeWorkGlobal!',
-      );
-      navigate('/worker/journey', { replace: true });
+      toast.success('Worker added. They can sign in with this mobile and password.');
+      navigate(partnerCtx?.myWorkersPath || '/partner/my-workers', { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
@@ -319,7 +323,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                 <p className="mt-1 text-sm text-muted-foreground">
                   {step === 'form'
                     ? partnerAssisted
-                      ? 'Same independent worker signup: name, email, mobile OTP and password. Then continue their onboarding journey.'
+                      ? 'Enter the worker’s name, email, mobile and password. We’ll SMS a code to confirm their number, then they can sign in.'
                       : 'Takes about 2 minutes. We’ll SMS a code to confirm your number.'
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>

@@ -2,10 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { partnerTypeConfig } from "../config/partnerTypes";
 
 type PartnerWorkerSource =
-  | { type: "emitra"; partnerProfileId: string }
-  | { type: "partner" };
+  | { type: "emitra"; partnerProfileId: string; orgId?: string }
+  | { type: "partner"; orgId?: string };
 
 export const PARTNER_ADD_WORKER_PATH = "/partner/add-worker";
+export const PARTNER_MY_WORKERS_PATH = "/partner/my-workers";
 
 const PARK_KEY = "swg_parked_partner_session";
 
@@ -18,6 +19,7 @@ export type ParkedPartnerSession = {
 export type PartnerAddWorkerContext = {
   allowed: boolean;
   returnTo: string;
+  myWorkersPath: string;
   source: PartnerWorkerSource;
   status: string | null;
 };
@@ -106,12 +108,13 @@ export async function resolvePartnerAddWorkerContext(
     (emitraProfile ? "/emitra/dashboard" : "/partner/dashboard");
 
   const source: PartnerWorkerSource = emitraProfile
-    ? { type: "emitra", partnerProfileId: emitra.id }
-    : { type: "partner" };
+    ? { type: "emitra", partnerProfileId: emitra.id, orgId: org?.id }
+    : { type: "partner", orgId: org?.id };
 
   return {
     allowed: partnerCanAddWorkers(status),
     returnTo,
+    myWorkersPath: org?.id ? "/partner/my-workers" : "/emitra/my-workers",
     source,
     status,
   };
