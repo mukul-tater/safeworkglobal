@@ -54,7 +54,7 @@ interface Props {
   kycStatus: string;
   kycDocs: KycDocument[];
   paymentRecord: AssessmentPaymentRecord | null;
-  identity: { pan: string; aadhaarLast4: string; passport: string };
+  identity: { pan: string; aadhaarLast4: string; passport: string; passportExpiry?: string | null };
   ecrCategory?: string | null;
   tenthPass?: boolean | null;
   onGoToCurrent: () => void;
@@ -76,7 +76,7 @@ function maskPassport(p: string): string {
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
-  const d = new Date(iso);
+  const d = iso.length <= 10 ? new Date(`${iso}T00:00:00`) : new Date(iso);
   return Number.isNaN(d.getTime())
     ? '—'
     : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -194,7 +194,7 @@ export function KycRecordSummary({
   submittedOn,
   verified,
 }: {
-  identity: { pan: string; aadhaarLast4: string; passport: string };
+  identity: { pan: string; aadhaarLast4: string; passport: string; passportExpiry?: string | null };
   kycDocs: KycDocument[];
   submittedOn: string | null | undefined;
   verified: boolean;
@@ -212,6 +212,10 @@ export function KycRecordSummary({
           label="Passport number"
           value={identity.passport ? maskPassport(identity.passport) : 'Not provided'}
           mono={Boolean(identity.passport)}
+        />
+        <Detail
+          label="Passport expiry"
+          value={identity.passportExpiry ? formatDate(identity.passportExpiry) : '—'}
         />
         <Detail label={verified ? 'Verified on' : 'Submitted on'} value={formatDate(submittedOn)} />
       </dl>

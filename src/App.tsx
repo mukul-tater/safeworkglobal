@@ -128,6 +128,18 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
+function EmitraRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute
+      allowedRoles={["partner"]}
+      loginPath="/emitra/login"
+      requireMobileVerified={false}
+    >
+      {children}
+    </ProtectedRoute>
+  );
+}
+
 function AppShell() {
   return (
     <>
@@ -189,17 +201,17 @@ function AppShell() {
           <Route
             path="/emitra/dashboard"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <EmitraDashboardPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
             path="/emitra/workers"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <EmitraWorkersPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
@@ -209,73 +221,73 @@ function AppShell() {
           <Route
             path="/partner/add-worker"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <PartnerAddWorkerPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
             path="/partner/my-workers"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <PartnerMyWorkersPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
             path="/emitra/my-workers"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <EmitraMyWorkersPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
             path="/emitra/rewards"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <EmitraRewardsPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
             path="/emitra/withdrawals"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <EmitraWithdrawalsPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
             path="/emitra/workers/register"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <EmitraRegisterWorkerPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
             path="/emitra/workers/:workerId"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <EmitraWorkerDetailPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
             path="/emitra/notifications"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <EmitraNotificationsPage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route
             path="/emitra/compliance"
             element={
-              <ProtectedRoute allowedRoles={["partner"]}>
+              <EmitraRoute>
                 <EmitraCompliancePage />
-              </ProtectedRoute>
+              </EmitraRoute>
             }
           />
           <Route

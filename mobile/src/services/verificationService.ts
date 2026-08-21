@@ -1,5 +1,6 @@
 import { supabase } from '../integrations/supabase/client';
 import { isWorkerMobileAuthEmail } from '../lib/workerAuthEmail';
+import { assertValidPassportKyc } from '../lib/passport';
 
 export type VerificationStage =
   | 'essentials'
@@ -34,7 +35,7 @@ export const JOURNEY_STEPS: { id: VerificationStage; label: string; description:
   { id: 'essentials', label: 'Essentials', description: 'Contact, skill, education, location' },
   { id: 'quiz', label: 'Test 1', description: 'Skill knowledge quiz' },
   { id: 'media', label: 'Skill proof', description: 'Upload work photos / video' },
-  { id: 'identity', label: 'Identity (KYC)', description: 'PAN, Aadhaar, passport if available' },
+  { id: 'identity', label: 'Identity (KYC)', description: 'PAN, Aadhaar, and passport valid 6+ months' },
   { id: 'awaiting_interview', label: 'Test 2', description: 'Video interview' },
   { id: 'awaiting_payment', label: 'Payment', description: 'Assessment fee' },
   { id: 'trade_test', label: 'Trade test', description: 'Physical skill assessment' },
@@ -178,16 +179,27 @@ export async function saveEssentials(
 
 export async function submitIdentity(
   userId: string,
-  input: { pan_number?: string; aadhaar_last4?: string; passport_number?: string },
+  input: {
+    pan_number?: string;
+    aadhaar_last4?: string;
+    passport_number: string;
+    passport_expiry: string;
+  },
 ): Promise<void> {
   const row = await getOrCreateVerification(userId);
+  const { passportNumber, passportExpiry } = assertValidPassportKyc({
+    number: input.passport_number,
+    expiry: input.passport_expiry,
+  });
 
   await supabase.from('worker_profiles').upsert(
     {
       user_id: userId,
       pan_number: input.pan_number || null,
       aadhaar_last4: input.aadhaar_last4 || null,
-      passport_number: input.passport_number || null,
+      passport_number: passportNumber,
+      passport_expiry: passportExpiry,
+      has_passport: true,
       kyc_status: 'submitted',
       kyc_submitted_at: new Date().toISOString(),
     },

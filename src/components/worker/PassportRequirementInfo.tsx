@@ -27,17 +27,18 @@ export default function PassportRequirementInfo() {
             Passport Requirement | पासपोर्ट संबंधी जानकारी
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Passport is optional for the trade test; a valid passport is required for emigration and travel.
+            A valid passport with at least 6 months remaining is required for identity verification, emigration and travel.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 text-sm leading-relaxed text-foreground">
           <p>
-            Don&apos;t have a passport yet? You can still appear for the trade test. However, a valid
-            passport is required for emigration clearance and international travel.
+            A valid passport is required for identity verification. It must not be expired and must
+            remain valid for at least 6 months from today (needed for emigration clearance and
+            overseas travel).
           </p>
           <p>
-            अभी पासपोर्ट नहीं है? आप फिर भी ट्रेड टेस्ट दे सकते हैं। हालांकि, इमिग्रेशन क्लियरेंस और
-            विदेश यात्रा के लिए वैध पासपोर्ट आवश्यक है।
+            पहचान सत्यापन के लिए वैध पासपोर्ट आवश्यक है। यह समाप्त (expired) नहीं होना चाहिए और आज से
+            कम से कम 6 महीने तक वैध होना चाहिए — इमिग्रेशन क्लियरेंस और विदेश यात्रा के लिए।
           </p>
         </div>
       </DialogContent>

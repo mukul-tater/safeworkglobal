@@ -1,51 +1,46 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { signOut as firebaseSignOut } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { ensureEmitraPartnerAccess, resolveEmitraAuthEmail } from '../lib/emitraAuth';
+import EmitraLayout from '../components/EmitraLayout';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Phone, Mail, Store } from 'lucide-react';
-import { toast } from 'sonner';
-import { getFirebaseAuth } from '@/lib/firebase';
 import {
-  useFirebasePhoneOtp,
-  WORKER_OTP_RECAPTCHA_BTN_ID,
-} from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
-import { partnerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
-import DevOtpHint from '@/components/DevOtpHint';
-import { isPartnerOperational, getPartnerProfile } from '../services/emitraService';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { hasValidLspSession } from '@/modules/lsp/services/lspSession';
-import AuthSplitLayout from '@/components/AuthSplitLayout';
-
-type Method = 'mobile' | 'email';
-type Step = 'credentials' | 'otp';
 
 export default function EmitraLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, isAuthenticated, role } = useAuth();
-  const firebaseOtp = useFirebasePhoneOtp();
+  const { login, isAuthenticated, role, refreshRole } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
+
   const nextPath = searchParams.get('next') || '';
 
   const afterLoginPath = () => {
     if (nextPath.startsWith('/') && !nextPath.startsWith('//')) return nextPath;
     if (hasValidLspSession()) return '/lsp/verify';
-    // Single partner entry — router sends eMitra (SEN) to /emitra/dashboard
-    return '/partner/dashboard';
+    return '/emitra/dashboard';
   };
-  const [method, setMethod] = useState<Method>('mobile');
-  const [step, setStep] = useState<Step>('credentials');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [mobile, setMobile] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
 
   useEffect(() => {
     if (isAuthenticated && role === 'partner') {
@@ -53,372 +48,187 @@ export default function EmitraLoginPage() {
     }
   }, [isAuthenticated, role, navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (step !== 'otp') return;
-    firebaseOtp.clearVerifierOnly();
-    firebaseOtp.dismissRecaptchaWidgets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
-
-  const checkPartnerApproved = async (userId: string): Promise<boolean> => {
-    const profile = await getPartnerProfile(userId);
-    return isPartnerOperational(profile);
-  };
-
-  const partnerLogin = async (authEmail: string, pwd: string, mobileDigits: string) => {
-    const synthetic = partnerAuthEmailFromMobile(mobileDigits);
-    let result = await login(authEmail, pwd);
-    if (!result.success && authEmail !== synthetic) {
-      result = await login(synthetic, pwd);
-    }
-    return result;
-  };
-
-  const handleMobileOtpRequest = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const digits = mobile.replace(/\D/g, '');
-    if (!/^[6-9]\d{9}$/.test(digits)) {
-      setError('Enter a valid 10-digit mobile number');
-      return;
-    }
-    if (!firebaseOtp.isAvailable) {
-      setError('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
-      return;
-    }
-
     setLoading(true);
-    try {
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .eq('phone', digits)
-        .maybeSingle();
 
-      if (!prof) {
-        setError('No partner account found with this mobile. Please apply first.');
-        return;
-      }
-
-      const { data: roleRow } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', prof.id)
-        .maybeSingle();
-
-      if (roleRow?.role !== 'partner') {
-        setError('This mobile is not registered as an E-Mitra partner.');
-        return;
-      }
-
-      const approved = await checkPartnerApproved(prof.id!);
-      if (!approved) {
-        setError('Your partner application is pending approval. You will be notified once approved.');
-        return;
-      }
-
-      await firebaseOtp.sendOtp(digits);
-      toast.success(`Verification code sent to +91 ${digits}`);
-      setStep('otp');
-      setOtp('');
-    } catch (err) {
-      firebaseOtp.resetRecaptcha();
-      setError(err instanceof Error ? err.message : 'Failed to send OTP');
-    } finally {
+    const authEmail = await resolveEmitraAuthEmail(email);
+    if (!authEmail) {
+      setError('Enter the email from your partner application, or your 10-digit mobile number.');
       setLoading(false);
-    }
-  };
-
-  const handleMobileOtpVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (otp.length !== 6) {
-      setError('Enter the 6-digit OTP');
-      return;
-    }
-    if (password.length < 6) {
-      setError('Enter the password you set during partner registration');
       return;
     }
 
-    setLoading(true);
-    const digits = mobile.replace(/\D/g, '');
-
-    try {
-      await firebaseOtp.verifyOtp(otp);
-      try {
-        await firebaseSignOut(getFirebaseAuth());
-      } catch {
-        /* ignore */
-      }
-
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('email, phone')
-        .eq('phone', digits)
-        .maybeSingle();
-
-      const authEmail = prof?.email?.trim() || partnerAuthEmailFromMobile(digits);
-      const result = await partnerLogin(authEmail, password, digits);
-      if (!result.success) {
-        setError(result.error || 'Wrong password. Use the password from registration, or sign in with email.');
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('profiles').update({ phone: digits, mobile_verified: true }).eq('id', user.id);
-        try {
-          sessionStorage.setItem(`swg_mobile_verified_${user.id}`, '1');
-        } catch {
-          /* ignore */
-        }
-      }
-
-      toast.success('Welcome back!');
-      navigate(afterLoginPath(), { replace: true });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    const result = await login(email.trim(), password);
+    const result = await login(authEmail, password);
     if (!result.success) {
-      setError(result.error || 'Login failed');
+      const raw = result.error || 'Login failed';
+      const looksMissing = /invalid login credentials|invalid_credentials|email not confirmed/i.test(raw);
+      setError(
+        looksMissing
+          ? `${raw} If you do not have an account yet, apply at /emitra/register.`
+          : raw,
+      );
       setLoading(false);
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setError('Authentication failed');
-      setLoading(false);
-      return;
-    }
-
-    const { data: roleRow } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (roleRow?.role !== 'partner') {
+    const access = await ensureEmitraPartnerAccess();
+    if (!access.ok) {
       await supabase.auth.signOut();
-      setError('This account is not an E-Mitra partner account.');
+      setError(access.error);
       setLoading(false);
       return;
     }
 
-    const approved = await checkPartnerApproved(user.id);
-    if (!approved) {
-      await supabase.auth.signOut();
-      setError('Your partner application is pending approval.');
-      setLoading(false);
-      return;
-    }
-
-    toast.success('Welcome back!');
+    await refreshRole();
+    toast.success('Welcome back');
     navigate(afterLoginPath(), { replace: true });
     setLoading(false);
   };
 
+  const handleSendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    const authEmail = await resolveEmitraAuthEmail(resetEmail);
+    if (!authEmail) {
+      setResetError('Enter the email from your partner application, or your 10-digit mobile number.');
+      return;
+    }
+    setResetLoading(true);
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(authEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+    if (resetErr) {
+      setResetError(resetErr.message);
+      return;
+    }
+    toast.success('If this partner email exists, a reset link has been sent.');
+    setResetOpen(false);
+    setResetEmail('');
+  };
+
   return (
-    <AuthSplitLayout audience="partner" variant="login">
-      <div className="mb-5">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
-            <Store className="h-4 w-4" />
-          </div>
-          <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
-            E-Mitra sign in
-          </h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Access your E-Mitra partner dashboard. Approved partners only.
-        </p>
-      </div>
-
-      <Tabs
-            value={method}
-            onValueChange={(v) => {
-              setMethod(v as Method);
-              setStep('credentials');
-              setError('');
-              firebaseOtp.resetRecaptcha();
-            }}
-          >
-            <TabsList className="grid w-full grid-cols-2 mb-6 h-11">
-              <TabsTrigger value="mobile" className="gap-1.5 text-sm">
-                <Phone className="h-3.5 w-3.5" /> Mobile OTP
-              </TabsTrigger>
-              <TabsTrigger value="email" className="gap-1.5 text-sm">
-                <Mail className="h-3.5 w-3.5" /> Email
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
+    <EmitraLayout
+      centered
+      maxWidth="md"
+      title="E-Mitra Sign In"
+      subtitle="Sign in to manage workers, rewards, and your CSC / E-Mitra centre."
+    >
+      <Card className="border-border/60 shadow-lg">
+        <CardContent className="p-6 md:p-8">
           {error && (
             <Alert variant="destructive" className="mb-5">
               <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
           )}
 
-          {method === 'mobile' ? (
-            step === 'credentials' ? (
-              <form onSubmit={handleMobileOtpRequest} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="partner-mobile">Mobile Number</Label>
-                  <Input
-                    id="partner-mobile"
-                    inputMode="numeric"
-                    maxLength={10}
-                    placeholder="10-digit mobile number"
-                    className="h-11"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    We&apos;ll send an SMS code via Firebase (+91).
-                  </p>
-                </div>
-                <Button
-                  id={WORKER_OTP_RECAPTCHA_BTN_ID}
-                  type="submit"
-                    className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
-                  disabled={loading}
-                >
-                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Send OTP
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={handleMobileOtpVerify} className="space-y-5">
-                <p className="text-sm text-muted-foreground text-center">
-                  Enter the SMS OTP sent to{' '}
-                  <span className="font-medium text-foreground">+91 {mobile}</span>
-                </p>
-                <DevOtpHint />
-                <div className="flex justify-center py-1">
-                  <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                    <InputOTPGroup>
-                      {[0, 1, 2, 3, 4, 5].map((i) => (
-                        <InputOTPSlot key={i} index={i} />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="partner-otp-password">Password</Label>
-                  <Input
-                    id="partner-otp-password"
-                    type="password"
-                    autoComplete="current-password"
-                    className="h-11"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password from registration"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                    className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
-                  disabled={loading || otp.length !== 6 || password.length < 6}
-                >
-                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Verify & Sign In
-                </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  Didn&apos;t get the code?{' '}
-                  <button
-                    id={WORKER_OTP_RECAPTCHA_BTN_ID}
-                    type="button"
-                    className="text-primary font-medium hover:underline disabled:opacity-50"
-                    disabled={loading}
-                    onClick={async () => {
-                      setError('');
-                      setLoading(true);
-                      try {
-                        const digits = mobile.replace(/\D/g, '');
-                        await firebaseOtp.sendOtp(digits);
-                        setOtp('');
-                        toast.success(`New code sent to +91 ${digits}`);
-                      } catch (err) {
-                        firebaseOtp.resetRecaptcha();
-                        setError(err instanceof Error ? err.message : 'Failed to resend OTP');
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                  >
-                    Resend SMS
-                  </button>
-                </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => {
-                    setStep('credentials');
-                    setOtp('');
-                    setError('');
-                    firebaseOtp.resetRecaptcha();
-                  }}
-                >
-                  Change number
-                </Button>
-              </form>
-            )
-          ) : (
-            <form onSubmit={handleEmailLogin} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="partner-email">Email Address</Label>
-                <Input
-                  id="partner-email"
-                  type="email"
-                  className="h-11"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="partner@email.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="partner-password">Password</Label>
-                <Input
-                  id="partner-password"
-                  type="password"
-                  className="h-11"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <Button type="submit" className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95" disabled={loading}>
-                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Sign In
-              </Button>
-            </form>
-          )}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="emitra-email">Email Address</Label>
+              <Input
+                id="emitra-email"
+                type="text"
+                autoComplete="username"
+                className="h-11"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="partner@email.com"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Email from your application, or your 10-digit registered mobile.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emitra-password">Password</Label>
+              <Input
+                id="emitra-password"
+                type="password"
+                autoComplete="current-password"
+                className="h-11"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Sign In to E-Mitra Portal
+            </Button>
 
-          <div className="mt-5 space-y-2 border-t border-border pt-4 text-center text-sm text-muted-foreground">
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => {
+                  setResetEmail(email);
+                  setResetError('');
+                  setResetOpen(true);
+                }}
+                className="text-sm text-primary hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+          </form>
+
+          <div className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border space-y-2">
             <p>
               New E-Mitra partner?{' '}
-              <Link to="/emitra/register" className="font-medium text-primary hover:underline">
+              <Link to="/emitra/register" className="text-primary font-medium hover:underline">
                 Apply here
               </Link>
             </p>
             <p>
               Trade test centre (SSVN)?{' '}
-              <Link to="/partner/ssvn/login" className="font-medium text-primary hover:underline">
+              <Link to="/partner/ssvn/login" className="text-primary font-medium hover:underline">
                 Use SSVN login
               </Link>
             </p>
           </div>
-    </AuthSplitLayout>
+        </CardContent>
+      </Card>
+
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset partner password</DialogTitle>
+            <DialogDescription>
+              Enter the email from your partner application. We&apos;ll send a secure link to set a new
+              password.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSendReset} className="space-y-4">
+            {resetError && (
+              <Alert variant="destructive">
+                <AlertDescription className="text-sm">{resetError}</AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="emitra-reset-email">Partner email</Label>
+              <Input
+                id="emitra-reset-email"
+                type="text"
+                autoComplete="username"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                placeholder="partner@email.com"
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setResetOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={resetLoading}>
+                {resetLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Send reset link
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </EmitraLayout>
   );
 }

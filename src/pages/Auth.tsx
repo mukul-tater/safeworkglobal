@@ -637,6 +637,9 @@ export default function Auth() {
         <p className="text-xs text-center text-muted-foreground/60 mt-3">
           Platform staff?{' '}
           <Link to="/admin/login" className="underline hover:text-muted-foreground">Admin Portal</Link>
+          {' · '}
+          E-Mitra partner?{' '}
+          <Link to="/emitra/login" className="underline hover:text-muted-foreground">Partner sign in</Link>
         </p>
       </div>
 

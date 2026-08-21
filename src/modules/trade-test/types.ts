@@ -116,6 +116,7 @@ export type WorkerIdentityPack = {
   pan_number: string | null;
   aadhaar_last4: string | null;
   passport_number: string | null;
+  passport_expiry: string | null;
   has_passport: boolean;
   documents: WorkerIdentityDoc[];
 };

@@ -54,6 +54,15 @@ export default function WorkerIdentityDocsPanel({
           <div className="font-medium">
             {pack?.passport_number || (pack?.has_passport ? 'On file' : 'Not uploaded')}
           </div>
+          {pack?.passport_expiry ? (
+            <div className="mt-1 text-xs text-muted-foreground">
+              Expires {new Date(`${pack.passport_expiry}T00:00:00`).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </div>
+          ) : null}
         </div>
       </div>
 

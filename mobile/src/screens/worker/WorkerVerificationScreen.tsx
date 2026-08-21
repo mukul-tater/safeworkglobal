@@ -30,6 +30,11 @@ import { radius, spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Badge, Button, Card, Input, LoadingView, SectionTitle } from '../../components/ui';
+import {
+  isValidPassportNumber,
+  normalizePassportNumber,
+  passportExpiryIssue,
+} from '../../lib/passport';
 
 export default function WorkerVerificationScreen() {
   const { profile, user } = useAuth();
@@ -52,6 +57,7 @@ export default function WorkerVerificationScreen() {
   const [pan, setPan] = useState('');
   const [aadhaar, setAadhaar] = useState('');
   const [passport, setPassport] = useState('');
+  const [passportExpiry, setPassportExpiry] = useState('');
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -141,8 +147,18 @@ export default function WorkerVerificationScreen() {
 
   const onSubmitKyc = async () => {
     if (!user?.id) return;
-    if (!pan && !aadhaar && !passport) {
-      Alert.alert('KYC required', 'Provide at least PAN, Aadhaar last 4, or passport number.');
+    if (!pan && !aadhaar) {
+      Alert.alert('KYC required', 'Provide PAN and Aadhaar last 4.');
+      return;
+    }
+    const passportNumber = normalizePassportNumber(passport);
+    if (!isValidPassportNumber(passportNumber)) {
+      Alert.alert('Passport required', 'Enter a valid passport number (6–9 letters and digits).');
+      return;
+    }
+    const expiryIssue = passportExpiryIssue(passportExpiry);
+    if (expiryIssue) {
+      Alert.alert('Passport expiry', expiryIssue);
       return;
     }
     setSaving(true);
@@ -150,7 +166,8 @@ export default function WorkerVerificationScreen() {
       await submitIdentity(user.id, {
         pan_number: pan.trim() || undefined,
         aadhaar_last4: aadhaar.trim() || undefined,
-        passport_number: passport.trim() || undefined,
+        passport_number: passportNumber,
+        passport_expiry: passportExpiry.trim().slice(0, 10),
       });
       await load();
       Alert.alert('Submitted', 'KYC submitted for review. Interview scheduling is next.');
@@ -327,17 +344,25 @@ export default function WorkerVerificationScreen() {
             <Input label="PAN" value={pan} onChangeText={setPan} autoCapitalize="characters" />
             <Input label="Aadhaar last 4" value={aadhaar} onChangeText={setAadhaar} keyboardType="number-pad" maxLength={4} />
             <Input
-              label="Passport number (optional)"
+              label="Passport number *"
               value={passport}
-              onChangeText={setPassport}
+              onChangeText={(v) => setPassport(normalizePassportNumber(v))}
               autoCapitalize="characters"
+              maxLength={9}
+            />
+            <Input
+              label="Passport expiry date * (YYYY-MM-DD)"
+              value={passportExpiry}
+              onChangeText={setPassportExpiry}
+              placeholder="2030-12-31"
+              keyboardType="numbers-and-punctuation"
             />
             <Text style={styles.hint}>
-              Passport (if available). If you have a passport, upload first page and last page
-              photos on the web journey. Don't have a passport yet? You can still continue.
+              Passport must be valid for at least 6 months from today. Upload first page and last
+              page photos on the web journey.
             </Text>
             <Text style={styles.hintHi}>
-              अभी पासपोर्ट नहीं है? आप फिर भी ट्रेड टेस्ट दे सकते हैं। विदेश यात्रा के लिए वैध पासपोर्ट आवश्यक है।
+              पासपोर्ट आज से कम से कम 6 महीने तक वैध होना चाहिए और समाप्त नहीं होना चाहिए।
             </Text>
             <Button title="Submit KYC" onPress={onSubmitKyc} loading={saving} fullWidth />
           </Card>

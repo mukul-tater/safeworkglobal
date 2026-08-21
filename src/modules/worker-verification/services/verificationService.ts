@@ -1,5 +1,6 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
+import { assertValidPassportKyc } from '@/lib/validations/passport';
 import type {
   BondTemplate,
   InterviewerAssignment,
@@ -336,8 +337,7 @@ export async function completeMediaStep(userId: string): Promise<WorkerVerificat
 }
 
 /**
- * KYC — PAN + full Aadhaar number + document photos.
- * Passport number is optional: workers can continue without one and add it later.
+ * KYC — PAN + full Aadhaar + passport (number, expiry ≥ 6 months) + document photos.
  * Stays on the identity stage: an admin must verify KYC before the video
  * interview can be scheduled (admin_verify_worker_kyc advances the stage).
  */
@@ -346,7 +346,8 @@ export async function completeIdentityKyc(
   opts: {
     panNumber: string;
     aadhaarNumber: string;
-    passportNumber?: string;
+    passportNumber: string;
+    passportExpiry: string;
     nextStageIfCurrentIdentity?: boolean;
   },
 ): Promise<WorkerVerification> {
@@ -356,16 +357,20 @@ export async function completeIdentityKyc(
     throw new Error('Enter your full 12-digit Aadhaar number');
   }
 
+  const { passportNumber, passportExpiry } = assertValidPassportKyc({
+    number: opts.passportNumber,
+    expiry: opts.passportExpiry,
+  });
+
   const now = new Date().toISOString();
-  const passport = (opts.passportNumber || '').trim().toUpperCase();
-  const hasPassport = /^[A-Z0-9]{6,9}$/.test(passport);
   const kycPayload = {
     user_id: userId,
     pan_number: opts.panNumber.trim().toUpperCase(),
     aadhaar_number: aadhaar,
     aadhaar_last4: aadhaar.slice(-4),
-    passport_number: hasPassport ? passport : null,
-    has_passport: hasPassport,
+    passport_number: passportNumber,
+    passport_expiry: passportExpiry,
+    has_passport: true,
     kyc_status: 'submitted',
     kyc_consent_at: now,
     kyc_submitted_at: now,

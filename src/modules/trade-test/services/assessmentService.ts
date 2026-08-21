@@ -359,7 +359,7 @@ export async function getWorkerIdentityPack(workerId: string): Promise<WorkerIde
   const [{ data: profile }, { data: docs, error: dErr }] = await Promise.all([
     supabase
       .from('worker_profiles')
-      .select('pan_number, aadhaar_last4, passport_number, has_passport')
+      .select('pan_number, aadhaar_last4, passport_number, passport_expiry, has_passport')
       .eq('user_id', workerId)
       .maybeSingle(),
     supabase
@@ -412,6 +412,7 @@ export async function getWorkerIdentityPack(workerId: string): Promise<WorkerIde
     pan_number: profile?.pan_number || null,
     aadhaar_last4: profile?.aadhaar_last4 || null,
     passport_number: profile?.passport_number || null,
+    passport_expiry: profile?.passport_expiry || null,
     has_passport: Boolean(profile?.has_passport || profile?.passport_number),
     documents,
   };
