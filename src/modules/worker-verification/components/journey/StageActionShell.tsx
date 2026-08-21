@@ -27,7 +27,7 @@ export default function StageActionShell({
   footer,
 }: Props) {
   return (
-    <Card className="overflow-hidden shadow-sm">
+    <Card className="shadow-sm">
       <CardContent className="space-y-5 p-5 sm:p-6">
         <div className="flex items-start gap-3 border-b border-border/60 pb-4">
           <div className="rounded-xl bg-primary/10 p-2.5 text-primary">

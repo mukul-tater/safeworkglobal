@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import QuickEmployerSignup from '@/pages/employer/QuickEmployerSignup';
+import EmployerLoginPage from '@/pages/employer/EmployerLoginPage';
 import WorkerBindMobilePage from '@/pages/worker/WorkerBindMobilePage';
 import QuickPostJob from '@/pages/employer/QuickPostJob';
 import PilotOffer from '@/pages/employer/PilotOffer';

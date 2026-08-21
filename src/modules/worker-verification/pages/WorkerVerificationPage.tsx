@@ -83,12 +83,12 @@ import WorkerDeclarationsSummary from '@/modules/worker-verification/components/
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
 import PassportRequirementInfo from '@/components/worker/PassportRequirementInfo';
+import { todayDateInputValue } from '@/lib/validations/common';
 import {
   isValidPassportNumber,
   minPassportExpiryDate,
   normalizePassportNumber,
   passportExpiryIssue,
-  toDateInputValue,
   toDateInputValueFromIso,
 } from '@/lib/validations/passport';
 
@@ -102,6 +102,10 @@ const KYC_DOC_TYPES = [
   'passport_last',
   'id_proof',
 ];
+
+function hasKycDoc(docs: KycDocument[], types: string[]): boolean {
+  return docs.some((d) => types.includes(d.document_type));
+}
 
 function kycTypeFallbacks(docType: string): string[] {
   if (docType === 'pan') return ['pan', 'id_proof'];
@@ -364,13 +368,23 @@ export default function WorkerVerificationPage() {
         setTradeAssessment(null);
       }
 
-      const { data: wp } = await supabase
+      const { data: wp, error: wpErr } = await supabase
         .from('worker_profiles')
-        .select('kyc_status, pan_number, aadhaar_last4, passport_number, passport_expiry, has_passport, ecr_status, ecr_category')
+        .select('kyc_status, pan_number, aadhaar_number, aadhaar_last4, passport_number, passport_expiry, has_passport, ecr_status, ecr_category')
         .eq('user_id', user.id)
         .maybeSingle();
+      if (wpErr) {
+        console.warn('Could not load worker KYC profile:', wpErr.message);
+      }
       const kycStatus = String((wp as any)?.kyc_status || 'not_started');
-      const kycOk = kycStatus === 'submitted' || kycStatus === 'verified';
+      const savedPassport = String((wp as any)?.passport_number || '');
+      const savedExpiry = toDateInputValueFromIso((wp as any)?.passport_expiry);
+      setPassportNumber(savedPassport);
+      setPassportExpiry(savedExpiry);
+      const passportOk = isValidPassportNumber(savedPassport) && !passportExpiryIssue(savedExpiry);
+      // Submitted KYC without a 6-month-valid passport is not complete — show the identity form.
+      const kycOk =
+        kycStatus === 'verified' || (kycStatus === 'submitted' && passportOk);
       setKycDone(kycOk);
       setKycStatusValue(kycStatus);
 
@@ -393,7 +407,7 @@ export default function WorkerVerificationPage() {
         setEcrCategory(null);
       }
 
-      if (kycOk || kycStatus === 'rejected') {
+      if (kycOk || kycStatus === 'rejected' || kycStatus === 'submitted') {
         const { data: docs } = await supabase
           .from('worker_documents')
           .select('document_name, document_type, file_url, verification_status, uploaded_at')
@@ -410,10 +424,8 @@ export default function WorkerVerificationPage() {
         setKycDocs([]);
       }
       if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
+      if ((wp as any)?.aadhaar_number) setAadhaarNumber(String((wp as any).aadhaar_number).replace(/\D/g, '').slice(0, 12));
       if ((wp as any)?.aadhaar_last4) setAadhaarOnFile(String((wp as any).aadhaar_last4));
-      const savedPassport = String((wp as any)?.passport_number || '');
-      setPassportNumber(savedPassport);
-      setPassportExpiry(toDateInputValueFromIso((wp as any)?.passport_expiry));
       if (v.payment_status === 'paid' || v.paid_at) {
         const { data: pay } = await supabase
           .from('worker_assessment_payments')
@@ -528,12 +540,20 @@ export default function WorkerVerificationPage() {
       toast.error('Enter your full 12-digit Aadhaar number');
       return;
     }
-    if (!panFile || !aadhaarFrontFile || !aadhaarBackFile) {
+    if (!panFile && !hasKycDoc(kycDocs, ['pan', 'id_proof'])) {
+      toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
+      return;
+    }
+    if (!aadhaarFrontFile && !hasKycDoc(kycDocs, ['aadhaar_front', 'aadhaar', 'id_proof'])) {
+      toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
+      return;
+    }
+    if (!aadhaarBackFile && !hasKycDoc(kycDocs, ['aadhaar_back', 'aadhaar', 'id_proof'])) {
       toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
       return;
     }
     if (!isValidPassportNumber(passport)) {
-      toast.error('Enter a valid passport number (6–9 letters and digits)');
+      toast.error('Enter a valid passport number (e.g. A1234567)');
       return;
     }
     const expiryIssue = passportExpiryIssue(passportExpiry);
@@ -541,7 +561,11 @@ export default function WorkerVerificationPage() {
       toast.error(expiryIssue);
       return;
     }
-    if (!passportFrontFile || !passportLastFile) {
+    if (!passportFrontFile && !hasKycDoc(kycDocs, ['passport_front', 'passport', 'id_proof'])) {
+      toast.error('Upload passport first page and last page photos');
+      return;
+    }
+    if (!passportLastFile && !hasKycDoc(kycDocs, ['passport_last', 'passport', 'id_proof'])) {
       toast.error('Upload passport first page and last page photos');
       return;
     }
@@ -600,11 +624,11 @@ export default function WorkerVerificationPage() {
         if (lastErr) throw lastErr;
       };
 
-      await uploadDoc(panFile, 'pan', 'PAN Card Front');
-      await uploadDoc(aadhaarFrontFile, 'aadhaar_front', 'Aadhaar Card Front');
-      await uploadDoc(aadhaarBackFile, 'aadhaar_back', 'Aadhaar Card Back');
-      await uploadDoc(passportFrontFile, 'passport_front', 'Passport First Page');
-      await uploadDoc(passportLastFile, 'passport_last', 'Passport Last Page');
+      if (panFile) await uploadDoc(panFile, 'pan', 'PAN Card Front');
+      if (aadhaarFrontFile) await uploadDoc(aadhaarFrontFile, 'aadhaar_front', 'Aadhaar Card Front');
+      if (aadhaarBackFile) await uploadDoc(aadhaarBackFile, 'aadhaar_back', 'Aadhaar Card Back');
+      if (passportFrontFile) await uploadDoc(passportFrontFile, 'passport_front', 'Passport First Page');
+      if (passportLastFile) await uploadDoc(passportLastFile, 'passport_last', 'Passport Last Page');
 
       const next = await completeIdentityKyc(user.id, {
         panNumber: pan,
@@ -1411,7 +1435,7 @@ export default function WorkerVerificationPage() {
             description="Required before applying to jobs. Upload PAN, Aadhaar, and a passport that is valid for at least 6 months. SafeWork verifies these before your video interview is scheduled."
             timeEstimate="Takes 5–7 minutes"
             footer={
-              <Button onClick={() => void onSubmitIdentity()} disabled={saving}>
+              <Button type="button" onClick={() => void onSubmitIdentity()} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
                 Submit identity &amp; continue
               </Button>
@@ -1531,14 +1555,24 @@ export default function WorkerVerificationPage() {
                     <Label>Passport expiry date *</Label>
                     <Input
                       type="date"
+                      className="h-12"
                       value={passportExpiry}
-                      min={toDateInputValue(minPassportExpiryDate())}
+                      min={todayDateInputValue()}
                       onChange={(e) => setPassportExpiry(e.target.value)}
                       disabled={saving}
                     />
                     <p className="text-[11px] text-muted-foreground">
-                      Must be valid for at least 6 months from today. Expired passports cannot be used.
+                      Must not be expired, and must stay valid until at least{' '}
+                      {minPassportExpiryDate().toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}{' '}
+                      (6 months from today).
                     </p>
+                    {passportExpiry && passportExpiryIssue(passportExpiry) ? (
+                      <p className="text-[11px] text-destructive">{passportExpiryIssue(passportExpiry)}</p>
+                    ) : null}
                   </div>
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
