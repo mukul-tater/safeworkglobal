@@ -25,6 +25,7 @@ import PartnerRegisterLegacy from "./modules/partner/pages/PartnerRegisterLegacy
 import PendingApproval from "./modules/partner/pages/PendingApproval";
 import PartnerDashboardRouter from "./modules/partner/pages/PartnerDashboardRouter";
 import PartnerAddWorkerPage from "./modules/partner/pages/PartnerAddWorkerPage";
+import PartnerWorkerJourneyPage from "./modules/partner/pages/PartnerWorkerJourneyPage";
 import PartnerMyWorkersPage from "./modules/partner/pages/PartnerMyWorkersPage";
 import SsvnDashboard from "./modules/partner/pages/ssvn/SsvnDashboard";
 import SsvnAssessments from "./modules/partner/pages/ssvn/SsvnAssessments";
@@ -227,6 +228,18 @@ function AppShell() {
                 requireMobileVerified={false}
               >
                 <PartnerAddWorkerPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/partner/workers/:workerId/journey"
+            element={
+              <ProtectedRoute
+                allowedRoles={["partner"]}
+                loginPath="/partner/login"
+                requireMobileVerified={false}
+              >
+                <PartnerWorkerJourneyPage />
               </ProtectedRoute>
             }
           />

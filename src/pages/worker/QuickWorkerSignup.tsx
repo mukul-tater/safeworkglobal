@@ -34,6 +34,7 @@ import DevOtpHint from '@/components/DevOtpHint';
 import FormStepPills from '@/components/FormStepPills';
 import {
   CREATED_BY_PARTNER_LABEL,
+  partnerWorkerJourneyPath,
   resolvePartnerAddWorkerContext,
   type PartnerAddWorkerContext,
 } from '@/modules/partner/lib/partnerAssistedWorker';
@@ -56,8 +57,7 @@ type Props = {
 /**
  * Worker signup — Name + Email + Mobile (Firebase SMS OTP) + Password + T&C.
  * Independent workers continue to /worker/journey.
- * Partners use the same account form, stay signed in as the partner, and
- * return to My Workers. The worker signs in later to continue their journey.
+ * Partners stay signed in and fill the worker GCC journey as a kiosk service.
  */
 export default function QuickWorkerSignup({ assistedByPartner = false }: Props) {
   const navigate = useNavigate();
@@ -261,10 +261,10 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       if (created.requiresEmailConfirmation) {
         toast.success(
           partnerAssisted
-            ? 'Worker account created and listed in My Workers. They should confirm email, then sign in to continue the GCC journey.'
+            ? 'Worker created and listed in My Workers. Continue their GCC journey — they should also confirm email.'
             : 'Account created. Check your email to confirm your account, then sign in.',
         );
-        navigate(partnerAssisted ? (partnerCtx?.myWorkersPath || '/partner/my-workers') : '/worker/login', {
+        navigate(partnerAssisted ? partnerWorkerJourneyPath(created.userId) : '/worker/login', {
           replace: true,
         });
         return;
@@ -283,8 +283,8 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       }
       await refreshRole();
       await refreshProfile();
-      toast.success('Worker added. They can sign in with this mobile and password to continue the GCC journey.');
-      navigate(partnerCtx?.myWorkersPath || '/partner/my-workers', { replace: true });
+      toast.success('Worker created. Continue their GCC journey — you stay signed in as partner.');
+      navigate(partnerWorkerJourneyPath(created.userId), { replace: true });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       if (isWeakPasswordAuthError(message)) {
@@ -387,7 +387,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                 <p className="mt-1 text-sm text-muted-foreground">
                   {step === 'form'
                     ? partnerAssisted
-                      ? 'Create their profile and a password they can use to sign in. They complete the GCC journey themselves after they log in. They appear in My Workers as soon as the account is created.'
+                      ? 'Create their account, then fill their full GCC journey here. You stay signed in as partner. They can also sign in later with this mobile and password.'
                       : 'Takes about 2 minutes. We’ll SMS a code to confirm your number.'
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>

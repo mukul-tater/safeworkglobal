@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'react-router-dom';
 import { Loader2, UserPlus, Users } from 'lucide-react';
 import ApprovedPartnerGate, { useApprovedPartner } from '../components/ApprovedPartnerGate';
-import { emitraNavGroups, emitraProfileMenu } from '../config/emitraNav';
+import { partnerWorkerJourneyPath } from '@/modules/partner/lib/partnerAssistedWorker';
 
 type WorkerRow = {
   user_id: string; primary_work_type: string | null; current_location: string | null;
@@ -96,7 +96,8 @@ function Inner() {
         <div>
           <h1 className="text-2xl font-bold">My Workers</h1>
           <p className="text-sm text-muted-foreground">
-            Workers you onboarded through eMitra on the GCC journey
+            Workers you onboarded. Fill their GCC journey as a paid kiosk service.
+            They can also sign in later with the mobile and password you set.
           </p>
         </div>
         <Button asChild><Link to="/partner/add-worker"><UserPlus className="h-4 w-4 mr-1" /> Add Worker</Link></Button>
@@ -139,6 +140,9 @@ function Inner() {
                     </div>
                   )}
                 </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link to={partnerWorkerJourneyPath(w.user_id)}>Continue GCC</Link>
+                </Button>
               </div>
             </Card>
           ))}

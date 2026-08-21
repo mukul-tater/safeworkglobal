@@ -9,12 +9,26 @@ export const PARTNER_ADD_WORKER_PATH = "/partner/add-worker";
 export const PARTNER_MY_WORKERS_PATH = "/partner/my-workers";
 export const CREATED_BY_PARTNER_LABEL = "Created by partner";
 
+export function partnerWorkerJourneyPath(workerUserId: string) {
+  return `/partner/workers/${workerUserId}/journey`;
+}
+
 const PARK_KEY = "swg_parked_partner_session";
+const WORKER_RESUME_KEY = "swg_parked_worker_resume";
+const WORKER_RESUME_TTL_MS = 30 * 60 * 1000;
 
 export type ParkedPartnerSession = {
   access_token: string;
   refresh_token: string;
   returnTo: string;
+};
+
+export type ParkedWorkerResume = {
+  access_token: string;
+  refresh_token: string;
+  userId: string;
+  mobile: string;
+  ts: number;
 };
 
 export type PartnerAddWorkerContext = {
@@ -79,7 +93,87 @@ export async function restoreParkedPartnerSession(): Promise<string> {
     throw new Error("Could not return to the partner portal. Please sign in again.");
   }
   clearParkedPartnerSession();
+  clearParkedWorkerResume();
   return parked.returnTo || PARTNER_MY_WORKERS_PATH;
+}
+
+export function parkWorkerResume(session: Omit<ParkedWorkerResume, "ts">) {
+  try {
+    sessionStorage.setItem(
+      WORKER_RESUME_KEY,
+      JSON.stringify({ ...session, ts: Date.now() }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getParkedWorkerResume(): ParkedWorkerResume | null {
+  try {
+    const raw = sessionStorage.getItem(WORKER_RESUME_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ParkedWorkerResume;
+    if (!parsed?.access_token || !parsed?.refresh_token || !parsed?.userId) return null;
+    if (parsed.ts && Date.now() - parsed.ts > WORKER_RESUME_TTL_MS) {
+      clearParkedWorkerResume();
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function clearParkedWorkerResume() {
+  try {
+    sessionStorage.removeItem(WORKER_RESUME_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function hasParkedWorkerResume(): boolean {
+  return getParkedWorkerResume() !== null;
+}
+
+/**
+ * Partner stays signed in after create. Call this when they choose to fill
+ * the worker's GCC journey now: park the partner, switch to the worker.
+ */
+export async function continueParkedWorkerJourney(partnerReturnTo: string): Promise<{
+  userId: string;
+  mobile: string;
+}> {
+  const worker = getParkedWorkerResume();
+  if (!worker) {
+    throw new Error(
+      "This session can no longer open the worker journey. Ask the worker to sign in, or add them again.",
+    );
+  }
+
+  const { data } = await supabase.auth.getSession();
+  if (!data.session?.access_token || !data.session.refresh_token) {
+    throw new Error("Partner session was lost. Please sign in again.");
+  }
+
+  parkPartnerSession({
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+    returnTo: partnerReturnTo || PARTNER_MY_WORKERS_PATH,
+  });
+
+  const { error } = await supabase.auth.setSession({
+    access_token: worker.access_token,
+    refresh_token: worker.refresh_token,
+  });
+  if (error) {
+    clearParkedPartnerSession();
+    throw new Error(
+      "Could not open the worker journey. Ask the worker to sign in with the mobile and password you set.",
+    );
+  }
+  clearParkedWorkerResume();
+  return { userId: worker.userId, mobile: worker.mobile };
 }
 
 function landingForPartnerType(code: string | null | undefined): string | null {

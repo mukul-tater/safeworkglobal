@@ -42,8 +42,8 @@ export default function PartnerAssistedJourneyBanner() {
       <AlertTitle>{CREATED_BY_PARTNER_LABEL}</AlertTitle>
       <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <span>
-          This worker is completing the full GCC onboarding journey. They already appear in My
-          Workers. Return to your partner portal when you are done.
+          This worker is listed in My Workers. Fill their GCC details here, then return
+          to your partner portal when you are done.
         </span>
         <Button
           type="button"

@@ -1,9 +1,8 @@
 import QuickWorkerSignup from "@/pages/worker/QuickWorkerSignup";
 
 /**
- * Partners add a worker with the same account form as independent signup.
- * The partner stays signed in. The worker is listed under My Workers and
- * signs in later to continue the GCC journey.
+ * Partners add a worker, stay signed in, and fill the GCC journey as a kiosk
+ * service. The worker can also sign in later with the mobile and password.
  */
 export default function PartnerAddWorkerPage() {
   return <QuickWorkerSignup assistedByPartner />;

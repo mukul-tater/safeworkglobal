@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { PARTNER_ADD_WORKER_PATH, CREATED_BY_PARTNER_LABEL } from "../lib/partnerAssistedWorker";
+import { PARTNER_ADD_WORKER_PATH, CREATED_BY_PARTNER_LABEL, partnerWorkerJourneyPath } from "../lib/partnerAssistedWorker";
 
 type WorkerRow = {
   user_id: string;
@@ -53,8 +53,8 @@ export default function PartnerMyWorkersPage() {
         <div>
           <h1 className="text-2xl font-bold">My Workers</h1>
           <p className="text-sm text-muted-foreground">
-            Workers you registered. They sign in with the mobile and password you set
-            to continue the GCC journey.
+            Workers you registered. Fill their GCC journey as a partner service.
+            They can also sign in later with the mobile and password you set.
           </p>
         </div>
         <Button asChild>
@@ -75,8 +75,7 @@ export default function PartnerMyWorkersPage() {
           <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p className="text-muted-foreground">No workers added yet.</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Add a worker to create their login. They show here as created by partner,
-            then they sign in to continue GCC onboarding.
+            Add a worker, then fill their GCC journey here as a partner service.
           </p>
           <Button asChild className="mt-4">
             <Link to={PARTNER_ADD_WORKER_PATH}>Add Worker</Link>
@@ -106,6 +105,9 @@ export default function PartnerMyWorkersPage() {
                     </p>
                   )}
                 </div>
+                <Button asChild size="sm" variant="outline">
+                  <Link to={partnerWorkerJourneyPath(w.user_id)}>Continue GCC</Link>
+                </Button>
               </div>
             </Card>
           ))}

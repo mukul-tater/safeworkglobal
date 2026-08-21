@@ -276,8 +276,18 @@ function formatAppointmentDate(iso: string | null | undefined): string {
  * Full worker verification wizard:
  * essentials → quiz → media → interview → payment → tests → bond → GCC ready
  */
-export default function WorkerVerificationPage() {
+export default function WorkerVerificationPage({
+  actingForWorkerId,
+  embedded = false,
+}: {
+  /** Partner kiosk: fill this worker's journey while remaining signed in as partner. */
+  actingForWorkerId?: string;
+  /** Render without WorkerPortalLayout (partner chrome wraps the page). */
+  embedded?: boolean;
+}) {
   const { user, profile, refreshProfile } = useAuth();
+  const subjectId = actingForWorkerId || user?.id || '';
+  const partnerKiosk = Boolean(actingForWorkerId);
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -336,24 +346,42 @@ export default function WorkerVerificationPage() {
   const [createdByPartner, setCreatedByPartner] = useState(false);
   const [createdByEmitra, setCreatedByEmitra] = useState(false);
   const [emitraNoticeOpen, setEmitraNoticeOpen] = useState(false);
+  const [subjectProfile, setSubjectProfile] = useState<{
+    full_name: string | null;
+    phone: string | null;
+    email: string | null;
+  } | null>(null);
   const loadGen = useRef(0);
   const completedDeclRef = useRef<WorkerPreJourneyDeclaration | null>(null);
   const initialLoadDone = useRef(false);
 
   const load = useCallback(async () => {
-    if (!user?.id) return;
+    if (!subjectId) return;
     const gen = ++loadGen.current;
     if (!initialLoadDone.current) setLoading(true);
     setLoadError(null);
     try {
-      const vRaw = await getOrCreateVerification(user.id);
+      const vRaw = await getOrCreateVerification(subjectId);
       const v: WorkerVerification = {
         ...vRaw,
         stage: normalizeVerificationStage(vRaw.stage, vRaw.trade_test_required),
       };
       if (gen !== loadGen.current) return;
       setRow(v);
-      const decl = await getWorkerDeclarations(user.id);
+      const { data: subj } = await supabase
+        .from('profiles')
+        .select('full_name, phone, email')
+        .eq('id', subjectId)
+        .maybeSingle();
+      if (gen !== loadGen.current) return;
+      if (subj) {
+        setSubjectProfile({
+          full_name: subj.full_name,
+          phone: subj.phone,
+          email: subj.email,
+        });
+      }
+      const decl = await getWorkerDeclarations(subjectId);
       if (gen !== loadGen.current) return;
       const completed =
         decl?.completed_at ? decl : completedDeclRef.current?.completed_at ? completedDeclRef.current : null;
@@ -366,7 +394,7 @@ export default function WorkerVerificationPage() {
         setShowDeclarationModal(true);
       }
       // Never prefill synthetic mobile-auth emails — worker types a real contact email
-      setEmail(displayableEmail(v.email) || displayableEmail(profile?.email) || '');
+      setEmail(displayableEmail(v.email) || displayableEmail(subj?.email) || displayableEmail(profile?.email) || '');
       setCity(v.city || '');
       setState(v.state || '');
       setEducation(v.education_level || '');
@@ -377,7 +405,7 @@ export default function WorkerVerificationPage() {
         || (centersForState.length === 1 ? centersForState[0].id : centersForState[0]?.id || ''),
       );
       try {
-        const assessment = await getWorkerActiveAssessment(user.id);
+        const assessment = await getWorkerActiveAssessment(subjectId);
         setTradeAssessment(assessment);
       } catch {
         setTradeAssessment(null);
@@ -386,7 +414,7 @@ export default function WorkerVerificationPage() {
       const { data: wp, error: wpErr } = await supabase
         .from('worker_profiles')
         .select('kyc_status, pan_number, aadhaar_number, aadhaar_last4, passport_number, passport_expiry, has_passport, ecr_status, ecr_category, source_type, source_partner_id')
-        .eq('user_id', user.id)
+        .eq('user_id', subjectId)
         .maybeSingle();
       if (wpErr) {
         console.warn('Could not load worker KYC profile:', wpErr.message);
@@ -397,7 +425,7 @@ export default function WorkerVerificationPage() {
         sourceType === 'partner' || emitraSourced,
       );
       setCreatedByEmitra(emitraSourced);
-      if (emitraSourced && hasParkedPartnerSession() && !hasAckedEmitraOnboardingNotice()) {
+      if (!partnerKiosk && emitraSourced && hasParkedPartnerSession() && !hasAckedEmitraOnboardingNotice()) {
         setEmitraNoticeOpen(true);
       }
       const kycStatus = String((wp as any)?.kyc_status || 'not_started');
@@ -435,7 +463,7 @@ export default function WorkerVerificationPage() {
         const { data: docs } = await supabase
           .from('worker_documents')
           .select('document_name, document_type, file_url, verification_status, uploaded_at')
-          .eq('worker_id', user.id)
+          .eq('worker_id', subjectId)
           .in('document_type', KYC_DOC_TYPES)
           .order('uploaded_at', { ascending: false });
         // A rejected re-upload keeps the old row, so show only the newest per document.
@@ -454,7 +482,7 @@ export default function WorkerVerificationPage() {
         const { data: pay } = await supabase
           .from('worker_assessment_payments')
           .select('id, amount, currency, provider, provider_ref, status, paid_at')
-          .eq('user_id', user.id)
+          .eq('user_id', subjectId)
           .order('created_at', { ascending: false })
           .limit(1);
         setPaymentRecord(((pay || [])[0] as AssessmentPaymentRecord) || null);
@@ -486,7 +514,7 @@ export default function WorkerVerificationPage() {
         const { data: skill } = await supabase
           .from('worker_skills')
           .select('id')
-          .eq('worker_id', user.id)
+          .eq('worker_id', subjectId)
           .eq('skill_name', v.primary_skill)
           .maybeSingle();
         if (skill?.id) {
@@ -511,7 +539,12 @@ export default function WorkerVerificationPage() {
         setLoading(false);
       }
     }
-  }, [user?.id, profile?.email]);
+  }, [subjectId, profile?.email, partnerKiosk]);
+
+  const displayProfile = subjectProfile || profile;
+
+  const JourneyShell = ({ children }: { children: React.ReactNode }) =>
+    embedded ? <>{children}</> : <WorkerPortalLayout>{children}</WorkerPortalLayout>;
 
   useEffect(() => {
     void load();
@@ -552,7 +585,7 @@ export default function WorkerVerificationPage() {
   const currentQuiz = quizItems[quizIndex];
 
   const onSubmitIdentity = async () => {
-    if (!user?.id) return;
+    if (!subjectId) return;
     const pan = panNumber.trim().toUpperCase();
     const passport = normalizePassportNumber(passportNumber);
     if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
@@ -605,18 +638,18 @@ export default function WorkerVerificationPage() {
       const { data: wpRow } = await supabase
         .from('worker_profiles')
         .select('user_id')
-        .eq('user_id', user.id)
+        .eq('user_id', subjectId)
         .maybeSingle();
       if (!wpRow) {
         const { error: ensureErr } = await supabase
           .from('worker_profiles')
-          .insert({ user_id: user.id } as any);
+          .insert({ user_id: subjectId } as any);
         if (ensureErr) throw new Error(ensureErr.message);
       }
 
       const uploadDoc = async (file: File, docType: string, name: string) => {
         const ext = file.name.split('.').pop() || 'jpg';
-        const path = `${user.id}/kyc/${docType}-${Date.now()}.${ext}`;
+        const path = `${subjectId}/kyc/${docType}-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('worker-documents')
           .upload(path, file, { cacheControl: '3600', upsert: false });
@@ -632,7 +665,7 @@ export default function WorkerVerificationPage() {
         let lastErr: Error | null = null;
         for (const type of tryTypes) {
           const { error: dbErr } = await supabase.from('worker_documents').insert({
-            worker_id: user.id,
+            worker_id: subjectId,
             document_name: name,
             document_type: type,
             file_url: signed.signedUrl,
@@ -654,7 +687,7 @@ export default function WorkerVerificationPage() {
       if (passportFrontFile) await uploadDoc(passportFrontFile, 'passport_front', 'Passport First Page');
       if (passportLastFile) await uploadDoc(passportLastFile, 'passport_last', 'Passport Last Page');
 
-      const next = await completeIdentityKyc(user.id, {
+      const next = await completeIdentityKyc(subjectId, {
         panNumber: pan,
         aadhaarNumber: aadhaar,
         passportNumber: passport,
@@ -678,7 +711,7 @@ export default function WorkerVerificationPage() {
     }
   };
   const onSaveEssentials = async () => {
-    if (!user?.id) return;
+    if (!subjectId) return;
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail || !trimmedEmail.includes('@') || isWorkerMobileAuthEmail(trimmedEmail)) {
       toast.error('Enter a real email address before continuing');
@@ -694,7 +727,7 @@ export default function WorkerVerificationPage() {
     }
     setSaving(true);
     try {
-      const next = await saveEssentials(user.id, {
+      const next = await saveEssentials(subjectId, {
         email: trimmedEmail,
         city: city.trim(),
         state,
@@ -724,7 +757,7 @@ export default function WorkerVerificationPage() {
   };
 
   const onQuizContinue = async () => {
-    if (!user?.id || !currentQuiz) return;
+    if (!subjectId || !currentQuiz) return;
     if (quizAnswers[currentQuiz.id] === undefined) {
       toast.error('Select Yes or No');
       return;
@@ -739,7 +772,7 @@ export default function WorkerVerificationPage() {
         quiz_item_id: item.id,
         answer: Boolean(quizAnswers[item.id]),
       }));
-      const next = await submitQuiz(user.id, answers);
+      const next = await submitQuiz(subjectId, answers);
       const normalized = normalizeVerificationStage(
         // Prefer media if quiz finished even when DB stage lagged.
         next.quiz_completed_at && next.stage === 'quiz' ? 'media' : next.stage,
@@ -755,7 +788,7 @@ export default function WorkerVerificationPage() {
       );
       // Soft reload — avoid full-page loading flash that can feel like a stuck quiz.
       try {
-        const vRaw = await getOrCreateVerification(user.id);
+        const vRaw = await getOrCreateVerification(subjectId);
         const vStage = normalizeVerificationStage(
           vRaw.quiz_completed_at && vRaw.stage === 'quiz' ? 'media' : vRaw.stage,
           vRaw.trade_test_required,
@@ -765,7 +798,7 @@ export default function WorkerVerificationPage() {
           const { data: skill } = await supabase
             .from('worker_skills')
             .select('id')
-            .eq('worker_id', user.id)
+            .eq('worker_id', subjectId)
             .eq('skill_name', vRaw.primary_skill)
             .maybeSingle();
           if (skill?.id) {
@@ -781,7 +814,7 @@ export default function WorkerVerificationPage() {
             const { data: inserted } = await supabase
               .from('worker_skills')
               .insert({
-                worker_id: user.id,
+                worker_id: subjectId,
                 skill_name: vRaw.primary_skill,
                 proficiency_level: 'intermediate',
                 years_of_experience: 0,
@@ -806,7 +839,7 @@ export default function WorkerVerificationPage() {
   const uploadMediaFiles = async (files: FileList | File[] | null, type: 'photo' | 'video') => {
     const list = files ? Array.from(files) : [];
     if (!list.length) return;
-    if (!user?.id || !skillId) {
+    if (!subjectId || !skillId) {
       toast.error('Primary skill not ready — go back to essentials');
       return;
     }
@@ -833,14 +866,14 @@ export default function WorkerVerificationPage() {
         setUploadProgress({ current: i + 1, total: valid.length });
         const ext = file.name.split('.').pop() || (type === 'photo' ? 'jpg' : 'mp4');
         const folder = type === 'photo' ? 'photos' : 'videos';
-        const filePath = `${user.id}/skills/${skillId}/${folder}/${Date.now()}-${i}.${ext}`;
+        const filePath = `${subjectId}/skills/${skillId}/${folder}/${Date.now()}-${i}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from(STORAGE_BUCKET)
           .upload(filePath, file, { upsert: false });
         if (uploadError) throw uploadError;
         const { error: insertError } = await supabase.from('worker_skill_media').insert({
           skill_id: skillId,
-          worker_id: user.id,
+          worker_id: subjectId,
           media_type: type,
           file_path: filePath,
         });
@@ -865,7 +898,7 @@ export default function WorkerVerificationPage() {
   };
 
   const onCompleteMedia = async () => {
-    if (!user?.id) return;
+    if (!subjectId) return;
     if (photoCount < 1 || videoCount < 1) {
       toast.error('Upload at least 1 photo and 1 video of your primary skill');
       return;
@@ -878,7 +911,7 @@ export default function WorkerVerificationPage() {
     }
     setSaving(true);
     try {
-      const next = await completeMediaStep(user.id);
+      const next = await completeMediaStep(subjectId);
       setRow(next);
       notifyVerificationUpdated();
       toast.success('Skill proof saved — next: Identity (KYC)');
@@ -890,13 +923,13 @@ export default function WorkerVerificationPage() {
   };
 
   const onDevResetJourney = async () => {
-    if (!user?.id || !showDevReset) return;
+    if (!subjectId || !showDevReset) return;
     if (!window.confirm('DEV ONLY: Reset GCC journey to Essentials and clear quiz/payment/bond progress?')) {
       return;
     }
     setResetting(true);
     try {
-      const next = await resetVerificationJourney(user.id);
+      const next = await resetVerificationJourney(subjectId);
       setRow(next);
       setEmail('');
       setCity('');
@@ -921,15 +954,15 @@ export default function WorkerVerificationPage() {
 
   if (loading) {
     return (
-      <WorkerPortalLayout>
+      <JourneyShell>
         <div className="py-16 text-center text-muted-foreground">Loading your journey…</div>
-      </WorkerPortalLayout>
+      </JourneyShell>
     );
   }
 
   if (loadError || !row) {
     return (
-      <WorkerPortalLayout>
+      <JourneyShell>
         <Card className="max-w-lg mx-auto">
           <CardContent className="p-8 text-center space-y-4">
             <h1 className="text-xl font-bold font-heading">Could not load GCC journey</h1>
@@ -942,30 +975,42 @@ export default function WorkerVerificationPage() {
             </Button>
           </CardContent>
         </Card>
-      </WorkerPortalLayout>
+      </JourneyShell>
     );
   }
 
   if (rawStage === 'gcc_ready' && !forceIdentity) {
     return (
-      <WorkerPortalLayout>
+      <JourneyShell>
         <div className="mx-auto max-w-lg">
           <StageResultShell
             tone="success"
-            title="You're GCC ready"
-            body="Your profile is verified and ready for employers. Apply to overseas jobs with priority visibility."
+            title={partnerKiosk ? 'This worker is GCC ready' : "You're GCC ready"}
+            body={
+              partnerKiosk
+                ? 'Their profile is verified. They can sign in and apply to jobs. You can return to My Workers.'
+                : 'Your profile is verified and ready for employers. Apply to overseas jobs with priority visibility.'
+            }
             stats={[
               { label: 'Ready since', value: gccReadyDate(row.gcc_ready_at) },
               { label: 'Skill', value: row.primary_skill || '—' },
               { label: 'Status', value: 'Verified' },
             ]}
           >
+            {partnerKiosk ? (
+              <Button asChild variant="outline" className="rounded-xl">
+                <Link to="/partner/my-workers">Back to My Workers</Link>
+              </Button>
+            ) : (
+              <>
             <Button asChild className="rounded-xl">
               <Link to="/jobs">Browse & apply to jobs</Link>
             </Button>
             <Button asChild variant="outline" className="rounded-xl">
               <Link to="/worker/dashboard">Go to dashboard</Link>
             </Button>
+              </>
+            )}
             {showDevReset && (
               <Button
                 type="button"
@@ -981,14 +1026,14 @@ export default function WorkerVerificationPage() {
             )}
           </StageResultShell>
         </div>
-      </WorkerPortalLayout>
+      </JourneyShell>
     );
   }
 
   return (
-    <WorkerPortalLayout>
+    <JourneyShell>
       <WorkerPreJourneyScreeningModal
-        userId={user?.id || ''}
+        userId={subjectId || ''}
         isOpen={showDeclarationModal && !emitraNoticeOpen}
         onCompleted={(decl) => {
           completedDeclRef.current = decl;
@@ -1101,8 +1146,12 @@ export default function WorkerVerificationPage() {
         {!viewingCompletedStep && stage === 'essentials' && (
           <StageActionShell
             icon={UserRound}
-            title="Your major details"
-            description="Name and mobile are already saved. Confirm your email, then add Class 10 status, location, education, and one primary skill."
+            title={partnerKiosk ? 'Worker details' : 'Your major details'}
+            description={
+              partnerKiosk
+                ? 'Name and mobile are already saved. Fill email, Class 10 status, location, education, and primary skill for this worker.'
+                : 'Name and mobile are already saved. Confirm your email, then add Class 10 status, location, education, and one primary skill.'
+            }
             timeEstimate="Takes 2–3 minutes"
             footer={
               <Button className="w-full sm:w-auto" onClick={() => void onSaveEssentials()} disabled={saving}>
@@ -1114,11 +1163,11 @@ export default function WorkerVerificationPage() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>Name</Label>
-                  <Input value={profile?.full_name || ''} disabled className="bg-muted/40" />
+                  <Input value={displayProfile?.full_name || ''} disabled className="bg-muted/40" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Mobile</Label>
-                  <Input value={profile?.phone || ''} disabled className="bg-muted/40" />
+                  <Input value={displayProfile?.phone || ''} disabled className="bg-muted/40" />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Email *</Label>
@@ -1701,10 +1750,10 @@ export default function WorkerVerificationPage() {
               variant="outline"
               disabled={saving}
               onClick={async () => {
-                if (!user?.id) return;
+                if (!subjectId) return;
                 setSaving(true);
                 try {
-                  const next = await waiveAssessmentInterviewPilot(user.id);
+                  const next = await waiveAssessmentInterviewPilot(subjectId);
                   setRow({
                     ...next,
                     stage: normalizeVerificationStage(next.stage, next.trade_test_required),
@@ -1810,13 +1859,14 @@ export default function WorkerVerificationPage() {
                 className="w-full"
                 disabled={saving}
                 onClick={async () => {
-                  if (!user?.id) return;
+                  if (!subjectId) return;
                   setSaving(true);
                   try {
                     const next = await payAssessmentFeeWithRazorpay({
-                      name: profile?.full_name,
-                      email: displayableEmail(row?.email) || displayableEmail(profile?.email),
-                      contact: profile?.phone,
+                      name: displayProfile?.full_name,
+                      email: displayableEmail(row?.email) || displayableEmail(displayProfile?.email),
+                      contact: displayProfile?.phone,
+                      workerUserId: partnerKiosk ? subjectId : undefined,
                     });
                     setRow({
                       ...next,
@@ -1879,10 +1929,10 @@ export default function WorkerVerificationPage() {
                   className="w-full border border-dashed border-amber-500/40 text-muted-foreground"
                   disabled={saving}
                   onClick={async () => {
-                    if (!user?.id) return;
+                    if (!subjectId) return;
                     setSaving(true);
                     try {
-                      const next = await waiveAssessmentPaymentPilot(user.id);
+                      const next = await waiveAssessmentPaymentPilot(subjectId);
                       setRow({
                         ...next,
                         stage: normalizeVerificationStage(next.stage, next.trade_test_required),
@@ -2092,7 +2142,7 @@ export default function WorkerVerificationPage() {
                       <Button
                         disabled={saving || !selectedTradeCenterId || centers.length === 0}
                         onClick={async () => {
-                          if (!user?.id) return;
+                          if (!subjectId) return;
                           const center = centers.find((c) => c.id === selectedTradeCenterId);
                           if (!center) {
                             toast.error('Select a trade test centre');
@@ -2100,7 +2150,7 @@ export default function WorkerVerificationPage() {
                           }
                           setSaving(true);
                           try {
-                            const next = await bookTradeTestCenter(user.id, {
+                            const next = await bookTradeTestCenter(subjectId, {
                               centerId: center.id,
                               centerName: center.name,
                               reportingWindow: TRADE_TEST_REPORTING_WINDOW,
@@ -2138,7 +2188,7 @@ export default function WorkerVerificationPage() {
                     <Button
                       disabled={saving || !centerConfirmed || (!tradeResultFile && !row.trade_test_result_url)}
                       onClick={async () => {
-                        if (!user?.id) return;
+                        if (!subjectId) return;
                         if (!tradeResultFile && !row.trade_test_result_url) {
                           toast.error('Upload your trade test result');
                           return;
@@ -2148,7 +2198,7 @@ export default function WorkerVerificationPage() {
                           let url = row.trade_test_result_url || '';
                           if (tradeResultFile) {
                             const ext = tradeResultFile.name.split('.').pop() || 'pdf';
-                            const path = `${user.id}/trade-test/${Date.now()}.${ext}`;
+                            const path = `${subjectId}/trade-test/${Date.now()}.${ext}`;
                             const { error: upErr } = await supabase.storage
                               .from(DOCS_BUCKET)
                               .upload(path, tradeResultFile, { upsert: false });
@@ -2161,7 +2211,7 @@ export default function WorkerVerificationPage() {
                             }
                             url = signed.signedUrl;
                           }
-                          const next = await submitTradeTestResult(user.id, url);
+                          const next = await submitTradeTestResult(subjectId, url);
                           setRow({
                             ...next,
                             stage: normalizeVerificationStage(next.stage, next.trade_test_required),
@@ -2283,7 +2333,7 @@ export default function WorkerVerificationPage() {
               <Button
                 disabled={saving || !canSubmit}
                 onClick={async () => {
-                  if (!user?.id) return;
+                  if (!subjectId) return;
                   if (!medicalBloodFile && !bloodUrl) {
                     toast.error('Upload your medical blood report');
                     return;
@@ -2299,15 +2349,15 @@ export default function WorkerVerificationPage() {
                   setSaving(true);
                   try {
                     const nextBlood = medicalBloodFile
-                      ? await uploadJourneyDoc(user.id, medicalBloodFile, 'medical/blood-report')
+                      ? await uploadJourneyDoc(subjectId, medicalBloodFile, 'medical/blood-report')
                       : bloodUrl!;
                     const nextXrayReport = medicalXrayReportFile
-                      ? await uploadJourneyDoc(user.id, medicalXrayReportFile, 'medical/xray-report')
+                      ? await uploadJourneyDoc(subjectId, medicalXrayReportFile, 'medical/xray-report')
                       : xrayReportUrl!;
                     const nextXrayPhoto = medicalXrayPhotoFile
-                      ? await uploadJourneyDoc(user.id, medicalXrayPhotoFile, 'medical/xray-photo')
+                      ? await uploadJourneyDoc(subjectId, medicalXrayPhotoFile, 'medical/xray-photo')
                       : xrayPhotoUrl!;
-                    const next = await submitMedicalResult(user.id, {
+                    const next = await submitMedicalResult(subjectId, {
                       bloodReportUrl: nextBlood,
                       xrayReportUrl: nextXrayReport,
                       xrayPhotoUrl: nextXrayPhoto,
@@ -2333,10 +2383,10 @@ export default function WorkerVerificationPage() {
           );
         })()}
 
-        {!viewingCompletedStep && stage === 'bond' && user?.id && (
+        {!viewingCompletedStep && stage === 'bond' && subjectId && (
           <BondSecurityStage
-            userId={user.id}
-            workerPhone={profile?.phone}
+            userId={subjectId}
+            workerPhone={displayProfile?.phone}
             verification={row}
             template={bondTemplate}
             onChanged={() => {
@@ -2449,6 +2499,6 @@ export default function WorkerVerificationPage() {
           </aside>
         </div>
       </div>
-    </WorkerPortalLayout>
+    </JourneyShell>
   );
 }

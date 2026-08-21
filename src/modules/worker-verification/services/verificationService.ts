@@ -667,6 +667,7 @@ function storePendingCheckout(payload: {
   razorpay_payment_id?: string;
   razorpay_order_id?: string;
   razorpay_signature?: string;
+  worker_user_id?: string;
 }) {
   try {
     sessionStorage.setItem(RZP_PENDING_KEY, JSON.stringify(payload));
@@ -679,6 +680,7 @@ function readPendingCheckout(): {
   razorpay_payment_id?: string;
   razorpay_order_id?: string;
   razorpay_signature?: string;
+  worker_user_id?: string;
 } | null {
   try {
     const raw = sessionStorage.getItem(RZP_PENDING_KEY);
@@ -696,8 +698,8 @@ function clearPendingCheckout() {
   }
 }
 
-async function currentVerification(): Promise<WorkerVerification> {
-  const uid = (await supabase.auth.getUser()).data.user?.id;
+async function currentVerification(workerUserId?: string): Promise<WorkerVerification> {
+  const uid = workerUserId || (await supabase.auth.getUser()).data.user?.id;
   if (!uid) throw new Error('Not signed in');
   return getOrCreateVerification(uid);
 }
@@ -715,19 +717,25 @@ export async function syncAssessmentPaymentAfterCheckout(): Promise<WorkerVerifi
     action: 'recover_payment',
     razorpay_order_id: pending?.razorpay_order_id,
     razorpay_payment_id: pending?.razorpay_payment_id,
+    ...(pending?.worker_user_id ? { worker_user_id: pending.worker_user_id } : {}),
   });
   clearPendingCheckout();
-  return normalized(res.verification || (await currentVerification()));
+  return normalized(res.verification || (await currentVerification(pending?.worker_user_id)));
 }
 
 export async function payAssessmentFeeWithRazorpay(opts?: {
   name?: string | null;
   email?: string | null;
   contact?: string | null;
+  /** Partner kiosk: pay this worker's assessment while signed in as partner. */
+  workerUserId?: string | null;
 }): Promise<WorkerVerification> {
   const { openRazorpayCheckout } = await import('../lib/razorpayCheckout');
 
-  const orderData = await callRazorpayFn({ action: 'create_order' });
+  const orderData = await callRazorpayFn({
+    action: 'create_order',
+    ...(opts?.workerUserId ? { worker_user_id: opts.workerUserId } : {}),
+  });
 
   // Already paid on an earlier attempt — no double charge.
   if (orderData.recovered && orderData.verification) {
@@ -759,6 +767,7 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
     razorpay_payment_id: checkout.razorpay_payment_id,
     razorpay_order_id: checkout.razorpay_order_id || orderId,
     razorpay_signature: checkout.razorpay_signature,
+    ...(opts?.workerUserId ? { worker_user_id: opts.workerUserId } : {}),
   });
 
   try {
@@ -767,6 +776,8 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
       razorpay_payment_id: checkout.razorpay_payment_id,
       razorpay_order_id: checkout.razorpay_order_id || orderId,
       razorpay_signature: checkout.razorpay_signature,
+      ...(opts?.workerUserId ? { worker_user_id: opts.workerUserId } : {}),
+    });
     });
     clearPendingCheckout();
     return normalized(verifyData.verification || (await currentVerification()));

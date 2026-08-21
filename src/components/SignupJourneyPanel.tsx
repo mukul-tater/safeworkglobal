@@ -126,7 +126,7 @@ export default function SignupJourneyPanel({
     ? 'Onboard this worker on the GCC journey'
     : copy.headline;
   const body = createdByPartner
-    ? 'Create their login. They complete the same GCC verification journey when they sign in. They will appear in your My Workers list.'
+    ? 'You stay signed in as the partner and fill their full GCC journey as a paid kiosk service. They also get a login to continue later if needed.'
     : copy.body;
 
   return (

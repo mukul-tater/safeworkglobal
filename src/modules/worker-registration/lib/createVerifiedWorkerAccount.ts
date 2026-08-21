@@ -4,7 +4,6 @@ import {
   WORKER_TERMS_VERSION,
 } from '@/modules/worker-verification/constants';
 import { acceptTerms } from '@/modules/worker-verification/services/verificationService';
-import { parkPartnerSession } from '@/modules/partner/lib/partnerAssistedWorker';
 
 async function attachWorkerToCallingPartner(input: {
   workerUserId: string;
@@ -301,26 +300,14 @@ export async function createVerifiedWorkerAccount(
     };
 
     if (input.preserveCallerSession && switchedAwayFromCaller) {
-      const stayAsWorker = input.restoreCallerAfterSuccess === false;
-      const partnerReturnTo = input.partnerReturnTo || '/partner/my-workers';
-
-      const { data: workerSess } = await supabase.auth.getSession();
-      const workerTokens =
-        workerSess.session?.access_token && workerSess.session.refresh_token
-          ? {
-              access_token: workerSess.session.access_token,
-              refresh_token: workerSess.session.refresh_token,
-            }
-          : null;
-
       if (!callerSession) {
         throw new Error(
           'Worker was created, but partner session was lost. Please sign in again as partner.',
         );
       }
 
-      // Attach requires the partner role. Switch back, stamp attribution, then
-      // either stay as partner or resume the new worker for the GCC journey.
+      // signUp() swapped the browser to the new worker. Restore the partner
+      // immediately so they stay signed in and can fill the worker's GCC forms.
       const { error: partnerErr } = await supabase.auth.setSession(callerSession);
       if (partnerErr) {
         throw new Error(
@@ -333,24 +320,6 @@ export async function createVerifiedWorkerAccount(
         mobile: digits,
         email: authEmail,
       });
-
-      if (stayAsWorker) {
-        parkPartnerSession({
-          ...callerSession,
-          returnTo: partnerReturnTo,
-        });
-        if (!workerTokens) {
-          throw new Error(
-            'Worker was created and listed. Sign in as the worker to continue the GCC journey.',
-          );
-        }
-        const { error: workerErr } = await supabase.auth.setSession(workerTokens);
-        if (workerErr) {
-          throw new Error(
-            'Worker was created and listed. Sign in as the worker to continue the GCC journey.',
-          );
-        }
-      }
       switchedAwayFromCaller = false;
     }
 

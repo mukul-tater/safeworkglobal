@@ -82,11 +82,25 @@ serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
+  async function resolvePayerUserId(requested?: string): Promise<string> {
+    const requestedId = String(requested || "").trim();
+    if (!requestedId || requestedId === user.id) return user.id;
+    const { data, error } = await userClient.rpc("partner_manages_worker", {
+      _worker_user_id: requestedId,
+    });
+    if (error) throw new Error(error.message);
+    if (data !== true) {
+      throw new Error("Not allowed to pay assessment for this worker");
+    }
+    return requestedId;
+  }
+
   let body: {
     action?: string;
     razorpay_payment_id?: string;
     razorpay_order_id?: string;
     razorpay_signature?: string;
+    worker_user_id?: string;
   };
   try {
     body = await req.json();
@@ -121,9 +135,9 @@ serve(async (req) => {
     return { payment: items.find((p) => isSettled(p.status)) || null };
   }
 
-  async function completePayment(paymentId: string, orderId: string) {
+  async function completePayment(paymentId: string, orderId: string, payerId: string) {
     const { data, error } = await admin.rpc("complete_assessment_payment_razorpay", {
-      p_user_id: user.id,
+      p_user_id: payerId,
       p_payment_id: paymentId,
       p_order_id: orderId,
       p_amount: ASSESSMENT_FEE_INR,
@@ -133,11 +147,13 @@ serve(async (req) => {
   }
 
   try {
+    const payerId = await resolvePayerUserId(body.worker_user_id);
+
     if (action === "create_order") {
       const { data: row, error: rowErr } = await admin
         .from("worker_verification")
         .select("id, stage, payment_status, user_id, razorpay_order_id")
-        .eq("user_id", user.id)
+        .eq("user_id", payerId)
         .maybeSingle();
       if (rowErr) throw new Error(rowErr.message);
       if (!row) return json(404, { error: "Verification row not found" });
@@ -155,13 +171,13 @@ serve(async (req) => {
           return json(502, { error: findErr });
         }
         if (payment) {
-          const verification = await completePayment(payment.id, row.razorpay_order_id);
+          const verification = await completePayment(payment.id, row.razorpay_order_id, payerId);
           return json(200, { recovered: true, verification, already_paid: true });
         }
       }
 
       const amountPaise = ASSESSMENT_FEE_INR * 100;
-      const receipt = `assess_${user.id.replace(/-/g, "").slice(0, 12)}_${Date.now()}`
+      const receipt = `assess_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`
         .slice(0, 40);
 
       const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
@@ -175,7 +191,7 @@ serve(async (req) => {
           currency: "INR",
           receipt,
           notes: {
-            user_id: user.id,
+            user_id: payerId,
             purpose: "worker_assessment_fee",
           },
         }),
@@ -218,7 +234,7 @@ serve(async (req) => {
       const { data: row, error: rowErr } = await admin
         .from("worker_verification")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", payerId)
         .maybeSingle();
       if (rowErr) throw new Error(rowErr.message);
       if (!row) return json(404, { error: "Verification row not found" });
@@ -253,7 +269,7 @@ serve(async (req) => {
         verifiedBy = "razorpay_api";
       }
 
-      const completed = await completePayment(paymentId, orderId);
+      const completed = await completePayment(paymentId, orderId, payerId);
       return json(200, { verification: completed, already_paid: false, verified_by: verifiedBy });
     }
 
@@ -264,7 +280,7 @@ serve(async (req) => {
       const { data: row, error: rowErr } = await admin
         .from("worker_verification")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", payerId)
         .maybeSingle();
       if (rowErr) throw new Error(rowErr.message);
       if (!row) return json(404, { error: "Verification row not found" });
@@ -297,7 +313,7 @@ serve(async (req) => {
         }
       }
 
-      const verification = await completePayment(paymentId, targetOrder);
+      const verification = await completePayment(paymentId, targetOrder, payerId);
       return json(200, { verification, recovered: true });
     }
 
