@@ -3,6 +3,7 @@ import PartnerLayout from "../../layout/PartnerLayout";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentPartner } from "../../hooks/useCurrentPartner";
+import AddWorkerButton from "../../components/AddWorkerButton";
 import { Building2, TrendingUp, DollarSign, Briefcase } from "lucide-react";
 
 export default function SenGlobalDashboard() {
@@ -37,9 +38,12 @@ export default function SenGlobalDashboard() {
   return (
     <PartnerLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">SEN Global Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Employer leads, commissions and revenue overview.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">SEN Global Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Employer leads, commissions and revenue overview.</p>
+          </div>
+          {partner?.status !== "rejected" && partner?.status !== "suspended" && <AddWorkerButton />}
         </div>
         <div className="grid md:grid-cols-4 gap-4">
           {cards.map((c) => {

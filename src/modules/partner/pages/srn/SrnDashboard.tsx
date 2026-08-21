@@ -3,6 +3,7 @@ import PartnerLayout from "../../layout/PartnerLayout";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentPartner } from "../../hooks/useCurrentPartner";
+import AddWorkerButton from "../../components/AddWorkerButton";
 import { HeartPulse, FileCheck2, Plane, Briefcase } from "lucide-react";
 
 const STAGES = [
@@ -38,11 +39,14 @@ export default function SrnDashboard() {
   return (
     <PartnerLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">SRN Dashboard</h1>
-          <p className="text-muted-foreground text-sm">
-            Track worker deployment across medical, visa, travel and deployment stages.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">SRN Dashboard</h1>
+            <p className="text-muted-foreground text-sm">
+              Track worker deployment across medical, visa, travel and deployment stages.
+            </p>
+          </div>
+          {partner.status !== "rejected" && partner.status !== "suspended" && <AddWorkerButton />}
         </div>
         <div className="grid md:grid-cols-4 gap-4">
           {STAGES.map((s) => {

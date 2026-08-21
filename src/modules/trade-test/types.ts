@@ -19,9 +19,23 @@ export type AssessmentOutcome = 'pass' | 'conditional_pass' | 'fail';
 export type AssessmentMediaType =
   | 'kyc_photo'
   | 'kyc_video'
+  | 'arrival_photo'
+  | 'video_kyc_blink'
+  | 'video_kyc_turn_left'
+  | 'video_kyc_turn_right'
   | 'practical_photo'
   | 'practical_video'
-  | 'document';
+  | 'document'
+  | 'scorecard';
+
+export type VideoKycLogEntry = {
+  challenge: 'blink' | 'turn_left' | 'turn_right';
+  started_at: string;
+  completed_at: string;
+  storage_path: string;
+  duration_seconds?: number | null;
+  operator_name?: string | null;
+};
 
 export type TradeTestCenterRow = {
   id: string;
@@ -54,7 +68,9 @@ export type AssessmentRow = {
   reported_at: string | null;
   centre_submitted_at: string | null;
   aadhaar_verified: boolean;
+  pan_verified: boolean;
   face_match_confirmed: boolean;
+  identity_same_person: boolean;
   attendance_confirmed: boolean;
   kyc_photo_path: string | null;
   kyc_video_path: string | null;
@@ -62,6 +78,17 @@ export type AssessmentRow = {
   docs_experience_ok: boolean | null;
   docs_passport_ok: boolean | null;
   docs_notes: string | null;
+  docs_pre_reviewed_at: string | null;
+  docs_pre_reviewed_by: string | null;
+  arrival_photo_path: string | null;
+  arrival_photo_taken_by: string | null;
+  arrival_photo_taken_by_name: string | null;
+  arrival_photo_taken_at: string | null;
+  video_kyc_log: VideoKycLogEntry[];
+  video_kyc_operator_id: string | null;
+  video_kyc_operator_name: string | null;
+  test_evidence_completed_at: string | null;
+  scorecard_uploaded_at: string | null;
   outcome: AssessmentOutcome | null;
   quality_reviewed_by: string | null;
   quality_reviewed_at: string | null;
@@ -71,8 +98,26 @@ export type AssessmentRow = {
   // joined
   worker_name?: string | null;
   worker_phone?: string | null;
+  worker_email?: string | null;
   center_name?: string | null;
   primary_skill?: string | null;
+};
+
+export type WorkerIdentityDoc = {
+  id: string;
+  document_type: string;
+  document_name: string;
+  file_url: string;
+  preview_url: string | null;
+  uploaded_at: string | null;
+};
+
+export type WorkerIdentityPack = {
+  pan_number: string | null;
+  aadhaar_last4: string | null;
+  passport_number: string | null;
+  has_passport: boolean;
+  documents: WorkerIdentityDoc[];
 };
 
 export type AssessmentScoresInput = {
@@ -101,6 +146,13 @@ export type AssessmentMediaRow = {
   storage_path: string;
   label: string | null;
   created_at: string;
+  captured_at?: string | null;
+  captured_by?: string | null;
+  captured_by_name?: string | null;
+  duration_seconds?: number | null;
+  angle?: string | null;
+  face_visible?: boolean | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 export const SOP_SCORE_FIELDS = [

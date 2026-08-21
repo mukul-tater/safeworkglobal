@@ -24,6 +24,7 @@ import PartnerRegister from "./modules/partner/pages/PartnerRegister";
 import PartnerRegisterLegacy from "./modules/partner/pages/PartnerRegisterLegacy";
 import PendingApproval from "./modules/partner/pages/PendingApproval";
 import PartnerDashboardRouter from "./modules/partner/pages/PartnerDashboardRouter";
+import PartnerAddWorkerPage from "./modules/partner/pages/PartnerAddWorkerPage";
 import SsvnDashboard from "./modules/partner/pages/ssvn/SsvnDashboard";
 import SsvnAssessments from "./modules/partner/pages/ssvn/SsvnAssessments";
 import SsvnCheckin from "./modules/partner/pages/ssvn/SsvnCheckin";
@@ -85,7 +86,6 @@ import {
   EmitraWorkerDetailPage,
   EmitraNotificationsPage,
   EmitraCompliancePage,
-  EmitraOnboardWorkerPage,
   EmitraMyWorkersPage,
   EmitraRewardsPage,
   EmitraWithdrawalsPage,
@@ -194,9 +194,13 @@ function AppShell() {
           />
           <Route
             path="/emitra/onboard-worker"
+            element={<Navigate to="/partner/add-worker" replace />}
+          />
+          <Route
+            path="/partner/add-worker"
             element={
               <ProtectedRoute allowedRoles={["partner"]}>
-                <EmitraOnboardWorkerPage />
+                <PartnerAddWorkerPage />
               </ProtectedRoute>
             }
           />

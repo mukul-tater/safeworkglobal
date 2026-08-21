@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 /**
- * Legacy CRM-only register path. Unified into EmitraOnboardWorkerPage:
- * Firebase OTP → real worker login account → source_partner_id attribution.
+ * Legacy CRM-only register path. Unified into /partner/add-worker
+ * (independent worker signup + journey).
  */
 export default function EmitraRegisterWorkerPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    navigate('/emitra/onboard-worker', { replace: true });
+    navigate('/partner/add-worker', { replace: true });
   }, [navigate]);
 
   return (

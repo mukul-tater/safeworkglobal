@@ -61,11 +61,13 @@ export default function SsvnAssessments({
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {a.overall_score != null && (
+                  {a.test_evidence_completed_at && !a.overall_score ? (
+                    <Badge>Awaiting scorecard</Badge>
+                  ) : a.overall_score != null ? (
                     <div className="text-sm">
                       Score: <b>{a.overall_score}</b>
                     </div>
-                  )}
+                  ) : null}
                   <Badge variant="outline">{a.status}</Badge>
                   <Button asChild size="sm" variant="outline">
                     <Link to={`/partner/ssvn/assessment/${a.id}`}>Open</Link>

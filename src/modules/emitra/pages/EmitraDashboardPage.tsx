@@ -116,9 +116,9 @@ export default function EmitraDashboardPage() {
             )}
           </div>
         </div>
-        {operational && (
+        {row.status !== 'rejected' && row.status !== 'suspended' && (
           <Button asChild>
-            <Link to="/emitra/onboard-worker"><UserPlus className="h-4 w-4 mr-1" /> Register Worker</Link>
+            <Link to="/partner/add-worker"><UserPlus className="h-4 w-4 mr-1" /> Add Worker</Link>
           </Button>
         )}
       </div>
@@ -220,9 +220,9 @@ export default function EmitraDashboardPage() {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader>
           <CardContent className="grid gap-2">
-            <Button variant="outline" asChild disabled={!operational} className="justify-between h-11">
-              <Link to="/emitra/onboard-worker">
-                <span className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> Register New Worker</span>
+            <Button variant="outline" asChild className="justify-between h-11">
+              <Link to="/partner/add-worker">
+                <span className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> Add Worker</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

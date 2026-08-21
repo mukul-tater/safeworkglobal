@@ -84,30 +84,51 @@ export type Database = {
       }
       assessment_media: {
         Row: {
+          angle: string | null
           assessment_id: string
+          captured_at: string | null
+          captured_by: string | null
+          captured_by_name: string | null
           created_at: string
           created_by: string | null
+          duration_seconds: number | null
+          face_visible: boolean | null
           id: string
           label: string | null
           media_type: string
+          metadata: Json
           storage_path: string
         }
         Insert: {
+          angle?: string | null
           assessment_id: string
+          captured_at?: string | null
+          captured_by?: string | null
+          captured_by_name?: string | null
           created_at?: string
           created_by?: string | null
+          duration_seconds?: number | null
+          face_visible?: boolean | null
           id?: string
           label?: string | null
           media_type: string
+          metadata?: Json
           storage_path: string
         }
         Update: {
+          angle?: string | null
           assessment_id?: string
+          captured_at?: string | null
+          captured_by?: string | null
+          captured_by_name?: string | null
           created_at?: string
           created_by?: string | null
+          duration_seconds?: number | null
+          face_visible?: boolean | null
           id?: string
           label?: string | null
           media_type?: string
+          metadata?: Json
           storage_path?: string
         }
         Relationships: [
@@ -186,17 +207,24 @@ export type Database = {
           appointment_date: string | null
           assessor_name: string | null
           attendance_confirmed: boolean
+          arrival_photo_path: string | null
+          arrival_photo_taken_at: string | null
+          arrival_photo_taken_by: string | null
+          arrival_photo_taken_by_name: string | null
           centre_submitted_at: string | null
           created_at: string
           created_by: string | null
           docs_experience_ok: boolean | null
           docs_notes: string | null
           docs_passport_ok: boolean | null
+          docs_pre_reviewed_at: string | null
+          docs_pre_reviewed_by: string | null
           employer_id: string | null
           end_time: string | null
           equipment: Json
           face_match_confirmed: boolean
           id: string
+          identity_same_person: boolean
           job_id: string | null
           kyc_completed_at: string | null
           kyc_photo_path: string | null
@@ -205,6 +233,7 @@ export type Database = {
           media: Json
           outcome: string | null
           overall_score: number | null
+          pan_verified: boolean
           partner_id: string | null
           quality_notes: string | null
           quality_reviewed_at: string | null
@@ -216,13 +245,18 @@ export type Database = {
           reported_at: string | null
           reporting_window: string | null
           scheduled_at: string | null
+          scorecard_uploaded_at: string | null
           scores: Json
           start_time: string | null
           status: Database["public"]["Enums"]["assessment_status"]
+          test_evidence_completed_at: string | null
           trade_id: string | null
           trade_level: string | null
           trade_test_center_id: string | null
           updated_at: string
+          video_kyc_log: Json
+          video_kyc_operator_id: string | null
+          video_kyc_operator_name: string | null
           worker_id: string
           worker_verification_id: string | null
         }

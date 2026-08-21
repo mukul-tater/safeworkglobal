@@ -4,10 +4,12 @@ import {
   WORKER_TERMS_VERSION,
 } from '@/modules/worker-verification/constants';
 import { acceptTerms } from '@/modules/worker-verification/services/verificationService';
+import { parkPartnerSession } from '@/modules/partner/lib/partnerAssistedWorker';
 
 export type WorkerSource =
   | { type: 'organic' }
-  | { type: 'emitra'; partnerProfileId: string };
+  | { type: 'emitra'; partnerProfileId: string }
+  | { type: 'partner' };
 
 export type CreateVerifiedWorkerInput = {
   fullName: string;
@@ -24,10 +26,18 @@ export type CreateVerifiedWorkerInput = {
     state?: string;
   };
   /**
-   * Emitra partners must stay logged in. Captures the caller session, creates the
-   * worker (briefly switching auth), then restores the partner session.
+   * Partner-assisted create: capture the caller session, create the worker
+   * (briefly switching auth). By default the partner session is restored.
    */
   preserveCallerSession?: boolean;
+  /**
+   * When preserveCallerSession is true, restore the partner after success.
+   * Set false to stay signed in as the new worker and continue /worker/journey.
+   * The partner session is parked in sessionStorage for later restore.
+   */
+  restoreCallerAfterSuccess?: boolean;
+  /** Dashboard path to restore after a partner-assisted journey. */
+  partnerReturnTo?: string;
 };
 
 export type CreateVerifiedWorkerResult = {
@@ -39,7 +49,7 @@ export type CreateVerifiedWorkerResult = {
 
 /**
  * Create a login-ready worker after Firebase SMS OTP succeeded.
- * Same account shape for self-signup and emitra-assisted signup.
+ * Same account shape for self-signup and partner-assisted signup.
  */
 export async function createVerifiedWorkerAccount(
   input: CreateVerifiedWorkerInput,
@@ -138,13 +148,14 @@ export async function createVerifiedWorkerAccount(
       .filter(Boolean)
       .join(', ');
 
+    const partnerSourced = source.type === 'emitra' || source.type === 'partner';
     const workerProfilePayload: Record<string, unknown> = {
       user_id: user.id,
       country,
       nationality: country,
       source_type: source.type,
       source_partner_id: source.type === 'emitra' ? source.partnerProfileId : null,
-      onboarded_at: source.type === 'emitra' ? new Date().toISOString() : null,
+      onboarded_at: partnerSourced ? new Date().toISOString() : null,
       // eMitra OTP-verified onboarding is trusted — worker can log in immediately.
       // Trigger only forces pending when status is null / not_required.
       review_status: source.type === 'emitra' ? 'approved' : 'not_required',
@@ -263,19 +274,29 @@ export async function createVerifiedWorkerAccount(
     };
 
     if (input.preserveCallerSession && switchedAwayFromCaller) {
-      await supabase.auth.signOut();
-      if (!callerSession) {
-        throw new Error(
-          'Worker was created, but partner session was lost. Please sign in again as partner.',
-        );
+      if (input.restoreCallerAfterSuccess === false) {
+        if (callerSession) {
+          parkPartnerSession({
+            ...callerSession,
+            returnTo: input.partnerReturnTo || '/partner/dashboard',
+          });
+        }
+        switchedAwayFromCaller = false;
+      } else {
+        await supabase.auth.signOut();
+        if (!callerSession) {
+          throw new Error(
+            'Worker was created, but partner session was lost. Please sign in again as partner.',
+          );
+        }
+        const { error } = await supabase.auth.setSession(callerSession);
+        if (error) {
+          throw new Error(
+            'Worker was created, but partner session could not be restored. Please sign in again.',
+          );
+        }
+        switchedAwayFromCaller = false;
       }
-      const { error } = await supabase.auth.setSession(callerSession);
-      if (error) {
-        throw new Error(
-          'Worker was created, but partner session could not be restored. Please sign in again.',
-        );
-      }
-      switchedAwayFromCaller = false;
     }
 
     return result;

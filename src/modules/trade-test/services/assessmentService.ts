@@ -2,6 +2,13 @@ import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { TRADE_TEST_REPORTING_WINDOW } from '@/data/tradeTestCenters';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import {
+  IDENTITY_DOC_TYPES,
+  MIN_PRACTICAL_PHOTOS,
+  MIN_PRACTICAL_VIDEOS,
+  MIN_PRACTICAL_VIDEO_SECONDS,
+  VIDEO_KYC_CHALLENGES,
+} from '../constants';
+import {
   averageSopScore,
   type AssessmentMediaRow,
   type AssessmentMediaType,
@@ -10,10 +17,49 @@ import {
   type AssessmentScoresInput,
   type AssessmentScoresRow,
   type TradeTestCenterRow,
+  type VideoKycLogEntry,
+  type WorkerIdentityPack,
 } from '../types';
 
 const supabase: any = supabaseTyped;
 const EVIDENCE_BUCKET = 'assessment-evidence';
+const WORKER_DOCS_BUCKET = 'worker-documents';
+
+function asVideoKycLog(value: unknown): VideoKycLogEntry[] {
+  return Array.isArray(value) ? (value as VideoKycLogEntry[]) : [];
+}
+
+function normalizeAssessment(row: AssessmentRow): AssessmentRow {
+  return {
+    ...row,
+    pan_verified: Boolean(row.pan_verified),
+    identity_same_person: Boolean(row.identity_same_person),
+    video_kyc_log: asVideoKycLog(row.video_kyc_log),
+    docs_pre_reviewed_at: row.docs_pre_reviewed_at ?? null,
+    arrival_photo_path: row.arrival_photo_path ?? row.kyc_photo_path ?? null,
+    arrival_photo_taken_by_name: row.arrival_photo_taken_by_name ?? null,
+    arrival_photo_taken_at: row.arrival_photo_taken_at ?? null,
+    test_evidence_completed_at: row.test_evidence_completed_at ?? null,
+    scorecard_uploaded_at: row.scorecard_uploaded_at ?? null,
+    video_kyc_operator_name: row.video_kyc_operator_name ?? null,
+  };
+}
+
+function workerDocStoragePath(fileUrl: string): string | null {
+  if (!fileUrl) return null;
+  if (!fileUrl.startsWith('http')) return fileUrl.replace(/^worker-documents\//, '');
+  try {
+    const u = new URL(fileUrl);
+    const marker = '/worker-documents/';
+    const idx = u.pathname.indexOf(marker);
+    if (idx >= 0) {
+      return decodeURIComponent(u.pathname.slice(idx + marker.length));
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
 
 async function enrichAssessments(rows: AssessmentRow[]): Promise<AssessmentRow[]> {
   if (!rows.length) return rows;
@@ -39,14 +85,14 @@ async function enrichAssessments(rows: AssessmentRow[]): Promise<AssessmentRow[]
     const p = pmap.get(r.worker_id) as any;
     const c = r.trade_test_center_id ? cmap.get(r.trade_test_center_id) : null;
     const v = r.worker_verification_id ? vmap.get(r.worker_verification_id) : null;
-    return {
+    return normalizeAssessment({
       ...r,
       worker_name: p?.full_name || null,
       worker_phone: p?.phone || null,
       center_name: (c as any)?.name || r.location || null,
       primary_skill: (v as any)?.primary_skill || null,
       worker_email: displayableEmail(p?.email) || null,
-    } as AssessmentRow;
+    } as AssessmentRow);
   });
 }
 
@@ -295,6 +341,99 @@ export async function rejectAssessment(
   return row;
 }
 
+async function currentUserId(): Promise<string | null> {
+  return (await supabase.auth.getUser()).data.user?.id || null;
+}
+
+function latestIdentityDoc<T extends { document_type: string; uploaded_at: string | null }>(
+  docs: T[],
+  types: string[],
+): T | null {
+  const match = docs
+    .filter((d) => types.includes(d.document_type))
+    .sort((a, b) => String(b.uploaded_at || '').localeCompare(String(a.uploaded_at || '')));
+  return match[0] || null;
+}
+
+export async function getWorkerIdentityPack(workerId: string): Promise<WorkerIdentityPack> {
+  const [{ data: profile }, { data: docs, error: dErr }] = await Promise.all([
+    supabase
+      .from('worker_profiles')
+      .select('pan_number, aadhaar_last4, passport_number, has_passport')
+      .eq('user_id', workerId)
+      .maybeSingle(),
+    supabase
+      .from('worker_documents')
+      .select('id, document_type, document_name, file_url, uploaded_at')
+      .eq('worker_id', workerId)
+      .in('document_type', [...IDENTITY_DOC_TYPES])
+      .order('uploaded_at', { ascending: false }),
+  ]);
+  if (dErr) throw new Error(dErr.message);
+
+  const rows = (docs || []) as Array<{
+    id: string;
+    document_type: string;
+    document_name: string;
+    file_url: string;
+    uploaded_at: string | null;
+  }>;
+
+  const preferred = [
+    latestIdentityDoc(rows, ['pan']),
+    latestIdentityDoc(rows, ['aadhaar_front', 'aadhaar']),
+    latestIdentityDoc(rows, ['aadhaar_back']),
+    latestIdentityDoc(rows, ['passport_front', 'passport']),
+    latestIdentityDoc(rows, ['passport_last']),
+  ].filter(Boolean) as typeof rows;
+
+  const seen = new Set(preferred.map((d) => d.id));
+  const rest = rows.filter((d) => !seen.has(d.id));
+  const ordered = [...preferred, ...rest];
+
+  const documents = await Promise.all(
+    ordered.map(async (d) => {
+      const path = workerDocStoragePath(d.file_url);
+      let preview = d.file_url || null;
+      if (path) {
+        const { data: signed } = await supabase.storage
+          .from(WORKER_DOCS_BUCKET)
+          .createSignedUrl(path, 3600);
+        if (signed?.signedUrl) preview = signed.signedUrl;
+      }
+      return {
+        ...d,
+        preview_url: preview,
+      };
+    }),
+  );
+
+  return {
+    pan_number: profile?.pan_number || null,
+    aadhaar_last4: profile?.aadhaar_last4 || null,
+    passport_number: profile?.passport_number || null,
+    has_passport: Boolean(profile?.has_passport || profile?.passport_number),
+    documents,
+  };
+}
+
+export async function markDocsPreReviewed(assessmentId: string): Promise<AssessmentRow> {
+  const userId = await currentUserId();
+  const { data, error } = await supabase
+    .from('assessments')
+    .update({
+      docs_pre_reviewed_at: new Date().toISOString(),
+      docs_pre_reviewed_by: userId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', assessmentId)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  const [row] = await enrichAssessments([data as AssessmentRow]);
+  return row;
+}
+
 export async function checkInAssessment(assessmentId: string): Promise<AssessmentRow> {
   const { data, error } = await supabase
     .from('assessments')
@@ -314,6 +453,181 @@ export async function checkInAssessment(assessmentId: string): Promise<Assessmen
   return row;
 }
 
+/** Physical arrival: same person as Aadhaar/PAN (+ passport), live photo, operator + timestamp. */
+export async function saveArrivalCheck(
+  assessmentId: string,
+  input: {
+    aadhaarMatch: boolean;
+    panMatch: boolean;
+    passportMatch: boolean | null;
+    samePerson: boolean;
+    faceMatch: boolean;
+    arrivalPhotoPath: string;
+    capturedByName: string;
+  },
+): Promise<AssessmentRow> {
+  if (!input.aadhaarMatch || !input.panMatch || !input.samePerson || !input.faceMatch) {
+    throw new Error('Confirm Aadhaar, PAN, and that the person who arrived is the same worker');
+  }
+  if (!input.arrivalPhotoPath) throw new Error('Take a live photo of the worker at arrival');
+  const operator = input.capturedByName.trim();
+  if (!operator) throw new Error('Record who took the arrival photo');
+
+  const userId = await currentUserId();
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('assessments')
+    .update({
+      status: 'checked_in',
+      reported_at: now,
+      attendance_confirmed: true,
+      start_time: now,
+      aadhaar_verified: true,
+      pan_verified: true,
+      docs_passport_ok: input.passportMatch,
+      identity_same_person: true,
+      face_match_confirmed: true,
+      kyc_photo_path: input.arrivalPhotoPath,
+      arrival_photo_path: input.arrivalPhotoPath,
+      arrival_photo_taken_by: userId,
+      arrival_photo_taken_by_name: operator,
+      arrival_photo_taken_at: now,
+      updated_at: now,
+    })
+    .eq('id', assessmentId)
+    .in('status', ['accepted', 'scheduled', 'checked_in'])
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+
+  await upsertTypedMedia(assessmentId, {
+    mediaType: 'arrival_photo',
+    storagePath: input.arrivalPhotoPath,
+    label: 'Arrival live photo',
+    capturedByName: operator,
+    capturedAt: now,
+    replaceExisting: true,
+  });
+
+  const [row] = await enrichAssessments([data as AssessmentRow]);
+  return row;
+}
+
+async function upsertTypedMedia(
+  assessmentId: string,
+  input: {
+    mediaType: AssessmentMediaType;
+    storagePath: string;
+    label: string;
+    capturedByName?: string | null;
+    capturedAt?: string;
+    durationSeconds?: number | null;
+    angle?: string | null;
+    faceVisible?: boolean | null;
+    replaceExisting?: boolean;
+  },
+): Promise<void> {
+  const userId = await currentUserId();
+  const payload = {
+    assessment_id: assessmentId,
+    media_type: input.mediaType,
+    storage_path: input.storagePath,
+    label: input.label,
+    captured_at: input.capturedAt || new Date().toISOString(),
+    captured_by: userId,
+    captured_by_name: input.capturedByName || null,
+    duration_seconds: input.durationSeconds ?? null,
+    angle: input.angle || null,
+    face_visible: input.faceVisible ?? null,
+    created_by: userId,
+  };
+
+  if (input.replaceExisting) {
+    const { data: existing } = await supabase
+      .from('assessment_media')
+      .select('id')
+      .eq('assessment_id', assessmentId)
+      .eq('media_type', input.mediaType)
+      .maybeSingle();
+    if (existing?.id) {
+      await supabase.from('assessment_media').update(payload).eq('id', existing.id);
+      return;
+    }
+  }
+
+  const { error } = await supabase.from('assessment_media').insert(payload);
+  if (error) throw new Error(error.message);
+}
+
+export async function saveVideoKyc(
+  assessmentId: string,
+  input: {
+    clips: Array<{
+      challenge: VideoKycLogEntry['challenge'];
+      storagePath: string;
+      startedAt: string;
+      completedAt: string;
+      durationSeconds: number;
+    }>;
+    operatorName: string;
+  },
+): Promise<AssessmentRow> {
+  const required = VIDEO_KYC_CHALLENGES.map((c) => c.id);
+  const got = new Set(input.clips.map((c) => c.challenge));
+  if (required.some((id) => !got.has(id))) {
+    throw new Error('Record all video KYC steps: blink, turn left, and turn right');
+  }
+  const operator = input.operatorName.trim();
+  if (!operator) throw new Error('Record who conducted video KYC');
+
+  const userId = await currentUserId();
+  const log: VideoKycLogEntry[] = input.clips.map((c) => ({
+    challenge: c.challenge,
+    started_at: c.startedAt,
+    completed_at: c.completedAt,
+    storage_path: c.storagePath,
+    duration_seconds: c.durationSeconds,
+    operator_name: operator,
+  }));
+  const blink = input.clips.find((c) => c.challenge === 'blink');
+
+  for (const clip of input.clips) {
+    const spec = VIDEO_KYC_CHALLENGES.find((c) => c.id === clip.challenge);
+    if (!spec) continue;
+    await upsertTypedMedia(assessmentId, {
+      mediaType: spec.mediaType,
+      storagePath: clip.storagePath,
+      label: spec.label,
+      capturedByName: operator,
+      capturedAt: clip.completedAt,
+      durationSeconds: clip.durationSeconds,
+      replaceExisting: true,
+    });
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('assessments')
+    .update({
+      kyc_video_path: blink?.storagePath || input.clips[0]?.storagePath || null,
+      video_kyc_log: log,
+      video_kyc_operator_id: userId,
+      video_kyc_operator_name: operator,
+      kyc_completed_at: now,
+      status: 'kyc_done',
+      updated_at: now,
+    })
+    .eq('id', assessmentId)
+    .in('status', ['checked_in', 'kyc_done', 'running'])
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+
+  const [row] = await enrichAssessments([data as AssessmentRow]);
+  return row;
+}
+
+/** @deprecated Use saveArrivalCheck + saveVideoKyc */
 export async function saveCentreKyc(
   assessmentId: string,
   input: {
@@ -330,71 +644,25 @@ export async function saveCentreKyc(
   if (!input.kycPhotoPath || !input.kycVideoPath) {
     throw new Error('Upload candidate photograph and live video recording');
   }
-
-  const { data, error } = await supabase
-    .from('assessments')
-    .update({
-      aadhaar_verified: true,
-      face_match_confirmed: true,
-      attendance_confirmed: true,
-      kyc_photo_path: input.kycPhotoPath,
-      kyc_video_path: input.kycVideoPath,
-      kyc_completed_at: new Date().toISOString(),
-      status: 'kyc_done',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', assessmentId)
-    .in('status', ['checked_in', 'kyc_done', 'running'])
-    .select('*')
-    .single();
-  if (error) throw new Error(error.message);
-
-  await supabase.from('assessment_media').upsert(
-    [
-      {
-        assessment_id: assessmentId,
-        media_type: 'kyc_photo',
-        storage_path: input.kycPhotoPath,
-        label: 'Candidate photograph',
-      },
-      {
-        assessment_id: assessmentId,
-        media_type: 'kyc_video',
-        storage_path: input.kycVideoPath,
-        label: 'Live video recording',
-      },
-    ],
-    { onConflict: 'assessment_id,media_type', ignoreDuplicates: false },
-  ).then(() => undefined).catch(() => undefined);
-
-  // upsert may fail without unique — insert if missing
-  for (const m of [
-    { media_type: 'kyc_photo' as const, path: input.kycPhotoPath, label: 'Candidate photograph' },
-    { media_type: 'kyc_video' as const, path: input.kycVideoPath, label: 'Live video recording' },
-  ]) {
-    const { data: existing } = await supabase
-      .from('assessment_media')
-      .select('id')
-      .eq('assessment_id', assessmentId)
-      .eq('media_type', m.media_type)
-      .maybeSingle();
-    if (existing) {
-      await supabase
-        .from('assessment_media')
-        .update({ storage_path: m.path, label: m.label })
-        .eq('id', existing.id);
-    } else {
-      await supabase.from('assessment_media').insert({
-        assessment_id: assessmentId,
-        media_type: m.media_type,
-        storage_path: m.path,
-        label: m.label,
-      });
-    }
-  }
-
-  const [row] = await enrichAssessments([data as AssessmentRow]);
-  return row;
+  await saveArrivalCheck(assessmentId, {
+    aadhaarMatch: true,
+    panMatch: true,
+    passportMatch: null,
+    samePerson: true,
+    faceMatch: true,
+    arrivalPhotoPath: input.kycPhotoPath,
+    capturedByName: 'Centre staff',
+  });
+  return saveVideoKyc(assessmentId, {
+    clips: VIDEO_KYC_CHALLENGES.map((c) => ({
+      challenge: c.id,
+      storagePath: input.kycVideoPath as string,
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      durationSeconds: 0,
+    })),
+    operatorName: 'Centre staff',
+  });
 }
 
 export async function saveDocChecks(
@@ -469,6 +737,7 @@ export async function saveAssessmentScores(
       overall_score: overall,
       assessor_name: scores.assessor_name.trim(),
       status: 'running',
+      scorecard_uploaded_at: new Date().toISOString(),
       scores: {
         safety_ppe: scores.safety_ppe,
         tool_identification: scores.tool_identification,
@@ -504,7 +773,13 @@ export async function addAssessmentMedia(input: {
   mediaType: AssessmentMediaType;
   storagePath: string;
   label?: string;
+  capturedByName?: string | null;
+  capturedAt?: string;
+  durationSeconds?: number | null;
+  angle?: string | null;
+  faceVisible?: boolean | null;
 }): Promise<AssessmentMediaRow> {
+  const userId = await currentUserId();
   const { data, error } = await supabase
     .from('assessment_media')
     .insert({
@@ -512,7 +787,13 @@ export async function addAssessmentMedia(input: {
       media_type: input.mediaType,
       storage_path: input.storagePath,
       label: input.label || null,
-      created_by: (await supabase.auth.getUser()).data.user?.id || null,
+      created_by: userId,
+      captured_at: input.capturedAt || new Date().toISOString(),
+      captured_by: userId,
+      captured_by_name: input.capturedByName || null,
+      duration_seconds: input.durationSeconds ?? null,
+      angle: input.angle || null,
+      face_visible: input.faceVisible ?? null,
     })
     .select('*')
     .single();
@@ -554,9 +835,56 @@ export async function signedEvidenceUrl(path: string, expiresIn = 3600): Promise
   return data.signedUrl;
 }
 
+export function practicalEvidenceSummary(media: AssessmentMediaRow[]): {
+  photos: AssessmentMediaRow[];
+  videos: AssessmentMediaRow[];
+  videosLongEnough: AssessmentMediaRow[];
+  photosOk: boolean;
+  videosOk: boolean;
+} {
+  const photos = media.filter((m) => m.media_type === 'practical_photo');
+  const videos = media.filter((m) => m.media_type === 'practical_video');
+  const videosLongEnough = videos.filter(
+    (m) => Number(m.duration_seconds || 0) >= MIN_PRACTICAL_VIDEO_SECONDS,
+  );
+  return {
+    photos,
+    videos,
+    videosLongEnough,
+    photosOk: photos.length >= MIN_PRACTICAL_PHOTOS,
+    videosOk: videosLongEnough.length >= MIN_PRACTICAL_VIDEOS,
+  };
+}
+
+export async function markTestEvidenceComplete(assessmentId: string): Promise<AssessmentRow> {
+  const media = await listAssessmentMedia(assessmentId);
+  const summary = practicalEvidenceSummary(media);
+  if (!summary.photosOk || !summary.videosOk) {
+    throw new Error(
+      `Upload at least ${MIN_PRACTICAL_PHOTOS} photos and ${MIN_PRACTICAL_VIDEOS} videos (${MIN_PRACTICAL_VIDEO_SECONDS}s each), face visible, from different angles`,
+    );
+  }
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('assessments')
+    .update({
+      test_evidence_completed_at: now,
+      updated_at: now,
+    })
+    .eq('id', assessmentId)
+    .in('status', ['kyc_done', 'running'])
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  const [row] = await enrichAssessments([data as AssessmentRow]);
+  return row;
+}
+
 export async function submitCentreAssessment(assessmentId: string): Promise<AssessmentRow> {
   const scores = await getAssessmentScores(assessmentId);
-  if (!scores) throw new Error('Complete the SOP scorecard before submitting');
+  if (!scores) {
+    throw new Error('Upload the SOP scorecard before submitting (you can do this 1–2 days after the test)');
+  }
 
   const { data: a, error: aErr } = await supabase
     .from('assessments')
@@ -564,17 +892,23 @@ export async function submitCentreAssessment(assessmentId: string): Promise<Asse
     .eq('id', assessmentId)
     .single();
   if (aErr) throw new Error(aErr.message);
-  if (!a.aadhaar_verified || !a.kyc_photo_path || !a.kyc_video_path) {
-    throw new Error('Complete identity KYC (Aadhaar + photo + video) before submitting');
+  if (!a.identity_same_person && !a.aadhaar_verified) {
+    throw new Error('Complete arrival identity check before submitting');
+  }
+  if (!a.kyc_photo_path && !a.arrival_photo_path) {
+    throw new Error('Arrival live photo is required');
+  }
+  const kycLog = asVideoKycLog(a.video_kyc_log);
+  if (kycLog.length < VIDEO_KYC_CHALLENGES.length && !a.kyc_video_path) {
+    throw new Error('Complete video KYC (blink, turn left, turn right) before submitting');
   }
 
-  const { data: media } = await supabase
-    .from('assessment_media')
-    .select('id')
-    .eq('assessment_id', assessmentId)
-    .in('media_type', ['practical_photo', 'practical_video']);
-  if (!media?.length) {
-    throw new Error('Upload at least one practical photo or video as evidence');
+  const media = await listAssessmentMedia(assessmentId);
+  const summary = practicalEvidenceSummary(media);
+  if (!summary.photosOk || !summary.videosOk) {
+    throw new Error(
+      `Need at least ${MIN_PRACTICAL_PHOTOS} test photos and ${MIN_PRACTICAL_VIDEOS} test videos of ${MIN_PRACTICAL_VIDEO_SECONDS}+ seconds, face visible from different angles`,
+    );
   }
 
   const { data, error } = await supabase
@@ -591,14 +925,12 @@ export async function submitCentreAssessment(assessmentId: string): Promise<Asse
     .single();
   if (error) throw new Error(error.message);
 
-  // Move to under_review for admin queue
   const { data: reviewed, error: rErr } = await supabase
     .from('assessments')
     .update({ status: 'under_review', updated_at: new Date().toISOString() })
     .eq('id', assessmentId)
     .select('*')
     .single();
-  // under_review update may fail if partner can't set it — centre_submitted is enough for admin list
   const final = rErr ? data : reviewed;
   const [row] = await enrichAssessments([final as AssessmentRow]);
   return row;

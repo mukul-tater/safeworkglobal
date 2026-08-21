@@ -1,13 +1,14 @@
 import { ReactNode } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wallet as WalletIcon } from "lucide-react";
+import { LogOut, Wallet as WalletIcon, UserPlus } from "lucide-react";
 import { useCurrentPartner } from "../hooks/useCurrentPartner";
 import { partnerTypeConfig } from "../config/partnerTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
+import { PARTNER_ADD_WORKER_PATH, partnerCanAddWorkers } from "../lib/partnerAssistedWorker";
 
 export default function PartnerLayout({ children }: { children: ReactNode }) {
   const { partner, loading } = useCurrentPartner();
@@ -110,6 +111,13 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-3">
+            {partnerCanAddWorkers(partner.status) && (
+              <Button asChild>
+                <Link to={PARTNER_ADD_WORKER_PATH}>
+                  <UserPlus className="mr-1 h-4 w-4" /> Add Worker
+                </Link>
+              </Button>
+            )}
             <AboutLanguageToggle compact />
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/5 border">
             <WalletIcon className="h-4 w-4 text-primary" />
@@ -125,7 +133,8 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
 
         {partner.status !== "approved" && (
           <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-sm text-amber-800">
-            Your partner account is <b>{partner.status}</b>. Some features are limited until an admin approves your organization.
+            Your partner account is <b>{partner.status}</b>. You can still add workers while awaiting
+            admin approval.
           </div>
         )}
 

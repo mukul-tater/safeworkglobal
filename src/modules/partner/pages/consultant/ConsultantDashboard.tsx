@@ -2,6 +2,7 @@ import PartnerLayout from "../../layout/PartnerLayout";
 import { Card } from "@/components/ui/card";
 import { UsersRound } from "lucide-react";
 import { useCurrentPartner } from "../../hooks/useCurrentPartner";
+import AddWorkerButton from "../../components/AddWorkerButton";
 
 export default function ConsultantDashboard() {
   const { partner } = useCurrentPartner();
@@ -9,12 +10,15 @@ export default function ConsultantDashboard() {
   return (
     <PartnerLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Consultant Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Welcome{partner?.company_name ? `, ${partner.company_name}` : ""}. Mobilise and place
-            candidates through SafeWork.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Consultant Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              Welcome{partner?.company_name ? `, ${partner.company_name}` : ""}. Mobilise and place
+              candidates through SafeWork.
+            </p>
+          </div>
+          {partner?.status !== "rejected" && partner?.status !== "suspended" && <AddWorkerButton />}
         </div>
         <Card className="p-6">
           <div className="flex items-start gap-3">
@@ -24,8 +28,8 @@ export default function ConsultantDashboard() {
             <div>
               <div className="font-semibold">Your consultant profile is connected</div>
               <p className="text-sm text-muted-foreground mt-1">
-                Candidate mobilisation workflows for placement consultants, recruitment partners,
-                freelancers, NGOs and mobilisers will appear here as they go live.
+                Add a worker to start the same independent worker onboarding journey (account, OTP,
+                then skill verification).
               </p>
             </div>
           </div>

@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCurrentPartner } from "../hooks/useCurrentPartner";
 import { useAuth } from "@/contexts/AuthContext";
 import { LOCKED_PARTNER_PORTALS } from "../config/partnerPortalRoutes";
+import { PARTNER_ADD_WORKER_PATH, partnerCanAddWorkers } from "../lib/partnerAssistedWorker";
 
 export default function PendingApproval() {
   const { partner, loading } = useCurrentPartner();
@@ -28,6 +29,8 @@ export default function PendingApproval() {
     navigate("/partner/dashboard", { replace: true });
     return null;
   }
+
+  const canAdd = partnerCanAddWorkers(partner.status);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-muted/30">
@@ -53,7 +56,9 @@ export default function PendingApproval() {
         <p className="text-muted-foreground mb-6">
           {partner.status === "rejected"
             ? "Please contact SafeWork Global support for next steps."
-            : "Our team is reviewing your submission. You will be notified once approved."}
+            : partner.status === "suspended"
+              ? "Your account is suspended. Contact support for reinstatement."
+              : "Our team is reviewing your submission. You can still add workers while you wait."}
         </p>
         <div className="text-sm text-muted-foreground mb-4">
           <div><b>Organization:</b> {partner.company_name}</div>
@@ -75,7 +80,14 @@ export default function PendingApproval() {
             .
           </p>
         )}
-        <Button variant="outline" onClick={() => logout()}>Logout</Button>
+        <div className="flex flex-col gap-2">
+          {canAdd && (
+            <Button onClick={() => navigate(PARTNER_ADD_WORKER_PATH)}>
+              <UserPlus className="mr-1 h-4 w-4" /> Add Worker
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => logout()}>Logout</Button>
+        </div>
       </Card>
     </div>
   );

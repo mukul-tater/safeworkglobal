@@ -8,6 +8,8 @@ import {
   FileBarChart,
   Calendar,
   UserCheck,
+  Camera,
+  UserPlus,
   Briefcase,
   Building2,
   Plane,
@@ -47,7 +49,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     navItems: [
       { label: "Dashboard", to: "/emitra/dashboard", icon: LayoutDashboard },
       { label: "My Workers", to: "/emitra/my-workers", icon: Users },
-      { label: "Register Worker", to: "/emitra/onboard-worker", icon: UserCheck },
+      { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "Rewards", to: "/emitra/rewards", icon: Award },
       { label: "Withdrawals", to: "/emitra/withdrawals", icon: DollarSign },
       { label: "Notifications", to: "/emitra/notifications", icon: Bell },
@@ -59,8 +61,10 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/ssvn/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/ssvn/dashboard", icon: LayoutDashboard },
+      { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "Inbox (Accept)", to: "/partner/ssvn/inbox", icon: ClipboardCheck },
       { label: "Today's Schedule", to: "/partner/ssvn/today", icon: Calendar },
+      { label: "Check-in / KYC", to: "/partner/ssvn/checkin", icon: Camera },
       { label: "Active assessments", to: "/partner/ssvn/active", icon: UserCheck },
       { label: "Assessment History", to: "/partner/ssvn/history", icon: FileBarChart },
       { label: "Reports", to: "/partner/reports", icon: FileBarChart },
@@ -76,6 +80,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/iti/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/iti/dashboard", icon: LayoutDashboard },
+      { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "Wallet", to: "/partner/wallet", icon: Wallet },
       { label: "Invoices", to: "/partner/invoices", icon: Receipt },
       { label: "Payouts", to: "/partner/payouts", icon: Banknote },
@@ -88,6 +93,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/srn/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/srn/dashboard", icon: LayoutDashboard },
+      { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "Assigned Workers", to: "/partner/srn/workers", icon: Users },
       { label: "Medical", to: "/partner/srn/medical", icon: HeartPulse },
       { label: "Visa", to: "/partner/srn/visa", icon: FileCheck2 },
@@ -104,6 +110,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/consultant/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/consultant/dashboard", icon: LayoutDashboard },
+      { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "Wallet", to: "/partner/wallet", icon: Wallet },
       { label: "Invoices", to: "/partner/invoices", icon: Receipt },
       { label: "Payouts", to: "/partner/payouts", icon: Banknote },
@@ -116,6 +123,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/sen-global/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/sen-global/dashboard", icon: LayoutDashboard },
+      { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "Employer Leads", to: "/partner/sen-global/leads", icon: Building2 },
       { label: "Revenue", to: "/partner/sen-global/revenue", icon: DollarSign },
       { label: "Wallet", to: "/partner/wallet", icon: Wallet },

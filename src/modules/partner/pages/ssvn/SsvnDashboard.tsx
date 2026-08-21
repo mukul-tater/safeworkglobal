@@ -3,6 +3,7 @@ import PartnerLayout from "../../layout/PartnerLayout";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentPartner } from "../../hooks/useCurrentPartner";
+import AddWorkerButton from "../../components/AddWorkerButton";
 import { CalendarDays, ClipboardCheck, CheckCircle2, FileText, Star, DollarSign } from "lucide-react";
 
 function StatCard({ label, value, icon: Icon }: any) {
@@ -57,9 +58,12 @@ export default function SsvnDashboard() {
   return (
     <PartnerLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Skill Verification Dashboard</h1>
-          <p className="text-muted-foreground">Trade test operations at a glance</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold">Skill Verification Dashboard</h1>
+            <p className="text-muted-foreground">Trade test operations at a glance</p>
+          </div>
+          {partner?.status !== "rejected" && partner?.status !== "suspended" && <AddWorkerButton />}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <StatCard label="Today's Assessments" value={stats.today} icon={ClipboardCheck} />

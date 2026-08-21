@@ -16,7 +16,7 @@ export const emitraNavGroups: NavGroup[] = [
     label: 'Workers',
     defaultOpen: true,
     items: [
-      { path: '/emitra/onboard-worker', icon: UserPlus, label: 'Register Worker' },
+      { path: '/partner/add-worker', icon: UserPlus, label: 'Add Worker' },
       { path: '/emitra/my-workers', icon: Users, label: 'My Workers' },
     ],
   },

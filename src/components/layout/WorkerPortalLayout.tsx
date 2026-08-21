@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { workerProfileMenu } from "@/config/workerNav";
 import { useWorkerNavGroups } from "@/modules/worker-registration/hooks/useWorkerNavGroups";
+import PartnerAssistedJourneyBanner from "@/modules/partner/components/PartnerAssistedJourneyBanner";
 
 interface Props {
   children: ReactNode;
@@ -19,6 +20,7 @@ export default function WorkerPortalLayout({ children }: Props) {
       profileMenuItems={workerProfileMenu}
       portalHomePath="/worker/dashboard"
     >
+      <PartnerAssistedJourneyBanner />
       {children}
     </DashboardLayout>
   );

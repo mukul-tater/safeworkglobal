@@ -8,7 +8,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
-  Loader2, Phone, Lock, Eye, EyeOff, Mail,
+  Loader2, Phone, Lock, Eye, EyeOff, Mail, ShieldCheck,
 } from 'lucide-react';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
@@ -24,18 +24,34 @@ import TermsAgreeRow from '@/components/TermsAgreeRow';
 import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 import SignupJourneyPanel from '@/components/SignupJourneyPanel';
 import SEOHead from '@/components/SEOHead';
+import {
+  resolvePartnerAddWorkerContext,
+  type PartnerAddWorkerContext,
+} from '@/modules/partner/lib/partnerAssistedWorker';
+import { Card } from '@/components/ui/card';
 
 type Step = 'form' | 'otp';
+
+type Props = {
+  /** Partner is registering a worker; same form and journey as independent signup. */
+  assistedByPartner?: boolean;
+};
 
 /**
  * Worker signup — Name + Email + Mobile (Firebase SMS OTP) + Password + T&C.
  * Continues to /worker/journey for essentials and skill verification.
+ * Partners use the same path (including before admin approval); their session
+ * is parked so they can return to the partner portal after the journey.
  */
-export default function QuickWorkerSignup() {
+export default function QuickWorkerSignup({ assistedByPartner = false }: Props) {
   const navigate = useNavigate();
-  const { isAuthenticated, role, isMobileVerified, profileLoading, refreshProfile, markMobileVerified } =
-    useAuth();
+  const {
+    user, isAuthenticated, role, isMobileVerified, profileLoading, refreshProfile, refreshRole, markMobileVerified,
+  } = useAuth();
   const firebaseOtp = useFirebasePhoneOtp();
+  const partnerAssisted = assistedByPartner || role === 'partner';
+  const [partnerCtx, setPartnerCtx] = useState<PartnerAddWorkerContext | null>(null);
+  const [partnerCtxLoading, setPartnerCtxLoading] = useState(partnerAssisted);
 
   const [step, setStep] = useState<Step>('form');
   const [formLoading, setFormLoading] = useState(false);
@@ -62,14 +78,45 @@ export default function QuickWorkerSignup() {
   }, []);
 
   useEffect(() => {
+    if (!partnerAssisted || !user?.id) {
+      setPartnerCtxLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setPartnerCtxLoading(true);
+    void resolvePartnerAddWorkerContext(user.id)
+      .then((ctx) => {
+        if (!cancelled) {
+          setPartnerCtx(ctx);
+          setPartnerCtxLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPartnerCtx({
+            allowed: true,
+            returnTo: '/partner/dashboard',
+            source: { type: 'partner' },
+            status: null,
+          });
+          setPartnerCtxLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [partnerAssisted, user?.id]);
+
+  useEffect(() => {
     if (profileLoading || formLoading) return;
     if (step !== 'form') return;
+    if (partnerAssisted) return;
     if (isAuthenticated && role === 'worker') {
       // OTP signup users are already verified — never send them to bind-mobile
       // from this page (Google users without phone still go to bind).
       navigate(isMobileVerified ? '/worker/journey' : '/worker/bind-mobile', { replace: true });
     }
-  }, [isAuthenticated, role, isMobileVerified, profileLoading, formLoading, step, navigate]);
+  }, [isAuthenticated, role, isMobileVerified, profileLoading, formLoading, step, navigate, partnerAssisted]);
 
   useEffect(() => {
     if (step !== 'otp') return;
@@ -146,20 +193,38 @@ export default function QuickWorkerSignup() {
         mobile,
         password,
         country,
-        source: { type: 'organic' },
+        source: partnerAssisted ? (partnerCtx?.source ?? { type: 'partner' }) : { type: 'organic' },
+        ...(partnerAssisted
+          ? {
+              preserveCallerSession: true,
+              restoreCallerAfterSuccess: false,
+              partnerReturnTo: partnerCtx?.returnTo,
+            }
+          : {}),
       });
       if (created.requiresEmailConfirmation) {
-        toast.success('Account created. Check your email to confirm your account, then sign in.');
-        navigate('/worker/login', { replace: true });
+        toast.success(
+          partnerAssisted
+            ? 'Worker account created. They must confirm email, then sign in to continue the journey.'
+            : 'Account created. Check your email to confirm your account, then sign in.',
+        );
+        navigate(partnerAssisted ? (partnerCtx?.returnTo || '/partner/dashboard') : '/worker/login', {
+          replace: true,
+        });
         return;
       }
       // Persist flag BEFORE navigation so ProtectedRoute does not bounce to
       // /worker/bind-mobile (signup OTP already verified this number).
       // Pass userId — AuthContext user may not be set yet after signIn.
       markMobileVerified(created.mobile, created.userId);
+      await refreshRole();
       await refreshProfile();
       markMobileVerified(created.mobile, created.userId);
-      toast.success('Welcome to SafeWorkGlobal!');
+      toast.success(
+        partnerAssisted
+          ? 'Worker account created. Continue their onboarding journey.'
+          : 'Welcome to SafeWorkGlobal!',
+      );
       navigate('/worker/journey', { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
@@ -167,6 +232,30 @@ export default function QuickWorkerSignup() {
       setFormLoading(false);
     }
   };
+
+  if (partnerAssisted && (partnerCtxLoading || !partnerCtx)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/40">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (partnerAssisted && partnerCtx && !partnerCtx.allowed) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
+        <Card className="max-w-md p-8 text-center">
+          <ShieldCheck className="mx-auto mb-3 h-12 w-12 text-primary" />
+          <h1 className="mb-2 text-xl font-bold">Account not active</h1>
+          <p className="mb-6 text-sm text-muted-foreground">
+            This partner account cannot add workers
+            {partnerCtx.status ? ` (status: ${partnerCtx.status})` : ''}. Contact support if you need help.
+          </p>
+          <Button onClick={() => navigate(partnerCtx.returnTo)}>Back to partner portal</Button>
+        </Card>
+      </div>
+    );
+  }
 
   const handleResendOtp = async () => {
     setError('');
@@ -196,6 +285,16 @@ export default function QuickWorkerSignup() {
         <main className="relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:px-8 md:px-8 lg:px-12">
           <div className="mx-auto w-full max-w-[420px]">
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5 sm:p-7">
+              {partnerAssisted && (
+                <button
+                  type="button"
+                  data-inline
+                  onClick={() => navigate(partnerCtx?.returnTo || '/partner/dashboard')}
+                  className="mb-4 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  ← Back to partner dashboard
+                </button>
+              )}
               <div className="mb-5">
                 <div className="mb-3 flex items-center gap-2">
                   <span
@@ -209,11 +308,19 @@ export default function QuickWorkerSignup() {
                   </span>
                 </div>
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
-                  {step === 'form' ? 'Create your worker profile' : 'Verify your mobile'}
+                  {step === 'form'
+                    ? partnerAssisted
+                      ? 'Add worker — create their profile'
+                      : 'Create your worker profile'
+                    : partnerAssisted
+                      ? 'Verify the worker mobile'
+                      : 'Verify your mobile'}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {step === 'form'
-                    ? 'Takes about 2 minutes. We’ll SMS a code to confirm your number.'
+                    ? partnerAssisted
+                      ? 'Same independent worker signup: name, email, mobile OTP and password. Then continue their onboarding journey.'
+                      : 'Takes about 2 minutes. We’ll SMS a code to confirm your number.'
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>
               </div>
@@ -224,7 +331,7 @@ export default function QuickWorkerSignup() {
                 </Alert>
               )}
 
-              {step === 'form' && (
+              {step === 'form' && !partnerAssisted && (
                 <div className="mb-4 space-y-3">
                   <GoogleAuthButton label="Sign up with Google" role="worker" />
                   <div className="relative">
@@ -368,26 +475,30 @@ export default function QuickWorkerSignup() {
                     Send SMS code
                   </Button>
 
-                  <p className="pt-1 text-center text-sm text-muted-foreground">
-                    Already have an account?{' '}
-                    <Link to="/worker/login" className="font-medium text-primary hover:underline">
-                      Sign in
-                    </Link>
-                  </p>
+                  {!partnerAssisted && (
+                    <>
+                      <p className="pt-1 text-center text-sm text-muted-foreground">
+                        Already have an account?{' '}
+                        <Link to="/worker/login" className="font-medium text-primary hover:underline">
+                          Sign in
+                        </Link>
+                      </p>
 
-                  <div className="mt-4 border-t border-border pt-4">
-                    <p className="mb-2.5 text-center text-xs text-muted-foreground">
-                      Looking for a different portal?
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                        <Link to="/employer/login">Employer sign in</Link>
-                      </Button>
-                      <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                        <Link to="/partner/login">Partner sign in</Link>
-                      </Button>
-                    </div>
-                  </div>
+                      <div className="mt-4 border-t border-border pt-4">
+                        <p className="mb-2.5 text-center text-xs text-muted-foreground">
+                          Looking for a different portal?
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                            <Link to="/employer/login">Employer sign in</Link>
+                          </Button>
+                          <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                            <Link to="/partner/login">Partner sign in</Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </form>
               )}
 

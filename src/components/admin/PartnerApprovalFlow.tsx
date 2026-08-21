@@ -34,7 +34,8 @@ export default function PartnerApprovalFlow({ compact = false }: { compact?: boo
     <div className={cn('rounded-xl border border-border bg-muted/20', compact ? 'p-4' : 'p-5 md:p-6')}>
       <p className="text-sm font-semibold text-foreground mb-1">Partner approval workflow</p>
       <p className="text-xs text-muted-foreground mb-4">
-        Partners cannot register workers until an admin approves their application.
+        Partners can add workers while their application is under review. Rejected or suspended
+        accounts cannot.
       </p>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch lg:gap-2">
         {STEPS.map((step, index) => {

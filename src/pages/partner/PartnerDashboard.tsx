@@ -26,7 +26,7 @@ const partnerNavGroups: NavGroup[] = [
     label: "Workers",
     defaultOpen: true,
     items: [
-      { path: "/partner/dashboard", icon: UserPlus, label: "Register Worker" },
+      { path: "/partner/add-worker", icon: UserPlus, label: "Add Worker" },
       { path: "/partner/dashboard", icon: Users, label: "My Workers" },
     ],
   },
@@ -111,6 +111,13 @@ export default function PartnerDashboard() {
             <Link to="/partner/onboarding">View Application</Link>
           </Button>
         )}
+        {status !== "rejected" && status !== "suspended" && (
+          <Button asChild>
+            <Link to="/partner/add-worker">
+              <UserPlus className="h-4 w-4 mr-1" /> Add Worker
+            </Link>
+          </Button>
+        )}
       </div>
 
       {!operational && (
@@ -147,7 +154,7 @@ export default function PartnerDashboard() {
             <div className="text-center py-8 text-muted-foreground">
               <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm">No worker registrations yet</p>
-              <p className="text-xs mt-1">Worker registration will be available after approval.</p>
+              <p className="text-xs mt-1">Use Add Worker to register a candidate on the independent worker journey.</p>
             </div>
           </CardContent>
         </Card>
@@ -177,10 +184,14 @@ export default function PartnerDashboard() {
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader>
         <CardContent className="grid sm:grid-cols-2 gap-2">
-          <Button variant="outline" disabled className="justify-between h-11">
-            <span className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> Register New Worker</span>
-            <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
-          </Button>
+          {(status !== "rejected" && status !== "suspended") && (
+            <Button variant="outline" asChild className="justify-between h-11">
+              <Link to="/partner/add-worker">
+                <span className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> Add Worker</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          )}
           <Button variant="outline" asChild className="justify-between h-11">
             <Link to="/partner/onboarding">
               <span className="flex items-center gap-2"><FileEdit className="h-4 w-4" /> View My Application</span>
