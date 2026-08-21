@@ -86,7 +86,7 @@ export type Database = {
         Row: {
           angle: string | null
           assessment_id: string
-          captured_at: string | null
+          captured_at: string
           captured_by: string | null
           captured_by_name: string | null
           created_at: string
@@ -102,7 +102,7 @@ export type Database = {
         Insert: {
           angle?: string | null
           assessment_id: string
-          captured_at?: string | null
+          captured_at?: string
           captured_by?: string | null
           captured_by_name?: string | null
           created_at?: string
@@ -118,7 +118,7 @@ export type Database = {
         Update: {
           angle?: string | null
           assessment_id?: string
-          captured_at?: string | null
+          captured_at?: string
           captured_by?: string | null
           captured_by_name?: string | null
           created_at?: string
@@ -205,12 +205,12 @@ export type Database = {
           aadhaar_verified: boolean
           accepted_at: string | null
           appointment_date: string | null
-          assessor_name: string | null
-          attendance_confirmed: boolean
           arrival_photo_path: string | null
           arrival_photo_taken_at: string | null
           arrival_photo_taken_by: string | null
           arrival_photo_taken_by_name: string | null
+          assessor_name: string | null
+          attendance_confirmed: boolean
           centre_submitted_at: string | null
           created_at: string
           created_by: string | null
@@ -264,6 +264,10 @@ export type Database = {
           aadhaar_verified?: boolean
           accepted_at?: string | null
           appointment_date?: string | null
+          arrival_photo_path?: string | null
+          arrival_photo_taken_at?: string | null
+          arrival_photo_taken_by?: string | null
+          arrival_photo_taken_by_name?: string | null
           assessor_name?: string | null
           attendance_confirmed?: boolean
           centre_submitted_at?: string | null
@@ -272,11 +276,14 @@ export type Database = {
           docs_experience_ok?: boolean | null
           docs_notes?: string | null
           docs_passport_ok?: boolean | null
+          docs_pre_reviewed_at?: string | null
+          docs_pre_reviewed_by?: string | null
           employer_id?: string | null
           end_time?: string | null
           equipment?: Json
           face_match_confirmed?: boolean
           id?: string
+          identity_same_person?: boolean
           job_id?: string | null
           kyc_completed_at?: string | null
           kyc_photo_path?: string | null
@@ -285,6 +292,7 @@ export type Database = {
           media?: Json
           outcome?: string | null
           overall_score?: number | null
+          pan_verified?: boolean
           partner_id?: string | null
           quality_notes?: string | null
           quality_reviewed_at?: string | null
@@ -296,13 +304,18 @@ export type Database = {
           reported_at?: string | null
           reporting_window?: string | null
           scheduled_at?: string | null
+          scorecard_uploaded_at?: string | null
           scores?: Json
           start_time?: string | null
           status?: Database["public"]["Enums"]["assessment_status"]
+          test_evidence_completed_at?: string | null
           trade_id?: string | null
           trade_level?: string | null
           trade_test_center_id?: string | null
           updated_at?: string
+          video_kyc_log?: Json
+          video_kyc_operator_id?: string | null
+          video_kyc_operator_name?: string | null
           worker_id: string
           worker_verification_id?: string | null
         }
@@ -310,6 +323,10 @@ export type Database = {
           aadhaar_verified?: boolean
           accepted_at?: string | null
           appointment_date?: string | null
+          arrival_photo_path?: string | null
+          arrival_photo_taken_at?: string | null
+          arrival_photo_taken_by?: string | null
+          arrival_photo_taken_by_name?: string | null
           assessor_name?: string | null
           attendance_confirmed?: boolean
           centre_submitted_at?: string | null
@@ -318,11 +335,14 @@ export type Database = {
           docs_experience_ok?: boolean | null
           docs_notes?: string | null
           docs_passport_ok?: boolean | null
+          docs_pre_reviewed_at?: string | null
+          docs_pre_reviewed_by?: string | null
           employer_id?: string | null
           end_time?: string | null
           equipment?: Json
           face_match_confirmed?: boolean
           id?: string
+          identity_same_person?: boolean
           job_id?: string | null
           kyc_completed_at?: string | null
           kyc_photo_path?: string | null
@@ -331,6 +351,7 @@ export type Database = {
           media?: Json
           outcome?: string | null
           overall_score?: number | null
+          pan_verified?: boolean
           partner_id?: string | null
           quality_notes?: string | null
           quality_reviewed_at?: string | null
@@ -342,13 +363,18 @@ export type Database = {
           reported_at?: string | null
           reporting_window?: string | null
           scheduled_at?: string | null
+          scorecard_uploaded_at?: string | null
           scores?: Json
           start_time?: string | null
           status?: Database["public"]["Enums"]["assessment_status"]
+          test_evidence_completed_at?: string | null
           trade_id?: string | null
           trade_level?: string | null
           trade_test_center_id?: string | null
           updated_at?: string
+          video_kyc_log?: Json
+          video_kyc_operator_id?: string | null
+          video_kyc_operator_name?: string | null
           worker_id?: string
           worker_verification_id?: string | null
         }
@@ -431,13 +457,13 @@ export type Database = {
           created_at: string
           created_by: string | null
           file_url: string
+          guarantor_cheque_amount: number | null
           id: string
           instructions: string | null
           title: string
           updated_at: string
           version: string
           worker_cheque_amount: number | null
-          guarantor_cheque_amount: number | null
         }
         Insert: {
           active?: boolean
@@ -445,13 +471,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           file_url: string
+          guarantor_cheque_amount?: number | null
           id?: string
           instructions?: string | null
           title?: string
           updated_at?: string
           version: string
           worker_cheque_amount?: number | null
-          guarantor_cheque_amount?: number | null
         }
         Update: {
           active?: boolean
@@ -459,13 +485,13 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           file_url?: string
+          guarantor_cheque_amount?: number | null
           id?: string
           instructions?: string | null
           title?: string
           updated_at?: string
           version?: string
           worker_cheque_amount?: number | null
-          guarantor_cheque_amount?: number | null
         }
         Relationships: []
       }
@@ -782,6 +808,60 @@ export type Database = {
           },
         ]
       }
+      employer_manpower_requirements: {
+        Row: {
+          additional_requirements: string | null
+          created_at: string
+          employer_user_id: string
+          experience: string | null
+          gender: string
+          id: string
+          joining_date: string | null
+          location: string
+          number_of_workers: number
+          project_duration: string | null
+          project_name: string | null
+          sort_order: number
+          technical_skills: string[]
+          trade: string
+          updated_at: string
+        }
+        Insert: {
+          additional_requirements?: string | null
+          created_at?: string
+          employer_user_id: string
+          experience?: string | null
+          gender?: string
+          id?: string
+          joining_date?: string | null
+          location?: string
+          number_of_workers: number
+          project_duration?: string | null
+          project_name?: string | null
+          sort_order?: number
+          technical_skills?: string[]
+          trade: string
+          updated_at?: string
+        }
+        Update: {
+          additional_requirements?: string | null
+          created_at?: string
+          employer_user_id?: string
+          experience?: string | null
+          gender?: string
+          id?: string
+          joining_date?: string | null
+          location?: string
+          number_of_workers?: number
+          project_duration?: string | null
+          project_name?: string | null
+          sort_order?: number
+          technical_skills?: string[]
+          trade?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employer_org_members: {
         Row: {
           created_at: string
@@ -846,16 +926,28 @@ export type Database = {
       }
       employer_profiles: {
         Row: {
+          additional_contact_number: string | null
           billing_address: string | null
           bio: string | null
+          business_email: string | null
           business_type: string | null
           cin_number: string | null
+          commercial_notes: string | null
           company_logo_url: string | null
           company_name: string | null
+          company_profile_path: string | null
           company_registration: string | null
           company_size: string | null
+          company_type: string | null
+          contact_designation: string | null
+          contact_full_name: string | null
           country: string | null
           created_at: string | null
+          declaration_accurate: boolean
+          declaration_authorized: boolean
+          declaration_contact_ok: boolean
+          declaration_regulations: boolean
+          emirate: string | null
           employer_role: string | null
           expected_start_date: string | null
           follows_safety_standards: boolean | null
@@ -866,55 +958,55 @@ export type Database = {
           id_type: string | null
           industry: string | null
           job_type: string | null
+          linkedin_url: string | null
           office_address: string | null
           office_state: string | null
           onboarding_completed: boolean | null
-          additional_contact_number: string | null
-          business_email: string | null
-          commercial_notes: string | null
-          company_profile_path: string | null
-          company_type: string | null
-          contact_designation: string | null
-          contact_full_name: string | null
-          declaration_accurate: boolean
-          declaration_authorized: boolean
-          declaration_contact_ok: boolean
-          declaration_regulations: boolean
-          emirate: string | null
-          linkedin_url: string | null
           partnership_model: string | null
-          preferred_communication: string | null
-          requirement_reference_id: string | null
-          requirement_submitted_at: string | null
-          trade_licence_path: string | null
-          trade_name: string | null
-          uae_mobile: string | null
-          whatsapp_number: string | null
           payment_method_preference: string | null
+          preferred_communication: string | null
           preferred_countries: string[] | null
           provides_ppe: string | null
+          requirement_reference_id: string | null
+          requirement_submitted_at: string | null
           salary_amount: number | null
           salary_type: string | null
           site_safety_level: string | null
           tax_info_number: string | null
+          trade_licence_path: string | null
+          trade_name: string | null
+          uae_mobile: string | null
           updated_at: string | null
           user_id: string
           website: string | null
+          whatsapp_number: string | null
           work_locations: string[] | null
           worker_type_needed: string | null
           workers_required: number | null
         }
         Insert: {
+          additional_contact_number?: string | null
           billing_address?: string | null
           bio?: string | null
+          business_email?: string | null
           business_type?: string | null
           cin_number?: string | null
+          commercial_notes?: string | null
           company_logo_url?: string | null
           company_name?: string | null
+          company_profile_path?: string | null
           company_registration?: string | null
           company_size?: string | null
+          company_type?: string | null
+          contact_designation?: string | null
+          contact_full_name?: string | null
           country?: string | null
           created_at?: string | null
+          declaration_accurate?: boolean
+          declaration_authorized?: boolean
+          declaration_contact_ok?: boolean
+          declaration_regulations?: boolean
+          emirate?: string | null
           employer_role?: string | null
           expected_start_date?: string | null
           follows_safety_standards?: boolean | null
@@ -925,55 +1017,55 @@ export type Database = {
           id_type?: string | null
           industry?: string | null
           job_type?: string | null
+          linkedin_url?: string | null
           office_address?: string | null
           office_state?: string | null
           onboarding_completed?: boolean | null
-          additional_contact_number?: string | null
-          business_email?: string | null
-          commercial_notes?: string | null
-          company_profile_path?: string | null
-          company_type?: string | null
-          contact_designation?: string | null
-          contact_full_name?: string | null
-          declaration_accurate?: boolean
-          declaration_authorized?: boolean
-          declaration_contact_ok?: boolean
-          declaration_regulations?: boolean
-          emirate?: string | null
-          linkedin_url?: string | null
           partnership_model?: string | null
-          preferred_communication?: string | null
-          requirement_reference_id?: string | null
-          requirement_submitted_at?: string | null
-          trade_licence_path?: string | null
-          trade_name?: string | null
-          uae_mobile?: string | null
-          whatsapp_number?: string | null
           payment_method_preference?: string | null
+          preferred_communication?: string | null
           preferred_countries?: string[] | null
           provides_ppe?: string | null
+          requirement_reference_id?: string | null
+          requirement_submitted_at?: string | null
           salary_amount?: number | null
           salary_type?: string | null
           site_safety_level?: string | null
           tax_info_number?: string | null
+          trade_licence_path?: string | null
+          trade_name?: string | null
+          uae_mobile?: string | null
           updated_at?: string | null
           user_id: string
           website?: string | null
+          whatsapp_number?: string | null
           work_locations?: string[] | null
           worker_type_needed?: string | null
           workers_required?: number | null
         }
         Update: {
+          additional_contact_number?: string | null
           billing_address?: string | null
           bio?: string | null
+          business_email?: string | null
           business_type?: string | null
           cin_number?: string | null
+          commercial_notes?: string | null
           company_logo_url?: string | null
           company_name?: string | null
+          company_profile_path?: string | null
           company_registration?: string | null
           company_size?: string | null
+          company_type?: string | null
+          contact_designation?: string | null
+          contact_full_name?: string | null
           country?: string | null
           created_at?: string | null
+          declaration_accurate?: boolean
+          declaration_authorized?: boolean
+          declaration_contact_ok?: boolean
+          declaration_regulations?: boolean
+          emirate?: string | null
           employer_role?: string | null
           expected_start_date?: string | null
           follows_safety_standards?: boolean | null
@@ -984,97 +1076,31 @@ export type Database = {
           id_type?: string | null
           industry?: string | null
           job_type?: string | null
+          linkedin_url?: string | null
           office_address?: string | null
           office_state?: string | null
           onboarding_completed?: boolean | null
-          additional_contact_number?: string | null
-          business_email?: string | null
-          commercial_notes?: string | null
-          company_profile_path?: string | null
-          company_type?: string | null
-          contact_designation?: string | null
-          contact_full_name?: string | null
-          declaration_accurate?: boolean
-          declaration_authorized?: boolean
-          declaration_contact_ok?: boolean
-          declaration_regulations?: boolean
-          emirate?: string | null
-          linkedin_url?: string | null
           partnership_model?: string | null
-          preferred_communication?: string | null
-          requirement_reference_id?: string | null
-          requirement_submitted_at?: string | null
-          trade_licence_path?: string | null
-          trade_name?: string | null
-          uae_mobile?: string | null
-          whatsapp_number?: string | null
           payment_method_preference?: string | null
+          preferred_communication?: string | null
           preferred_countries?: string[] | null
           provides_ppe?: string | null
+          requirement_reference_id?: string | null
+          requirement_submitted_at?: string | null
           salary_amount?: number | null
           salary_type?: string | null
           site_safety_level?: string | null
           tax_info_number?: string | null
+          trade_licence_path?: string | null
+          trade_name?: string | null
+          uae_mobile?: string | null
           updated_at?: string | null
           user_id?: string
           website?: string | null
+          whatsapp_number?: string | null
           work_locations?: string[] | null
           worker_type_needed?: string | null
           workers_required?: number | null
-        }
-        Relationships: []
-      }
-      employer_manpower_requirements: {
-        Row: {
-          additional_requirements: string | null
-          created_at: string
-          employer_user_id: string
-          experience: string | null
-          gender: string
-          id: string
-          joining_date: string | null
-          location: string
-          number_of_workers: number
-          project_duration: string | null
-          project_name: string | null
-          sort_order: number
-          technical_skills: string[]
-          trade: string
-          updated_at: string
-        }
-        Insert: {
-          additional_requirements?: string | null
-          created_at?: string
-          employer_user_id: string
-          experience?: string | null
-          gender?: string
-          id?: string
-          joining_date?: string | null
-          location?: string
-          number_of_workers: number
-          project_duration?: string | null
-          project_name?: string | null
-          sort_order?: number
-          technical_skills?: string[]
-          trade: string
-          updated_at?: string
-        }
-        Update: {
-          additional_requirements?: string | null
-          created_at?: string
-          employer_user_id?: string
-          experience?: string | null
-          gender?: string
-          id?: string
-          joining_date?: string | null
-          location?: string
-          number_of_workers?: number
-          project_duration?: string | null
-          project_name?: string | null
-          sort_order?: number
-          technical_skills?: string[]
-          trade?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -3664,6 +3690,48 @@ export type Database = {
           },
         ]
       }
+      state_stamp_paper_values: {
+        Row: {
+          active: boolean
+          aliases: string[]
+          created_at: string
+          currency: string
+          id: string
+          minimum_stamp_value: number
+          name_hi: string | null
+          state_id: string
+          state_name: string
+          state_type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          aliases?: string[]
+          created_at?: string
+          currency?: string
+          id?: string
+          minimum_stamp_value: number
+          name_hi?: string | null
+          state_id: string
+          state_name: string
+          state_type: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          aliases?: string[]
+          created_at?: string
+          currency?: string
+          id?: string
+          minimum_stamp_value?: number
+          name_hi?: string | null
+          state_id?: string
+          state_name?: string
+          state_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trade_test_centers: {
         Row: {
           address: string | null
@@ -3997,6 +4065,209 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_bond_security: {
+        Row: {
+          applicable_stamp_value: number | null
+          approved_at: string | null
+          approved_by: string | null
+          authenticity_declared_at: string | null
+          bond_doc_status: string
+          bond_file_name: string | null
+          bond_file_path: string | null
+          bond_uploaded_at: string | null
+          confirmed_state: string | null
+          courier_company: string | null
+          courier_date: string | null
+          courier_receipt_name: string | null
+          courier_receipt_path: string | null
+          courier_status: string
+          created_at: string
+          guarantor_address: string | null
+          guarantor_bank_name: string | null
+          guarantor_cheque_amount: number | null
+          guarantor_cheque_date: string | null
+          guarantor_cheque_holder_name: string | null
+          guarantor_cheque_name: string | null
+          guarantor_cheque_number: string | null
+          guarantor_cheque_path: string | null
+          guarantor_declaration_accepted_at: string | null
+          guarantor_full_name: string | null
+          guarantor_mobile: string | null
+          guarantor_otp_verified: boolean
+          guarantor_otp_verified_at: string | null
+          guarantor_relationship: string | null
+          id: string
+          no_guarantee_declared_at: string | null
+          rejection_reason: string | null
+          stamp_currency: string
+          state_confirmed: boolean
+          state_confirmed_at: string | null
+          state_id: string | null
+          status: string
+          submitted_at: string | null
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+          version: number
+          worker_cheque_amount: number | null
+          worker_cheque_bank_name: string | null
+          worker_cheque_date: string | null
+          worker_cheque_holder_name: string | null
+          worker_cheque_name: string | null
+          worker_cheque_number: string | null
+          worker_cheque_path: string | null
+        }
+        Insert: {
+          applicable_stamp_value?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          authenticity_declared_at?: string | null
+          bond_doc_status?: string
+          bond_file_name?: string | null
+          bond_file_path?: string | null
+          bond_uploaded_at?: string | null
+          confirmed_state?: string | null
+          courier_company?: string | null
+          courier_date?: string | null
+          courier_receipt_name?: string | null
+          courier_receipt_path?: string | null
+          courier_status?: string
+          created_at?: string
+          guarantor_address?: string | null
+          guarantor_bank_name?: string | null
+          guarantor_cheque_amount?: number | null
+          guarantor_cheque_date?: string | null
+          guarantor_cheque_holder_name?: string | null
+          guarantor_cheque_name?: string | null
+          guarantor_cheque_number?: string | null
+          guarantor_cheque_path?: string | null
+          guarantor_declaration_accepted_at?: string | null
+          guarantor_full_name?: string | null
+          guarantor_mobile?: string | null
+          guarantor_otp_verified?: boolean
+          guarantor_otp_verified_at?: string | null
+          guarantor_relationship?: string | null
+          id?: string
+          no_guarantee_declared_at?: string | null
+          rejection_reason?: string | null
+          stamp_currency?: string
+          state_confirmed?: boolean
+          state_confirmed_at?: string | null
+          state_id?: string | null
+          status?: string
+          submitted_at?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+          user_id: string
+          version?: number
+          worker_cheque_amount?: number | null
+          worker_cheque_bank_name?: string | null
+          worker_cheque_date?: string | null
+          worker_cheque_holder_name?: string | null
+          worker_cheque_name?: string | null
+          worker_cheque_number?: string | null
+          worker_cheque_path?: string | null
+        }
+        Update: {
+          applicable_stamp_value?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          authenticity_declared_at?: string | null
+          bond_doc_status?: string
+          bond_file_name?: string | null
+          bond_file_path?: string | null
+          bond_uploaded_at?: string | null
+          confirmed_state?: string | null
+          courier_company?: string | null
+          courier_date?: string | null
+          courier_receipt_name?: string | null
+          courier_receipt_path?: string | null
+          courier_status?: string
+          created_at?: string
+          guarantor_address?: string | null
+          guarantor_bank_name?: string | null
+          guarantor_cheque_amount?: number | null
+          guarantor_cheque_date?: string | null
+          guarantor_cheque_holder_name?: string | null
+          guarantor_cheque_name?: string | null
+          guarantor_cheque_number?: string | null
+          guarantor_cheque_path?: string | null
+          guarantor_declaration_accepted_at?: string | null
+          guarantor_full_name?: string | null
+          guarantor_mobile?: string | null
+          guarantor_otp_verified?: boolean
+          guarantor_otp_verified_at?: string | null
+          guarantor_relationship?: string | null
+          id?: string
+          no_guarantee_declared_at?: string | null
+          rejection_reason?: string | null
+          stamp_currency?: string
+          state_confirmed?: boolean
+          state_confirmed_at?: string | null
+          state_id?: string | null
+          status?: string
+          submitted_at?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+          worker_cheque_amount?: number | null
+          worker_cheque_bank_name?: string | null
+          worker_cheque_date?: string | null
+          worker_cheque_holder_name?: string | null
+          worker_cheque_name?: string | null
+          worker_cheque_number?: string | null
+          worker_cheque_path?: string | null
+        }
+        Relationships: []
+      }
+      worker_bond_security_files: {
+        Row: {
+          deleted_at: string | null
+          file_name: string
+          file_size: number | null
+          id: string
+          kind: string
+          replaced_at: string | null
+          storage_path: string
+          submission_id: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string | null
+          file_name: string
+          file_size?: number | null
+          id?: string
+          kind: string
+          replaced_at?: string | null
+          storage_path: string
+          submission_id: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string | null
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          kind?: string
+          replaced_at?: string | null
+          storage_path?: string
+          submission_id?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_bond_security_files_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "worker_bond_security"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worker_bonds: {
         Row: {
           created_at: string
@@ -4127,6 +4398,42 @@ export type Database = {
           },
         ]
       }
+      worker_pre_journey_declarations: {
+        Row: {
+          acknowledgements: Json
+          completed_at: string
+          created_at: string
+          id: string
+          medical: Json
+          overseas: Json
+          recruitment: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acknowledgements?: Json
+          completed_at?: string
+          created_at?: string
+          id?: string
+          medical?: Json
+          overseas?: Json
+          recruitment?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acknowledgements?: Json
+          completed_at?: string
+          created_at?: string
+          id?: string
+          medical?: Json
+          overseas?: Json
+          recruitment?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       worker_profile_employer_info: {
         Row: {
           availability: string | null
@@ -4230,6 +4537,7 @@ export type Database = {
         Row: {
           aadhaar_last4: string | null
           aadhaar_number: string | null
+          added_by_org_id: string | null
           availability: string | null
           bio: string | null
           country: string | null
@@ -4280,6 +4588,7 @@ export type Database = {
         Insert: {
           aadhaar_last4?: string | null
           aadhaar_number?: string | null
+          added_by_org_id?: string | null
           availability?: string | null
           bio?: string | null
           country?: string | null
@@ -4330,6 +4639,7 @@ export type Database = {
         Update: {
           aadhaar_last4?: string | null
           aadhaar_number?: string | null
+          added_by_org_id?: string | null
           availability?: string | null
           bio?: string | null
           country?: string | null
@@ -4378,6 +4688,13 @@ export type Database = {
           years_of_experience?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "worker_profiles_added_by_org_id_fkey"
+            columns: ["added_by_org_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "worker_profiles_source_partner_id_fkey"
             columns: ["source_partner_id"]
@@ -4600,8 +4917,8 @@ export type Database = {
           bond_courier_tracking: string | null
           bond_couriered_at: string | null
           bond_received_at: string | null
-          bond_status: string | null
           bond_rejection_reason: string | null
+          bond_status: string | null
           bond_template_id: string | null
           city: string | null
           created_at: string
@@ -4625,8 +4942,8 @@ export type Database = {
           interview_scheduled_at: string | null
           interview_score: number | null
           interview_status: string
-          interviewer_user_id: string | null
           interviewer_name: string | null
+          interviewer_user_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -4673,6 +4990,7 @@ export type Database = {
           bond_courier_tracking?: string | null
           bond_couriered_at?: string | null
           bond_received_at?: string | null
+          bond_rejection_reason?: string | null
           bond_status?: string | null
           bond_template_id?: string | null
           city?: string | null
@@ -4697,8 +5015,8 @@ export type Database = {
           interview_scheduled_at?: string | null
           interview_score?: number | null
           interview_status?: string
-          interviewer_user_id?: string | null
           interviewer_name?: string | null
+          interviewer_user_id?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: string
           kyc_verified_at?: string | null
@@ -4745,6 +5063,7 @@ export type Database = {
           bond_courier_tracking?: string | null
           bond_couriered_at?: string | null
           bond_received_at?: string | null
+          bond_rejection_reason?: string | null
           bond_status?: string | null
           bond_template_id?: string | null
           city?: string | null
@@ -4769,8 +5088,8 @@ export type Database = {
           interview_scheduled_at?: string | null
           interview_score?: number | null
           interview_status?: string
-          interviewer_user_id?: string | null
           interviewer_name?: string | null
+          interviewer_user_id?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: string
           kyc_verified_at?: string | null
@@ -5026,6 +5345,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_review_bond_security: {
+        Args: { p_action: string; p_reason?: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_revoke_worker_assignment: {
         Args: { p_org: string; p_worker_user_id: string }
         Returns: undefined
@@ -5125,6 +5448,7 @@ export type Database = {
           bond_courier_tracking: string | null
           bond_couriered_at: string | null
           bond_received_at: string | null
+          bond_rejection_reason: string | null
           bond_status: string | null
           bond_template_id: string | null
           city: string | null
@@ -5149,8 +5473,8 @@ export type Database = {
           interview_scheduled_at: string | null
           interview_score: number | null
           interview_status: string
-          interviewer_user_id: string | null
           interviewer_name: string | null
+          interviewer_user_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5206,6 +5530,7 @@ export type Database = {
           bond_courier_tracking: string | null
           bond_couriered_at: string | null
           bond_received_at: string | null
+          bond_rejection_reason: string | null
           bond_status: string | null
           bond_template_id: string | null
           city: string | null
@@ -5230,8 +5555,8 @@ export type Database = {
           interview_scheduled_at: string | null
           interview_score: number | null
           interview_status: string
-          interviewer_user_id: string | null
           interviewer_name: string | null
+          interviewer_user_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5401,6 +5726,67 @@ export type Database = {
           worker_user_id: string
         }[]
       }
+      ensure_worker_bond_security: {
+        Args: { p_user_id: string }
+        Returns: {
+          applicable_stamp_value: number | null
+          approved_at: string | null
+          approved_by: string | null
+          authenticity_declared_at: string | null
+          bond_doc_status: string
+          bond_file_name: string | null
+          bond_file_path: string | null
+          bond_uploaded_at: string | null
+          confirmed_state: string | null
+          courier_company: string | null
+          courier_date: string | null
+          courier_receipt_name: string | null
+          courier_receipt_path: string | null
+          courier_status: string
+          created_at: string
+          guarantor_address: string | null
+          guarantor_bank_name: string | null
+          guarantor_cheque_amount: number | null
+          guarantor_cheque_date: string | null
+          guarantor_cheque_holder_name: string | null
+          guarantor_cheque_name: string | null
+          guarantor_cheque_number: string | null
+          guarantor_cheque_path: string | null
+          guarantor_declaration_accepted_at: string | null
+          guarantor_full_name: string | null
+          guarantor_mobile: string | null
+          guarantor_otp_verified: boolean
+          guarantor_otp_verified_at: string | null
+          guarantor_relationship: string | null
+          id: string
+          no_guarantee_declared_at: string | null
+          rejection_reason: string | null
+          stamp_currency: string
+          state_confirmed: boolean
+          state_confirmed_at: string | null
+          state_id: string | null
+          status: string
+          submitted_at: string | null
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+          version: number
+          worker_cheque_amount: number | null
+          worker_cheque_bank_name: string | null
+          worker_cheque_date: string | null
+          worker_cheque_holder_name: string | null
+          worker_cheque_name: string | null
+          worker_cheque_number: string | null
+          worker_cheque_path: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_bond_security"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      generate_employer_requirement_ref: { Args: never; Returns: string }
       generate_partner_code: { Args: never; Returns: string }
       get_employer_company_names: {
         Args: { p_employer_ids: string[] }
@@ -5527,6 +5913,17 @@ export type Database = {
           years_of_experience: number
         }[]
       }
+      lookup_stamp_paper: {
+        Args: { p_state: string }
+        Returns: {
+          currency: string
+          minimum_stamp_value: number
+          name_hi: string
+          state_id: string
+          state_name: string
+          state_type: string
+        }[]
+      }
       lsp_hmac_hex: {
         Args: { p_message: string; p_secret: string }
         Returns: string
@@ -5540,12 +5937,25 @@ export type Database = {
         }
         Returns: undefined
       }
+      partner_attach_registered_worker: {
+        Args: {
+          p_email?: string
+          p_full_name: string
+          p_mobile: string
+          p_worker_user_id: string
+        }
+        Returns: undefined
+      }
       partner_list_my_workers: {
         Args: never
         Returns: {
+          added_by_org_id: string
           created_at: string
           current_city: string
           current_location: string
+          email: string
+          full_name: string
+          phone: string
           primary_work_type: string
           review_notes: string
           review_rejection_reason: string
@@ -5554,6 +5964,10 @@ export type Database = {
           updated_at: string
           user_id: string
         }[]
+      }
+      partner_manages_worker: {
+        Args: { _worker_user_id: string }
+        Returns: boolean
       }
       resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
@@ -5584,6 +5998,7 @@ export type Database = {
           bond_courier_tracking: string | null
           bond_couriered_at: string | null
           bond_received_at: string | null
+          bond_rejection_reason: string | null
           bond_status: string | null
           bond_template_id: string | null
           city: string | null
@@ -5608,8 +6023,8 @@ export type Database = {
           interview_scheduled_at: string | null
           interview_score: number | null
           interview_status: string
-          interviewer_user_id: string | null
           interviewer_name: string | null
+          interviewer_user_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5665,6 +6080,7 @@ export type Database = {
           bond_courier_tracking: string | null
           bond_couriered_at: string | null
           bond_received_at: string | null
+          bond_rejection_reason: string | null
           bond_status: string | null
           bond_template_id: string | null
           city: string | null
@@ -5689,8 +6105,8 @@ export type Database = {
           interview_scheduled_at: string | null
           interview_score: number | null
           interview_status: string
-          interviewer_user_id: string | null
           interviewer_name: string | null
+          interviewer_user_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5739,13 +6155,259 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      worker_attach_bond_security_file: {
+        Args: {
+          p_file_name: string
+          p_file_size?: number
+          p_kind: string
+          p_path: string
+        }
+        Returns: {
+          applicable_stamp_value: number | null
+          approved_at: string | null
+          approved_by: string | null
+          authenticity_declared_at: string | null
+          bond_doc_status: string
+          bond_file_name: string | null
+          bond_file_path: string | null
+          bond_uploaded_at: string | null
+          confirmed_state: string | null
+          courier_company: string | null
+          courier_date: string | null
+          courier_receipt_name: string | null
+          courier_receipt_path: string | null
+          courier_status: string
+          created_at: string
+          guarantor_address: string | null
+          guarantor_bank_name: string | null
+          guarantor_cheque_amount: number | null
+          guarantor_cheque_date: string | null
+          guarantor_cheque_holder_name: string | null
+          guarantor_cheque_name: string | null
+          guarantor_cheque_number: string | null
+          guarantor_cheque_path: string | null
+          guarantor_declaration_accepted_at: string | null
+          guarantor_full_name: string | null
+          guarantor_mobile: string | null
+          guarantor_otp_verified: boolean
+          guarantor_otp_verified_at: string | null
+          guarantor_relationship: string | null
+          id: string
+          no_guarantee_declared_at: string | null
+          rejection_reason: string | null
+          stamp_currency: string
+          state_confirmed: boolean
+          state_confirmed_at: string | null
+          state_id: string | null
+          status: string
+          submitted_at: string | null
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+          version: number
+          worker_cheque_amount: number | null
+          worker_cheque_bank_name: string | null
+          worker_cheque_date: string | null
+          worker_cheque_holder_name: string | null
+          worker_cheque_name: string | null
+          worker_cheque_number: string | null
+          worker_cheque_path: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_bond_security"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       worker_can_apply_to_jobs: {
         Args: { p_user_id: string }
         Returns: boolean
       }
+      worker_confirm_guarantor_otp: {
+        Args: { p_mobile: string }
+        Returns: {
+          applicable_stamp_value: number | null
+          approved_at: string | null
+          approved_by: string | null
+          authenticity_declared_at: string | null
+          bond_doc_status: string
+          bond_file_name: string | null
+          bond_file_path: string | null
+          bond_uploaded_at: string | null
+          confirmed_state: string | null
+          courier_company: string | null
+          courier_date: string | null
+          courier_receipt_name: string | null
+          courier_receipt_path: string | null
+          courier_status: string
+          created_at: string
+          guarantor_address: string | null
+          guarantor_bank_name: string | null
+          guarantor_cheque_amount: number | null
+          guarantor_cheque_date: string | null
+          guarantor_cheque_holder_name: string | null
+          guarantor_cheque_name: string | null
+          guarantor_cheque_number: string | null
+          guarantor_cheque_path: string | null
+          guarantor_declaration_accepted_at: string | null
+          guarantor_full_name: string | null
+          guarantor_mobile: string | null
+          guarantor_otp_verified: boolean
+          guarantor_otp_verified_at: string | null
+          guarantor_relationship: string | null
+          id: string
+          no_guarantee_declared_at: string | null
+          rejection_reason: string | null
+          stamp_currency: string
+          state_confirmed: boolean
+          state_confirmed_at: string | null
+          state_id: string | null
+          status: string
+          submitted_at: string | null
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+          version: number
+          worker_cheque_amount: number | null
+          worker_cheque_bank_name: string | null
+          worker_cheque_date: string | null
+          worker_cheque_holder_name: string | null
+          worker_cheque_name: string | null
+          worker_cheque_number: string | null
+          worker_cheque_path: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_bond_security"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      worker_on_bond_stage: { Args: { p_user_id: string }; Returns: boolean }
+      worker_submit_bond_security: {
+        Args: never
+        Returns: {
+          applicable_stamp_value: number | null
+          approved_at: string | null
+          approved_by: string | null
+          authenticity_declared_at: string | null
+          bond_doc_status: string
+          bond_file_name: string | null
+          bond_file_path: string | null
+          bond_uploaded_at: string | null
+          confirmed_state: string | null
+          courier_company: string | null
+          courier_date: string | null
+          courier_receipt_name: string | null
+          courier_receipt_path: string | null
+          courier_status: string
+          created_at: string
+          guarantor_address: string | null
+          guarantor_bank_name: string | null
+          guarantor_cheque_amount: number | null
+          guarantor_cheque_date: string | null
+          guarantor_cheque_holder_name: string | null
+          guarantor_cheque_name: string | null
+          guarantor_cheque_number: string | null
+          guarantor_cheque_path: string | null
+          guarantor_declaration_accepted_at: string | null
+          guarantor_full_name: string | null
+          guarantor_mobile: string | null
+          guarantor_otp_verified: boolean
+          guarantor_otp_verified_at: string | null
+          guarantor_relationship: string | null
+          id: string
+          no_guarantee_declared_at: string | null
+          rejection_reason: string | null
+          stamp_currency: string
+          state_confirmed: boolean
+          state_confirmed_at: string | null
+          state_id: string | null
+          status: string
+          submitted_at: string | null
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+          version: number
+          worker_cheque_amount: number | null
+          worker_cheque_bank_name: string | null
+          worker_cheque_date: string | null
+          worker_cheque_holder_name: string | null
+          worker_cheque_name: string | null
+          worker_cheque_number: string | null
+          worker_cheque_path: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_bond_security"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       worker_submit_bond_tracking: {
         Args: { p_tracking: string }
         Returns: undefined
+      }
+      worker_upsert_bond_security: {
+        Args: { p_payload: Json }
+        Returns: {
+          applicable_stamp_value: number | null
+          approved_at: string | null
+          approved_by: string | null
+          authenticity_declared_at: string | null
+          bond_doc_status: string
+          bond_file_name: string | null
+          bond_file_path: string | null
+          bond_uploaded_at: string | null
+          confirmed_state: string | null
+          courier_company: string | null
+          courier_date: string | null
+          courier_receipt_name: string | null
+          courier_receipt_path: string | null
+          courier_status: string
+          created_at: string
+          guarantor_address: string | null
+          guarantor_bank_name: string | null
+          guarantor_cheque_amount: number | null
+          guarantor_cheque_date: string | null
+          guarantor_cheque_holder_name: string | null
+          guarantor_cheque_name: string | null
+          guarantor_cheque_number: string | null
+          guarantor_cheque_path: string | null
+          guarantor_declaration_accepted_at: string | null
+          guarantor_full_name: string | null
+          guarantor_mobile: string | null
+          guarantor_otp_verified: boolean
+          guarantor_otp_verified_at: string | null
+          guarantor_relationship: string | null
+          id: string
+          no_guarantee_declared_at: string | null
+          rejection_reason: string | null
+          stamp_currency: string
+          state_confirmed: boolean
+          state_confirmed_at: string | null
+          state_id: string | null
+          status: string
+          submitted_at: string | null
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+          version: number
+          worker_cheque_amount: number | null
+          worker_cheque_bank_name: string | null
+          worker_cheque_date: string | null
+          worker_cheque_holder_name: string | null
+          worker_cheque_name: string | null
+          worker_cheque_number: string | null
+          worker_cheque_path: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_bond_security"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {

@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { Loader2, UserPlus, Users } from 'lucide-react';
 import ApprovedPartnerGate, { useApprovedPartner } from '../components/ApprovedPartnerGate';
 import { partnerWorkerJourneyPath } from '@/modules/partner/lib/partnerAssistedWorker';
+import { emitraNavGroups, emitraProfileMenu } from '../config/emitraNav';
 
 type WorkerRow = {
   user_id: string; primary_work_type: string | null; current_location: string | null;

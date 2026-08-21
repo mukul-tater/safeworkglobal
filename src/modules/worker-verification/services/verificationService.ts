@@ -778,7 +778,6 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
       razorpay_signature: checkout.razorpay_signature,
       ...(opts?.workerUserId ? { worker_user_id: opts.workerUserId } : {}),
     });
-    });
     clearPendingCheckout();
     return normalized(verifyData.verification || (await currentVerification()));
   } catch (verifyError) {
