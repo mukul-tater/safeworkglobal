@@ -90,9 +90,9 @@ import PassportRequirementInfo from '@/components/worker/PassportRequirementInfo
 import { todayDateInputValue } from '@/lib/validations/common';
 import {
   isValidPassportNumber,
-  minPassportExpiryDate,
   normalizePassportNumber,
   passportExpiryIssue,
+  passportMinValidityHintEn,
   toDateInputValueFromIso,
 } from '@/lib/validations/passport';
 
@@ -1673,13 +1673,7 @@ export default function WorkerVerificationPage({
                       disabled={saving}
                     />
                     <p className="text-[11px] text-muted-foreground">
-                      Must not be expired, and must stay valid until at least{' '}
-                      {minPassportExpiryDate().toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}{' '}
-                      (6 months from today).
+                      {passportMinValidityHintEn()}
                     </p>
                     {passportExpiry && passportExpiryIssue(passportExpiry) ? (
                       <p className="text-[11px] text-destructive">{passportExpiryIssue(passportExpiry)}</p>

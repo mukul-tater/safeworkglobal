@@ -28,6 +28,23 @@ export function minPassportExpiryDate(from = new Date()): Date {
   return addCalendarMonths(from, PASSPORT_MIN_VALIDITY_MONTHS);
 }
 
+export function formatMinPassportExpiryDate(from = new Date()): string {
+  return minPassportExpiryDate(from).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+/** Same helper shown on Identity (KYC) and the passport info popup. */
+export function passportMinValidityHintEn(from = new Date()): string {
+  return `Must not be expired, and must stay valid until at least ${formatMinPassportExpiryDate(from)} (6 months from today).`;
+}
+
+export function passportMinValidityHintHi(from = new Date()): string {
+  return `समाप्त नहीं होना चाहिए, और कम से कम ${formatMinPassportExpiryDate(from)} तक वैध रहना चाहिए (आज से 6 महीने)।`;
+}
+
 export function toDateInputValue(date: Date): string {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
