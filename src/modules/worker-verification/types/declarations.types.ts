@@ -126,9 +126,9 @@ export const ORIGINAL_DOCS_READY_NOTICE = {
   titleEn: 'Keep your original documents with you',
   titleHi: 'अपने मूल दस्तावेज़ अपने पास रखें',
   bodyEn:
-    'Before you start the worker journey and continue filling this form, keep your original PAN card, Aadhaar card, and passport with you and available.',
+    'Before you start the worker journey, keep your original PAN card, Aadhaar card, and passport with you. We only ask for a Class 10 marksheet later if you confirm that you passed 10th.',
   bodyHi:
-    'वर्कर जर्नी शुरू करने और यह फॉर्म भरना जारी रखने से पहले, अपना मूल पैन कार्ड, आधार कार्ड और पासपोर्ट अपने पास तैयार रखें।',
+    'वर्कर जर्नी शुरू करने से पहले अपना मूल पैन कार्ड, आधार कार्ड और पासपोर्ट अपने पास रखें। 10वीं मार्कशीट केवल तभी माँगी जाएगी जब आप 10वीं पास होने की पुष्टि करेंगे।',
   items: [
     { en: 'Original PAN card', hi: 'मूल पैन कार्ड' },
     { en: 'Original Aadhaar card', hi: 'मूल आधार कार्ड' },

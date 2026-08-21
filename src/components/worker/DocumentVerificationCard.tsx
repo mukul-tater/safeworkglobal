@@ -14,9 +14,14 @@ interface Document {
 
 interface DocumentVerificationCardProps {
   documents: Document[];
+  /** Class 10 marksheet is required only when the worker passed 10th. */
+  tenthPass?: boolean | null;
 }
 
-export default function DocumentVerificationCard({ documents }: DocumentVerificationCardProps) {
+export default function DocumentVerificationCard({
+  documents,
+  tenthPass = null,
+}: DocumentVerificationCardProps) {
   const navigate = useNavigate();
 
   const getStatusIcon = (status: string) => {
@@ -47,10 +52,10 @@ export default function DocumentVerificationCard({ documents }: DocumentVerifica
 
   const requiredDocuments = [
     'Passport',
-    'Educational Certificate',
+    ...(tenthPass === true ? ['Educational Certificate'] : []),
     'Experience Letter',
     'Police Clearance Certificate',
-    'Medical Certificate'
+    'Medical Certificate',
   ];
 
   const documentMap = new Map(documents.map(doc => [doc.document_type, doc]));

@@ -104,6 +104,8 @@ const KYC_DOC_TYPES = [
   'passport',
   'passport_front',
   'passport_last',
+  'tenth_marksheet',
+  'certificate',
   'id_proof',
 ];
 
@@ -117,6 +119,7 @@ function kycTypeFallbacks(docType: string): string[] {
   if (docType === 'aadhaar_back') return ['aadhaar_back', 'aadhaar', 'id_proof'];
   if (docType === 'passport_front') return ['passport_front', 'passport', 'id_proof'];
   if (docType === 'passport_last') return ['passport_last', 'passport', 'id_proof'];
+  if (docType === 'tenth_marksheet') return ['tenth_marksheet', 'certificate'];
   if (docType === 'aadhaar' || docType === 'passport') return [docType, 'id_proof'];
   return [docType];
 }
@@ -328,6 +331,7 @@ export default function WorkerVerificationPage({
   const [aadhaarBackFile, setAadhaarBackFile] = useState<File | null>(null);
   const [passportFrontFile, setPassportFrontFile] = useState<File | null>(null);
   const [passportLastFile, setPassportLastFile] = useState<File | null>(null);
+  const [tenthMarksheetFile, setTenthMarksheetFile] = useState<File | null>(null);
   const [kycConsent, setKycConsent] = useState(false);
   const [forceIdentity, setForceIdentity] = useState(false);
   const [kycDone, setKycDone] = useState(false);
@@ -561,6 +565,7 @@ export default function WorkerVerificationPage({
     kycDone && recoveredFromQuiz === 'identity' ? 'awaiting_interview' : recoveredFromQuiz;
   const stage: VerificationStage = forceIdentity ? 'identity' : effectiveRaw;
   const tradeNeeded = row?.trade_test_required ?? skillRequiresTradeTest(row?.primary_skill);
+  const needsTenthMarksheet = tenthPass === true;
   const navId = navStepForStage(stage);
   const heroSubheading = HERO_SUBHEADINGS[phaseForStage(stage)];
 
@@ -626,6 +631,14 @@ export default function WorkerVerificationPage({
       toast.error('Upload passport first page and last page photos');
       return;
     }
+    if (
+      needsTenthMarksheet &&
+      !tenthMarksheetFile &&
+      !hasKycDoc(kycDocs, ['tenth_marksheet', 'certificate'])
+    ) {
+      toast.error('Upload the Class 10 marksheet photo');
+      return;
+    }
     if (!kycConsent) {
       toast.error('Please accept the KYC consent');
       return;
@@ -686,6 +699,9 @@ export default function WorkerVerificationPage({
       if (aadhaarBackFile) await uploadDoc(aadhaarBackFile, 'aadhaar_back', 'Aadhaar Card Back');
       if (passportFrontFile) await uploadDoc(passportFrontFile, 'passport_front', 'Passport First Page');
       if (passportLastFile) await uploadDoc(passportLastFile, 'passport_last', 'Passport Last Page');
+      if (needsTenthMarksheet && tenthMarksheetFile) {
+        await uploadDoc(tenthMarksheetFile, 'tenth_marksheet', 'Class 10 Marksheet');
+      }
 
       const next = await completeIdentityKyc(subjectId, {
         panNumber: pan,
@@ -700,6 +716,7 @@ export default function WorkerVerificationPage({
       setAadhaarBackFile(null);
       setPassportFrontFile(null);
       setPassportLastFile(null);
+      setTenthMarksheetFile(null);
       notifyVerificationUpdated();
       toast.success('Identity submitted — SafeWork will verify your documents before the video interview');
       await load();
@@ -1478,13 +1495,19 @@ export default function WorkerVerificationPage({
           <StageWaitingShell
             icon={ShieldCheck}
             title="We're verifying your identity"
-            body="Your PAN, Aadhaar and passport are submitted. SafeWork reviews them before scheduling your video interview."
+            body={
+              needsTenthMarksheet
+                ? 'Your PAN, Aadhaar, passport and Class 10 marksheet are submitted. SafeWork reviews them before scheduling your video interview.'
+                : 'Your PAN, Aadhaar and passport are submitted. SafeWork reviews them before scheduling your video interview.'
+            }
             expected="Usually within a few hours"
             notifyNote="You'll get an SMS and an app notification the moment verification is done — no need to keep this page open."
             timeline={[
               {
                 label: 'Identity documents submitted',
-                detail: 'PAN, Aadhaar & Passport uploaded',
+                detail: needsTenthMarksheet
+                  ? 'PAN, Aadhaar, Passport & Class 10 marksheet uploaded'
+                  : 'PAN, Aadhaar & Passport uploaded',
                 status: 'done',
               },
               { label: 'SafeWork verifying your documents', status: 'current' },
@@ -1516,7 +1539,11 @@ export default function WorkerVerificationPage({
           <StageActionShell
             icon={ShieldCheck}
             title="Identity (KYC)"
-            description="Required before applying to jobs. Upload PAN, Aadhaar, and a passport that is valid for at least 6 months. SafeWork verifies these before your video interview is scheduled."
+            description={
+              needsTenthMarksheet
+                ? 'Required before applying to jobs. Upload PAN, Aadhaar, a passport valid for at least 6 months, and your Class 10 marksheet. SafeWork verifies these before your video interview is scheduled.'
+                : 'Required before applying to jobs. Upload PAN, Aadhaar, and a passport that is valid for at least 6 months. SafeWork verifies these before your video interview is scheduled.'
+            }
             timeEstimate="Takes 5–7 minutes"
             footer={
               <Button type="button" onClick={() => void onSubmitIdentity()} disabled={saving}>
@@ -1679,6 +1706,21 @@ export default function WorkerVerificationPage({
                   Upload a clear photo of the first page (photo + expiry) and the last page of your passport.
                 </p>
               </div>
+              {needsTenthMarksheet && (
+                <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
+                  <p className="text-sm font-medium text-foreground">Class 10 marksheet *</p>
+                  <KycPhotoField
+                    label="10th marksheet photo"
+                    required
+                    file={tenthMarksheetFile}
+                    disabled={saving}
+                    onChange={setTenthMarksheetFile}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Required because you confirmed Class 10 pass (ECNR). A clear photo of the original marksheet is enough.
+                  </p>
+                </div>
+              )}
               <label className="flex items-start gap-2 text-xs cursor-pointer">
                 <input
                   type="checkbox"
