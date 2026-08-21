@@ -85,7 +85,7 @@ export default function EmitraLoginPage() {
     const access = await ensureEmitraPartnerAccess();
     if (!access.ok) {
       await supabase.auth.signOut();
-      setError(access.error);
+      setError((access as { error?: string }).error || 'Access denied');
       setLoading(false);
       return;
     }
