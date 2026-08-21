@@ -15,11 +15,10 @@ import ComplianceGate from '../components/ComplianceGate';
 import PartnerTierBadge from '../components/PartnerTierBadge';
 import {
   getPartnerProfile, getDashboardStats, getPartnerActivities,
-  getPartnerIncentives, getLeaderboardRank, isPartnerOperational,
+  getLeaderboardRank, isPartnerOperational,
   isComplianceAcknowledged,
 } from '../services/emitraService';
-import type { PartnerActivity, PartnerIncentive, PartnerProfile } from '../types/emitra.types';
-import { INCENTIVE_AMOUNTS } from '../config/constants';
+import type { PartnerActivity, PartnerProfile } from '../types/emitra.types';
 
 export default function EmitraDashboardPage() {
   const { profile, user } = useAuth();
@@ -40,7 +39,6 @@ export default function EmitraDashboardPage() {
     incentivesEarned: 0,
   });
   const [activities, setActivities] = useState<PartnerActivity[]>([]);
-  const [incentives, setIncentives] = useState<PartnerIncentive[]>([]);
   const [rank, setRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,15 +51,13 @@ export default function EmitraDashboardPage() {
       return;
     }
     if (p && await isPartnerOperational(p)) {
-      const [s, a, i, r] = await Promise.all([
+      const [s, a, r] = await Promise.all([
         getDashboardStats(p.id),
         getPartnerActivities(p.id),
-        getPartnerIncentives(p.id),
         getLeaderboardRank(p.id),
       ]);
       setStats(s);
       setActivities(a);
-      setIncentives(i);
       setRank(r);
     }
     setLoading(false);
@@ -199,48 +195,29 @@ export default function EmitraDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-lg">Incentive Breakdown</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Verified worker</span><span>₹{INCENTIVE_AMOUNTS.verified}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Interview qualified</span><span>₹{INCENTIVE_AMOUNTS.interview_qualified}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Successful placement</span><span>₹{INCENTIVE_AMOUNTS.placement}</span></div>
-            <div className="flex justify-between border-t pt-2 font-semibold">
-              <span>Total Earned</span><span>₹{stats.earnings}</span>
-            </div>
-            {incentives.slice(0, 3).map((inc) => (
-              <div key={inc.id} className="text-xs text-muted-foreground flex justify-between">
-                <span>{inc.description}</span><span>+₹{inc.amount}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader>
-          <CardContent className="grid gap-2">
-            <Button variant="outline" asChild className="justify-between h-11">
-              <Link to="/partner/add-worker">
-                <span className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> Add Worker</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="justify-between h-11">
-              <Link to="/emitra/workers">
-                <span className="flex items-center gap-2"><Users className="h-4 w-4" /> Manage Workers</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="outline" asChild className="justify-between h-11">
-              <Link to="/emitra/notifications">
-                <span>View Notifications</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="md:max-w-lg">
+        <CardHeader className="pb-2"><CardTitle className="text-lg">Quick Actions</CardTitle></CardHeader>
+        <CardContent className="grid gap-2">
+          <Button variant="outline" asChild className="justify-between h-11">
+            <Link to="/partner/add-worker">
+              <span className="flex items-center gap-2"><UserPlus className="h-4 w-4" /> Add Worker</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button variant="outline" asChild className="justify-between h-11">
+            <Link to="/emitra/workers">
+              <span className="flex items-center gap-2"><Users className="h-4 w-4" /> Manage Workers</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button variant="outline" asChild className="justify-between h-11">
+            <Link to="/emitra/notifications">
+              <span>View Notifications</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
     </DashboardLayout>
   );
 }
