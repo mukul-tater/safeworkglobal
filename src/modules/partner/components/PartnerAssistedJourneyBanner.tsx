@@ -6,11 +6,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  CREATED_BY_PARTNER_LABEL,
   hasParkedPartnerSession,
   restoreParkedPartnerSession,
 } from "../lib/partnerAssistedWorker";
 
-/** Shown on the worker journey while a partner is registering that worker. */
+/** Shown on the worker GCC journey while a partner is registering that worker. */
 export default function PartnerAssistedJourneyBanner() {
   const { refreshProfile, refreshRole } = useAuth();
   const navigate = useNavigate();
@@ -38,11 +39,11 @@ export default function PartnerAssistedJourneyBanner() {
   return (
     <Alert className="mb-4 border-primary/30 bg-primary/5">
       <Store className="h-4 w-4" />
-      <AlertTitle>Partner-assisted worker registration</AlertTitle>
+      <AlertTitle>{CREATED_BY_PARTNER_LABEL}</AlertTitle>
       <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <span>
-          You are completing the same onboarding journey as an independent worker. When finished,
-          return to your partner dashboard.
+          This worker is completing the full GCC onboarding journey. They already appear in My
+          Workers. Return to your partner portal when you are done.
         </span>
         <Button
           type="button"
@@ -53,7 +54,7 @@ export default function PartnerAssistedJourneyBanner() {
           onClick={handleReturn}
         >
           {busy && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
-          Back to partner portal
+          Back to My Workers
         </Button>
       </AlertDescription>
     </Alert>

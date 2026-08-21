@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { PARTNER_ADD_WORKER_PATH } from "../lib/partnerAssistedWorker";
+import { PARTNER_ADD_WORKER_PATH, CREATED_BY_PARTNER_LABEL } from "../lib/partnerAssistedWorker";
 
 type WorkerRow = {
   user_id: string;
@@ -53,7 +53,8 @@ export default function PartnerMyWorkersPage() {
         <div>
           <h1 className="text-2xl font-bold">My Workers</h1>
           <p className="text-sm text-muted-foreground">
-            Workers you registered. They can sign in with the mobile number and password you set.
+            Workers you registered on the GCC journey. Open Add Worker to onboard the next candidate
+            the same way an independent worker starts.
           </p>
         </div>
         <Button asChild>
@@ -73,6 +74,10 @@ export default function PartnerMyWorkersPage() {
         <Card className="p-12 text-center">
           <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p className="text-muted-foreground">No workers added yet.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Add a worker to start their full GCC onboarding. They will show here as created by
+            partner.
+          </p>
           <Button asChild className="mt-4">
             <Link to={PARTNER_ADD_WORKER_PATH}>Add Worker</Link>
           </Button>
@@ -85,6 +90,7 @@ export default function PartnerMyWorkersPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-semibold">{w.full_name || "Worker"}</h3>
+                    <Badge variant="secondary">{CREATED_BY_PARTNER_LABEL}</Badge>
                     {w.review_status && w.review_status !== "not_required" && (
                       <Badge variant="outline">{w.review_status.replace(/_/g, " ")}</Badge>
                     )}

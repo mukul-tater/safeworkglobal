@@ -301,20 +301,28 @@ export async function createVerifiedWorkerAccount(
     };
 
     if (input.preserveCallerSession && switchedAwayFromCaller) {
-      if (input.restoreCallerAfterSuccess === false && callerSession) {
-        parkPartnerSession({
-          ...callerSession,
-          returnTo: input.partnerReturnTo || '/partner/dashboard',
-        });
-      }
-      await supabase.auth.signOut();
+      const stayAsWorker = input.restoreCallerAfterSuccess === false;
+      const partnerReturnTo = input.partnerReturnTo || '/partner/my-workers';
+
+      const { data: workerSess } = await supabase.auth.getSession();
+      const workerTokens =
+        workerSess.session?.access_token && workerSess.session.refresh_token
+          ? {
+              access_token: workerSess.session.access_token,
+              refresh_token: workerSess.session.refresh_token,
+            }
+          : null;
+
       if (!callerSession) {
         throw new Error(
           'Worker was created, but partner session was lost. Please sign in again as partner.',
         );
       }
-      const { error } = await supabase.auth.setSession(callerSession);
-      if (error) {
+
+      // Attach requires the partner role. Switch back, stamp attribution, then
+      // either stay as partner or resume the new worker for the GCC journey.
+      const { error: partnerErr } = await supabase.auth.setSession(callerSession);
+      if (partnerErr) {
         throw new Error(
           'Worker was created, but partner session could not be restored. Please sign in again.',
         );
@@ -325,6 +333,24 @@ export async function createVerifiedWorkerAccount(
         mobile: digits,
         email: authEmail,
       });
+
+      if (stayAsWorker) {
+        parkPartnerSession({
+          ...callerSession,
+          returnTo: partnerReturnTo,
+        });
+        if (!workerTokens) {
+          throw new Error(
+            'Worker was created and listed. Sign in as the worker to continue the GCC journey.',
+          );
+        }
+        const { error: workerErr } = await supabase.auth.setSession(workerTokens);
+        if (workerErr) {
+          throw new Error(
+            'Worker was created and listed. Sign in as the worker to continue the GCC journey.',
+          );
+        }
+      }
       switchedAwayFromCaller = false;
     }
 

@@ -95,7 +95,9 @@ function Inner() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="text-2xl font-bold">My Workers</h1>
-          <p className="text-sm text-muted-foreground">Workers you onboarded through eMitra</p>
+          <p className="text-sm text-muted-foreground">
+            Workers you onboarded through eMitra on the GCC journey
+          </p>
         </div>
         <Button asChild><Link to="/partner/add-worker"><UserPlus className="h-4 w-4 mr-1" /> Add Worker</Link></Button>
       </div>
@@ -123,6 +125,7 @@ function Inner() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-semibold">{w.profile?.full_name || w.full_name || 'Worker'}</h3>
+                    <Badge variant="secondary">Created by partner</Badge>
                     {reviewBadge(w.review_status)}
                     {w.hired && <Badge variant="default">Placed</Badge>}
                     {w.reward && <Badge variant="secondary">₹{Number(w.reward.amount).toLocaleString('en-IN')} {w.reward.status}</Badge>}

@@ -154,7 +154,7 @@ export default function PartnerDashboard() {
             <div className="text-center py-8 text-muted-foreground">
               <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm">No worker registrations yet</p>
-              <p className="text-xs mt-1">Use Add Worker to register a candidate on the independent worker journey.</p>
+              <p className="text-xs mt-1">Use Add Worker to start a candidate on the full GCC worker journey. They will show in My Workers as created by partner.</p>
             </div>
           </CardContent>
         </Card>

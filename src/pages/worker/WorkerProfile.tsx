@@ -61,6 +61,7 @@ export default function WorkerProfile() {
   const [registeredCity, setRegisteredCity] = useState<string>("");
   const [contactEmail, setContactEmail] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
+  const [partnerSetPassword, setPartnerSetPassword] = useState(false);
 
   const googleEmail = getGoogleEmailFromUser(user);
   const displayEmail =
@@ -135,6 +136,13 @@ export default function WorkerProfile() {
           .maybeSingle();
 
         if (error) throw error;
+
+        const sourceType = String(workerProfile?.source_type || '');
+        setPartnerSetPassword(
+          sourceType === 'emitra' ||
+            sourceType === 'partner' ||
+            !!workerProfile?.source_partner_id,
+        );
 
         const { data: verification } = await supabase
           .from('worker_verification')
@@ -639,7 +647,7 @@ export default function WorkerProfile() {
       </form>
 
       <div className="mt-10 pt-8 border-t border-border/60">
-        <ChangePasswordCard />
+        <ChangePasswordCard partnerSetPassword={partnerSetPassword} />
       </div>
     </div>,
   );

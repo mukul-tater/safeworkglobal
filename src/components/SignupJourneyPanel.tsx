@@ -108,16 +108,26 @@ export default function SignupJourneyPanel({
   variant = 'signup',
   audience = 'worker',
   activeStep = 0,
+  createdByPartner = false,
 }: {
   variant?: Variant;
   audience?: Audience;
   /** 0-based step to highlight in the journey list. */
   activeStep?: number;
+  /** Partner is creating this worker — same GCC journey, attributed to the partner. */
+  createdByPartner?: boolean;
 }) {
   const copy = COPY[audience][variant];
-  const BadgeIcon = copy.BadgeIcon;
+  const BadgeIcon = createdByPartner ? Handshake : copy.BadgeIcon;
   const trust = TRUST[audience];
-  const mobileBadge = MOBILE_BADGE[audience];
+  const mobileBadge = createdByPartner ? 'Partner' : MOBILE_BADGE[audience];
+  const badgeLabel = createdByPartner ? 'Created by partner' : copy.badge;
+  const headline = createdByPartner
+    ? 'Onboard this worker on the GCC journey'
+    : copy.headline;
+  const body = createdByPartner
+    ? 'Create their profile, then complete the same GCC verification journey as an independent worker. They will appear in your My Workers list.'
+    : copy.body;
 
   return (
     <aside className="relative flex shrink-0 flex-col overflow-hidden bg-[hsl(230_25%_10%)] text-white md:h-full md:w-[44%] lg:w-[46%]">
@@ -144,7 +154,7 @@ export default function SignupJourneyPanel({
           </span>
         </div>
         <div className="px-4 pb-3 pt-3">
-          <p className="font-heading text-base font-bold leading-snug">{copy.headline}</p>
+          <p className="font-heading text-base font-bold leading-snug">{headline}</p>
           <div className={`mt-3 grid gap-1.5 ${copy.steps.length >= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
             {copy.steps.map((step, i) => (
               <div
@@ -175,13 +185,13 @@ export default function SignupJourneyPanel({
         <div className="mt-10 flex min-h-0 flex-1 flex-col justify-center lg:mt-12">
           <div className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-white/70">
             <BadgeIcon className="h-3.5 w-3.5 text-primary" />
-            {copy.badge}
+            {badgeLabel}
           </div>
           <h1 className="font-heading text-2xl font-bold leading-tight tracking-tight lg:text-3xl xl:text-[2.1rem]">
-            {copy.headline}
+            {headline}
           </h1>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/60 lg:text-[15px]">
-            {copy.body}
+            {body}
           </p>
           {audience === 'employer' && variant === 'signup' && (
             <p className="mt-2 text-xs font-medium text-white/45">

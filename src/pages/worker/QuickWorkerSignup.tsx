@@ -33,10 +33,18 @@ import SEOHead from '@/components/SEOHead';
 import DevOtpHint from '@/components/DevOtpHint';
 import FormStepPills from '@/components/FormStepPills';
 import {
+  CREATED_BY_PARTNER_LABEL,
   resolvePartnerAddWorkerContext,
   type PartnerAddWorkerContext,
 } from '@/modules/partner/lib/partnerAssistedWorker';
+import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import EmitraWorkerOnboardingNoticeDialog from '@/modules/emitra/components/EmitraWorkerOnboardingNoticeDialog';
+import HindiText from '@/components/indian-workforce/HindiText';
+import {
+  hasAckedEmitraOnboardingNotice,
+  suggestEmitraWorkerPassword,
+} from '@/modules/emitra/lib/emitraWorkerOnboarding';
 
 type Step = 'form' | 'otp';
 
@@ -48,8 +56,8 @@ type Props = {
 /**
  * Worker signup — Name + Email + Mobile (Firebase SMS OTP) + Password + T&C.
  * Continues to /worker/journey for essentials and skill verification.
- * Partners use the same account form (name, email, mobile OTP, password),
- * then return to My Workers. The worker later signs in to continue their journey.
+ * Partners use the same account form, stay signed in as the worker, and
+ * continue the full GCC journey. The worker is listed under My Workers.
  */
 export default function QuickWorkerSignup({ assistedByPartner = false }: Props) {
   const navigate = useNavigate();
@@ -77,6 +85,8 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
   const [confirmPassword, setConfirmPassword] = useState('');
   const country = 'India';
   const [otp, setOtp] = useState('');
+  const [emitraNoticeOpen, setEmitraNoticeOpen] = useState(false);
+  const isEmitraAssisted = partnerAssisted && partnerCtx?.source.type === 'emitra';
 
   // If already signed in when opening this page, send them on.
   // Do NOT redirect while OTP/account creation is in progress — signIn happens
@@ -118,9 +128,22 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
   }, [partnerAssisted, user?.id]);
 
   useEffect(() => {
+    if (!isEmitraAssisted) return;
+    if (hasAckedEmitraOnboardingNotice()) return;
+    setEmitraNoticeOpen(true);
+  }, [isEmitraAssisted]);
+
+  useEffect(() => {
     if (profileLoading || formLoading) return;
     if (step !== 'form') return;
-    if (partnerAssisted) return;
+    // Partner add-worker: after the account is created we are signed in as the
+    // worker — continue into the GCC journey (same as independent onboarding).
+    if (partnerAssisted) {
+      if (isAuthenticated && role === 'worker') {
+        navigate('/worker/journey', { replace: true });
+      }
+      return;
+    }
     if (isAuthenticated && role === 'worker') {
       // OTP signup users are already verified — never send them to bind-mobile
       // from this page (Google users without phone still go to bind).
@@ -168,6 +191,14 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       setError('');
       setStep('otp');
     }
+  };
+
+  const fillBasicPassword = () => {
+    const suggested = suggestEmitraWorkerPassword();
+    setPassword(suggested);
+    setConfirmPassword(suggested);
+    setShowPassword(true);
+    setShowConfirmPassword(true);
   };
 
   const handleRequestOtp = async (e: React.FormEvent) => {
@@ -227,7 +258,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
         ...(partnerAssisted
           ? {
               preserveCallerSession: true,
-              restoreCallerAfterSuccess: true,
+              restoreCallerAfterSuccess: false,
               partnerReturnTo: partnerCtx?.myWorkersPath || '/partner/my-workers',
             }
           : {}),
@@ -235,7 +266,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       if (created.requiresEmailConfirmation) {
         toast.success(
           partnerAssisted
-            ? 'Worker account created. They should confirm email, then they can sign in.'
+            ? 'Worker account created and listed in My Workers. They should confirm email, then continue the GCC journey.'
             : 'Account created. Check your email to confirm your account, then sign in.',
         );
         navigate(partnerAssisted ? (partnerCtx?.myWorkersPath || '/partner/my-workers') : '/worker/login', {
@@ -246,19 +277,16 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       // Persist flag BEFORE navigation so ProtectedRoute does not bounce to
       // /worker/bind-mobile (signup OTP already verified this number).
       // Pass userId — AuthContext user may not be set yet after signIn.
-      if (!partnerAssisted) {
-        markMobileVerified(created.mobile, created.userId);
-        await refreshRole();
-        await refreshProfile();
-        markMobileVerified(created.mobile, created.userId);
-        toast.success('Welcome to SafeWorkGlobal!');
-        navigate('/worker/journey', { replace: true });
-        return;
-      }
+      markMobileVerified(created.mobile, created.userId);
       await refreshRole();
       await refreshProfile();
-      toast.success('Worker added. They can sign in with this mobile and password.');
-      navigate(partnerCtx?.myWorkersPath || '/partner/my-workers', { replace: true });
+      markMobileVerified(created.mobile, created.userId);
+      toast.success(
+        partnerAssisted
+          ? 'Worker created. Continuing the GCC journey — they also appear in My Workers.'
+          : 'Welcome to SafeWorkGlobal!',
+      );
+      navigate('/worker/journey', { replace: true });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       if (isWeakPasswordAuthError(message)) {
@@ -322,7 +350,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
         description="Create a free SafeWork Global worker profile to complete skill verification and connect with global employment opportunities."
       />
       <div className="flex h-full flex-col md:flex-row">
-        <SignupJourneyPanel />
+        <SignupJourneyPanel createdByPartner={partnerAssisted} />
 
         <main className="relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:px-8 md:px-8 lg:px-12">
           <div className="mx-auto w-full max-w-[420px]">
@@ -344,10 +372,15 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                   maxReachable={otpReached ? 2 : 1}
                   onSelect={goToSignupStep}
                 />
+                {partnerAssisted && (
+                  <Badge variant="secondary" className="mb-2">
+                    {CREATED_BY_PARTNER_LABEL}
+                  </Badge>
+                )}
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
                   {step === 'form'
                     ? partnerAssisted
-                      ? 'Add worker — create their profile'
+                      ? 'Start their GCC onboarding'
                       : 'Create your worker profile'
                     : partnerAssisted
                       ? 'Verify the worker mobile'
@@ -356,7 +389,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                 <p className="mt-1 text-sm text-muted-foreground">
                   {step === 'form'
                     ? partnerAssisted
-                      ? 'Enter the worker’s name, email, mobile and password. We’ll SMS a code to confirm their number, then they can sign in.'
+                      ? 'Same account and GCC journey as independent workers. After we confirm their mobile, you continue their full onboarding.'
                       : 'Takes about 2 minutes. We’ll SMS a code to confirm your number.'
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>
@@ -388,7 +421,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                     <Label htmlFor="name">Full name</Label>
                     <Input
                       id="name"
-                      placeholder="Your full name"
+                      placeholder={partnerAssisted ? 'Worker full name' : 'Your full name'}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
@@ -441,7 +474,9 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor="password">Password</Label>
+                      <Label htmlFor="password">
+                        {isEmitraAssisted ? 'Basic password' : 'Password'}
+                      </Label>
                       <div className="relative">
                         <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
@@ -494,9 +529,30 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Use 8+ characters with letters and numbers. Avoid common or leaked passwords.
-                  </p>
+                  {isEmitraAssisted ? (
+                    <div className="space-y-1.5">
+                      <p className="text-xs text-muted-foreground">
+                        Set a basic password for this worker. Write it down with their mobile number.
+                        They can change it later from Profile.
+                      </p>
+                      <HindiText className="text-xs text-muted-foreground">
+                        वर्कर के लिए बेसिक पासवर्ड सेट करें। मोबाइल नंबर के साथ लिख लें। बाद में प्रोफ़ाइल से बदल सकते हैं।
+                      </HindiText>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={fillBasicPassword}
+                      >
+                        Suggest basic password
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Use 8+ characters with letters and numbers. Avoid common or leaked passwords.
+                    </p>
+                  )}
 
                   <TermsAgreeRow
                     id="worker-signup-terms"
@@ -578,7 +634,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                     disabled={formLoading || otp.length !== 6}
                   >
                     {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Verify & create account
+                    {partnerAssisted ? 'Verify & start GCC journey' : 'Verify & create account'}
                   </Button>
 
                   <button
@@ -601,6 +657,15 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
         onOpenChange={setTermsOpen}
         onAgree={() => setAcceptedTerms(true)}
       />
+      {isEmitraAssisted && (
+        <EmitraWorkerOnboardingNoticeDialog
+          open={emitraNoticeOpen}
+          onOpenChange={(open) => {
+            setEmitraNoticeOpen(open);
+            if (!open && !password) fillBasicPassword();
+          }}
+        />
+      )}
     </div>
   );
 }

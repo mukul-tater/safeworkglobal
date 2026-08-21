@@ -6,8 +6,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Lock } from 'lucide-react';
 import ProfileSection from '@/components/profile/ProfileSection';
+import HindiText from '@/components/indian-workforce/HindiText';
 
-export default function ChangePasswordCard() {
+export default function ChangePasswordCard({
+  partnerSetPassword = false,
+}: {
+  /** Worker account was created by an eMitra / partner with a basic password. */
+  partnerSetPassword?: boolean;
+}) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -48,9 +54,18 @@ export default function ChangePasswordCard() {
   return (
     <ProfileSection
       title="Change Password"
-      description="Uses a separate action from Save profile above."
+      description={
+        partnerSetPassword
+          ? 'If an eMitra partner set a basic password for you, replace it with one only you know.'
+          : 'Uses a separate action from Save profile above.'
+      }
       icon={Lock}
     >
+      {partnerSetPassword && (
+        <HindiText className="mb-3 text-xs text-muted-foreground">
+          अगर ई-मित्र पार्टनर ने आपके लिए बेसिक पासवर्ड सेट किया है, तो उसे अपनी पसंद के पासवर्ड से बदल दें।
+        </HindiText>
+      )}
       <form onSubmit={handleChangePassword} noValidate className="space-y-4 max-w-md">
         <div className="space-y-1.5">
           <Label htmlFor="new_password">New password</Label>

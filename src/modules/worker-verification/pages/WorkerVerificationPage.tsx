@@ -80,6 +80,9 @@ import CompletedStepReview, {
 } from '@/modules/worker-verification/components/journey/CompletedStepReview';
 import { phaseForStage } from '@/modules/worker-verification/journey/phases';
 import WorkerPreJourneyScreeningModal from '@/modules/worker-verification/components/journey/WorkerPreJourneyScreeningModal';
+import { CREATED_BY_PARTNER_LABEL, hasParkedPartnerSession } from '@/modules/partner/lib/partnerAssistedWorker';
+import EmitraWorkerOnboardingNoticeDialog from '@/modules/emitra/components/EmitraWorkerOnboardingNoticeDialog';
+import { hasAckedEmitraOnboardingNotice } from '@/modules/emitra/lib/emitraWorkerOnboarding';
 import WorkerDeclarationsSummary from '@/modules/worker-verification/components/journey/WorkerDeclarationsSummary';
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
@@ -330,6 +333,9 @@ export default function WorkerVerificationPage() {
   const [medicalXrayPhotoFile, setMedicalXrayPhotoFile] = useState<File | null>(null);
   const [declaration, setDeclaration] = useState<WorkerPreJourneyDeclaration | null>(null);
   const [showDeclarationModal, setShowDeclarationModal] = useState(false);
+  const [createdByPartner, setCreatedByPartner] = useState(false);
+  const [createdByEmitra, setCreatedByEmitra] = useState(false);
+  const [emitraNoticeOpen, setEmitraNoticeOpen] = useState(false);
   const loadGen = useRef(0);
   const completedDeclRef = useRef<WorkerPreJourneyDeclaration | null>(null);
   const initialLoadDone = useRef(false);
@@ -379,11 +385,20 @@ export default function WorkerVerificationPage() {
 
       const { data: wp, error: wpErr } = await supabase
         .from('worker_profiles')
-        .select('kyc_status, pan_number, aadhaar_number, aadhaar_last4, passport_number, passport_expiry, has_passport, ecr_status, ecr_category')
+        .select('kyc_status, pan_number, aadhaar_number, aadhaar_last4, passport_number, passport_expiry, has_passport, ecr_status, ecr_category, source_type, source_partner_id')
         .eq('user_id', user.id)
         .maybeSingle();
       if (wpErr) {
         console.warn('Could not load worker KYC profile:', wpErr.message);
+      }
+      const sourceType = String(wp?.source_type || '');
+      const emitraSourced = sourceType === 'emitra' || !!wp?.source_partner_id;
+      setCreatedByPartner(
+        sourceType === 'partner' || emitraSourced,
+      );
+      setCreatedByEmitra(emitraSourced);
+      if (emitraSourced && hasParkedPartnerSession() && !hasAckedEmitraOnboardingNotice()) {
+        setEmitraNoticeOpen(true);
       }
       const kycStatus = String((wp as any)?.kyc_status || 'not_started');
       const savedPassport = String((wp as any)?.passport_number || '');
@@ -974,7 +989,7 @@ export default function WorkerVerificationPage() {
     <WorkerPortalLayout>
       <WorkerPreJourneyScreeningModal
         userId={user?.id || ''}
-        isOpen={showDeclarationModal}
+        isOpen={showDeclarationModal && !emitraNoticeOpen}
         onCompleted={(decl) => {
           completedDeclRef.current = decl;
           setDeclaration(decl);
@@ -982,8 +997,18 @@ export default function WorkerVerificationPage() {
           notifyVerificationUpdated();
         }}
       />
+      {createdByEmitra && (
+        <EmitraWorkerOnboardingNoticeDialog
+          open={emitraNoticeOpen}
+          onOpenChange={setEmitraNoticeOpen}
+        />
+      )}
       <div className="mx-auto max-w-5xl space-y-5">
-        <JourneyHero stage={stage} subheading={heroSubheading} />
+        <JourneyHero
+          stage={stage}
+          subheading={heroSubheading}
+          attributionLabel={createdByPartner ? CREATED_BY_PARTNER_LABEL : null}
+        />
 
         {declaration && (
           <WorkerDeclarationsSummary declaration={declaration} />

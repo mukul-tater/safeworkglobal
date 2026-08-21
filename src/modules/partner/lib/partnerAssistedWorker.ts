@@ -7,6 +7,7 @@ type PartnerWorkerSource =
 
 export const PARTNER_ADD_WORKER_PATH = "/partner/add-worker";
 export const PARTNER_MY_WORKERS_PATH = "/partner/my-workers";
+export const CREATED_BY_PARTNER_LABEL = "Created by partner";
 
 const PARK_KEY = "swg_parked_partner_session";
 
@@ -78,7 +79,7 @@ export async function restoreParkedPartnerSession(): Promise<string> {
     throw new Error("Could not return to the partner portal. Please sign in again.");
   }
   clearParkedPartnerSession();
-  return parked.returnTo || "/partner/dashboard";
+  return parked.returnTo || PARTNER_MY_WORKERS_PATH;
 }
 
 function landingForPartnerType(code: string | null | undefined): string | null {

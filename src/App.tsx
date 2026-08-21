@@ -221,9 +221,13 @@ function AppShell() {
           <Route
             path="/partner/add-worker"
             element={
-              <EmitraRoute>
+              <ProtectedRoute
+                allowedRoles={["partner", "worker"]}
+                loginPath="/partner/login"
+                requireMobileVerified={false}
+              >
                 <PartnerAddWorkerPage />
-              </EmitraRoute>
+              </ProtectedRoute>
             }
           />
           <Route

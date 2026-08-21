@@ -15,13 +15,14 @@ interface Props {
   /** Optional override heading; defaults to the stage label. */
   heading?: string;
   subheading?: string;
+  attributionLabel?: string | null;
 }
 
 /**
  * Status hero for the worker journey.
  * Current phase, position, a connected 4-phase stepper, and overall progress.
  */
-export default function JourneyHero({ stage, heading, subheading }: Props) {
+export default function JourneyHero({ stage, heading, subheading, attributionLabel }: Props) {
   const { position, total } = stepPositionForStage(stage);
   const percent = journeyProgressPercent(stage);
   const statuses = phaseStatusesForStage(stage);
@@ -37,6 +38,11 @@ export default function JourneyHero({ stage, heading, subheading }: Props) {
           <h1 className="mt-1.5 font-heading text-2xl font-bold leading-tight text-foreground">
             {heading ?? VERIFICATION_STAGE_LABELS[stage]}
           </h1>
+          {attributionLabel ? (
+            <p className="mt-1.5 inline-flex rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+              {attributionLabel}
+            </p>
+          ) : null}
           {subheading ? (
             <p className="mt-1.5 text-sm text-muted-foreground">{subheading}</p>
           ) : null}

@@ -28,8 +28,9 @@ export default function ConsultantDashboard() {
             <div>
               <div className="font-semibold">Your consultant profile is connected</div>
               <p className="text-sm text-muted-foreground mt-1">
-                Add a worker to start the same independent worker onboarding journey (account, OTP,
-                then skill verification).
+                Add a worker to start the same GCC onboarding journey as an independent worker.
+                After their account is created, continue verification here — they appear in My
+                Workers as created by partner.
               </p>
             </div>
           </div>
