@@ -114,7 +114,7 @@ export async function resolvePartnerAddWorkerContext(
   return {
     allowed: partnerCanAddWorkers(status),
     returnTo,
-    myWorkersPath: org?.id ? "/partner/my-workers" : "/emitra/my-workers",
+    myWorkersPath: emitraProfile ? "/emitra/my-workers" : "/partner/my-workers",
     source,
     status,
   };

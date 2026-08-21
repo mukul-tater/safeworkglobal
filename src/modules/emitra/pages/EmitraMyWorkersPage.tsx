@@ -41,13 +41,21 @@ function Inner() {
   const { partnerId } = useApprovedPartner();
   const [rows, setRows] = useState<WorkerRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [tab, setTab] = useState('all');
 
   useEffect(() => {
     if (!partnerId) return;
     (async () => {
       setLoading(true);
-      const { data: workers } = await (supabase as any).rpc('partner_list_my_workers');
+      setError('');
+      const { data: workers, error: rpcErr } = await (supabase as any).rpc('partner_list_my_workers');
+      if (rpcErr) {
+        setError(rpcErr.message);
+        setRows([]);
+        setLoading(false);
+        return;
+      }
       const list: WorkerRow[] = (workers || [])
         .slice()
         .sort((a: any, b: any) =>
@@ -100,6 +108,8 @@ function Inner() {
 
       {loading ? (
         <div className="py-20 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
+      ) : error ? (
+        <Card className="p-8 text-center text-sm text-destructive">{error}</Card>
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center">
           <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />

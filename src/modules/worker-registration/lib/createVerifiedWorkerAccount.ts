@@ -177,18 +177,15 @@ export async function createVerifiedWorkerAccount(
       .join(', ');
 
     const partnerSourced = source.type === 'emitra' || source.type === 'partner';
-    const orgId = source.type === 'organic' ? null : source.orgId ?? null;
+    // Do not write source/review here. handle_new_user already inserted an
+    // organic worker_profiles row; workers cannot change attribution (trigger).
+    // Partner session is restored below, then partner_attach_registered_worker
+    // stamps source_partner_id so My Workers can list them.
     const workerProfilePayload: Record<string, unknown> = {
       user_id: user.id,
       country,
       nationality: country,
-      source_type: source.type,
-      source_partner_id: source.type === 'emitra' ? source.partnerProfileId : null,
-      added_by_org_id: orgId,
       onboarded_at: partnerSourced ? new Date().toISOString() : null,
-      // eMitra OTP-verified onboarding is trusted — worker can log in immediately.
-      // Trigger only forces pending when status is null / not_required.
-      review_status: source.type === 'emitra' ? 'approved' : 'not_required',
     };
 
     if (input.profileSeed?.primary_work_type) {
@@ -304,29 +301,31 @@ export async function createVerifiedWorkerAccount(
     };
 
     if (input.preserveCallerSession && switchedAwayFromCaller) {
-      if (input.restoreCallerAfterSuccess === false) {
-        if (callerSession) {
-          parkPartnerSession({
-            ...callerSession,
-            returnTo: input.partnerReturnTo || '/partner/dashboard',
-          });
-        }
-        switchedAwayFromCaller = false;
-      } else {
-        await supabase.auth.signOut();
-        if (!callerSession) {
-          throw new Error(
-            'Worker was created, but partner session was lost. Please sign in again as partner.',
-          );
-        }
-        const { error } = await supabase.auth.setSession(callerSession);
-        if (error) {
-          throw new Error(
-            'Worker was created, but partner session could not be restored. Please sign in again.',
-          );
-        }
-        switchedAwayFromCaller = false;
+      if (input.restoreCallerAfterSuccess === false && callerSession) {
+        parkPartnerSession({
+          ...callerSession,
+          returnTo: input.partnerReturnTo || '/partner/dashboard',
+        });
       }
+      await supabase.auth.signOut();
+      if (!callerSession) {
+        throw new Error(
+          'Worker was created, but partner session was lost. Please sign in again as partner.',
+        );
+      }
+      const { error } = await supabase.auth.setSession(callerSession);
+      if (error) {
+        throw new Error(
+          'Worker was created, but partner session could not be restored. Please sign in again.',
+        );
+      }
+      await attachWorkerToCallingPartner({
+        workerUserId: user.id,
+        fullName: input.fullName.trim(),
+        mobile: digits,
+        email: authEmail,
+      });
+      switchedAwayFromCaller = false;
     }
 
     return result;
