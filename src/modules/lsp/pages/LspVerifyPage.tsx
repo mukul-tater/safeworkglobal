@@ -77,7 +77,7 @@ export default function LspVerifyPage() {
       setError('Enter a valid 10-digit mobile number');
       return;
     }
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       setError('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
       return;
     }

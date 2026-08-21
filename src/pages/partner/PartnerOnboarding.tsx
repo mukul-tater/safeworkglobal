@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Store, ShieldCheck, Building2, Landmark, FileSignature, SkipForward } from "lucide-react";
 import { toast } from "sonner";
 import PartnerDocUpload from "@/components/partner/PartnerDocUpload";
+import { useMaxReachedStep } from "@/components/FormStepPills";
 import {
   businessInfoSchema, identitySchema, businessDetailsSchema, bankSchema, declarationsSchema,
   indianStates, SERVICE_OPTIONS,
@@ -35,6 +36,7 @@ export default function PartnerOnboarding() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState(1);
+  const maxReached = useMaxReachedStep(step);
   const [data, setData] = useState<PartnerRow>({
     services_offered: [],
     offers_passport_service: false,
@@ -204,17 +206,25 @@ export default function PartnerOnboarding() {
               const Icon = s.icon;
               const done = step > s.id;
               const active = step === s.id;
+              const canGo = s.id !== step && s.id <= maxReached;
               return (
-                <div key={s.id} className="text-center">
+                <button
+                  key={s.id}
+                  type="button"
+                  disabled={!canGo}
+                  aria-current={active ? "step" : undefined}
+                  onClick={() => canGo && setStep(s.id)}
+                  className="text-center disabled:cursor-default"
+                >
                   <div className={`mx-auto h-9 w-9 rounded-full flex items-center justify-center border-2 ${
                     done ? "bg-success border-success text-success-foreground"
                     : active ? "bg-primary border-primary text-primary-foreground"
                     : "bg-background border-muted text-muted-foreground"
-                  }`}>
+                  } ${canGo ? "hover:opacity-90" : ""}`}>
                     {done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                   </div>
                   <p className={`text-[10px] mt-1 ${active ? "font-medium" : "text-muted-foreground"} hidden sm:block`}>{s.title}</p>
-                </div>
+                </button>
               );
             })}
           </div>

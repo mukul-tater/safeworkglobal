@@ -4,6 +4,7 @@ import { signOut as firebaseSignOut } from 'firebase/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthSplitLayout from '@/components/AuthSplitLayout';
+import FormStepPills, { useMaxReachedStep } from '@/components/FormStepPills';
 import PartnerDocUpload from '@/components/partner/PartnerDocUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,6 +105,7 @@ export default function EmitraOnboardingPage() {
   const [sourceLspId, setSourceLspId] = useState<string | null>(lspSession?.lspId ?? null);
   const firebaseOtp = useFirebasePhoneOtp();
   const [step, setStep] = useState(1);
+  const maxReached = useMaxReachedStep(step);
   const [loading, setLoading] = useState(!!user);
   const [saving, setSaving] = useState(false);
   const [otpBusy, setOtpBusy] = useState(false);
@@ -224,7 +226,7 @@ export default function EmitraOnboardingPage() {
       toast.error('Enter a valid 10-digit mobile number');
       return;
     }
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       toast.error('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
       return;
     }
@@ -273,7 +275,7 @@ export default function EmitraOnboardingPage() {
       toast.error('Mobile number not verified — cannot send agreement OTP');
       return;
     }
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       toast.error('SMS verification is not configured.');
       return;
     }
@@ -475,12 +477,14 @@ export default function EmitraOnboardingPage() {
     >
       <div className="px-5 pt-5 md:px-7 md:pt-6">
           <div className="mb-4">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="h-1.5 w-6 rounded-full bg-primary/30" />
-              <span className="h-1.5 w-6 rounded-full bg-primary" />
-              <span className="h-1.5 w-6 rounded-full bg-muted-foreground/25" />
-              <span className="ml-1 text-[11px] font-medium text-muted-foreground">Step 2 of 3</span>
-            </div>
+            <FormStepPills
+              current={2}
+              total={3}
+              maxReachable={2}
+              onSelect={(n) => {
+                if (n === 1) navigate('/partner/register');
+              }}
+            />
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
@@ -516,14 +520,23 @@ export default function EmitraOnboardingPage() {
           </div>
           <Progress value={progress} className="h-2 mb-4" />
           <div className="flex justify-between gap-1 text-[10px] sm:text-xs text-muted-foreground mb-2">
-            {STEPS.map((s) => (
-              <span
-                key={s.id}
-                className={step === s.id ? 'text-primary font-medium' : step > s.id ? 'text-foreground' : ''}
-              >
-                {s.title.split(' ')[0]}
-              </span>
-            ))}
+            {STEPS.map((s) => {
+              const canGo = s.id !== step && s.id <= maxReached;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  disabled={!canGo}
+                  aria-current={step === s.id ? 'step' : undefined}
+                  onClick={() => canGo && setStep(s.id)}
+                  className={`${
+                    step === s.id ? 'text-primary font-medium' : step > s.id ? 'text-foreground' : ''
+                  } disabled:cursor-default ${canGo ? 'hover:text-primary' : ''}`}
+                >
+                  {s.title.split(' ')[0]}
+                </button>
+              );
+            })}
           </div>
         </div>
 

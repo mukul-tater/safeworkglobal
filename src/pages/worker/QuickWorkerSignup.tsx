@@ -11,6 +11,12 @@ import {
   Loader2, Phone, Lock, Eye, EyeOff, Mail, ShieldCheck,
 } from 'lucide-react';
 import { isValidIndianMobile } from '@/lib/validations/common';
+import {
+  isLeakedPassword,
+  isWeakPasswordAuthError,
+  passwordSignupIssue,
+  WEAK_PASSWORD_MESSAGE,
+} from '@/lib/validations/password';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import {
   useFirebasePhoneOtp,
@@ -24,6 +30,8 @@ import TermsAgreeRow from '@/components/TermsAgreeRow';
 import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 import SignupJourneyPanel from '@/components/SignupJourneyPanel';
 import SEOHead from '@/components/SEOHead';
+import DevOtpHint from '@/components/DevOtpHint';
+import FormStepPills from '@/components/FormStepPills';
 import {
   resolvePartnerAddWorkerContext,
   type PartnerAddWorkerContext,
@@ -54,6 +62,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
   const [partnerCtxLoading, setPartnerCtxLoading] = useState(partnerAssisted);
 
   const [step, setStep] = useState<Step>('form');
+  const [otpReached, setOtpReached] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -137,13 +146,28 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       return 'Enter your real email address';
     }
     if (!isValidIndianMobile(mobile)) return 'Enter a valid 10-digit Indian mobile number';
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       return 'Phone SMS verification is not configured. Ask the admin to add Firebase Phone Auth keys.';
     }
-    if (password.length < 6) return 'Password must be at least 6 characters';
+    const passwordIssue = passwordSignupIssue(password, { email: trimmedEmail, mobile });
+    if (passwordIssue) return passwordIssue;
     if (password !== confirmPassword) return 'Passwords do not match';
     if (!acceptedTerms) return 'Please agree to the terms and declarations';
     return null;
+  };
+
+  const goToSignupStep = (n: number) => {
+    if (n === 1) {
+      setStep('form');
+      setOtp('');
+      setError('');
+      firebaseOtp.resetRecaptcha();
+      return;
+    }
+    if (n === 2 && otpReached) {
+      setError('');
+      setStep('otp');
+    }
   };
 
   const handleRequestOtp = async (e: React.FormEvent) => {
@@ -157,9 +181,14 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
 
     setFormLoading(true);
     try {
+      if (await isLeakedPassword(password)) {
+        setError(WEAK_PASSWORD_MESSAGE);
+        return;
+      }
       const digits = mobile.replace(/\D/g, '');
       await firebaseOtp.sendOtp(digits);
       toast.success(`Verification code sent to +91 ${digits}`);
+      setOtpReached(true);
       setStep('otp');
       setOtp('');
     } catch (err: unknown) {
@@ -231,7 +260,16 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       toast.success('Worker added. They can sign in with this mobile and password.');
       navigate(partnerCtx?.myWorkersPath || '/partner/my-workers', { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      if (isWeakPasswordAuthError(message)) {
+        firebaseOtp.resetRecaptcha();
+        setOtp('');
+        setStep('form');
+        setError(WEAK_PASSWORD_MESSAGE);
+        toast.error('Choose a stronger password, then send a new SMS code.');
+      } else {
+        setError(message);
+      }
     } finally {
       setFormLoading(false);
     }
@@ -300,17 +338,12 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                 </button>
               )}
               <div className="mb-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <span
-                    className={`h-1.5 w-6 rounded-full ${step === 'form' ? 'bg-primary' : 'bg-primary/30'}`}
-                  />
-                  <span
-                    className={`h-1.5 w-6 rounded-full ${step === 'otp' ? 'bg-primary' : 'bg-muted-foreground/25'}`}
-                  />
-                  <span className="ml-1 text-[11px] font-medium text-muted-foreground">
-                    Step {step === 'form' ? '1' : '2'} of 2
-                  </span>
-                </div>
+                <FormStepPills
+                  current={step === 'form' ? 1 : 2}
+                  total={2}
+                  maxReachable={otpReached ? 2 : 1}
+                  onSelect={goToSignupStep}
+                />
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
                   {step === 'form'
                     ? partnerAssisted
@@ -414,11 +447,11 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                         <Input
                           id="password"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Min 6 chars"
+                          placeholder="8+ chars"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          minLength={6}
+                          minLength={8}
                           className="h-11 pl-10 pr-9"
                           autoComplete="new-password"
                         />
@@ -445,7 +478,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           required
-                          minLength={6}
+                          minLength={8}
                           className="h-11 pl-10 pr-9"
                           autoComplete="new-password"
                         />
@@ -461,6 +494,9 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                       </div>
                     </div>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use 8+ characters with letters and numbers. Avoid common or leaked passwords.
+                  </p>
 
                   <TermsAgreeRow
                     id="worker-signup-terms"
@@ -508,6 +544,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
 
               {step === 'otp' && (
                 <form onSubmit={handleVerifyAndCreate} className="space-y-5">
+                  <DevOtpHint />
                   <div className="flex justify-center py-1">
                     <InputOTP maxLength={6} value={otp} onChange={setOtp}>
                       <InputOTPGroup>
@@ -547,12 +584,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                   <button
                     type="button"
                     data-inline
-                    onClick={() => {
-                      setStep('form');
-                      setOtp('');
-                      setError('');
-                      firebaseOtp.resetRecaptcha();
-                    }}
+                    onClick={() => goToSignupStep(1)}
                     className="w-full text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     ← Change details

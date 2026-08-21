@@ -23,6 +23,7 @@ import { indianStates } from "@/lib/validations/partner";
 import { partnerAuthEmailFromMobile, displayableEmail } from "@/lib/workerAuthEmail";
 import { lockedPartnerFromPath } from "@/modules/partner/config/partnerPortalRoutes";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
+import FormStepPills from "@/components/FormStepPills";
 import { cn } from "@/lib/utils";
 
 interface PartnerType {
@@ -221,12 +222,14 @@ export default function PartnerRegisterLegacy() {
       centerVertically={false}
     >
       <div className="mb-5">
-        <div className="mb-3 flex items-center gap-2">
-          <span className="h-1.5 w-6 rounded-full bg-primary/30" />
-          <span className="h-1.5 w-6 rounded-full bg-primary" />
-          <span className="h-1.5 w-6 rounded-full bg-muted-foreground/25" />
-          <span className="ml-1 text-[11px] font-medium text-muted-foreground">Step 2 of 3</span>
-        </div>
+        <FormStepPills
+          current={2}
+          total={3}
+          maxReachable={2}
+          onSelect={(n) => {
+            if (n === 1) navigate("/partner/register");
+          }}
+        />
         <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
           {heading}
         </h2>

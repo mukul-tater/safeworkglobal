@@ -79,10 +79,11 @@ function SectionIntro({
 
 export default function QuickEmployerSignup() {
   const navigate = useNavigate();
-  const { user, profile, isAuthenticated, role, profileLoading } = useAuth();
+  const { user, profile, isAuthenticated, role, profileLoading, isMobileVerified } = useAuth();
 
   const [screen, setScreen] = useState<Screen>("account");
   const [section, setSection] = useState<RegistrationSection>(1);
+  const [maxSection, setMaxSection] = useState<RegistrationSection>(1);
   const [ready, setReady] = useState(false);
   const bootstrappedRef = useRef(false);
   const [loading, setLoading] = useState(false);
@@ -116,6 +117,10 @@ export default function QuickEmployerSignup() {
 
     const bootstrap = async () => {
       if (isAuthenticated && role === "employer" && user) {
+        if (!isMobileVerified) {
+          navigate("/employer/bind-mobile", { replace: true });
+          return;
+        }
         const loaded = await loadEmployerRegistration(user.id);
         if (cancelled) return;
         setDraft(loaded.draft);
@@ -138,7 +143,7 @@ export default function QuickEmployerSignup() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, role, user, profile, profileLoading, navigate]);
+  }, [isAuthenticated, role, user, profile, profileLoading, isMobileVerified, navigate]);
 
   const persistDraft = async (completed: boolean) => {
     const { data: { user: current } } = await supabase.auth.getUser();
@@ -301,6 +306,7 @@ export default function QuickEmployerSignup() {
           setEditingRequirementId(item.id);
         }
         setSection(next);
+        setMaxSection((m) => (next > m ? next : m) as RegistrationSection);
       } catch (err) {
         console.error(err);
         toast.error("Could not save this section. Please try again.");
@@ -379,7 +385,13 @@ export default function QuickEmployerSignup() {
         >
           <div className={`mx-auto w-full ${screen === "account" ? "max-w-[420px]" : "max-w-[720px]"}`}>
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5 sm:p-7">
-              {screen === "form" && <EmployerSignupStepper step={section} />}
+              {screen === "form" && (
+                <EmployerSignupStepper
+                  step={section}
+                  maxReachable={maxSection}
+                  onSelect={setSection}
+                />
+              )}
 
               {screen === "account" && (
                 <div className="mb-5">

@@ -96,7 +96,7 @@ export default function WorkerRegisterPage() {
       toast.error('Enter a valid 10-digit mobile number first');
       return;
     }
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       toast.error('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
       return;
     }

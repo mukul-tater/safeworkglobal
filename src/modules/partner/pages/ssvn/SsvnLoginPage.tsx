@@ -114,7 +114,7 @@ export default function SsvnLoginPage() {
       setError('Enter a valid 10-digit mobile number');
       return;
     }
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       setError('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
       return;
     }
@@ -190,6 +190,12 @@ export default function SsvnLoginPage() {
       if (!user) {
         setError('Authentication failed');
         return;
+      }
+      await supabase.from('profiles').update({ phone: digits, mobile_verified: true }).eq('id', user.id);
+      try {
+        sessionStorage.setItem(`swg_mobile_verified_${user.id}`, '1');
+      } catch {
+        /* ignore */
       }
       const block = await ensureSsvnAccess(user.id);
       if (block) {

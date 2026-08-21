@@ -20,6 +20,7 @@ import {
   WORK_PREFERENCES, WAGE_TYPES, NATIONALITIES,
 } from '@/lib/constants';
 import AutoSaveStatus from '@/components/profile/AutoSaveStatus';
+import { useMaxReachedStep } from '@/components/FormStepPills';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { saveWorkerOnboardingPartial } from '@/lib/autoSaveProfiles';
 import { validateSchema } from '@/lib/validations/common';
@@ -40,6 +41,7 @@ export default function WorkerOnboarding() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const maxReached = useMaxReachedStep(step);
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -366,15 +368,23 @@ export default function WorkerOnboarding() {
         <div className="flex items-center gap-2 mb-4">
           {STEPS.map((s) => {
             const Icon = s.icon;
+            const canGo = s.id !== step && s.id <= maxReached;
             return (
               <div key={s.id} className="flex items-center flex-1">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-colors ${
-                  step > s.id ? 'bg-success text-success-foreground' :
-                  step === s.id ? 'bg-primary text-primary-foreground' :
-                  'bg-muted text-muted-foreground'
-                }`}>
+                <button
+                  type="button"
+                  disabled={!canGo}
+                  aria-current={step === s.id ? 'step' : undefined}
+                  aria-label={`Step ${s.id}: ${s.title}`}
+                  onClick={() => canGo && setStep(s.id)}
+                  className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-colors ${
+                    step > s.id ? 'bg-success text-success-foreground' :
+                    step === s.id ? 'bg-primary text-primary-foreground' :
+                    'bg-muted text-muted-foreground'
+                  } ${canGo ? 'hover:opacity-90' : 'cursor-default'}`}
+                >
                   {step > s.id ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-                </div>
+                </button>
                 {s.id < STEPS.length && (
                   <div className={`flex-1 h-0.5 mx-1 ${step > s.id ? 'bg-success' : 'bg-muted'}`} />
                 )}

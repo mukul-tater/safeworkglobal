@@ -6,12 +6,13 @@ import { getEmitraReviewBlockMessage } from '@/lib/workerPortalAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { bindMobilePath, MOBILE_OTP_ROLES } from '@/lib/mobileVerification';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: AppRole[];
   loginPath?: string;
-  /** Workers must complete one-time mobile OTP before portal access (Google bind). */
+  /** Portal users must complete mobile OTP. Default: on for worker / employer / partner. */
   requireMobileVerified?: boolean;
 }
 
@@ -19,7 +20,7 @@ export default function ProtectedRoute({
   children,
   allowedRoles,
   loginPath = '/auth',
-  requireMobileVerified = false,
+  requireMobileVerified,
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, role, loading, profileLoading, needsRoleSelection, isMobileVerified } =
     useAuth();
@@ -81,10 +82,14 @@ export default function ProtectedRoute({
     return <AccessDenied />;
   }
 
-  // Workers without mobile_verified must bind + OTP once (Google path).
-  // Wait until profile has resolved — never bounce during signup race when
-  // profile is still null / loading after OTP account create.
-  if (requireMobileVerified && role === 'worker') {
+  // Worker / employer / partner must verify mobile once. Bind-mobile pages pass false.
+  const enforceMobile =
+    requireMobileVerified === true ||
+    (requireMobileVerified !== false &&
+      !!allowedRoles?.some((r) => MOBILE_OTP_ROLES.includes(r)) &&
+      !allowedRoles.includes('admin'));
+
+  if (enforceMobile && role && MOBILE_OTP_ROLES.includes(role)) {
     if (profileLoading || !user?.id) {
       return (
         <div className="flex items-center justify-center min-h-screen">
@@ -92,7 +97,6 @@ export default function ProtectedRoute({
         </div>
       );
     }
-    // Session flag from signup OTP (survives brief DB/profile lag).
     let sessionFlag = false;
     try {
       sessionFlag = sessionStorage.getItem(`swg_mobile_verified_${user.id}`) === '1';
@@ -100,7 +104,7 @@ export default function ProtectedRoute({
       /* ignore */
     }
     if (!isMobileVerified && !sessionFlag) {
-      return <Navigate to="/worker/bind-mobile" replace />;
+      return <Navigate to={bindMobilePath(role)} replace />;
     }
   }
 

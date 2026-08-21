@@ -119,6 +119,11 @@ export async function createVerifiedWorkerAccount(
       if (/already registered|already exists/i.test(signupErr.message)) {
         throw new Error('This email or mobile is already registered. Sign in instead.');
       }
+      if (/weak|easy to guess|pwned|leaked password/i.test(signupErr.message)) {
+        throw new Error(
+          'That password is too easy to guess. Go back and choose a stronger password, then request a new SMS code.',
+        );
+      }
       throw new Error(signupErr.message);
     }
 

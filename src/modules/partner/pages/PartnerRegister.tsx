@@ -18,6 +18,7 @@ import { useI18n } from "@/i18n";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
 import SEOHead from "@/components/SEOHead";
+import FormStepPills from "@/components/FormStepPills";
 import {
   DEFAULT_PARTNER_SIGNUP_CODE,
   EMITRA_STATE_BRANDS,
@@ -65,14 +66,11 @@ export default function PartnerRegister() {
         centerVertically={false}
       >
         <div className="mb-5">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="h-1.5 w-6 rounded-full bg-primary" />
-            <span className="h-1.5 w-6 rounded-full bg-muted-foreground/25" />
-            <span className="h-1.5 w-6 rounded-full bg-muted-foreground/25" />
-            <span className="ml-1 text-[11px] font-medium text-muted-foreground">
-              {t("partner.stepOf", { current: 1, total: 3 })}
-            </span>
-          </div>
+          <FormStepPills
+            current={1}
+            total={3}
+            label={t("partner.stepOf", { current: 1, total: 3 })}
+          />
           <div className="flex items-start justify-between gap-2">
             <div>
               <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">

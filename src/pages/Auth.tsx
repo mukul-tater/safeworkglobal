@@ -168,7 +168,11 @@ export default function Auth() {
           .maybeSingle();
         if (cancelled) return;
         navigate(
-          data?.onboarding_completed ? '/employer/dashboard' : '/employer/quick-signup',
+          isMobileVerified
+            ? data?.onboarding_completed
+              ? '/employer/dashboard'
+              : '/employer/quick-signup'
+            : '/employer/bind-mobile',
           { replace: true },
         );
       })();
@@ -177,7 +181,7 @@ export default function Auth() {
       };
     }
     if (role === 'partner') {
-      navigate('/partner/dashboard', { replace: true });
+      navigate(isMobileVerified ? '/partner/dashboard' : '/partner/bind-mobile', { replace: true });
       return;
     }
     if (role === 'admin') {
@@ -344,7 +348,6 @@ export default function Auth() {
       }
       toast.success(`Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!`);
       if (selectedRole === 'worker') {
-        // Fresh Google workers still need one-time mobile OTP.
         navigate(isMobileVerified ? '/worker/dashboard' : '/worker/bind-mobile', { replace: true });
       } else if (selectedRole === 'employer') {
         // Apply any pending company/full-name captured from the
@@ -370,9 +373,9 @@ export default function Auth() {
         } catch {
           // Non-fatal — user can edit on the employer profile page.
         }
-        navigate('/employer/quick-signup', { replace: true });
+        navigate(isMobileVerified ? '/employer/quick-signup' : '/employer/bind-mobile', { replace: true });
       } else {
-        navigate('/emitra/register', { replace: true });
+        navigate(isMobileVerified ? '/emitra/register' : '/partner/bind-mobile', { replace: true });
       }
       return;
     }

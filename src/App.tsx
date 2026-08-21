@@ -31,6 +31,7 @@ import SsvnAssessments from "./modules/partner/pages/ssvn/SsvnAssessments";
 import SsvnCheckin from "./modules/partner/pages/ssvn/SsvnCheckin";
 import SsvnAssessmentWizard from "./modules/partner/pages/ssvn/SsvnAssessmentWizard";
 import SsvnLoginPage from "./modules/partner/pages/ssvn/SsvnLoginPage";
+import WorkerBindMobilePage from "./pages/worker/WorkerBindMobilePage";
 import ItiDashboard from "./modules/partner/pages/iti/ItiDashboard";
 import ConsultantDashboard from "./modules/partner/pages/consultant/ConsultantDashboard";
 import PartnerLoginChooser from "./modules/partner/pages/PartnerLoginChooser";
@@ -177,6 +178,14 @@ function AppShell() {
           <Route path="/partner/iti/login" element={<SsvnLoginPage />} />
           <Route path="/partner/srn/login" element={<SsvnLoginPage />} />
           <Route path="/partner/consultant/login" element={<SsvnLoginPage />} />
+          <Route
+            path="/partner/bind-mobile"
+            element={
+              <ProtectedRoute allowedRoles={["partner"]} loginPath="/partner/login" requireMobileVerified={false}>
+                <WorkerBindMobilePage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/emitra/dashboard"
             element={

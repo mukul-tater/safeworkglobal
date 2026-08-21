@@ -14,7 +14,7 @@ import { clearPendingOAuthRole, setPendingOAuthRole } from '@/lib/oauthRedirect'
 
 export default function EmployerLoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthenticated, role } = useAuth();
+  const { login, isAuthenticated, role, isMobileVerified } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,9 +24,9 @@ export default function EmployerLoginPage() {
 
   useEffect(() => {
     if (isAuthenticated && role === 'employer') {
-      navigate('/employer/dashboard', { replace: true });
+      navigate(isMobileVerified ? '/employer/dashboard' : '/employer/bind-mobile', { replace: true });
     }
-  }, [isAuthenticated, role, navigate]);
+  }, [isAuthenticated, role, isMobileVerified, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

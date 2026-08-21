@@ -55,7 +55,7 @@ export const legacyWorkerRoutes = (
     <Route
       path="/worker/bind-mobile"
       element={
-        <ProtectedRoute allowedRoles={['worker']} loginPath="/worker/login">
+        <ProtectedRoute allowedRoles={['worker']} loginPath="/worker/login" requireMobileVerified={false}>
           <WorkerBindMobilePage />
         </ProtectedRoute>
       }

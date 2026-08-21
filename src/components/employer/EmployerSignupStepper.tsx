@@ -8,16 +8,45 @@ const STEPS = [
   { id: 4, label: "Partnership" },
 ] as const;
 
-export default function EmployerSignupStepper({ step }: { step: 1 | 2 | 3 | 4 }) {
+type StepId = 1 | 2 | 3 | 4;
+
+export default function EmployerSignupStepper({
+  step,
+  maxReachable,
+  onSelect,
+}: {
+  step: StepId;
+  maxReachable?: StepId;
+  onSelect?: (step: StepId) => void;
+}) {
+  const max = maxReachable ?? step;
+
+  const go = (id: StepId) => {
+    if (!onSelect || id === step || id > max) return;
+    onSelect(id);
+  };
+
   return (
     <div className="mb-5">
       <ol className="hidden items-center md:flex">
         {STEPS.map((s, i) => {
           const done = step > s.id;
           const active = step === s.id;
+          const canGo = !!onSelect && s.id !== step && s.id <= max;
           return (
             <li key={s.id} className="flex flex-1 items-center">
-              <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!canGo}
+                aria-current={active ? "step" : undefined}
+                aria-label={`Step ${s.id}: ${s.label}`}
+                onClick={() => go(s.id)}
+                className={cn(
+                  "flex items-center gap-2 rounded-md text-left",
+                  canGo && "cursor-pointer hover:opacity-90",
+                  !canGo && "cursor-default",
+                )}
+              >
                 <span
                   className={cn(
                     "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold",
@@ -36,7 +65,7 @@ export default function EmployerSignupStepper({ step }: { step: 1 | 2 | 3 | 4 })
                 >
                   {s.label}
                 </span>
-              </div>
+              </button>
               {i < STEPS.length - 1 && (
                 <div className={cn("mx-3 h-px flex-1", step > s.id ? "bg-success/70" : "bg-border")} />
               )}
@@ -55,15 +84,25 @@ export default function EmployerSignupStepper({ step }: { step: 1 | 2 | 3 | 4 })
           </p>
         </div>
         <div className="flex gap-1.5">
-          {STEPS.map((s) => (
-            <span
-              key={s.id}
-              className={cn(
-                "h-1.5 flex-1 rounded-full",
-                s.id <= step ? "bg-primary" : "bg-muted-foreground/25",
-              )}
-            />
-          ))}
+          {STEPS.map((s) => {
+            const canGo = !!onSelect && s.id !== step && s.id <= max;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                disabled={!canGo}
+                aria-label={`Step ${s.id} of 4`}
+                aria-current={s.id === step ? "step" : undefined}
+                onClick={() => go(s.id)}
+                className={cn(
+                  "h-1.5 flex-1 rounded-full transition-all",
+                  s.id <= step ? "bg-primary" : "bg-muted-foreground/25",
+                  canGo && "cursor-pointer hover:ring-2 hover:ring-primary/30",
+                  !canGo && "cursor-default",
+                )}
+              />
+            );
+          })}
         </div>
       </div>
     </div>

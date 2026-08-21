@@ -20,6 +20,7 @@ import {
   Landmark, FileSignature, Shield, SkipForward,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMaxReachedStep } from '@/components/FormStepPills';
 import { indianStates } from '@/lib/validations/partner';
 import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
 import {
@@ -63,6 +64,7 @@ export default function EmitraRegisterPage() {
   const [sourceLspId, setSourceLspId] = useState<string | null>(lspSession?.lspId ?? null);
   const firebaseOtp = useFirebasePhoneOtp();
   const [step, setStep] = useState(1);
+  const maxReached = useMaxReachedStep(step);
   const [loading, setLoading] = useState(!!user);
   const [saving, setSaving] = useState(false);
   const [otpBusy, setOtpBusy] = useState(false);
@@ -180,7 +182,7 @@ export default function EmitraRegisterPage() {
       toast.error('Enter a valid mobile number first');
       return;
     }
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       toast.error('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
       return;
     }
@@ -398,9 +400,16 @@ export default function EmitraRegisterPage() {
               const Icon = s.icon;
               const done = step > s.id;
               const active = step === s.id;
+              const canGo = s.id !== step && s.id <= maxReached;
               return (
                 <div key={s.id} className="flex flex-1 items-center">
-                  <div className="flex flex-col items-center flex-1 min-w-0">
+                  <button
+                    type="button"
+                    disabled={!canGo}
+                    aria-current={active ? 'step' : undefined}
+                    onClick={() => canGo && setStep(s.id)}
+                    className="flex flex-col items-center flex-1 min-w-0 disabled:cursor-default"
+                  >
                     <div
                       className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
                         done
@@ -408,7 +417,7 @@ export default function EmitraRegisterPage() {
                           : active
                             ? 'bg-primary/15 text-primary ring-2 ring-primary ring-offset-2 ring-offset-background'
                             : 'bg-muted text-muted-foreground'
-                      }`}
+                      } ${canGo ? 'hover:opacity-90' : ''}`}
                     >
                       {done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                     </div>
@@ -419,7 +428,7 @@ export default function EmitraRegisterPage() {
                     >
                       {s.title}
                     </p>
-                  </div>
+                  </button>
                   {idx < STEPS.length - 1 && (
                     <div
                       className={`h-0.5 flex-1 mx-1 mt-4 rounded-full ${

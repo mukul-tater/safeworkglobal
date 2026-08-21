@@ -81,7 +81,7 @@ export default function EmitraLoginPage() {
       setError('Enter a valid 10-digit mobile number');
       return;
     }
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       setError('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
       return;
     }
@@ -162,6 +162,16 @@ export default function EmitraLoginPage() {
       if (!result.success) {
         setError(result.error || 'Wrong password. Use the password from registration, or sign in with email.');
         return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profiles').update({ phone: digits, mobile_verified: true }).eq('id', user.id);
+        try {
+          sessionStorage.setItem(`swg_mobile_verified_${user.id}`, '1');
+        } catch {
+          /* ignore */
+        }
       }
 
       toast.success('Welcome back!');

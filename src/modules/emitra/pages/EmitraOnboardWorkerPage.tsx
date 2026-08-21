@@ -59,7 +59,7 @@ function Inner() {
   const validate = (): string | null => {
     if (!name.trim() || name.trim().length < 2) return 'Enter the worker full name';
     if (!isValidIndianMobile(mobile)) return 'Enter a valid 10-digit Indian mobile number';
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       return 'Phone SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.';
     }
     if (password.length < 6) return 'Password must be at least 6 characters';

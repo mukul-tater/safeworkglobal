@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import QuickEmployerSignup from '@/pages/employer/QuickEmployerSignup';
-import EmployerLoginPage from '@/pages/employer/EmployerLoginPage';
+import WorkerBindMobilePage from '@/pages/worker/WorkerBindMobilePage';
 import QuickPostJob from '@/pages/employer/QuickPostJob';
 import PilotOffer from '@/pages/employer/PilotOffer';
 import RecommendedWorkers from '@/pages/employer/RecommendedWorkers';
@@ -43,6 +43,14 @@ export const legacyEmployerRoutes = (
   <>
     <Route path="/employer/quick-signup" element={<QuickEmployerSignup />} />
     <Route path="/employer/login" element={<EmployerLoginPage />} />
+    <Route
+      path="/employer/bind-mobile"
+      element={
+        <ProtectedRoute allowedRoles={['employer']} loginPath="/employer/login" requireMobileVerified={false}>
+          <WorkerBindMobilePage />
+        </ProtectedRoute>
+      }
+    />
     <Route path="/employer/register" element={<Navigate to="/employer/quick-signup" replace />} />
     <Route path="/employer/trust" element={<Navigate to="/employer/dashboard" replace />} />
     {employerRoute('/employer/quick-post-job', <QuickPostJob />)}

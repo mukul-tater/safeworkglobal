@@ -15,14 +15,14 @@ import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
-import { getFirebaseAuth, isFirebaseConfigured } from '@/lib/firebase';
-import { signOut as firebaseSignOut } from 'firebase/auth';
+import { bindMobileLoginPath, afterMobileVerifiedPath, MOBILE_OTP_ROLES } from '@/lib/mobileVerification';
+import DevOtpHint from '@/components/DevOtpHint';
 
 type Step = 'form' | 'otp';
 
 /**
- * Google (and any other) workers without mobile_verified must complete
- * SMS OTP once here before accessing the worker dashboard.
+ * Google (and any other) workers, employers, and partners without mobile_verified
+ * must complete SMS OTP once here before accessing their portal.
  */
 export default function WorkerBindMobilePage() {
   const navigate = useNavigate();
@@ -49,15 +49,15 @@ export default function WorkerBindMobilePage() {
   useEffect(() => {
     if (loading || profileLoading) return;
     if (!isAuthenticated) {
-      navigate('/worker/login', { replace: true });
+      navigate(bindMobileLoginPath(role), { replace: true });
       return;
     }
-    if (role && role !== 'worker') {
+    if (role && !MOBILE_OTP_ROLES.includes(role)) {
       navigate('/auth', { replace: true });
       return;
     }
     if (isMobileVerified) {
-      navigate('/worker/journey', { replace: true });
+      navigate(afterMobileVerifiedPath(role), { replace: true });
     }
   }, [isAuthenticated, role, isMobileVerified, loading, profileLoading, navigate]);
 
@@ -93,7 +93,7 @@ export default function WorkerBindMobilePage() {
       setError('Enter a valid 10-digit Indian mobile number');
       return;
     }
-    if (!isFirebaseConfigured()) {
+    if (!firebaseOtp.isAvailable) {
       setError('Phone SMS verification is not configured. Ask the admin to add Firebase Phone Auth keys.');
       return;
     }
@@ -130,7 +130,11 @@ export default function WorkerBindMobilePage() {
     try {
       await firebaseOtp.verifyOtp(otp);
       try {
-        await firebaseSignOut(getFirebaseAuth());
+        const { getFirebaseAuth } = await import('@/lib/firebase');
+        const { signOut: firebaseSignOut } = await import('firebase/auth');
+        if (!firebaseOtp.devBypass) {
+          await firebaseSignOut(getFirebaseAuth());
+        }
       } catch {
         /* ignore — Firebase session only used for OTP */
       }
@@ -145,15 +149,17 @@ export default function WorkerBindMobilePage() {
       if (updateErr) throw new Error(updateErr.message);
 
       await supabase.auth.updateUser({ data: { phone: digits } });
-      await supabase.from('worker_profiles').upsert({ user_id: user.id } as any, {
-        onConflict: 'user_id',
-      });
+      if (role === 'worker') {
+        await supabase.from('worker_profiles').upsert({ user_id: user.id } as any, {
+          onConflict: 'user_id',
+        });
+      }
 
       markMobileVerified(digits, user.id);
       await refreshProfile();
       markMobileVerified(digits, user.id);
       toast.success('Mobile verified — welcome!');
-      navigate('/worker/journey', { replace: true });
+      navigate(afterMobileVerifiedPath(role), { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Verification failed. Please try again.');
     } finally {
@@ -194,13 +200,15 @@ export default function WorkerBindMobilePage() {
           </div>
           <h1 className="text-2xl font-bold font-heading">Verify your mobile</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            One-time SMS check before you can use the worker portal
+            One-time SMS check before you can use the{' '}
+            {role === 'employer' ? 'employer' : role === 'partner' ? 'partner' : 'worker'} portal
           </p>
         </div>
 
         <div className="mb-4 flex items-center justify-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
           <HardHat className="h-3.5 w-3.5" />
-          Worker account · mobile required
+          {role === 'employer' ? 'Employer' : role === 'partner' ? 'Partner' : 'Worker'} account ·
+          mobile required
         </div>
 
         <Card className="shadow-lg border-border/60">
@@ -210,6 +218,9 @@ export default function WorkerBindMobilePage() {
                 <AlertDescription className="text-sm">{error}</AlertDescription>
               </Alert>
             )}
+            <div className="mb-4">
+              <DevOtpHint />
+            </div>
 
             {step === 'form' && (
               <form onSubmit={handleRequestOtp} className="space-y-4" noValidate>

@@ -5,6 +5,7 @@ import {
   type ConfirmationResult,
 } from 'firebase/auth';
 import { getFirebaseAuth, isFirebaseConfigured, redirectToPhoneAuthHost } from '@/lib/firebase';
+import { DEV_OTP_CODE, isDevOtpBypassEnabled, isOtpSixDigits } from '@/lib/otpConfig';
 
 function mapFirebaseAuthError(err: unknown): string {
   const code = (err as { code?: string })?.code;
@@ -72,6 +73,7 @@ export function dismissRecaptchaWidgets() {
 export function useFirebasePhoneOtp() {
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
+  const pendingDevPhoneRef = useRef<string | null>(null);
 
   const clearVerifierOnly = useCallback(() => {
     try {
@@ -112,6 +114,12 @@ export function useFirebasePhoneOtp() {
 
   const sendOtp = useCallback(
     async (mobileNumber: string) => {
+      if (isDevOtpBypassEnabled()) {
+        pendingDevPhoneRef.current = mobileNumber.replace(/\D/g, '').slice(-10) || mobileNumber;
+        confirmationRef.current = null;
+        return;
+      }
+
       if (!isFirebaseConfigured()) {
         throw new Error('Firebase is not configured');
       }
@@ -141,6 +149,19 @@ export function useFirebasePhoneOtp() {
 
   const verifyOtp = useCallback(
     async (otp: string): Promise<string> => {
+      const code = otp.replace(/\s/g, '');
+      if (isDevOtpBypassEnabled()) {
+        if (!pendingDevPhoneRef.current) {
+          throw new Error('Request OTP first');
+        }
+        if (!isOtpSixDigits(code)) {
+          throw new Error('Enter the 6-digit OTP');
+        }
+        pendingDevPhoneRef.current = null;
+        resetRecaptcha();
+        return `dev-otp:${code === DEV_OTP_CODE ? DEV_OTP_CODE : 'ok'}`;
+      }
+
       if (!confirmationRef.current) {
         throw new Error('Request OTP first');
       }
@@ -158,7 +179,8 @@ export function useFirebasePhoneOtp() {
   );
 
   return {
-    isAvailable: isFirebaseConfigured(),
+    isAvailable: isFirebaseConfigured() || isDevOtpBypassEnabled(),
+    devBypass: isDevOtpBypassEnabled(),
     sendOtp,
     verifyOtp,
     resetRecaptcha,
