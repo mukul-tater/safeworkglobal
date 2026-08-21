@@ -55,9 +55,9 @@ type Props = {
 
 /**
  * Worker signup — Name + Email + Mobile (Firebase SMS OTP) + Password + T&C.
- * Continues to /worker/journey for essentials and skill verification.
- * Partners use the same account form, stay signed in as the worker, and
- * continue the full GCC journey. The worker is listed under My Workers.
+ * Independent workers continue to /worker/journey.
+ * Partners use the same account form, stay signed in as the partner, and
+ * return to My Workers. The worker signs in later to continue their journey.
  */
 export default function QuickWorkerSignup({ assistedByPartner = false }: Props) {
   const navigate = useNavigate();
@@ -136,14 +136,9 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
   useEffect(() => {
     if (profileLoading || formLoading) return;
     if (step !== 'form') return;
-    // Partner add-worker: after the account is created we are signed in as the
-    // worker — continue into the GCC journey (same as independent onboarding).
-    if (partnerAssisted) {
-      if (isAuthenticated && role === 'worker') {
-        navigate('/worker/journey', { replace: true });
-      }
-      return;
-    }
+    // Partner stays on this form (and later My Workers). Never treat the
+    // brief worker signUp session as "the partner should become this worker".
+    if (partnerAssisted) return;
     if (isAuthenticated && role === 'worker') {
       // OTP signup users are already verified — never send them to bind-mobile
       // from this page (Google users without phone still go to bind).
@@ -258,7 +253,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
         ...(partnerAssisted
           ? {
               preserveCallerSession: true,
-              restoreCallerAfterSuccess: false,
+              restoreCallerAfterSuccess: true,
               partnerReturnTo: partnerCtx?.myWorkersPath || '/partner/my-workers',
             }
           : {}),
@@ -266,7 +261,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       if (created.requiresEmailConfirmation) {
         toast.success(
           partnerAssisted
-            ? 'Worker account created and listed in My Workers. They should confirm email, then continue the GCC journey.'
+            ? 'Worker account created and listed in My Workers. They should confirm email, then sign in to continue the GCC journey.'
             : 'Account created. Check your email to confirm your account, then sign in.',
         );
         navigate(partnerAssisted ? (partnerCtx?.myWorkersPath || '/partner/my-workers') : '/worker/login', {
@@ -277,16 +272,19 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
       // Persist flag BEFORE navigation so ProtectedRoute does not bounce to
       // /worker/bind-mobile (signup OTP already verified this number).
       // Pass userId — AuthContext user may not be set yet after signIn.
-      markMobileVerified(created.mobile, created.userId);
+      if (!partnerAssisted) {
+        markMobileVerified(created.mobile, created.userId);
+        await refreshRole();
+        await refreshProfile();
+        markMobileVerified(created.mobile, created.userId);
+        toast.success('Welcome to SafeWorkGlobal!');
+        navigate('/worker/journey', { replace: true });
+        return;
+      }
       await refreshRole();
       await refreshProfile();
-      markMobileVerified(created.mobile, created.userId);
-      toast.success(
-        partnerAssisted
-          ? 'Worker created. Continuing the GCC journey — they also appear in My Workers.'
-          : 'Welcome to SafeWorkGlobal!',
-      );
-      navigate('/worker/journey', { replace: true });
+      toast.success('Worker added. They can sign in with this mobile and password to continue the GCC journey.');
+      navigate(partnerCtx?.myWorkersPath || '/partner/my-workers', { replace: true });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       if (isWeakPasswordAuthError(message)) {
@@ -380,7 +378,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
                   {step === 'form'
                     ? partnerAssisted
-                      ? 'Start their GCC onboarding'
+                      ? 'Create their worker login'
                       : 'Create your worker profile'
                     : partnerAssisted
                       ? 'Verify the worker mobile'
@@ -389,7 +387,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                 <p className="mt-1 text-sm text-muted-foreground">
                   {step === 'form'
                     ? partnerAssisted
-                      ? 'Same account and GCC journey as independent workers. After we confirm their mobile, you continue their full onboarding.'
+                      ? 'Create their profile and a password they can use to sign in. They complete the GCC journey themselves after they log in. They appear in My Workers as soon as the account is created.'
                       : 'Takes about 2 minutes. We’ll SMS a code to confirm your number.'
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>
@@ -634,7 +632,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                     disabled={formLoading || otp.length !== 6}
                   >
                     {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {partnerAssisted ? 'Verify & start GCC journey' : 'Verify & create account'}
+                    {partnerAssisted ? 'Verify & add worker' : 'Verify & create account'}
                   </Button>
 
                   <button

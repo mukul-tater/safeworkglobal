@@ -126,7 +126,7 @@ export default function SignupJourneyPanel({
     ? 'Onboard this worker on the GCC journey'
     : copy.headline;
   const body = createdByPartner
-    ? 'Create their profile, then complete the same GCC verification journey as an independent worker. They will appear in your My Workers list.'
+    ? 'Create their login. They complete the same GCC verification journey when they sign in. They will appear in your My Workers list.'
     : copy.body;
 
   return (

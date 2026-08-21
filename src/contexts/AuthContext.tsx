@@ -127,6 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loadedUserIdRef = useRef<string | null>(null);
   const loadGenerationRef = useRef(0);
   const oauthWaitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Last auth user id we observed (set synchronously on every session). */
+  const lastAuthUserIdRef = useRef<string | null>(null);
 
   const clearOAuthWaitTimer = () => {
     if (oauthWaitTimerRef.current) {
@@ -143,12 +145,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, 8000);
   };
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserRole = async (userId: string, generation?: number) => {
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
       .maybeSingle();
+
+    if (generation !== undefined && generation !== loadGenerationRef.current) return;
 
     if (data && !error) {
       setRole(data.role as AppRole);
@@ -260,12 +264,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isInitialForUser) {
       setProfileLoading(true);
       setHasResolvedRole(false);
+      setRole(null);
     }
 
     try {
       await Promise.all([
         fetchOrCreateProfile(currentUser, generation),
-        fetchUserRole(currentUser.id),
+        fetchUserRole(currentUser.id, generation),
       ]);
       if (generation === loadGenerationRef.current) {
         loadedUserIdRef.current = currentUser.id;
@@ -294,6 +299,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_OUT') {
           clearMobileVerifiedSession(loadedUserIdRef.current);
           loadedUserIdRef.current = null;
+          lastAuthUserIdRef.current = null;
           mobileVerifiedOverrideRef.current = false;
           setMobileVerifiedOverride(false);
           setSession(null);
@@ -327,15 +333,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setMobileVerifiedOverride(true);
         }
 
+        const switchedUser =
+          !!lastAuthUserIdRef.current && lastAuthUserIdRef.current !== nextSession.user.id;
+        lastAuthUserIdRef.current = nextSession.user.id;
+
+        // Partner add-worker: signUp briefly becomes the worker, then we restore
+        // the partner. loadedUserIdRef can still be the partner id during that
+        // hop, which would skip reload and let the in-flight worker fetch win.
+        if (switchedUser) {
+          loadedUserIdRef.current = null;
+          ++loadGenerationRef.current;
+          setRole(null);
+          setHasResolvedRole(false);
+          setProfileLoading(true);
+        }
+
         const sameUser = loadedUserIdRef.current === nextSession.user.id;
         // Same user after tab focus / INITIAL_SESSION / SIGNED_IN recovery.
-        if (sameUser && event !== 'USER_UPDATED') {
+        if (!switchedUser && sameUser && event !== 'USER_UPDATED') {
           setLoading(false);
           return;
         }
 
         setTimeout(() => {
-          void loadUserData(nextSession.user, { force: event === 'USER_UPDATED' });
+          void loadUserData(nextSession.user, { force: event === 'USER_UPDATED' || switchedUser });
         }, 0);
         setLoading(false);
       }
@@ -346,6 +367,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(existing?.user ?? null);
 
       if (existing?.user) {
+        lastAuthUserIdRef.current = existing.user.id;
         if (readMobileVerifiedSession(existing.user.id)) {
           mobileVerifiedOverrideRef.current = true;
           setMobileVerifiedOverride(true);
@@ -428,6 +450,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     clearMobileVerifiedSession(uid);
     loadedUserIdRef.current = null;
+    lastAuthUserIdRef.current = null;
     mobileVerifiedOverrideRef.current = false;
     setMobileVerifiedOverride(false);
     setUser(null);
@@ -500,8 +523,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshRole = async () => {
+    const generation = ++loadGenerationRef.current;
     const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (currentUser) await fetchUserRole(currentUser.id);
+    if (currentUser) await fetchUserRole(currentUser.id, generation);
   };
 
   const assignRole = async (newRole: AppRole) => {

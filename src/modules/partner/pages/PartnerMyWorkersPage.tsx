@@ -53,8 +53,8 @@ export default function PartnerMyWorkersPage() {
         <div>
           <h1 className="text-2xl font-bold">My Workers</h1>
           <p className="text-sm text-muted-foreground">
-            Workers you registered on the GCC journey. Open Add Worker to onboard the next candidate
-            the same way an independent worker starts.
+            Workers you registered. They sign in with the mobile and password you set
+            to continue the GCC journey.
           </p>
         </div>
         <Button asChild>
@@ -75,8 +75,8 @@ export default function PartnerMyWorkersPage() {
           <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p className="text-muted-foreground">No workers added yet.</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Add a worker to start their full GCC onboarding. They will show here as created by
-            partner.
+            Add a worker to create their login. They show here as created by partner,
+            then they sign in to continue GCC onboarding.
           </p>
           <Button asChild className="mt-4">
             <Link to={PARTNER_ADD_WORKER_PATH}>Add Worker</Link>

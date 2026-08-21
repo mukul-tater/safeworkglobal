@@ -222,7 +222,7 @@ function AppShell() {
             path="/partner/add-worker"
             element={
               <ProtectedRoute
-                allowedRoles={["partner", "worker"]}
+                allowedRoles={["partner"]}
                 loginPath="/partner/login"
                 requireMobileVerified={false}
               >
