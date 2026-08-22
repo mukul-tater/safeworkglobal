@@ -6,6 +6,7 @@ import QuickWorkerSignup from "@/pages/worker/QuickWorkerSignup";
 import WorkerPreJourneyScreeningModal from "@/modules/worker-verification/components/journey/WorkerPreJourneyScreeningModal";
 import { useWorkerNavGroups } from "@/modules/worker-registration/hooks/useWorkerNavGroups";
 import { WorkerKioskProvider } from "@/modules/partner/context/WorkerKioskContext";
+import PartnerAddWorkerLoginNotice from "@/modules/partner/components/PartnerAddWorkerLoginNotice";
 import {
   createdByAttribution,
   PARTNER_ADD_WORKER_PATH,
@@ -19,17 +20,31 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 function PartnerAddWorkerShell({
+  loginNoticeAcked,
+  onLoginNoticeAcked,
   declarationsDone,
   onDeclarationsDone,
   myWorkersPath,
   attributionLabel,
 }: {
+  loginNoticeAcked: boolean;
+  onLoginNoticeAcked: () => void;
   declarationsDone: boolean;
   onDeclarationsDone: () => void;
   myWorkersPath: string;
   attributionLabel: string;
 }) {
   const { navGroups } = useWorkerNavGroups();
+  const heading = !loginNoticeAcked
+    ? "Before adding a worker"
+    : declarationsDone
+      ? "Worker creation"
+      : "Pre-declaration";
+  const subtitle = !loginNoticeAcked
+    ? "Read this with the worker, then continue."
+    : declarationsDone
+      ? "Name, email, mobile OTP, and password. You stay signed in as the partner."
+      : "Complete declarations first, then create the worker account.";
 
   return (
     <DashboardLayout
@@ -47,16 +62,14 @@ function PartnerAddWorkerShell({
           <Badge variant="secondary">{attributionLabel}</Badge>
         </div>
         <h1 className="mt-1 font-heading text-xl font-semibold tracking-tight">
-          {declarationsDone ? "Worker creation" : "Pre-declaration"}
+          {heading}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {declarationsDone
-            ? "Name, email, mobile OTP, and password. You stay signed in as the partner."
-            : "Complete declarations first, then create the worker account."}
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
       </div>
 
-      {!declarationsDone ? (
+      {!loginNoticeAcked ? (
+        <PartnerAddWorkerLoginNotice onContinue={onLoginNoticeAcked} />
+      ) : !declarationsDone ? (
         <WorkerPreJourneyScreeningModal
           userId={PARTNER_DRAFT_DECL_ID}
           isOpen
@@ -76,6 +89,7 @@ function PartnerAddWorkerShell({
  */
 export default function PartnerAddWorkerPage() {
   const { user } = useAuth();
+  const [loginNoticeAcked, setLoginNoticeAcked] = useState(false);
   const [declarationsDone, setDeclarationsDone] = useState(hasPartnerDraftDeclarations);
   const [myWorkersPath, setMyWorkersPath] = useState(PARTNER_MY_WORKERS_PATH);
   const [attributionLabel, setAttributionLabel] = useState("Created by partner");
@@ -107,6 +121,8 @@ export default function PartnerAddWorkerPage() {
       draft={draft}
     >
       <PartnerAddWorkerShell
+        loginNoticeAcked={loginNoticeAcked}
+        onLoginNoticeAcked={() => setLoginNoticeAcked(true)}
         declarationsDone={declarationsDone}
         onDeclarationsDone={() => setDeclarationsDone(true)}
         myWorkersPath={myWorkersPath}
