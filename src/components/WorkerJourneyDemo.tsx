@@ -58,7 +58,7 @@ const STEPS: JourneyStep[] = [
     shortTitle: "Registration",
     description: "Start your journey through the website, the mobile app, or partners.",
     icon: UserPlus,
-    bullets: ["Website", "Mobile App", "Partners"],
+    bullets: ["Website", "Mobile App", "Though (CSC- ITI Centres-Emitra Centers)"],
   },
   {
     id: "documents",
