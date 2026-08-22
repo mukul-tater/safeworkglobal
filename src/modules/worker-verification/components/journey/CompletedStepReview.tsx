@@ -25,6 +25,7 @@ import {
   QUIZ_PASS_SCORE,
   type GccNavStepId,
 } from '@/modules/worker-verification/constants';
+import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
 
 export interface KycDocument {
   document_name: string;
@@ -602,7 +603,10 @@ export default function CompletedStepReview({
                   {ASSESSMENT_FEE_INCLUSIONS.map((item) => (
                     <li key={item} className="flex items-start gap-2 text-sm text-foreground">
                       <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
-                      <span>{item}</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        {item}
+                        {item === 'Insurance' && <InsuranceCoverageInfo />}
+                      </span>
                     </li>
                   ))}
                 </ul>

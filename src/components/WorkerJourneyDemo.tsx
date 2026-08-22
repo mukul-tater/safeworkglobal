@@ -15,6 +15,7 @@ import {
   ArrowRight,
   Building2,
   CreditCard,
+  FileSignature,
   Plane,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { TRADE_TEST_CENTERS } from "@/data/tradeTestCenters";
 import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo";
+import InsuranceCoverageInfo from "@/components/worker/InsuranceCoverageInfo";
 import { ASSESSMENT_FEE_INCLUSIONS } from "@/modules/worker-verification/constants";
 import { cn } from "@/lib/utils";
 
@@ -133,8 +135,24 @@ const STEPS: JourneyStep[] = [
     bullets: ["Medical blood report", "X-ray report", "X-ray photo"],
   },
   {
-    id: "travel",
+    id: "agreement",
     number: 8,
+    title: "Agreement",
+    shortTitle: "Agreement",
+    descriptionHi:
+      "मैं नियोक्ता द्वारा निर्धारित रोजगार अवधि (जहां लागू हो, सामान्यतः 2 वर्ष) तक काम करने के लिए सहमत हूं। यदि मैं निर्धारित रोजगार अवधि पूरी होने से पहले नौकरी छोड़कर भारत वापस आना चाहता/चाहती हूं, तो मैं समझता/समझती हूं कि वापसी की यात्रा का खर्च मुझे स्वयं वहन करना पड़ सकता है तथा रोजगार अनुबंध और लागू कानून के अनुसार नियोक्ता को देय कोई कानूनी रूप से लागू शुल्क या वसूल योग्य खर्च भी मुझे देना पड़ सकता है।",
+    description:
+      "I agree to work for the employment period specified by the employer (normally 2 years, where applicable). If I choose to leave or return to India before completing the agreed employment period, I understand that I may be responsible for my own return travel expenses and any legally applicable fees or recoverable costs payable to the employer under my employment contract and applicable law.",
+    icon: FileSignature,
+    bullets: [
+      "Employment period specified by the employer (normally 2 years, where applicable)",
+      "Early return travel may be at your own expense",
+      "Legally applicable fees or recoverable costs may be payable under the contract and law",
+    ],
+  },
+  {
+    id: "travel",
+    number: 9,
     title: "Travel — Visa & Flight",
     shortTitle: "Travel",
     description:
@@ -354,6 +372,7 @@ function StepDetail({
               <span className="inline-flex items-center gap-1.5">
                 {bullet}
                 {bullet.startsWith("Passport") && <PassportRequirementInfo />}
+                {bullet === "Insurance" && <InsuranceCoverageInfo />}
               </span>
             </li>
           ))}
@@ -489,6 +508,11 @@ export default function WorkerJourneyDemo() {
                             Starts from ₹20,000 + GST
                           </span>
                         )}
+                        {step.id === "agreement" && (
+                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                            2-year work commitment
+                          </span>
+                        )}
                         {step.id === "travel" && (
                           <span className="mt-0.5 block text-[11px] text-muted-foreground">
                             Visa &amp; flight
@@ -571,6 +595,11 @@ export default function WorkerJourneyDemo() {
                       {step.id === "payment" && (
                         <span className="block text-xs text-muted-foreground mt-0.5">
                           Starts from ₹20,000 + GST
+                        </span>
+                      )}
+                      {step.id === "agreement" && (
+                        <span className="block text-xs text-muted-foreground mt-0.5">
+                          2-year work commitment
                         </span>
                       )}
                       {step.id === "travel" && (
