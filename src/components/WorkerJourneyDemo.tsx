@@ -76,7 +76,7 @@ const STEPS: JourneyStep[] = [
     shortTitle: "Verbal Screening",
     description: "Trade-specific Q&A conducted at an E-Mitra Centre.",
     icon: MessageSquare,
-    bullets: ["Conducted at E-Mitra Centre", "Trade-specific questions", "Communication check"],
+    bullets: ["Conducted at E-Mitra/CSC/ITI Centres", "Trade-specific questions", "Communication check"],
     branch: { pass: "Online Interview", fail: "Reject / Upskill" },
   },
   {
