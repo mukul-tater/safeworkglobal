@@ -5,7 +5,7 @@ export const HOME_TRADES = [
   { en: 'Electrician', hi: 'इलेक्ट्रीशियन' },
   { en: 'Plumber', hi: 'प्लंबर' },
   { en: 'Welder', hi: 'वेल्डर' },
-  { en: 'HVAC Technician', hi: 'HVAC तकनीशियन' },
+  { en: 'AC/Lift Technician', hi: 'HVAC तकनीशियन' },
   { en: 'Fitter', hi: 'फिटर' },
   { en: 'Construction', hi: 'निर्माण कार्य' },
   { en: 'Carpenter', hi: 'बढ़ई' },
