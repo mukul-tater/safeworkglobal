@@ -33,10 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { TRADE_TEST_CENTERS } from "@/data/tradeTestCenters";
 import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo";
-import {
-  ASSESSMENT_FEE_INR,
-  ASSESSMENT_FEE_INCLUSIONS,
-} from "@/modules/worker-verification/constants";
+import { ASSESSMENT_FEE_INCLUSIONS } from "@/modules/worker-verification/constants";
 import { cn } from "@/lib/utils";
 
 type JourneyStep = {
@@ -45,6 +42,7 @@ type JourneyStep = {
   title: string;
   shortTitle: string;
   description: string;
+  descriptionHi?: string;
   icon: typeof UserPlus;
   bullets: string[];
   branch?: { pass: string; fail: string };
@@ -100,10 +98,12 @@ const STEPS: JourneyStep[] = [
   {
     id: "payment",
     number: 5,
-    title: `Payment — ₹${ASSESSMENT_FEE_INR.toLocaleString("en-IN")}`,
+    title: "Payment — starts from ₹20,000 + GST",
     shortTitle: "Payment",
+    descriptionHi:
+      "फी हर जॉब के हिसाब से अलग होती है। अधिक जानकारी के लिए Find Jobs पर देखें।",
     description:
-      "One transparent fee. This ₹35,400 covers everything you need to get travel-ready — no hidden agent charges.",
+      "The fee varies by job. For more details, see Find Jobs.",
     icon: CreditCard,
     bullets: [...ASSESSMENT_FEE_INCLUSIONS],
   },
@@ -298,23 +298,42 @@ function StepDetail({
                 step.title
               )}
             </h3>
-            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-              {step.description}
-            </p>
+            {step.descriptionHi ? (
+              <div className="mt-1.5 space-y-1">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {step.descriptionHi}
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {step.description}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                {step.description}
+              </p>
+            )}
           </div>
         </div>
 
         {isPayment && (
           <div className="mb-4 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-              One-time fee
+              Starts from
             </p>
             <p className="mt-0.5 text-2xl font-bold font-heading tabular-nums text-foreground">
-              ₹{ASSESSMENT_FEE_INR.toLocaleString("en-IN")}
+              ₹20,000{" "}
+              <span className="text-base font-semibold text-muted-foreground">+ GST</span>
             </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              All-inclusive — visa, flights, docs, insurance &amp; government fees
+            <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+              वीज़ा, फ्लाइट, डॉक्स और इंश्योरेंस शामिल। Visa, flights, docs &amp; insurance included.
             </p>
+            <Link
+              to="/jobs"
+              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+            >
+              View job-wise fee on Find Jobs
+              <ArrowRight className="h-3 w-3" />
+            </Link>
           </div>
         )}
 
@@ -467,7 +486,7 @@ export default function WorkerJourneyDemo() {
                         )}
                         {step.id === "payment" && (
                           <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                            ₹{ASSESSMENT_FEE_INR.toLocaleString("en-IN")} all-inclusive
+                            Starts from ₹20,000 + GST
                           </span>
                         )}
                         {step.id === "travel" && (
@@ -551,7 +570,7 @@ export default function WorkerJourneyDemo() {
                       )}
                       {step.id === "payment" && (
                         <span className="block text-xs text-muted-foreground mt-0.5">
-                          ₹{ASSESSMENT_FEE_INR.toLocaleString("en-IN")} — visa, flights &amp; more
+                          Starts from ₹20,000 + GST
                         </span>
                       )}
                       {step.id === "travel" && (
