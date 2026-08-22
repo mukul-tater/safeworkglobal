@@ -34,9 +34,7 @@ export default function PassportRequirementInfo() {
         </DialogHeader>
         <div className="space-y-4 text-sm leading-relaxed text-foreground">
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              English
-            </p>
+            
             <p>Your passport should have at least 6 months’ validity.</p>
             <p>
               No passport yet? Still you can register and complete till trade tests, but a valid
@@ -46,9 +44,7 @@ export default function PassportRequirementInfo() {
             <p>You can apply for a new passport. Generally you will get new passport in 10-15 days.</p>
           </div>
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              हिंदी
-            </p>
+            
             <p>पासपोर्ट आवश्यक: आपके पासपोर्ट की वैधता कम से कम 6 महीने होनी चाहिए।</p>
             <p>
               अभी पासपोर्ट नहीं है? लेकिन फिर भी आप रजिस्ट्रेशन और ट्रेड टेस्ट पूरा कर सकते हैं, लेकिन
