@@ -66,7 +66,7 @@ export default function SavedJobs() {
       const { error } = await supabase.from("saved_jobs").delete().eq("id", savedJobId);
       if (error) throw error;
       setSavedJobs(prev => prev.filter(sj => sj.id !== savedJobId));
-      toast({ title: "Removed", description: "Job removed from saved list" });
+      toast({ title: "Removed", description: "Job removed from favourites" });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
@@ -79,8 +79,8 @@ export default function SavedJobs() {
       <WorkerJobsGate>
       <PortalBreadcrumb />
       <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold mb-2">Saved Jobs</h1>
-        <p className="text-muted-foreground text-sm">Jobs you've bookmarked for later</p>
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">Favourite jobs</h1>
+        <p className="text-muted-foreground text-sm">Jobs you saved to apply later</p>
       </div>
 
       {loading ? (
@@ -91,9 +91,9 @@ export default function SavedJobs() {
       ) : savedJobs.length === 0 ? (
         <Card className="p-12 text-center">
           <Bookmark className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-lg font-semibold mb-2">No saved jobs yet</h2>
+          <h2 className="text-lg font-semibold mb-2">No favourite jobs yet</h2>
           <p className="text-muted-foreground text-sm mb-6">
-            Browse jobs and click the bookmark icon to save them here for later.
+            Browse jobs and tap the bookmark to save favourites here.
           </p>
           <Button onClick={() => navigate("/jobs")}>
             <Briefcase className="h-4 w-4 mr-2" />

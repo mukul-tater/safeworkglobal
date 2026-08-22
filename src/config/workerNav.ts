@@ -16,7 +16,7 @@ export const workerNavGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { path: "/jobs", icon: Briefcase, label: "Job Search" },
-      { path: "/worker/saved-jobs", icon: Bookmark, label: "Saved Jobs" },
+      { path: "/worker/saved-jobs", icon: Bookmark, label: "Favourite jobs" },
       { path: "/worker/saved-searches", icon: Bookmark, label: "Saved Searches" },
       { path: "/worker/applications", icon: FileText, label: "Applications" },
       { path: "/worker/application-tracking", icon: FileCheck, label: "Track Applications" },

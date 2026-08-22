@@ -305,6 +305,32 @@ export default function CompletedStepReview({
           <StatusPill tone={headerTone} label={headerLabel} />
         </div>
 
+        {stepId === 'pre_declaration' && (
+          <p className="text-sm text-muted-foreground">
+            Pre-journey screening declarations were submitted.
+          </p>
+        )}
+
+        {stepId === 'account_details' && (
+          <p className="text-sm text-muted-foreground">
+            Worker login (name, email, mobile and password) is set. They can also sign in later with
+            this mobile and password.
+          </p>
+        )}
+
+        {stepId === 'find_jobs' && (
+          <p className="text-sm text-muted-foreground">
+            Job search completed. Favourites stay in Favourite jobs.
+          </p>
+        )}
+
+        {stepId === 'apply_job' && (
+          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+            <Detail label="Applied job skill" value={row.primary_skill || '—'} />
+            <Detail label="Journey job" value={row.journey_job_id ? 'Linked' : '—'} />
+          </dl>
+        )}
+
         {stepId === 'essentials' && (
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
             <Detail label="Email" value={displayableEmail(row.email) || '—'} />
@@ -621,7 +647,19 @@ export default function CompletedStepReview({
         })()}
 
         {!stepId ||
-        !['essentials', 'test1', 'skill_proof', 'identity', 'test2', 'payment', 'medical'].includes(stepId) ? (
+        ![
+          'pre_declaration',
+          'account_details',
+          'essentials',
+          'find_jobs',
+          'apply_job',
+          'test1',
+          'skill_proof',
+          'identity',
+          'test2',
+          'payment',
+          'medical',
+        ].includes(stepId) ? (
           <p className="text-sm text-muted-foreground">
             You've finished this step. SafeWork has everything it needs here.
           </p>

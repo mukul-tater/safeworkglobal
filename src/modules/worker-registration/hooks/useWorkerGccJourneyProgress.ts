@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Briefcase,
   ClipboardList,
   CreditCard,
   FileSignature,
   Flag,
   GraduationCap,
   ImagePlus,
+  KeyRound,
   Plane,
+  Search,
   ShieldCheck,
   Stethoscope,
   UserRound,
@@ -16,19 +19,24 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useWorkerKiosk } from "@/modules/partner/context/WorkerKioskContext";
 import {
-  GCC_JOURNEY_NAV_STEPS,
+  gccJourneyNavSteps,
   navStepForStage,
-  navStepIndex,
   normalizeVerificationStage,
   type GccNavStepId,
   type VerificationStage,
 } from "@/modules/worker-verification/constants";
+import { getWorkerDeclarations } from "@/modules/worker-verification/services/declarationService";
 
 export type GccStepStatus = "completed" | "current" | "waiting";
 
 const STEP_ICONS: Record<GccNavStepId, LucideIcon> = {
+  pre_declaration: FileSignature,
+  account_details: KeyRound,
   essentials: UserRound,
+  find_jobs: Search,
+  apply_job: Briefcase,
   test1: ClipboardList,
   skill_proof: ImagePlus,
   identity: ShieldCheck,
@@ -42,19 +50,33 @@ const STEP_ICONS: Record<GccNavStepId, LucideIcon> = {
   deployment: Plane,
 };
 
-function deriveNavStatuses(
+export function deriveNavStatuses(
   stage: VerificationStage | null,
   tradeRequired: boolean,
+  opts: {
+    declarationsDone: boolean;
+    includeAccountDetails: boolean;
+    accountCreated: boolean;
+  },
 ): Record<GccNavStepId, GccStepStatus> {
-  const currentNav = navStepForStage(stage ?? "essentials");
-  const curIdx = navStepIndex(currentNav);
+  const steps = gccJourneyNavSteps({ includeAccountDetails: opts.includeAccountDetails });
+  let currentNav: GccNavStepId;
+  if (!opts.declarationsDone) {
+    currentNav = "pre_declaration";
+  } else if (opts.includeAccountDetails && !opts.accountCreated) {
+    currentNav = "account_details";
+  } else {
+    currentNav = navStepForStage(stage ?? "essentials");
+  }
+
+  const curIdx = steps.findIndex((s) => s.id === currentNav);
   const out = {} as Record<GccNavStepId, GccStepStatus>;
 
-  for (const step of GCC_JOURNEY_NAV_STEPS) {
-    const i = navStepIndex(step.id);
+  for (const step of steps) {
+    const i = steps.findIndex((s) => s.id === step.id);
     if (currentNav === "gcc_ready" && i <= curIdx) {
       out[step.id] = "completed";
-    } else if (step.id === "test3" && !tradeRequired && curIdx > navStepIndex("payment")) {
+    } else if (step.id === "test3" && !tradeRequired && curIdx > steps.findIndex((s) => s.id === "payment")) {
       out[step.id] = "completed";
     } else if (i < curIdx) {
       out[step.id] = "completed";
@@ -73,17 +95,42 @@ function statusLabel(s: GccStepStatus): string {
   return "Waiting";
 }
 
+export type UseWorkerGccJourneyProgressOpts = {
+  workerUserId?: string | null;
+  includeAccountDetails?: boolean;
+  journeyPath?: string;
+  /** Partner add-worker before the account exists. */
+  draft?: {
+    declarationsDone: boolean;
+    accountCreated: boolean;
+  };
+};
+
 /**
- * GCC Journey: Test 1 = quiz, Test 2 = interview, Test 3 = physical trade (skill-based), then Medical.
+ * GCC Journey: Find jobs + apply, then Test 1 = quiz.
  */
-export function useWorkerGccJourneyProgress() {
+export function useWorkerGccJourneyProgress(opts?: UseWorkerGccJourneyProgressOpts) {
   const { user, profile } = useAuth();
+  const kiosk = useWorkerKiosk();
+  const workerUserId = opts?.workerUserId ?? kiosk.workerUserId ?? user?.id ?? profile?.id ?? null;
+  const includeAccountDetails = opts?.includeAccountDetails ?? kiosk.includeAccountDetails;
+  const journeyPath = opts?.journeyPath ?? kiosk.journeyPath ?? "/worker/journey";
+  const draft = opts?.draft ?? kiosk.draft;
+
   const [stage, setStage] = useState<VerificationStage | null>(null);
   const [tradeRequired, setTradeRequired] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [declarationsDone, setDeclarationsDone] = useState(Boolean(draft?.declarationsDone));
+  const [loading, setLoading] = useState(!draft);
 
   useEffect(() => {
-    const uid = user?.id || profile?.id;
+    if (draft) {
+      setDeclarationsDone(draft.declarationsDone);
+      setStage("essentials");
+      setLoading(false);
+      return;
+    }
+
+    const uid = workerUserId;
     if (!uid) {
       setLoading(false);
       return;
@@ -93,7 +140,7 @@ export function useWorkerGccJourneyProgress() {
 
     const load = async () => {
       try {
-        const [{ data }, { data: wp }] = await Promise.all([
+        const [{ data }, { data: wp }, decl] = await Promise.all([
           (supabase as any)
             .from("worker_verification")
             .select("stage, trade_test_required, primary_skill")
@@ -104,6 +151,7 @@ export function useWorkerGccJourneyProgress() {
             .select("kyc_status")
             .eq("user_id", uid)
             .maybeSingle(),
+          getWorkerDeclarations(uid),
         ]);
         if (cancelled) return;
 
@@ -112,6 +160,7 @@ export function useWorkerGccJourneyProgress() {
             ? Boolean(data.trade_test_required)
             : true;
         setTradeRequired(trade);
+        setDeclarationsDone(Boolean(decl?.completed_at));
 
         let nextStage = normalizeVerificationStage(
           (data?.stage as string) || "essentials",
@@ -121,6 +170,8 @@ export function useWorkerGccJourneyProgress() {
         const kycOk = kycStatus === "submitted" || kycStatus === "verified";
         const pastMedia =
           nextStage !== "essentials" &&
+          nextStage !== "find_jobs" &&
+          nextStage !== "apply_job" &&
           nextStage !== "quiz" &&
           nextStage !== "media";
         if (!kycOk && pastMedia && nextStage !== "identity") {
@@ -145,34 +196,43 @@ export function useWorkerGccJourneyProgress() {
       cancelled = true;
       window.removeEventListener("swg-verification-updated", onUpdated);
     };
-  }, [user?.id, profile?.id]);
+  }, [workerUserId, draft?.declarationsDone, draft?.accountCreated]);
+
+  const steps = useMemo(
+    () => gccJourneyNavSteps({ includeAccountDetails }),
+    [includeAccountDetails],
+  );
 
   const statuses = useMemo(
-    () => deriveNavStatuses(stage, tradeRequired),
-    [stage, tradeRequired],
+    () =>
+      deriveNavStatuses(stage, tradeRequired, {
+        declarationsDone,
+        includeAccountDetails,
+        accountCreated: draft ? draft.accountCreated : Boolean(workerUserId),
+      }),
+    [stage, tradeRequired, declarationsDone, includeAccountDetails, draft, workerUserId],
   );
-  const completed = GCC_JOURNEY_NAV_STEPS.filter((s) => statuses[s.id] === "completed").length;
+  const completed = steps.filter((s) => statuses[s.id] === "completed").length;
   const journeyIncomplete = stage !== "gcc_ready" && stage !== "deployment";
 
   const navItems = useMemo(
     () =>
-      GCC_JOURNEY_NAV_STEPS.map((step) => {
+      steps.map((step) => {
         const status = statuses[step.id];
         const tone: "completed" | "in_progress" | "waiting" =
           status === "current" ? "in_progress" : status === "completed" ? "completed" : "waiting";
         return {
           id: step.id,
-          path: "/worker/journey",
+          path: journeyPath,
           icon: STEP_ICONS[step.id],
           label: step.navLabel,
           title: step.label,
           statusLabel: statusLabel(statuses[step.id]),
           statusTone: tone,
-          // Locked stepper: cannot jump ahead. Done steps stay viewable.
           disabled: statuses[step.id] === "waiting",
         };
       }),
-    [statuses],
+    [statuses, steps, journeyPath],
   );
 
   return {
@@ -180,9 +240,11 @@ export function useWorkerGccJourneyProgress() {
     stage,
     statuses,
     completed,
-    total: GCC_JOURNEY_NAV_STEPS.length,
+    total: steps.length,
     journeyIncomplete,
     navItems,
     tradeRequired,
+    steps,
+    declarationsDone,
   };
 }

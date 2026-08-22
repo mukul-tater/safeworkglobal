@@ -16,7 +16,7 @@ import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
   Calendar, CreditCard, Stethoscope, RotateCcw, ShieldCheck, Wrench,
   GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList, Info,
-  MapPin, Phone, ExternalLink,
+  MapPin, Phone, ExternalLink, Search, Briefcase,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { indianStates } from '@/lib/validations/partner';
@@ -27,12 +27,11 @@ import {
   MEDICAL_TEST_SCREENING_NOTE,
   educationOptionsForTenthPass,
   ecrFromTenthPass,
-  GCC_JOURNEY_NAV_STEPS,
+  gccJourneyNavSteps,
   DEPLOYMENT_CHECKLIST,
   VERIFICATION_STAGE_LABELS,
   isJourneyResetEnabled,
   navStepForStage,
-  navStepIndex,
   normalizeVerificationStage,
   QUIZ_PASS_SCORE,
   skillRequiresTradeTest,
@@ -85,6 +84,7 @@ import { CREATED_BY_PARTNER_LABEL, hasParkedPartnerSession } from '@/modules/par
 import EmitraWorkerOnboardingNoticeDialog from '@/modules/emitra/components/EmitraWorkerOnboardingNoticeDialog';
 import { hasAckedEmitraOnboardingNotice } from '@/modules/emitra/lib/emitraWorkerOnboarding';
 import WorkerDeclarationsSummary from '@/modules/worker-verification/components/journey/WorkerDeclarationsSummary';
+import JourneyJobPicker from '@/modules/worker-verification/components/journey/JourneyJobPicker';
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
 import PassportRequirementInfo from '@/components/worker/PassportRequirementInfo';
@@ -594,11 +594,13 @@ export default function WorkerVerificationPage({
       // Mandatory for apply: if KYC missing and worker already passed skill proof, show Identity.
       const pastMedia =
         v.stage !== 'essentials' &&
+        v.stage !== 'find_jobs' &&
+        v.stage !== 'apply_job' &&
         v.stage !== 'quiz' &&
         v.stage !== 'media';
       setForceIdentity(!kycOk && pastMedia && v.stage !== 'identity');
 
-      if (v.primary_skill && (v.stage === 'quiz' || !v.quiz_completed_at)) {
+      if (v.primary_skill && (v.stage === 'quiz' || (!v.quiz_completed_at && v.stage !== 'find_jobs' && v.stage !== 'apply_job' && v.stage !== 'essentials'))) {
         const items = await loadQuizItems(v.primary_skill, v.state);
         setQuizItems(items);
       }
@@ -652,19 +654,22 @@ export default function WorkerVerificationPage({
   const stage: VerificationStage = forceIdentity ? 'identity' : effectiveRaw;
   const tradeNeeded = row?.trade_test_required ?? skillRequiresTradeTest(row?.primary_skill);
   const needsTenthMarksheet = tenthPass === true;
-  const navId = navStepForStage(stage);
+  const navSteps = gccJourneyNavSteps({ includeAccountDetails: partnerKiosk });
+  const currentNav: GccNavStepId = !declaration && showDeclarationModal
+    ? 'pre_declaration'
+    : navStepForStage(stage);
   const heroSubheading = HERO_SUBHEADINGS[phaseForStage(stage)];
 
   const journeyParam = searchParams.get('journey') as GccNavStepId | null;
-  const validJourneyIds = GCC_JOURNEY_NAV_STEPS.map((s) => s.id);
+  const validJourneyIds = navSteps.map((s) => s.id);
   const viewingJourney =
     journeyParam && validJourneyIds.includes(journeyParam) ? journeyParam : null;
   const viewingCompletedStep =
     !!viewingJourney &&
-    viewingJourney !== navId &&
-    navStepIndex(viewingJourney) < navStepIndex(navId);
+    viewingJourney !== currentNav &&
+    navSteps.findIndex((s) => s.id === viewingJourney) < navSteps.findIndex((s) => s.id === currentNav);
   const viewingStepMeta = viewingCompletedStep
-    ? GCC_JOURNEY_NAV_STEPS.find((s) => s.id === viewingJourney)
+    ? navSteps.find((s) => s.id === viewingJourney)
     : null;
 
   const clearJourneyQuery = () => {
@@ -845,12 +850,7 @@ export default function WorkerVerificationPage({
       setEcrCategory(ecrFromTenthPass(tenthPass).ecr_category);
       notifyVerificationUpdated();
       await refreshProfile();
-      const items = await loadQuizItems(primarySkill);
-      setQuizItems(items);
-      setQuizIndex(0);
-      setQuizAnswers({});
-      setQuizFailScore(null);
-      toast.success('Essentials saved — start your skill check');
+      toast.success('Essentials saved — find a job next');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not save');
     } finally {
@@ -1153,16 +1153,22 @@ export default function WorkerVerificationPage({
 
   return (
     <JourneyShell embedded={embedded}>
-      <WorkerPreJourneyScreeningModal
-        userId={subjectId || ''}
-        isOpen={showDeclarationModal && !emitraNoticeOpen}
-        onCompleted={(decl) => {
-          completedDeclRef.current = decl;
-          setDeclaration(decl);
-          setShowDeclarationModal(false);
-          notifyVerificationUpdated();
-        }}
-      />
+      {showDeclarationModal && !emitraNoticeOpen ? (
+        <div className="mx-auto max-w-5xl">
+          <WorkerPreJourneyScreeningModal
+            userId={subjectId || ''}
+            isOpen
+            variant="inline"
+            onCompleted={(decl) => {
+              completedDeclRef.current = decl;
+              setDeclaration(decl);
+              setShowDeclarationModal(false);
+              notifyVerificationUpdated();
+            }}
+          />
+        </div>
+      ) : (
+      <>
       {createdByEmitra && (
         <EmitraWorkerOnboardingNoticeDialog
           open={emitraNoticeOpen}
@@ -1277,7 +1283,7 @@ export default function WorkerVerificationPage({
             footer={
               <Button className="w-full sm:w-auto" onClick={() => void onSaveEssentials()} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                Continue to Test 1 <ArrowRight className="h-4 w-4 ml-1" />
+                Continue to find jobs <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             }
           >
@@ -1382,6 +1388,65 @@ export default function WorkerVerificationPage({
           </StageActionShell>
         )}
 
+        {!viewingCompletedStep && stage === 'find_jobs' && (
+          <StageActionShell
+            icon={Search}
+            title="Find jobs"
+            description="Browse overseas openings, favourite the ones that fit, then continue to apply. Test 1 will match the job you apply to."
+            timeEstimate="Browse and save favourites"
+          >
+            <JourneyJobPicker
+              workerUserId={subjectId}
+              mode="find"
+              primarySkill={row.primary_skill}
+              onAdvanced={(next) => {
+                setRow(next);
+                notifyVerificationUpdated();
+                clearJourneyQuery();
+              }}
+            />
+          </StageActionShell>
+        )}
+
+        {!viewingCompletedStep && stage === 'apply_job' && (
+          <StageActionShell
+            icon={Briefcase}
+            title="Apply to a job"
+            description="Apply to one job to unlock Test 1. The work quiz uses that job’s trade."
+            timeEstimate="One application required"
+          >
+            <JourneyJobPicker
+              workerUserId={subjectId}
+              mode="apply"
+              primarySkill={row.primary_skill}
+              onAdvanced={async (next) => {
+                setRow(next);
+                notifyVerificationUpdated();
+                clearJourneyQuery();
+                if (next.primary_skill) {
+                  const items = await loadQuizItems(next.primary_skill, next.state);
+                  setQuizItems(items);
+                  setQuizIndex(0);
+                  setQuizAnswers({});
+                }
+              }}
+            />
+          </StageActionShell>
+        )}
+
+        {!viewingCompletedStep && stage === 'quiz' && !currentQuiz && (
+          <StageActionShell
+            icon={ClipboardList}
+            title="Test 1 — Do you know this work?"
+            description="Loading quiz questions for the job you applied to…"
+          >
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Preparing Test 1
+            </div>
+          </StageActionShell>
+        )}
+
         {!viewingCompletedStep && stage === 'quiz' && currentQuiz && (
           <StageActionShell
             icon={ClipboardList}
@@ -1389,7 +1454,8 @@ export default function WorkerVerificationPage({
             description={
               <>
                 Watch the example for{' '}
-                <span className="font-medium text-foreground">{row.primary_skill || 'your skill'}</span>, then
+                <span className="font-medium text-foreground">{row.primary_skill || 'your skill'}</span>
+                {row.journey_job_id ? ' (from the job you applied to)' : ''}, then
                 answer Yes or No. You upload your own photos and videos in the next step. Question {quizIndex + 1} of{' '}
                 {quizItems.length}.
               </>
@@ -2652,6 +2718,8 @@ export default function WorkerVerificationPage({
           </aside>
         </div>
       </div>
+      </>
+      )}
     </JourneyShell>
   );
 }

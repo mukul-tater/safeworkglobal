@@ -1,5 +1,7 @@
 export type VerificationStage =
   | 'essentials'
+  | 'find_jobs'
+  | 'apply_job'
   | 'quiz'
   | 'media'
   | 'identity'
@@ -24,6 +26,7 @@ export interface WorkerVerification {
   state: string | null;
   education_level: string | null;
   primary_skill: string | null;
+  journey_job_id?: string | null;
   essentials_completed_at: string | null;
   quiz_score: number | null;
   quiz_completed_at: string | null;

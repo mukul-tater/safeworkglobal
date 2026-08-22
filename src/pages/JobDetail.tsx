@@ -165,8 +165,8 @@ export default function JobDetail() {
     }
     if (isWorker && !canApplyToJobs) {
       toast({
-        title: 'Complete your profile first',
-        description: 'You can browse jobs anytime. Finish your profile to apply or show interest.',
+        title: 'Finish Essentials first',
+        description: 'Complete Essentials in your GCC journey, then apply so Test 1 matches the job.',
         variant: 'destructive',
       });
       navigate(onboardingPath);
@@ -182,56 +182,26 @@ export default function JobDetail() {
     try {
       if (!user) return;
 
-      // Soft KYC gate — worker must have submitted or verified KYC
-      const { data: wp } = await supabase
-        .from('worker_profiles')
-        .select('kyc_status')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      const kycStatus = (wp as any)?.kyc_status ?? 'not_started';
-      if (kycStatus !== 'submitted' && kycStatus !== 'verified') {
-        toast({
-          title: 'Identity verification required',
-          description: 'Complete Identity (KYC) in your GCC Journey before applying.',
-          variant: 'destructive',
-        });
-        setApplying(false);
-        navigate('/worker/journey');
-        return;
-      }
-
-      const inserted = await withRetry(
-        async () => {
-          const { data, error } = await supabase
-            .from('job_applications')
-            .insert({
-              job_id: job.id,
-              worker_id: user.id,
-              employer_id: job.employer_id,
-              status: 'PENDING',
-              cover_letter: 'Application submitted through platform',
-            })
-            .select('id')
-            .single();
-          if (error) throw error;
-          return data;
-        },
-        {
-          onAttempt: (n) => {
-            if (n > 1) toast({ title: `Retrying submission… (${n}/3)` });
-          },
-        }
+      const { applyToJobForJourney } = await import(
+        '@/modules/worker-verification/services/jobJourneyService'
       );
+      const { applicationId } = await applyToJobForJourney({
+        jobId: job.id,
+        workerUserId: user.id,
+        title: job.title,
+        description: job.description || '',
+        fallbackSkill: null,
+      });
 
       setHasApplied(true);
       toast({ title: 'Application Submitted!', description: 'Your application has been sent to the employer' });
-      if (inserted?.id) {
-        navigate(`/worker/application-success/${inserted.id}`);
+      if (applicationId) {
+        navigate(`/worker/application-success/${applicationId}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
-        title: 'Could not submit application',
-        description: error?.message || 'Please check your connection and try again.',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to submit application',
         variant: 'destructive',
       });
     } finally {
@@ -287,7 +257,7 @@ export default function JobDetail() {
         setIsSaved(false);
         toast({
           title: 'Job Removed',
-          description: 'Job removed from your saved list',
+          description: 'Job removed from your favourites',
         });
       } else {
         // Save the job
@@ -307,8 +277,8 @@ export default function JobDetail() {
 
         setIsSaved(true);
         toast({
-          title: 'Job Saved',
-          description: 'Job added to your saved list',
+          title: 'Added to favourites',
+          description: 'Find this job again under Favourite jobs',
         });
       }
     } catch (error: any) {
@@ -554,14 +524,14 @@ export default function JobDetail() {
                         ) : !isLoggedIn ? (
                           'Sign Up to Apply'
                         ) : isWorker && !canApplyToJobs ? (
-                          'Complete profile to apply'
+                          'Finish Essentials to apply'
                         ) : (
                           'Apply Now'
                         )}
                       </Button>
                       {isLoggedIn && isWorker && !canApplyToJobs && !hasApplied && (
                         <p className="text-xs text-muted-foreground text-center">
-                          You can browse jobs now. Finish your profile to apply.
+                          Complete Essentials, then apply so Test 1 matches this job.
                         </p>
                       )}
                     </>

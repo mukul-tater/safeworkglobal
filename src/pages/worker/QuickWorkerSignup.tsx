@@ -52,6 +52,8 @@ type Step = 'form' | 'otp';
 type Props = {
   /** Partner is registering a worker; same form and journey as independent signup. */
   assistedByPartner?: boolean;
+  /** Render only the form card (used inside the worker-portal sidebar). */
+  embedded?: boolean;
 };
 
 /**
@@ -59,7 +61,7 @@ type Props = {
  * Independent workers continue to /worker/journey.
  * Partners stay signed in and fill the worker GCC journey as a kiosk service.
  */
-export default function QuickWorkerSignup({ assistedByPartner = false }: Props) {
+export default function QuickWorkerSignup({ assistedByPartner = false, embedded = false }: Props) {
   const navigate = useNavigate();
   const {
     user, isAuthenticated, role, isMobileVerified, profileLoading, refreshProfile, refreshRole, markMobileVerified,
@@ -258,6 +260,16 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
             }
           : {}),
       });
+      if (partnerAssisted) {
+        try {
+          const { attachDraftDeclarationsToWorker } = await import(
+            '@/modules/worker-verification/services/declarationService'
+          );
+          await attachDraftDeclarationsToWorker(created.userId);
+        } catch {
+          /* declarations can be re-done on the journey */
+        }
+      }
       if (created.requiresEmailConfirmation) {
         toast.success(
           partnerAssisted
@@ -342,18 +354,18 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-muted/40">
+    <div className={embedded ? 'w-full' : 'fixed inset-0 overflow-hidden bg-muted/40'}>
       <SEOHead
         title="Worker Registration | SafeWork Global"
         description="Create a free SafeWork Global worker profile to complete skill verification and connect with global employment opportunities."
       />
-      <div className="flex h-full flex-col md:flex-row">
-        <SignupJourneyPanel createdByPartner={partnerAssisted} />
+      <div className={embedded ? '' : 'flex h-full flex-col md:flex-row'}>
+        {!embedded && <SignupJourneyPanel createdByPartner={partnerAssisted} />}
 
-        <main className="relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:px-8 md:px-8 lg:px-12">
-          <div className="mx-auto w-full max-w-[420px]">
+        <main className={embedded ? 'w-full' : 'relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:px-8 md:px-8 lg:px-12'}>
+          <div className="mx-auto w-full max-w-[480px]">
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5 sm:p-7">
-              {partnerAssisted && (
+              {partnerAssisted && !embedded && (
                 <button
                   type="button"
                   data-inline

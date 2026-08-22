@@ -139,6 +139,8 @@ export const MEDICAL_TEST_SCREENING_NOTE =
 
 export type VerificationStage =
   | 'essentials'
+  | 'find_jobs'
+  | 'apply_job'
   | 'quiz'
   | 'media'
   | 'identity'
@@ -154,6 +156,8 @@ export type VerificationStage =
 
 export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
   'essentials',
+  'find_jobs',
+  'apply_job',
   'quiz',
   'media',
   'identity',
@@ -170,6 +174,8 @@ export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
 /** Short labels used inside the wizard UI (DB stages). */
 export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   essentials: 'Essentials',
+  find_jobs: 'Find jobs',
+  apply_job: 'Apply to job',
   quiz: 'Test 1 — Know this work?',
   media: 'Skill proof upload',
   identity: 'Identity (KYC)',
@@ -186,10 +192,15 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
 
 /**
  * Sidebar / home tracker.
- * Identity/KYC is required before applying to jobs (after skill proof, before Test 2).
+ * Find jobs + apply happen after Essentials and before Test 1.
+ * Partner add-worker also inserts an account-details step after pre-declaration.
  */
 export type GccNavStepId =
+  | 'pre_declaration'
+  | 'account_details'
   | 'essentials'
+  | 'find_jobs'
+  | 'apply_job'
   | 'test1'
   | 'skill_proof'
   | 'identity'
@@ -202,21 +213,52 @@ export type GccNavStepId =
   | 'deployment'
   | 'gcc_ready';
 
-export const GCC_JOURNEY_NAV_STEPS: {
+export type GccNavStepMeta = {
   id: GccNavStepId;
   label: string;
   shortLabel: string;
   /** Medium-length label for the sidebar — descriptive but fits a 16rem rail. */
   navLabel: string;
-  /** DB stages that count as this nav step. */
+  /** DB stages that count as this nav step. Empty for UI-only steps. */
   stages: VerificationStage[];
-}[] = [
+};
+
+const ACCOUNT_DETAILS_NAV_STEP: GccNavStepMeta = {
+  id: 'account_details',
+  label: 'Worker login',
+  shortLabel: 'Login',
+  navLabel: 'Worker login',
+  stages: [],
+};
+
+const GCC_JOURNEY_NAV_STEPS_CORE: GccNavStepMeta[] = [
+  {
+    id: 'pre_declaration',
+    label: 'Pre-declaration',
+    shortLabel: 'Declarations',
+    navLabel: 'Pre-declaration',
+    stages: [],
+  },
   {
     id: 'essentials',
     label: 'Essentials',
     shortLabel: 'Essentials',
     navLabel: 'Essentials',
     stages: ['essentials'],
+  },
+  {
+    id: 'find_jobs',
+    label: 'Find jobs',
+    shortLabel: 'Find jobs',
+    navLabel: 'Find jobs',
+    stages: ['find_jobs'],
+  },
+  {
+    id: 'apply_job',
+    label: 'Apply to job',
+    shortLabel: 'Apply',
+    navLabel: 'Apply to job',
+    stages: ['apply_job'],
   },
   {
     id: 'test1',
@@ -290,6 +332,21 @@ export const GCC_JOURNEY_NAV_STEPS: {
     stages: ['deployment'],
   },
 ];
+
+/** Default worker journey (no partner-only login step). */
+export const GCC_JOURNEY_NAV_STEPS: GccNavStepMeta[] = GCC_JOURNEY_NAV_STEPS_CORE;
+
+/** Partner add-worker inserts login details after pre-declaration, before Essentials. */
+export function gccJourneyNavSteps(opts?: { includeAccountDetails?: boolean }): GccNavStepMeta[] {
+  if (!opts?.includeAccountDetails) return GCC_JOURNEY_NAV_STEPS_CORE;
+  const essentialsAt = GCC_JOURNEY_NAV_STEPS_CORE.findIndex((s) => s.id === 'essentials');
+  if (essentialsAt < 0) return GCC_JOURNEY_NAV_STEPS_CORE;
+  return [
+    ...GCC_JOURNEY_NAV_STEPS_CORE.slice(0, essentialsAt),
+    ACCOUNT_DETAILS_NAV_STEP,
+    ...GCC_JOURNEY_NAV_STEPS_CORE.slice(essentialsAt),
+  ];
+}
 
 /** Minimum Test 1 score to pass. Failing allows unlimited retries for now. */
 export const QUIZ_PASS_SCORE = 60;

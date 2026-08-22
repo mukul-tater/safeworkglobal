@@ -6220,6 +6220,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_to_job_for_journey: {
+        Args: { p_job_id: string; p_user_id?: string }
+        Returns: string
+      }
+      toggle_saved_job: {
+        Args: { p_job_id: string; p_user_id?: string }
+        Returns: boolean
+      }
       worker_can_apply_to_jobs: {
         Args: { p_user_id: string }
         Returns: boolean

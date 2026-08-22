@@ -24,7 +24,13 @@ export async function getEmitraReviewBlockMessage(userId: string): Promise<strin
   return null;
 }
 
-/** Apply / job interest requires GCC-ready verification stage. */
+/** Apply is allowed after Essentials (Find jobs / Apply journey steps). */
+export async function isWorkerReadyToApply(userId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('worker_can_apply_to_jobs', { p_user_id: userId });
+  if (error) return false;
+  return Boolean(data);
+}
+
 export async function isWorkerGccReady(userId: string): Promise<boolean> {
   const { data } = await supabase
     .from('worker_verification')

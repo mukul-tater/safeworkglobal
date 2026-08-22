@@ -146,7 +146,7 @@ export async function saveEssentials(
       trade_test_required: skillRequiresTradeTest(input.primary_skill),
       trade_test_status: skillRequiresTradeTest(input.primary_skill) ? 'pending' : 'not_required',
       essentials_completed_at: new Date().toISOString(),
-      stage: 'quiz',
+      stage: 'find_jobs',
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id)
@@ -1016,6 +1016,8 @@ export async function approveBond(userId: string): Promise<void> {
 export function stageIndex(stage: VerificationStage): number {
   const order = [
     'essentials',
+    'find_jobs',
+    'apply_job',
     'quiz',
     'media',
     'identity',
@@ -1055,6 +1057,7 @@ export async function resetVerificationJourney(userId: string): Promise<WorkerVe
       education_level: null,
       primary_skill: null,
       essentials_completed_at: null,
+      journey_job_id: null,
       quiz_score: null,
       quiz_completed_at: null,
       media_submitted_at: null,

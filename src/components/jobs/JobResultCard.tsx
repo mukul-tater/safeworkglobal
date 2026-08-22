@@ -52,17 +52,32 @@ interface JobResultCardProps {
   saved?: boolean;
   savePending?: boolean;
   onToggleSave?: (job: JobListItem) => void;
+  /** Override default navigation to the public job page. */
+  onOpen?: (job: JobListItem) => void;
+  actionLabel?: string;
 }
 
-export default function JobResultCard({ job, saved = false, savePending = false, onToggleSave }: JobResultCardProps) {
+export default function JobResultCard({
+  job,
+  saved = false,
+  savePending = false,
+  onToggleSave,
+  onOpen,
+  actionLabel = 'View job',
+}: JobResultCardProps) {
   const navigate = useNavigate();
   const [logoFailed, setLogoFailed] = useState(false);
   const jobUrl = `/jobs/${job.slug}`;
   const showLogo = Boolean(job.companyLogoUrl) && !logoFailed;
 
+  const open = () => {
+    if (onOpen) onOpen(job);
+    else navigate(jobUrl);
+  };
+
   return (
     <article
-      onClick={() => navigate(jobUrl)}
+      onClick={open}
       className="group cursor-pointer rounded-xl border border-border/60 bg-card p-4 transition-colors hover:border-primary/40 sm:p-5"
     >
       <div className="flex gap-3 sm:gap-4">
@@ -93,7 +108,7 @@ export default function JobResultCard({ job, saved = false, savePending = false,
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={saved ? 'Remove from saved jobs' : 'Save job'}
+                aria-label={saved ? 'Remove from favourite jobs' : 'Add to favourite jobs'}
                 disabled={savePending}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -158,10 +173,10 @@ export default function JobResultCard({ job, saved = false, savePending = false,
               className="w-full sm:w-auto"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(jobUrl);
+                open();
               }}
             >
-              View job
+              {actionLabel}
             </Button>
           </div>
         </div>

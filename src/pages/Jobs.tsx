@@ -383,16 +383,16 @@ export default function Jobs() {
           next.delete(job.id);
           return next;
         });
-        toast.success('Removed from saved jobs');
+        toast.success('Removed from favourite jobs');
       } else {
         const { error } = await supabase.from('saved_jobs').insert({ user_id: user.id, job_id: job.id });
         if (error) throw error;
         setSavedJobIds((prev) => new Set(prev).add(job.id));
-        toast.success('Saved for later');
+        toast.success('Added to favourite jobs');
       }
     } catch (error) {
       console.error('Error toggling saved job:', error);
-      toast.error('Could not update saved jobs');
+      toast.error('Could not update favourite jobs');
     } finally {
       setSavePendingId(null);
     }

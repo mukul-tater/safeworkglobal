@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getEmitraReviewBlockMessage,
-  isWorkerGccReady,
+  isWorkerReadyToApply,
 } from '@/lib/workerPortalAccess';
 
 interface WorkerJobAccess {
@@ -10,7 +10,7 @@ interface WorkerJobAccess {
   isWorker: boolean;
   /** Workers can always browse jobs. */
   canBrowseJobs: boolean;
-  /** Apply / show interest requires GCC-ready verification. */
+  /** Apply after Essentials (Find jobs / Apply journey steps). */
   canApplyToJobs: boolean;
   onboardingPath: string;
   /** Set when eMitra review blocks portal use. */
@@ -19,7 +19,7 @@ interface WorkerJobAccess {
 
 /**
  * Job access for the Supabase worker portal.
- * Phase-1 JWT worker auth is retired — apply always requires gcc_ready.
+ * Apply unlocks after Essentials so Test 1 can follow the applied job.
  */
 export function useWorkerJobAccess(): WorkerJobAccess {
   const { isAuthenticated, role, user, profileLoading } = useAuth();
@@ -50,7 +50,7 @@ export function useWorkerJobAccess(): WorkerJobAccess {
           if (!cancelled) setCanApplyToJobs(false);
           return;
         }
-        const ready = await isWorkerGccReady(user.id);
+        const ready = await isWorkerReadyToApply(user.id);
         if (!cancelled) setCanApplyToJobs(ready);
       } catch {
         if (!cancelled) {

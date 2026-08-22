@@ -55,7 +55,7 @@ export default function WorkerDashboard() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {canApplyToJobs
                   ? "Pick up where you left off."
-                  : "Finish every step to unlock applying to overseas jobs."}
+                  : "Find a job, apply, then finish Test 1 and the rest of your GCC journey."}
               </p>
             </div>
             <Button asChild className="h-11 shrink-0 rounded-xl">
@@ -80,9 +80,9 @@ export default function WorkerDashboard() {
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-success/10">
               <Briefcase className="h-6 w-6 text-success" />
             </div>
-            <h2 className="mb-1 font-heading text-lg font-semibold">You're ready to apply</h2>
+            <h2 className="mb-1 font-heading text-lg font-semibold">Apply to a job</h2>
             <p className="mx-auto mb-4 max-w-md text-sm text-muted-foreground">
-              Your profile is verified. Apply to verified overseas openings with priority visibility.
+              Apply now so Test 1 matches that job. You can also save favourites and come back.
             </p>
             <Button asChild className="rounded-xl">
               <Link to="/jobs">Go to job search</Link>
@@ -94,8 +94,7 @@ export default function WorkerDashboard() {
           <CardContent className="flex items-start gap-3 p-4">
             <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              You can browse jobs now. Applying unlocks once you finish all {GCC_JOURNEY_NAV_STEPS.length}{" "}
-              journey steps.
+              Finish Essentials to apply. Applying unlocks Test 1 for that job.
             </p>
           </CardContent>
         </Card>

@@ -9,7 +9,7 @@ import {
 /**
  * Presentation-only grouping of the 12 GCC nav steps into 4 named phases.
  * The database `stage` enum is unchanged — this only makes the journey feel
- * like four short chapters instead of an endless 12-step list.
+ * like four short chapters instead of an endless step list.
  */
 export type JourneyPhaseId = 'profile' | 'verify' | 'assess' | 'deploy';
 
@@ -21,7 +21,7 @@ export interface JourneyPhase {
 }
 
 export const JOURNEY_PHASES: JourneyPhase[] = [
-  { id: 'profile', label: 'Profile', steps: ['essentials', 'test1', 'skill_proof'] },
+  { id: 'profile', label: 'Profile', steps: ['pre_declaration', 'essentials', 'find_jobs', 'apply_job', 'test1', 'skill_proof'] },
   { id: 'verify', label: 'Verify', steps: ['identity', 'test2'] },
   { id: 'assess', label: 'Assess', steps: ['payment', 'test3', 'medical'] },
   { id: 'deploy', label: 'Deploy', steps: ['bond', 'pdot', 'gcc_ready', 'deployment'] },

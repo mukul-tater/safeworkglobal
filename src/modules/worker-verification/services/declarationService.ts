@@ -12,6 +12,7 @@ import {
 const supabase: any = supabaseTyped;
 
 const LOCAL_STORAGE_KEY_PREFIX = 'swg_pre_journey_decl_';
+export const PARTNER_DRAFT_DECL_ID = 'partner-draft';
 
 export const INITIAL_MEDICAL: MedicalFitnessDeclaration = {
   fitForDuties: '',
@@ -263,6 +264,11 @@ export async function saveWorkerDeclarations(
     /* ignore */
   }
 
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+  if (!isUuid) {
+    return declRecord;
+  }
+
   try {
     const { data, error } = await supabase
       .from('worker_pre_journey_declarations')
@@ -300,4 +306,43 @@ export async function saveWorkerDeclarations(
   }
 
   return declRecord;
+}
+
+export function hasPartnerDraftDeclarations(): boolean {
+  try {
+    const raw = localStorage.getItem(`${LOCAL_STORAGE_KEY_PREFIX}${PARTNER_DRAFT_DECL_ID}`);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as WorkerPreJourneyDeclaration;
+    return Boolean(parsed?.completed_at);
+  } catch {
+    return false;
+  }
+}
+
+/** After partner creates the worker, persist the pre-declaration draft against their account. */
+export async function attachDraftDeclarationsToWorker(
+  workerUserId: string,
+): Promise<WorkerPreJourneyDeclaration | null> {
+  let draft: WorkerPreJourneyDeclaration | null = null;
+  try {
+    const raw = localStorage.getItem(`${LOCAL_STORAGE_KEY_PREFIX}${PARTNER_DRAFT_DECL_ID}`);
+    if (raw) draft = JSON.parse(raw) as WorkerPreJourneyDeclaration;
+  } catch {
+    draft = null;
+  }
+  if (!draft?.completed_at) return null;
+
+  const saved = await saveWorkerDeclarations(
+    workerUserId,
+    draft.medical,
+    draft.overseas,
+    draft.recruitment,
+    draft.acknowledgements,
+  );
+  try {
+    localStorage.removeItem(`${LOCAL_STORAGE_KEY_PREFIX}${PARTNER_DRAFT_DECL_ID}`);
+  } catch {
+    /* ignore */
+  }
+  return saved;
 }

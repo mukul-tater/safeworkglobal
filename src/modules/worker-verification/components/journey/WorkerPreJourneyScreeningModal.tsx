@@ -53,6 +53,8 @@ interface Props {
   userId: string;
   isOpen: boolean;
   onCompleted: (decl: WorkerPreJourneyDeclaration) => void;
+  /** Render in the page (keeps the worker portal sidebar visible). */
+  variant?: 'modal' | 'inline';
 }
 
 type Step = 0 | 1 | 2 | 3 | 4;
@@ -85,7 +87,12 @@ function ChoiceLabel({ copy }: { copy: EnHi }) {
   );
 }
 
-export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompleted }: Props) {
+export default function WorkerPreJourneyScreeningModal({
+  userId,
+  isOpen,
+  onCompleted,
+  variant = 'modal',
+}: Props) {
   const [step, setStep] = useState<Step>(0);
   const [medical, setMedical] = useState<MedicalFitnessDeclaration>(INITIAL_MEDICAL);
   const [overseas, setOverseas] = useState<PreviousOverseasEmploymentDeclaration>(INITIAL_OVERSEAS);
@@ -165,7 +172,13 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-background/80 p-3 backdrop-blur-md sm:p-6">
+    <div
+      className={
+        variant === 'inline'
+          ? 'w-full'
+          : 'fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-background/80 p-3 backdrop-blur-md sm:p-6'
+      }
+    >
       <Card className="relative w-full max-w-3xl border-primary/20 bg-card shadow-2xl shadow-primary/10">
         {/* Header */}
         <CardHeader className="border-b border-border/60 bg-muted/30 pb-4">
@@ -259,7 +272,7 @@ export default function WorkerPreJourneyScreeningModal({ userId, isOpen, onCompl
         </CardHeader>
 
         {/* Content Body */}
-        <CardContent className="max-h-[68vh] overflow-y-auto p-4 sm:p-6 space-y-6">
+        <CardContent className={variant === 'inline' ? 'p-4 sm:p-6 space-y-6' : 'max-h-[68vh] overflow-y-auto p-4 sm:p-6 space-y-6'}>
           {step === 0 && (
             <div className="space-y-5">
               <Alert className="border-primary/30 bg-primary/5">
