@@ -6006,6 +6006,14 @@ export type Database = {
         Args: { _worker_user_id: string }
         Returns: boolean
       }
+      partner_profile_self_update_allowed: {
+        Args: { _new: Database["public"]["Tables"]["partner_profiles"]["Row"] }
+        Returns: boolean
+      }
+      partners_self_update_allowed: {
+        Args: { _new: Database["public"]["Tables"]["partners"]["Row"] }
+        Returns: boolean
+      }
       resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
