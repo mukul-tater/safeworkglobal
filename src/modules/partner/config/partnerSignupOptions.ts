@@ -88,21 +88,13 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
 
 export const DEFAULT_PARTNER_SIGNUP_CODE = "EMITRA";
 
-/** Split "Assam e-District / Common Services Centre" into separate selectable names. */
-export function splitEmitraBrandNames(brand: string): string[] {
-  return brand
-    .split(/\s\/\s/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-/** Local citizen-service kiosk names by state (E-Mitra is Rajasthan’s brand). */
+/** Local citizen-service kiosk names by state (E-Mitra is Rajasthan’s brand). One name per state. */
 export const EMITRA_STATE_BRANDS: { stateEn: string; stateHi: string; brand: string }[] = [
   { stateEn: "India", stateHi: "भारत", brand: "India CSC" },
   {
     stateEn: "Andhra Pradesh",
     stateHi: "आंध्र प्रदेश",
-    brand: "గ్రామ/వార్డ్ సచివాలయం (Village/Ward Secretariat) / Rajiv Citizen Service Centre",
+    brand: "Rajiv Citizen Service Centre",
   },
   { stateEn: "Assam", stateHi: "असम", brand: "Assam e-District / Common Services Centre" },
   { stateEn: "Bihar", stateHi: "बिहार", brand: "RTPS Bihar / Lok Sewaon Ka Adhikar" },

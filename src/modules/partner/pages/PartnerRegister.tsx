@@ -24,7 +24,6 @@ import {
   EMITRA_STATE_BRANDS,
   PARTNER_SIGNUP_OPTIONS,
   getPartnerSignupOption,
-  splitEmitraBrandNames,
   type PartnerSignupOption,
 } from "@/modules/partner/config/partnerSignupOptions";
 
@@ -165,29 +164,27 @@ export default function PartnerRegister() {
                               </p>
                             </div>
                             <ul className="max-h-72 divide-y overflow-y-auto">
-                              {EMITRA_STATE_BRANDS.flatMap((row) =>
-                                splitEmitraBrandNames(row.brand).map((name) => {
-                                  const isActive = emitraBrandName === name;
-                                  return (
-                                    <li key={`${row.stateEn}-${name}`}>
-                                      <button
-                                        type="button"
-                                        className={cn(
-                                          "w-full px-3 py-2 text-left transition-colors hover:bg-primary/5",
-                                          isActive && "bg-primary/5",
-                                        )}
-                                        aria-label={`${row.stateEn}: ${name}`}
-                                        onClick={() => chooseEmitraState(name)}
-                                      >
-                                        <p className="text-xs text-muted-foreground">
-                                          {locale === "hi" ? row.stateHi : row.stateEn}
-                                        </p>
-                                        <p className="text-sm font-medium leading-snug">{name}</p>
-                                      </button>
-                                    </li>
-                                  );
-                                }),
-                              )}
+                              {EMITRA_STATE_BRANDS.map((row) => {
+                                const isActive = emitraBrandName === row.brand;
+                                return (
+                                  <li key={row.stateEn}>
+                                    <button
+                                      type="button"
+                                      className={cn(
+                                        "w-full px-3 py-2 text-left transition-colors hover:bg-primary/5",
+                                        isActive && "bg-primary/5",
+                                      )}
+                                      aria-label={`${row.stateEn}: ${row.brand}`}
+                                      onClick={() => chooseEmitraState(row.brand)}
+                                    >
+                                      <p className="text-xs text-muted-foreground">
+                                        {locale === "hi" ? row.stateHi : row.stateEn}
+                                      </p>
+                                      <p className="text-sm font-medium leading-snug">{row.brand}</p>
+                                    </button>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </PopoverContent>
                         </Popover>
