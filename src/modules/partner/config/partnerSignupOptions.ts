@@ -90,6 +90,7 @@ export const DEFAULT_PARTNER_SIGNUP_CODE = "EMITRA";
 
 /** Local citizen-service kiosk names by state (E-Mitra is Rajasthan’s brand). */
 export const EMITRA_STATE_BRANDS: { stateEn: string; stateHi: string; brand: string }[] = [
+  { stateEn: "India", stateHi: "भारत", brand: "India CSC" },
   {
     stateEn: "Andhra Pradesh",
     stateHi: "आंध्र प्रदेश",
