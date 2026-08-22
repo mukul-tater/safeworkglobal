@@ -663,6 +663,9 @@ export default function WorkerVerificationPage({
         .eq('user_id', subjectId)
         .maybeSingle();
       if (!wpRow) {
+        if (partnerKiosk) {
+          throw new Error('Worker profile not found. Return to My Workers and re-add this worker.');
+        }
         const { error: ensureErr } = await supabase
           .from('worker_profiles')
           .insert({ user_id: subjectId } as any);

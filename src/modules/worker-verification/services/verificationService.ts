@@ -79,23 +79,40 @@ export async function saveEssentials(
   const row = await getOrCreateVerification(userId);
   const ecr = ecrFromTenthPass(input.tenth_pass);
 
-  const { error: profileErr } = await supabase
-    .from('worker_profiles')
-    .upsert(
-      {
-        user_id: userId,
-        current_city: input.city,
-        current_location: [input.city, input.state].filter(Boolean).join(', '),
-        primary_skill: input.primary_skill,
-        primary_work_type: input.primary_skill,
-        experience_range: input.education_level,
-        tenth_pass_confirmed: ecr.tenth_pass_confirmed,
-        ecr_category: ecr.ecr_category,
-        ecr_status: ecr.ecr_status,
-      },
-      { onConflict: 'user_id' },
-    );
-  if (profileErr) throw new Error(profileErr.message);
+  const profilePayload = {
+    user_id: userId,
+    current_city: input.city,
+    current_location: [input.city, input.state].filter(Boolean).join(', '),
+    primary_skill: input.primary_skill,
+    primary_work_type: input.primary_skill,
+    experience_range: input.education_level,
+    tenth_pass_confirmed: ecr.tenth_pass_confirmed,
+    ecr_category: ecr.ecr_category,
+    ecr_status: ecr.ecr_status,
+  };
+
+  // Partners cannot INSERT a new worker_profiles row (RLS requires an already
+  // attributed row). Update that row. Workers still upsert in case onboarding
+  // never created one.
+  const { data: authUser } = await supabase.auth.getUser();
+  const actingAsSelf = authUser?.user?.id === userId;
+  if (actingAsSelf) {
+    const { error: profileErr } = await supabase
+      .from('worker_profiles')
+      .upsert(profilePayload, { onConflict: 'user_id' });
+    if (profileErr) throw new Error(profileErr.message);
+  } else {
+    const { data: updated, error: profileErr } = await supabase
+      .from('worker_profiles')
+      .update(profilePayload)
+      .eq('user_id', userId)
+      .select('user_id')
+      .maybeSingle();
+    if (profileErr) throw new Error(profileErr.message);
+    if (!updated) {
+      throw new Error('Worker profile not found. Return to My Workers and re-add this worker.');
+    }
+  }
 
   await supabase.from('profiles').update({ email }).eq('id', userId);
 
@@ -377,6 +394,7 @@ export async function completeIdentityKyc(
   };
 
   // Prefer update when a profile already exists (essentials creates it).
+  // Partners cannot INSERT worker_profiles; the kiosk row must already exist.
   const { data: existingWp } = await supabase
     .from('worker_profiles')
     .select('user_id')
@@ -390,6 +408,10 @@ export async function completeIdentityKyc(
       .eq('user_id', userId);
     if (wpErr) throw new Error(wpErr.message);
   } else {
+    const { data: authUser } = await supabase.auth.getUser();
+    if (authUser?.user?.id !== userId) {
+      throw new Error('Worker profile not found. Return to My Workers and re-add this worker.');
+    }
     const { error: wpErr } = await supabase.from('worker_profiles').insert(kycPayload);
     if (wpErr) throw new Error(wpErr.message);
   }
