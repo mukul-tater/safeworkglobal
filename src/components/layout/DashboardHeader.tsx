@@ -11,12 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User, Home, HelpCircle, LucideIcon } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { LogOut, HelpCircle, LucideIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import NotificationDrawer from "@/components/NotificationDrawer";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 import { displayableEmail, formatIndianMobile } from "@/lib/workerAuthEmail";
 import { getGoogleEmailFromUser } from "@/modules/worker-verification/lib/connectGoogleEmail";
 
@@ -27,16 +25,16 @@ interface ProfileMenuItem {
 }
 
 interface DashboardHeaderProps {
-  portalName: string;
+  portalLabel: string;
+  pageTitle: string;
   profileMenuItems?: ProfileMenuItem[];
-  portalHomePath?: string;
   showLanguageSwitcher?: boolean;
 }
 
 export default function DashboardHeader({
-  portalName,
+  portalLabel,
+  pageTitle,
   profileMenuItems = [],
-  portalHomePath = "/",
   showLanguageSwitcher = false,
 }: DashboardHeaderProps) {
   const { user, profile, logout } = useAuth();
@@ -44,7 +42,6 @@ export default function DashboardHeader({
   const workerLang = useOptionalWorkerLanguage();
   const navigate = useNavigate();
 
-  const homeLabel = showLanguageSwitcher && workerLang ? workerLang.t("header.home") : "Home";
   const helpLabel = showLanguageSwitcher && workerLang ? workerLang.t("header.help") : "Help & Support";
   const signOutLabel = showLanguageSwitcher && workerLang ? workerLang.t("header.signOut") : "Sign Out";
 
@@ -70,22 +67,15 @@ export default function DashboardHeader({
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80">
-      <div className="flex h-14 md:h-16 items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-3 ml-12 md:ml-0">
-          <Link
-            to={portalHomePath}
-            className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Home className="h-4 w-4" />
-            <span className="text-sm font-medium">{homeLabel}</span>
-          </Link>
-          <span className="hidden md:inline text-border">/</span>
-          <h1 className="text-base md:text-lg font-semibold text-foreground">{portalName}</h1>
+      <div className="flex h-14 md:h-16 items-center justify-between gap-3 px-4 md:px-6">
+        <div className="min-w-0 ml-12 md:ml-0">
+          <p className="text-[11px] leading-none text-muted-foreground font-medium truncate">{portalLabel}</p>
+          <h1 className="text-base md:text-[17px] font-semibold text-foreground truncate leading-tight mt-0.5">
+            {pageTitle}
+          </h1>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3">
-          <AboutLanguageToggle compact />
-          <ThemeToggle />
+        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           <NotificationDrawer />
 
           <DropdownMenu>

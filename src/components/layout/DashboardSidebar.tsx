@@ -1,9 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Menu, LucideIcon, ChevronDown } from "lucide-react";
+import { Menu, LucideIcon, ChevronDown, Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n";
+import { APP_LOCALES, type AppLocale } from "@/i18n/locales";
 
 export interface NavItem {
   path: string;
@@ -35,7 +38,7 @@ interface DashboardSidebarProps {
   portalHomePath?: string;
 }
 
-function itemIsActive(item: NavItem, pathname: string, search: string): boolean {
+export function itemIsActive(item: NavItem, pathname: string, search: string): boolean {
   const pathMatches =
     pathname === item.path || pathname.startsWith(`${item.path}/`);
   if (!pathMatches) return false;
@@ -176,6 +179,65 @@ function NavGroupSection({ group, onNavigate }: { group: NavGroup; onNavigate: (
   );
 }
 
+function SidebarAppearance() {
+  const { locale, setLocale } = useI18n();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  const themes = [
+    { id: "light" as const, label: "Light", icon: Sun },
+    { id: "dark" as const, label: "Dark", icon: Moon },
+    { id: "system" as const, label: "System", icon: Monitor },
+  ];
+
+  return (
+    <div className="shrink-0 border-t pt-3 mt-2 space-y-3">
+      <div className="space-y-1.5">
+        <label htmlFor="sidebar-language" className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Language
+        </label>
+        <select
+          id="sidebar-language"
+          value={locale}
+          onChange={(event) => setLocale(event.target.value as AppLocale)}
+          className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
+        >
+          {APP_LOCALES.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-1.5">
+        <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Theme</p>
+        <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/70 p-1">
+          {themes.map(({ id, label, icon: Icon }) => {
+            const active = mounted && theme === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTheme(id)}
+                className={cn(
+                  "flex items-center justify-center gap-1 rounded-md py-1.5 text-[11px] font-medium transition-colors",
+                  active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+                aria-pressed={active}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SidebarBody({
   navItems,
   navGroups,
@@ -237,6 +299,7 @@ function SidebarBody({
           </nav>
         ) : null}
       </div>
+      <SidebarAppearance />
     </div>
   );
 }
@@ -273,7 +336,7 @@ export default function DashboardSidebar({
             <Menu className="h-5 w-5" />
           </button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-72 p-4 pt-6">
+        <SheetContent side="left" className="w-72 p-4 pt-6 flex flex-col">
           {body}
         </SheetContent>
       </Sheet>
