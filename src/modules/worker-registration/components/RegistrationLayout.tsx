@@ -100,7 +100,6 @@ export default function RegistrationLayout({
             <div className="flex items-center gap-1 sm:gap-2">
               <TopNav />
               <div className="hidden sm:block h-6 w-px bg-border mx-1" />
-              <AboutLanguageToggle />
               <ThemeToggle />
             </div>
           </div>
@@ -127,6 +126,9 @@ export default function RegistrationLayout({
                 {footer}
               </div>
             )}
+            <div className={cn('mt-8 max-w-sm', centered && 'mx-auto')}>
+              <AboutLanguageToggle labeled />
+            </div>
           </div>
         </main>
       </div>

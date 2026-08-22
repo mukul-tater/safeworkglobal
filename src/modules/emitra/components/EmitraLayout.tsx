@@ -94,7 +94,8 @@ export default function EmitraLayout({
       <aside className="hidden md:flex flex-col w-[260px] bg-card border-r border-border min-h-screen p-5 shrink-0">
         <SidebarBrand />
         <SidebarNav />
-        <div className="mt-auto pt-6 border-t border-border">
+        <div className="mt-auto pt-6 border-t border-border space-y-4">
+          <AboutLanguageToggle labeled />
           <div className="flex items-start gap-2.5 px-1 text-xs text-muted-foreground leading-relaxed">
             <Store className="h-4 w-4 text-primary shrink-0 mt-0.5" />
             <p>Restricted access for approved E-Mitra / CSC partners only.</p>
@@ -122,6 +123,9 @@ export default function EmitraLayout({
                   <SheetContent side="left" className="w-72 p-5 flex flex-col">
                     <SidebarBrand />
                     <SidebarNav onNavigate={() => setMenuOpen(false)} />
+                    <div className="mt-auto pt-6 border-t border-border">
+                      <AboutLanguageToggle labeled />
+                    </div>
                   </SheetContent>
                 </Sheet>
               )}
@@ -137,7 +141,6 @@ export default function EmitraLayout({
               </Link>
             </div>
             <div className="flex items-center gap-2">
-              <AboutLanguageToggle compact />
               <ThemeToggle />
             </div>
           </div>

@@ -13,7 +13,6 @@ import {
 import { User, LogOut, Home, Building, Settings, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { NotificationDrawer } from '@/components/NotificationDrawer';
-import AboutLanguageToggle from '@/components/AboutLanguageToggle';
 
 export default function EmployerHeader() {
   const { user, profile, logout } = useAuth();
@@ -44,7 +43,6 @@ export default function EmployerHeader() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          <AboutLanguageToggle compact />
           <NotificationDrawer />
 
           <DropdownMenu>

@@ -5,8 +5,7 @@ import { useTheme } from "next-themes";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu, LucideIcon, ChevronDown, Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/i18n";
-import { APP_LOCALES, type AppLocale } from "@/i18n/locales";
+import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 
 export interface NavItem {
   path: string;
@@ -180,7 +179,6 @@ function NavGroupSection({ group, onNavigate }: { group: NavGroup; onNavigate: (
 }
 
 function SidebarAppearance() {
-  const { locale, setLocale } = useI18n();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -194,23 +192,7 @@ function SidebarAppearance() {
 
   return (
     <div className="shrink-0 border-t pt-3 mt-2 space-y-3">
-      <div className="space-y-1.5">
-        <label htmlFor="sidebar-language" className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Language
-        </label>
-        <select
-          id="sidebar-language"
-          value={locale}
-          onChange={(event) => setLocale(event.target.value as AppLocale)}
-          className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground"
-        >
-          {APP_LOCALES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <AboutLanguageToggle labeled />
       <div className="space-y-1.5">
         <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Theme</p>
         <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/70 p-1">

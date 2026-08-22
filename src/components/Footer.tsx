@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { SAFEWORK_CONTACT } from "@/config/workerSupport";
 import { useI18n } from "@/i18n";
+import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -54,6 +55,8 @@ const Footer = () => {
               <p className="text-white/60 leading-relaxed max-w-sm text-sm">
                 {t("footer.blurb")}
               </p>
+
+              <AboutLanguageToggle labeled variant="onDark" className="max-w-xs" />
 
               <div className="flex gap-2">
                 {[

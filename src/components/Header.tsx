@@ -114,7 +114,6 @@ const Header = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-3">
-              <AboutLanguageToggle variant={overlaysHomeHero ? "onDark" : "default"} />
               <div className={`flex items-center gap-3 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
               <ThemeToggle />
               {isAuthenticated ? (
@@ -219,7 +218,6 @@ const Header = () => {
 
             {/* Mobile Actions */}
             <div className="flex items-center gap-1 md:hidden">
-              <AboutLanguageToggle compact variant={overlaysHomeHero ? "onDark" : "default"} className="mr-1" />
               <div className={`flex items-center ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
               <ThemeToggle />
             {/* Mobile Menu Toggle */}
@@ -256,8 +254,7 @@ const Header = () => {
           >
             <nav className="container mx-auto px-4 py-6 space-y-2">
               <div className="px-1 pb-4 mb-2 border-b border-border">
-                <p className="text-xs font-semibold text-muted-foreground mb-2">{t("lang.aria")}</p>
-                <AboutLanguageToggle />
+                <AboutLanguageToggle labeled />
               </div>
               {navLinks.map((link) => (
                 <Link 

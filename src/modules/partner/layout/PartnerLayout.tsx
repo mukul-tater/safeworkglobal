@@ -79,7 +79,8 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="p-2 border-t">
+        <div className="p-3 border-t space-y-3">
+          <AboutLanguageToggle labeled />
           <Button variant="ghost" className="w-full justify-start" onClick={() => logout()}>
             <LogOut className="h-4 w-4 mr-2" /> Logout
           </Button>
@@ -118,7 +119,6 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
                 </Link>
               </Button>
             )}
-            <AboutLanguageToggle compact />
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/5 border">
             <WalletIcon className="h-4 w-4 text-primary" />
             <div>
