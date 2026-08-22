@@ -1800,6 +1800,27 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -4944,6 +4965,7 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5017,6 +5039,7 @@ export type Database = {
           interview_status?: string
           interviewer_name?: string | null
           interviewer_user_id?: string | null
+          journey_job_id?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: string
           kyc_verified_at?: string | null
@@ -5090,6 +5113,7 @@ export type Database = {
           interview_status?: string
           interviewer_name?: string | null
           interviewer_user_id?: string | null
+          journey_job_id?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: string
           kyc_verified_at?: string | null
@@ -5144,6 +5168,13 @@ export type Database = {
             columns: ["bond_template_id"]
             isOneToOne: false
             referencedRelation: "bond_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_verification_journey_job_id_fkey"
+            columns: ["journey_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -5424,6 +5455,10 @@ export type Database = {
         Args: { p_approved: boolean; p_reason?: string; p_user_id: string }
         Returns: undefined
       }
+      apply_to_job_for_journey: {
+        Args: { p_job_id: string; p_user_id?: string }
+        Returns: string
+      }
       assign_employer_requirement_ref: {
         Args: { p_user_id: string }
         Returns: string
@@ -5475,6 +5510,7 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5557,6 +5593,7 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -5973,12 +6010,16 @@ export type Database = {
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
       submit_worker_quiz: {
-        Args: { p_answers: Json }
+        Args: { p_answers: Json; p_user_id?: string }
         Returns: {
           correct_count: number
           score: number
           total_count: number
         }[]
+      }
+      toggle_saved_job: {
+        Args: { p_job_id: string; p_user_id?: string }
+        Returns: boolean
       }
       verify_lsp_launch: {
         Args: {
@@ -6025,6 +6066,7 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -6107,6 +6149,7 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
           kyc_verified_at: string | null
@@ -6219,14 +6262,6 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
-      }
-      apply_to_job_for_journey: {
-        Args: { p_job_id: string; p_user_id?: string }
-        Returns: string
-      }
-      toggle_saved_job: {
-        Args: { p_job_id: string; p_user_id?: string }
-        Returns: boolean
       }
       worker_can_apply_to_jobs: {
         Args: { p_user_id: string }
