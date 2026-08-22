@@ -34,6 +34,7 @@ import {
   navStepForStage,
   navStepIndex,
   normalizeVerificationStage,
+  QUIZ_PASS_SCORE,
   skillRequiresTradeTest,
   youtubeEmbedUrl,
   type GccNavStepId,
@@ -320,6 +321,7 @@ export default function WorkerVerificationPage({
   const [quizItems, setQuizItems] = useState<SkillQuizItem[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, boolean | undefined>>({});
   const [quizIndex, setQuizIndex] = useState(0);
+  const [quizFailScore, setQuizFailScore] = useState<number | null>(null);
 
   const [photoCount, setPhotoCount] = useState(0);
   const [videoCount, setVideoCount] = useState(0);
@@ -384,6 +386,15 @@ export default function WorkerVerificationPage({
       };
       if (gen !== loadGen.current) return;
       setRow(v);
+      if (
+        v.quiz_score != null &&
+        !v.quiz_completed_at &&
+        Number(v.quiz_score) < QUIZ_PASS_SCORE
+      ) {
+        setQuizFailScore(Number(v.quiz_score));
+      } else if (v.quiz_completed_at) {
+        setQuizFailScore(null);
+      }
       const { data: subj } = await supabase
         .from('profiles')
         .select('full_name, phone, email')
@@ -772,6 +783,7 @@ export default function WorkerVerificationPage({
       setQuizItems(items);
       setQuizIndex(0);
       setQuizAnswers({});
+      setQuizFailScore(null);
       toast.success('Essentials saved — start your skill check');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not save');
@@ -802,6 +814,19 @@ export default function WorkerVerificationPage({
         answer: Boolean(quizAnswers[item.id]),
       }));
       const next = await submitQuiz(subjectId, answers);
+      const passed = (Number(next.quiz_score) || 0) >= QUIZ_PASS_SCORE;
+      if (!passed) {
+        setRow(next);
+        setQuizIndex(0);
+        setQuizAnswers({});
+        setQuizFailScore(Number(next.quiz_score) || 0);
+        notifyVerificationUpdated();
+        toast.error(
+          `Score ${next.quiz_score}%. You need ${QUIZ_PASS_SCORE}% to continue — try Test 1 again.`,
+        );
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
       const normalized = normalizeVerificationStage(
         // Prefer media if quiz finished even when DB stage lagged.
         next.quiz_completed_at && next.stage === 'quiz' ? 'media' : next.stage,
@@ -811,6 +836,7 @@ export default function WorkerVerificationPage({
       clearJourneyQuery();
       setRow({ ...next, stage: normalized });
       setQuizIndex(0);
+      setQuizFailScore(null);
       notifyVerificationUpdated();
       toast.success(
         `Test 1 complete — score ${next.quiz_score}%. Next: upload your skill proof.`,
@@ -1309,6 +1335,16 @@ export default function WorkerVerificationPage({
               </Button>
             }
           >
+              {quizFailScore !== null && (
+                <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                  <p className="text-sm text-foreground">
+                    Last score <span className="font-semibold">{quizFailScore}%</span>. Pass mark is{' '}
+                    {QUIZ_PASS_SCORE}%. Answer all {quizItems.length} questions again to continue.
+                  </p>
+                </div>
+              )}
+
               {(() => {
                 const embed = youtubeEmbedUrl(currentQuiz.youtube_url);
                 if (embed) {

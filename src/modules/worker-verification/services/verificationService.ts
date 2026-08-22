@@ -299,9 +299,19 @@ export async function submitQuiz(
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
   // Grading and scoring are done server-side against the hidden answer key.
-  const { data: graded, error: gradeErr } = await (supabase as any).rpc('submit_worker_quiz', {
-    p_answers: answers.map((a) => ({ quiz_item_id: a.quiz_item_id, answer: a.answer })),
+  const payload = answers.map((a) => ({ quiz_item_id: a.quiz_item_id, answer: a.answer }));
+  let { data: graded, error: gradeErr } = await (supabase as any).rpc('submit_worker_quiz', {
+    p_answers: payload,
+    p_user_id: userId,
   });
+  // Older DBs only accept p_answers (pre-partner kiosk). Retry once.
+  if (gradeErr) {
+    const retry = await (supabase as any).rpc('submit_worker_quiz', { p_answers: payload });
+    if (!retry.error) {
+      graded = retry.data;
+      gradeErr = null;
+    }
+  }
   if (gradeErr) throw new Error(gradeErr.message);
   const result = Array.isArray(graded) ? graded[0] : graded;
   const score = Number(result?.score ?? 0);
