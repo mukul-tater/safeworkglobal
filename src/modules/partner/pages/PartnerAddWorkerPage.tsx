@@ -1,7 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { workerProfileMenu } from "@/config/workerNav";
@@ -42,29 +39,21 @@ function PartnerAddWorkerShell({
       profileMenuItems={workerProfileMenu}
       portalHomePath={myWorkersPath}
     >
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Partner service
-            </p>
-            <Badge variant="secondary">{attributionLabel}</Badge>
-          </div>
-          <h1 className="mt-1 font-heading text-xl font-semibold tracking-tight">
-            {declarationsDone ? "Worker creation" : "Pre-declaration"}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {declarationsDone
-              ? "Name, email, mobile OTP, and password. You stay signed in as the partner."
-              : "Complete declarations first, then create the worker account."}
+      <div className="mb-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Partner service
           </p>
+          <Badge variant="secondary">{attributionLabel}</Badge>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link to={myWorkersPath}>
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            My Workers
-          </Link>
-        </Button>
+        <h1 className="mt-1 font-heading text-xl font-semibold tracking-tight">
+          {declarationsDone ? "Worker creation" : "Pre-declaration"}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {declarationsDone
+            ? "Name, email, mobile OTP, and password. You stay signed in as the partner."
+            : "Complete declarations first, then create the worker account."}
+        </p>
       </div>
 
       {!declarationsDone ? (
