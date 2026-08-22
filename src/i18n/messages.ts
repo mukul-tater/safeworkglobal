@@ -159,9 +159,9 @@ const en = {
     "You will be redirected to the dedicated {{name}} onboarding form to complete your application.",
   "partner.confirmCta": "Continue to Onboarding",
   "partner.emitraInfoAria": "State-wise E-Mitra / CSC names",
-  "partner.emitraInfoTitle": "Known as E-Mitra / CSC in your state",
+  "partner.emitraInfoTitle": "CSC Centres are spread across India",
   "partner.emitraInfoHint":
-    "Common Service Centres use different local names. This partner type is for all of them.",
+    "CSC Centres are spread across India and may operate under different regional names in different states. We have provided a state-wise list of the corresponding kiosk names for easy reference.",
 
   "contact.title": "Need Help With Overseas Employment?",
   "contact.subtitle":
@@ -325,9 +325,9 @@ const hi: Record<AppMessageKey, string> = {
     "आवेदन पूरा करने के लिए आपको {{name}} ऑनबोर्डिंग फ़ॉर्म पर भेजा जाएगा।",
   "partner.confirmCta": "ऑनबोर्डिंग पर जाएँ",
   "partner.emitraInfoAria": "राज्य के अनुसार E-Mitra / CSC नाम",
-  "partner.emitraInfoTitle": "आपके राज्य में E-Mitra / CSC का नाम",
+  "partner.emitraInfoTitle": "CSC केंद्र पूरे भारत में फैले हुए हैं",
   "partner.emitraInfoHint":
-    "कॉमन सर्विस सेंटर अलग-अलग राज्यों में अलग नाम से चलते हैं। यह साझेदार प्रकार उन सभी के लिए है।",
+    "CSC केंद्र पूरे भारत में फैले हुए हैं और अलग-अलग राज्यों में इनके क्षेत्रीय नाम अलग हो सकते हैं। आपकी सुविधा के लिए हमने राज्यों के अनुसार संबंधित Kiosk के नामों की सूची उपलब्ध कराई है।",
 
   "contact.title": "विदेश रोजगार से जुड़ी सहायता चाहिए?",
   "contact.subtitle":

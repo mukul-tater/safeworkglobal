@@ -31,16 +31,58 @@ export type PartnerApplicationPayload = Partial<
   status?: string;
 };
 
+const EMITRA_V2_COLUMNS = [
+  'gst_number',
+  'csc_id',
+  'shop_name',
+  'address_line1',
+  'address_line2',
+  'village',
+  'panchayat',
+  'city_town',
+  'google_maps_url',
+  'date_of_birth',
+  'has_webcam',
+  'bank_name',
+  'cancelled_cheque_url',
+  'aadhaar_url',
+  'inside_shop_photo_url',
+  'training_declaration',
+  'agree_mea_guidelines',
+  'agree_platform_only',
+  'agree_confidentiality',
+  'agree_no_misrepresentation',
+  'agree_accurate_info',
+  'agree_not_sub_agent',
+  'agreement_accepted_via_otp',
+  'agreement_accepted_at',
+] as const;
+
+function missingColumnFromPostgrest(message: string): string | null {
+  const match = message.match(/could not find the '([^']+)' column/i);
+  return match?.[1] ?? null;
+}
+
+function isMissingColumnError(error: { code?: string; message?: string }): boolean {
+  const message = error.message || '';
+  return error.code === 'PGRST204' || /could not find the '.*' column/i.test(message);
+}
+
+function isPrivilegedFieldError(error: { code?: string; message?: string }): boolean {
+  const message = error.message || '';
+  return (
+    error.code === '42501'
+    || /row-level security/i.test(message)
+    || /cannot modify approval/i.test(message)
+  );
+}
+
 function mapPartnerProfileError(error: { code?: string; message?: string }): Error {
   const message = error.message || 'Failed to save partner application';
 
-  // Fixes: PGRST204 missing E-Mitra onboarding columns
-  if (
-    error.code === 'PGRST204'
-    || /could not find the '.*' column/i.test(message)
-  ) {
+  if (isMissingColumnError(error)) {
     return new Error(
-      'Partner database is missing E-Mitra columns. Run supabase migrations 20260607180000_partner_profiles_emitra_columns.sql and 20260730100000_emitra_onboarding_v2.sql in the Supabase SQL editor, then retry.',
+      'Partner database is missing E-Mitra columns. Run supabase migration 20260823010000_partner_profiles_emitra_v2_ensure_columns.sql in the Supabase SQL editor, then retry.',
     );
   }
 
@@ -49,6 +91,38 @@ function mapPartnerProfileError(error: { code?: string; message?: string }): Err
   }
 
   return new Error(message);
+}
+
+function deleteKey(row: Record<string, unknown>, key: string): boolean {
+  if (key === 'user_id' || !(key in row)) return false;
+  delete row[key];
+  return true;
+}
+
+/** Drop keys PostgREST/RLS reject so a partial save can still succeed. */
+function stripBlockedKeys(
+  row: Record<string, unknown>,
+  error: { code?: string; message?: string },
+): boolean {
+  if (isMissingColumnError(error)) {
+    let stripped = false;
+    const missing = missingColumnFromPostgrest(error.message || '');
+    if (missing) stripped = deleteKey(row, missing) || stripped;
+    for (const key of EMITRA_V2_COLUMNS) {
+      stripped = deleteKey(row, key) || stripped;
+    }
+    return stripped;
+  }
+
+  if (isPrivilegedFieldError(error)) {
+    let stripped = false;
+    for (const key of ['status', 'source_lsp_id'] as const) {
+      stripped = deleteKey(row, key) || stripped;
+    }
+    return stripped;
+  }
+
+  return false;
 }
 
 /** Update or insert partner_profiles without PostgREST upsert (more reliable with RLS). */
@@ -64,19 +138,24 @@ export async function savePartnerApplication(
 
   if (fetchError) throw mapPartnerProfileError(fetchError);
 
-  const row = { user_id: userId, ...payload };
-
+  const row: Record<string, unknown> = { ...payload };
+  delete row.id;
   if (existing) {
-    const { error } = await supabase
-      .from('partner_profiles')
-      .update(row)
-      .eq('user_id', userId);
-    if (error) throw mapPartnerProfileError(error);
-    return;
+    delete row.user_id;
+  } else {
+    row.user_id = userId;
   }
 
-  const { error } = await supabase.from('partner_profiles').insert(row);
-  if (error) throw mapPartnerProfileError(error);
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const { error } = existing
+      ? await supabase.from('partner_profiles').update(row).eq('user_id', userId)
+      : await supabase.from('partner_profiles').insert(row);
+
+    if (!error) return;
+    if (!stripBlockedKeys(row, error)) throw mapPartnerProfileError(error);
+  }
+
+  throw new Error('Failed to save partner application');
 }
 
 export function isPartnerOperational(profile: PartnerProfile | null): boolean {

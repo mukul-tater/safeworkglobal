@@ -5,18 +5,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthSplitLayout from '@/components/AuthSplitLayout';
 import FormStepPills, { useMaxReachedStep } from '@/components/FormStepPills';
-import PartnerDocUpload from '@/components/partner/PartnerDocUpload';
+import PartnerDocUpload, { uploadPartnerDocFile } from '@/components/partner/PartnerDocUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import {
-  ArrowLeft, ArrowRight, CheckCircle2, Loader2, User, MapPin,
-  Landmark, FileSignature, ShieldCheck,
+  ArrowLeft, ArrowRight, CheckCircle2, Loader2, MapPin,
+  FileText, FileSignature, ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { indianStates } from '@/lib/validations/partner';
@@ -33,66 +33,55 @@ import {
 import VestaEmitraAgreement from '@/components/partner/VestaEmitraAgreement';
 import {
   emitraV2BasicSchema,
-  emitraV2LocationSchema,
-  emitraV2BankSchema,
   emitraV2DocumentsSchema,
+  emitraV2AgreementSchema,
+  PARTNER_DECLARATION_ITEMS,
+  PARTNER_DECLARATION_TEXT,
 } from '../validations/emitraOnboardingV2';
 import { getPartnerProfile, savePartnerApplication } from '../services/emitraService';
 import { getLspSession } from '@/modules/lsp/services/lspSession';
 
 const STEPS = [
-  { id: 1, title: 'Basic Information', icon: User },
-  { id: 2, title: 'Location Details', icon: MapPin },
-  { id: 3, title: 'Banking Details', icon: Landmark },
-  { id: 4, title: 'Documents & Agreement', icon: FileSignature },
+  { id: 1, title: 'Centre & Owner Details', icon: MapPin },
+  { id: 2, title: 'Documents & Declaration', icon: FileText },
+  { id: 3, title: 'Agreement & OTP', icon: FileSignature },
 ] as const;
 
 type FormData = Record<string, any>;
 
 const DEFAULTS: FormData = {
   center_name: '',
-  owner_name: '',
-  mobile: '',
-  mobile_verified: false,
-  email: '',
-  pan_number: '',
-  gst_number: '',
   emitra_id: '',
-  csc_id: '',
-  shop_name: '',
+  owner_name: '',
   address_line1: '',
-  address_line2: '',
-  village: '',
-  panchayat: '',
   city_town: '',
   district: '',
   state: '',
   pincode: '',
-  has_internet: false,
-  has_computer: false,
-  has_printer: false,
-  has_webcam: false,
-  account_holder: '',
-  bank_name: '',
-  account_number: '',
-  ifsc: '',
-  upi_id: '',
-  cancelled_cheque_url: '',
-  pan_card_url: '',
-  emitra_certificate_url: '',
+  google_maps_url: '',
   shop_photo_url: '',
-  owner_photo_url: '',
-  inside_shop_photo_url: '',
-  training_declaration: false,
+  mobile: '',
+  mobile_verified: false,
+  whatsapp: '',
+  whatsapp_same: true,
+  email: '',
+  date_of_birth: '',
+  aadhaar_number: '',
+  pan_number: '',
+  aadhaar_url: '',
+  address_proof_url: '',
+  emitra_certificate_url: '',
   accepted_terms: false,
-  agree_mea_guidelines: false,
+  no_jobs_promise: false,
+  agree_no_misrepresentation: false,
   no_unauthorized_fees: false,
-  agree_platform_only: false,
-  agree_confidentiality: false,
+  agree_accurate_info: false,
+  agree_not_sub_agent: false,
+  agree_partner_agreement: false,
 };
 
 /**
- * New E-Mitra partner onboarding (v2).
+ * E-Mitra / CSC partner onboarding.
  * Replaces EmitraRegisterPage at /emitra/register; legacy kept at /emitra/register-legacy.
  */
 export default function EmitraOnboardingPage() {
@@ -115,22 +104,36 @@ export default function EmitraOnboardingPage() {
   const [accountPasswordConfirm, setAccountPasswordConfirm] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [data, setData] = useState<FormData>({ ...DEFAULTS });
-  const [agreementOtpStep, setAgreementOtpStep] = useState(false);
-  const [agreementOtp, setAgreementOtp] = useState('');
-  const [agreementOtpBusy, setAgreementOtpBusy] = useState(false);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
+  const [pendingShopPhoto, setPendingShopPhoto] = useState<File | null>(null);
 
   const update = (patch: Partial<FormData>) => setData((d) => ({ ...d, ...patch }));
 
+  const allDeclarationsChecked = PARTNER_DECLARATION_ITEMS.every((item) => !!data[item.key]);
+
+  const agreeAllDeclarations = () => {
+    update(Object.fromEntries(PARTNER_DECLARATION_ITEMS.map((item) => [item.key, true])));
+    setErrors((e) => {
+      const nextErrors = { ...e };
+      for (const item of PARTNER_DECLARATION_ITEMS) delete nextErrors[item.key];
+      return nextErrors;
+    });
+  };
+
   const setMobile = (raw: string) => {
     const digits = raw.replace(/\D/g, '').slice(0, 10);
-    if (mobileVerified || otpStep) {
+    if (agreementAccepted || otpStep || mobileVerified) {
+      setAgreementAccepted(false);
       setMobileVerified(false);
       setOtpStep(false);
       setOtp('');
       firebaseOtp.resetRecaptcha();
     }
-    update({ mobile: digits, mobile_verified: false });
+    update({
+      mobile: digits,
+      mobile_verified: false,
+      ...(data.whatsapp_same ? { whatsapp: digits } : {}),
+    });
   };
 
   useEffect(() => {
@@ -162,29 +165,36 @@ export default function EmitraOnboardingPage() {
           navigate('/emitra/dashboard', { replace: true });
           return;
         }
+        const mobile = row.mobile || '';
+        const whatsapp = row.whatsapp || '';
         setData((d) => ({
           ...d,
           ...row,
           owner_name: row.owner_name || d.owner_name || '',
           email: displayableEmail(row.email) || displayableEmail(user.email) || d.email || '',
-          center_name: row.center_name || d.center_name || '',
+          center_name: row.center_name || row.shop_name || d.center_name || '',
+          emitra_id: row.emitra_id || row.csc_id || d.emitra_id || '',
           address_line1: (row as any).address_line1 || row.address || d.address_line1 || '',
-          city_town: (row as any).city_town || row.village_city || d.city_town || '',
-          village: (row as any).village || d.village || '',
-          has_internet: row.has_internet ?? false,
-          has_computer: row.has_computer ?? false,
-          has_printer: row.has_printer ?? false,
-          has_webcam: (row as any).has_webcam ?? false,
-          training_declaration: (row as any).training_declaration ?? false,
+          city_town: (row as any).city_town || row.village_city || (row as any).village || d.city_town || '',
+          date_of_birth: String((row as any).date_of_birth || '').slice(0, 10) || d.date_of_birth || '',
+          google_maps_url: (row as any).google_maps_url || d.google_maps_url || '',
+          aadhaar_number: row.aadhaar_number || '',
+          pan_number: row.pan_number || '',
+          aadhaar_url: (row as any).aadhaar_url || d.aadhaar_url || '',
+          address_proof_url: row.address_proof_url || '',
           accepted_terms: row.accepted_terms ?? false,
-          agree_mea_guidelines: (row as any).agree_mea_guidelines ?? false,
+          no_jobs_promise: row.no_jobs_promise ?? false,
+          agree_no_misrepresentation: (row as any).agree_no_misrepresentation ?? false,
           no_unauthorized_fees: row.no_unauthorized_fees ?? false,
-          agree_platform_only: (row as any).agree_platform_only ?? false,
-          agree_confidentiality: (row as any).agree_confidentiality ?? false,
+          agree_accurate_info: (row as any).agree_accurate_info ?? false,
+          agree_not_sub_agent: (row as any).agree_not_sub_agent ?? false,
           mobile_verified: !!row.mobile_verified,
+          whatsapp,
+          whatsapp_same: !whatsapp || whatsapp === mobile,
         }));
         if (row.current_step) setStep(Math.min(Math.max(row.current_step, 1), STEPS.length));
         if (row.mobile_verified) setMobileVerified(true);
+        if (row.agreement_accepted_via_otp) setAgreementAccepted(true);
       } else {
         const meta = user.user_metadata || {};
         setData((d) => ({
@@ -197,13 +207,20 @@ export default function EmitraOnboardingPage() {
     })();
   }, [user, navigate]);
 
-  const schemas = [null, emitraV2BasicSchema, emitraV2LocationSchema, emitraV2BankSchema, emitraV2DocumentsSchema] as const;
+  const schemas = [null, emitraV2BasicSchema, emitraV2DocumentsSchema, emitraV2AgreementSchema] as const;
 
   const validateStep = (): boolean => {
     setErrors({});
     const schema = schemas[step];
     if (!schema) return true;
-    const payload = step === 1 ? { ...data, mobile_verified: mobileVerified } : data;
+    const payload =
+      step === 1
+        ? {
+            ...data,
+            shop_photo_url: data.shop_photo_url || (pendingShopPhoto ? 'pending' : ''),
+            whatsapp: data.whatsapp_same ? data.mobile : data.whatsapp,
+          }
+        : data;
     const result = schema.safeParse(payload);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
@@ -215,10 +232,33 @@ export default function EmitraOnboardingPage() {
       toast.error('Please fix the highlighted fields');
       return false;
     }
+    if (step === 1 && !user) {
+      const passwordIssue = passwordSignupIssue(accountPassword);
+      if (passwordIssue) {
+        setErrors((e) => ({ ...e, password: passwordIssue }));
+        toast.error(passwordIssue);
+        return false;
+      }
+      if (accountPassword !== accountPasswordConfirm) {
+        setErrors((e) => ({ ...e, password_confirm: 'Passwords do not match' }));
+        toast.error('Passwords do not match');
+        return false;
+      }
+    }
     return true;
   };
 
   const requestOtp = async () => {
+    if (!data.agree_partner_agreement) {
+      setErrors((e) => ({ ...e, agree_partner_agreement: 'You must agree to the Partner Agreement' }));
+      toast.error('Please agree to the Partner Agreement first');
+      return;
+    }
+    if (!(data.owner_name || '').trim()) {
+      setErrors((e) => ({ ...e, owner_name: 'Partner name is required' }));
+      toast.error('Enter the partner name');
+      return;
+    }
     const digits = (data.mobile || '').replace(/\D/g, '');
     if (!/^[6-9]\d{9}$/.test(digits)) {
       setErrors((e) => ({ ...e, mobile: 'Enter a valid 10-digit mobile' }));
@@ -257,10 +297,11 @@ export default function EmitraOnboardingPage() {
         /* ignore */
       }
       setMobileVerified(true);
+      setAgreementAccepted(true);
       update({ mobile_verified: true });
       setOtpStep(false);
       setOtp('');
-      toast.success('Mobile verified');
+      toast.success('Mobile verified. You can complete registration.');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Invalid OTP');
     } finally {
@@ -268,58 +309,8 @@ export default function EmitraOnboardingPage() {
     }
   };
 
-  const requestAgreementOtp = async () => {
-    const digits = (data.mobile || '').replace(/\D/g, '');
-    if (!/^[6-9]\d{9}$/.test(digits)) {
-      toast.error('Mobile number not verified — cannot send agreement OTP');
-      return;
-    }
-    if (!firebaseOtp.isAvailable) {
-      toast.error('SMS verification is not configured.');
-      return;
-    }
-    setAgreementOtpBusy(true);
-    try {
-      await firebaseOtp.sendOtp(digits);
-      setAgreementOtpStep(true);
-      setAgreementOtp('');
-      toast.success(`Agreement acceptance OTP sent to +91 ${digits}`);
-    } catch (err) {
-      firebaseOtp.resetRecaptcha();
-      toast.error(err instanceof Error ? err.message : 'Failed to send OTP');
-    } finally {
-      setAgreementOtpBusy(false);
-    }
-  };
-
-  const confirmAgreementOtp = async () => {
-    if (agreementOtp.length !== 6) {
-      toast.error('Enter the 6-digit OTP');
-      return;
-    }
-    setAgreementOtpBusy(true);
-    try {
-      await firebaseOtp.verifyOtp(agreementOtp);
-      try {
-        await firebaseSignOut(getFirebaseAuth());
-      } catch { /* ignore */ }
-      setAgreementAccepted(true);
-      setAgreementOtpStep(false);
-      setAgreementOtp('');
-      toast.success('Agreement accepted via OTP');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Invalid OTP');
-    } finally {
-      setAgreementOtpBusy(false);
-    }
-  };
-
   const ensureAccount = async (): Promise<string | null> => {
     if (user) return user.id;
-    if (!mobileVerified) {
-      toast.error('Verify your mobile number with SMS OTP first');
-      return null;
-    }
     const passwordIssue = passwordSignupIssue(accountPassword);
     if (passwordIssue) {
       toast.error(passwordIssue);
@@ -353,59 +344,49 @@ export default function EmitraOnboardingPage() {
   };
 
   const buildPayload = (overrides: Record<string, unknown> = {}) => {
-    const address =
-      [data.address_line1, data.address_line2].filter(Boolean).join(', ') || data.address_line1 || null;
-    const villageCity = data.city_town || data.village || null;
+    const address = data.address_line1 || null;
+    const villageCity = data.city_town || null;
     const digits = (data.mobile || '').replace(/\D/g, '');
+    const whatsapp = (data.whatsapp_same ? digits : (data.whatsapp || '').replace(/\D/g, '')) || null;
 
     return {
       owner_name: data.owner_name,
       mobile: data.mobile,
-      // Store verified mobile for contact; WhatsApp channel removed from onboarding
-      whatsapp: digits || null,
+      whatsapp,
       email: displayableEmail(data.email),
+      date_of_birth: data.date_of_birth || null,
       emitra_id: data.emitra_id,
+      csc_id: data.emitra_id || null,
       center_name: data.center_name,
-      pan_number: data.pan_number,
-      gst_number: data.gst_number || null,
-      csc_id: data.csc_id || null,
-      shop_name: data.shop_name || null,
+      shop_name: data.center_name || null,
+      pan_number: data.pan_number || null,
+      aadhaar_number: data.aadhaar_number || null,
       address_line1: data.address_line1,
-      address_line2: data.address_line2 || null,
-      village: data.village || null,
-      panchayat: data.panchayat || null,
       city_town: data.city_town || null,
+      village: data.city_town || null,
       address,
       village_city: villageCity,
       district: data.district,
       state: data.state,
       pincode: data.pincode,
-      has_internet: !!data.has_internet,
-      has_computer: !!data.has_computer,
-      has_printer: !!data.has_printer,
-      has_webcam: !!data.has_webcam,
-      account_holder: data.account_holder,
-      bank_name: data.bank_name,
-      account_number: data.account_number,
-      ifsc: data.ifsc,
-      upi_id: data.upi_id || null,
-      cancelled_cheque_url: data.cancelled_cheque_url || null,
-      pan_card_url: data.pan_card_url || null,
-      emitra_certificate_url: data.emitra_certificate_url || null,
+      google_maps_url: data.google_maps_url || null,
       shop_photo_url: data.shop_photo_url || null,
-      owner_photo_url: data.owner_photo_url || null,
-      inside_shop_photo_url: data.inside_shop_photo_url || null,
-      training_declaration: !!data.training_declaration,
+      aadhaar_url: data.aadhaar_url || null,
+      address_proof_url: data.address_proof_url || null,
+      emitra_certificate_url: data.emitra_certificate_url || null,
       accepted_terms: !!data.accepted_terms,
-      agree_mea_guidelines: !!data.agree_mea_guidelines,
+      no_jobs_promise: !!data.no_jobs_promise,
+      agree_no_misrepresentation: !!data.agree_no_misrepresentation,
       no_unauthorized_fees: !!data.no_unauthorized_fees,
-      agree_platform_only: !!data.agree_platform_only,
-      agree_confidentiality: !!data.agree_confidentiality,
-      // Keep legacy declaration fields in sync where useful
-      no_jobs_promise: !!data.agree_mea_guidelines,
+      agree_accurate_info: !!data.agree_accurate_info,
+      agree_not_sub_agent: !!data.agree_not_sub_agent,
       mobile_verified: mobileVerified,
-      agreement_accepted_via_otp: agreementAccepted,
-      ...(agreementAccepted ? { agreement_accepted_at: new Date().toISOString() } : {}),
+      ...(agreementAccepted
+        ? {
+            agreement_accepted_via_otp: true,
+            agreement_accepted_at: new Date().toISOString(),
+          }
+        : {}),
       current_step: step,
       ...(sourceLspId ? { source_lsp_id: sourceLspId } : {}),
       ...overrides,
@@ -415,7 +396,13 @@ export default function EmitraOnboardingPage() {
   const persistProgress = async (overrides: Record<string, unknown> = {}) => {
     const uid = user?.id || (await ensureAccount());
     if (!uid) throw new Error('Account not ready. Please try again.');
-    await savePartnerApplication(uid, buildPayload(overrides) as any);
+    let shopPhotoUrl = data.shop_photo_url as string;
+    if (pendingShopPhoto) {
+      shopPhotoUrl = await uploadPartnerDocFile(uid, 'kiosk-photo', pendingShopPhoto);
+      setPendingShopPhoto(null);
+      update({ shop_photo_url: shopPhotoUrl });
+    }
+    await savePartnerApplication(uid, buildPayload({ shop_photo_url: shopPhotoUrl, ...overrides }) as any);
     return uid;
   };
 
@@ -434,8 +421,8 @@ export default function EmitraOnboardingPage() {
 
   const handleSubmit = async () => {
     if (!validateStep()) return;
-    if (!agreementAccepted) {
-      toast.error('Please accept the SafeWork–Vesta–E-Mitra Agreement via OTP before submitting.');
+    if (!agreementAccepted || !mobileVerified) {
+      toast.error('Verify the OTP sent to your mobile before completing registration.');
       return;
     }
     setSaving(true);
@@ -540,27 +527,322 @@ export default function EmitraOnboardingPage() {
 
         <div className="px-5 py-5 md:px-7 md:py-6 space-y-5">
           {step === 1 && (
-            <section className="space-y-4">
-              <h3 className="text-sm font-semibold text-foreground">Business Information</h3>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="E-Mitra / CSC Name" error={errors.center_name} required>
-                  <Input value={data.center_name || ''} onChange={(e) => update({ center_name: e.target.value })} />
-                </Field>
-                <Field label="Owner Full Name" error={errors.owner_name} required>
-                  <Input value={data.owner_name || ''} onChange={(e) => update({ owner_name: e.target.value })} />
-                </Field>
-                <Field label="Mobile Number" error={errors.mobile || errors.mobile_verified} required>
-                  <div className="flex gap-2">
+            <div className="space-y-8">
+              <section className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground">Centre Details</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <Field label="Centre / Shop Name" error={errors.center_name} required>
+                    <Input
+                      value={data.center_name || ''}
+                      onChange={(e) => update({ center_name: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="E-Mitra ID / CSC ID" error={errors.emitra_id} required>
+                    <Input
+                      value={data.emitra_id || ''}
+                      onChange={(e) => update({ emitra_id: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Centre Owner / Proprietor Name" error={errors.owner_name} required className="sm:col-span-2">
+                    <Input
+                      value={data.owner_name || ''}
+                      onChange={(e) => update({ owner_name: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Centre Address" error={errors.address_line1} required className="sm:col-span-2">
+                    <Textarea
+                      value={data.address_line1 || ''}
+                      onChange={(e) => update({ address_line1: e.target.value })}
+                      className="min-h-[80px]"
+                    />
+                  </Field>
+                  <Field label="Village / Town / City" error={errors.city_town} required>
+                    <Input
+                      value={data.city_town || ''}
+                      onChange={(e) => update({ city_town: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="District" error={errors.district} required>
+                    <Input value={data.district || ''} onChange={(e) => update({ district: e.target.value })} />
+                  </Field>
+                  <Field label="State" error={errors.state} required>
+                    <Select value={data.state || ''} onValueChange={(v) => update({ state: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {indianStates.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                  <Field label="PIN Code" error={errors.pincode} required>
                     <Input
                       inputMode="numeric"
-                      maxLength={10}
-                      value={data.mobile || ''}
-                      onChange={(e) => setMobile(e.target.value)}
-                      disabled={mobileVerified}
-                      className="flex-1"
-                      placeholder="10-digit Indian mobile"
+                      maxLength={6}
+                      value={data.pincode || ''}
+                      onChange={(e) => update({ pincode: e.target.value.replace(/\D/g, '') })}
                     />
-                    {mobileVerified ? (
+                  </Field>
+                  <Field label="Google Maps Location" error={errors.google_maps_url} required className="sm:col-span-2">
+                    <Input
+                      value={data.google_maps_url || ''}
+                      onChange={(e) => update({ google_maps_url: e.target.value })}
+                      placeholder="Paste Google Maps link or lat,lng"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Open Google Maps, share your centre location, and paste the link here.
+                    </p>
+                  </Field>
+                  <div className="sm:col-span-2">
+                    <PartnerDocUpload
+                      label="Centre Photograph"
+                      field="kiosk-photo"
+                      accept="image/*"
+                      required
+                      value={data.shop_photo_url}
+                      onChange={(v) => update({ shop_photo_url: v || '' })}
+                      pendingFile={pendingShopPhoto}
+                      onPendingFile={setPendingShopPhoto}
+                    />
+                    {errors.shop_photo_url && (
+                      <p className="text-xs text-destructive mt-1">{errors.shop_photo_url}</p>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground">Owner Details</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <Field label="Full Name" error={errors.owner_name} required>
+                    <Input
+                      value={data.owner_name || ''}
+                      onChange={(e) => update({ owner_name: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Date of Birth" error={errors.date_of_birth} required>
+                    <Input
+                      type="date"
+                      value={data.date_of_birth || ''}
+                      onChange={(e) => update({ date_of_birth: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Mobile Number" error={errors.mobile} required>
+                    <div className="flex">
+                      <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
+                        +91
+                      </span>
+                      <Input
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={data.mobile || ''}
+                        onChange={(e) => setMobile(e.target.value)}
+                        className="rounded-l-none"
+                        placeholder="10-digit Indian mobile"
+                      />
+                    </div>
+                  </Field>
+                  <Field label="WhatsApp Number" error={errors.whatsapp} required>
+                    <div className="flex">
+                      <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
+                        +91
+                      </span>
+                      <Input
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={data.whatsapp_same ? data.mobile || '' : data.whatsapp || ''}
+                        onChange={(e) => update({ whatsapp: e.target.value.replace(/\D/g, '').slice(0, 10), whatsapp_same: false })}
+                        disabled={!!data.whatsapp_same}
+                        className="rounded-l-none"
+                        placeholder="10-digit WhatsApp"
+                      />
+                    </div>
+                    <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox
+                        checked={!!data.whatsapp_same}
+                        onCheckedChange={(v) => {
+                          const same = !!v;
+                          update({
+                            whatsapp_same: same,
+                            whatsapp: same ? data.mobile : data.whatsapp,
+                          });
+                        }}
+                      />
+                      Same as mobile
+                    </label>
+                  </Field>
+                  <Field label="Email" error={errors.email} required className="sm:col-span-2">
+                    <Input
+                      type="email"
+                      value={data.email || ''}
+                      onChange={(e) => update({ email: e.target.value })}
+                    />
+                  </Field>
+                  {!user && (
+                    <>
+                      <Field label="Account password" error={errors.password} required>
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          value={accountPassword}
+                          onChange={(e) => setAccountPassword(sanitizePasswordInput(e.target.value))}
+                          placeholder={PASSWORD_HINT}
+                        />
+                      </Field>
+                      <Field label="Confirm password" error={errors.password_confirm} required>
+                        <Input
+                          type="password"
+                          autoComplete="new-password"
+                          value={accountPasswordConfirm}
+                          onChange={(e) => setAccountPasswordConfirm(sanitizePasswordInput(e.target.value))}
+                          placeholder="Re-enter password"
+                        />
+                      </Field>
+                    </>
+                  )}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-8">
+              <section className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground">Identity</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <Field label="Aadhaar / Government ID" error={errors.aadhaar_number}>
+                    <Input
+                      inputMode="numeric"
+                      maxLength={12}
+                      value={data.aadhaar_number || ''}
+                      onChange={(e) => update({ aadhaar_number: e.target.value.replace(/\D/g, '').slice(0, 12) })}
+                      placeholder="12-digit Aadhaar, if applicable"
+                    />
+                  </Field>
+                  <Field label="PAN" error={errors.pan_number}>
+                    <Input
+                      maxLength={10}
+                      value={data.pan_number || ''}
+                      onChange={(e) => update({ pan_number: e.target.value.toUpperCase() })}
+                      placeholder="If applicable"
+                    />
+                  </Field>
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <h3 className="text-sm font-semibold text-foreground">Upload</h3>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <DocField
+                    label="ID Proof"
+                    field="id-proof"
+                    value={data.aadhaar_url}
+                    error={errors.aadhaar_url}
+                    required
+                    onChange={(v) => update({ aadhaar_url: v || '' })}
+                  />
+                  <DocField
+                    label="Address Proof"
+                    field="address-proof"
+                    value={data.address_proof_url}
+                    error={errors.address_proof_url}
+                    required
+                    onChange={(v) => update({ address_proof_url: v || '' })}
+                  />
+                  <DocField
+                    label="E-Mitra / CSC authorization / ID proof"
+                    field="emitra-cert"
+                    value={data.emitra_certificate_url}
+                    error={errors.emitra_certificate_url}
+                    required
+                    onChange={(v) => update({ emitra_certificate_url: v || '' })}
+                  />
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Partner Declaration</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {PARTNER_DECLARATION_TEXT}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={agreeAllDeclarations}
+                    className="shrink-0 h-auto border-primary/40 text-primary hover:bg-primary/10 py-2 px-3"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                    {allDeclarationsChecked ? 'All terms accepted' : 'Agree to all terms and conditions'}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {PARTNER_DECLARATION_ITEMS.map((item) => (
+                    <Decl
+                      key={item.key}
+                      id={item.key}
+                      checked={!!data[item.key]}
+                      error={errors[item.key]}
+                      onChange={(v) => update({ [item.key]: v })}
+                      label={item.label}
+                    />
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6">
+              <section className="space-y-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Partner Agreement</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Please review the SafeWork Global E-Mitra/CSC Partner Agreement before accepting.
+                  </p>
+                </div>
+                <VestaEmitraAgreement partnerName={data.owner_name || undefined} />
+                <Decl
+                  id="agree_partner_agreement"
+                  checked={!!data.agree_partner_agreement}
+                  error={errors.agree_partner_agreement}
+                  onChange={(v) => update({ agree_partner_agreement: v })}
+                  label="I have read and agree to the SafeWork Global E-Mitra/CSC Partner Agreement and understand my permitted role and responsibilities."
+                />
+              </section>
+
+              <section className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+                <h3 className="text-sm font-semibold text-foreground">Agreement & OTP Acceptance</h3>
+                <Field label="Partner Name" error={errors.owner_name} required>
+                  <Input
+                    value={data.owner_name || ''}
+                    onChange={(e) => update({ owner_name: e.target.value })}
+                  />
+                </Field>
+                <Field label="Mobile" error={errors.mobile} required>
+                  <div className="flex gap-2">
+                    <div className="flex flex-1">
+                      <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
+                        +91
+                      </span>
+                      <Input
+                        inputMode="numeric"
+                        maxLength={10}
+                        value={data.mobile || ''}
+                        onChange={(e) => setMobile(e.target.value)}
+                        disabled={agreementAccepted}
+                        className="rounded-l-none"
+                        placeholder="XXXXX XXXXX"
+                      />
+                    </div>
+                    {agreementAccepted ? (
                       <BadgeVerified />
                     ) : (
                       <Button
@@ -575,42 +857,20 @@ export default function EmitraOnboardingPage() {
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    We&apos;ll send a 6-digit SMS code to verify your number.
-                  </p>
-                  {!firebaseOtp.isAvailable && (
-                    <p className="text-xs text-amber-600 mt-1">
-                      SMS verification is temporarily unavailable. Please try again later or contact support.
-                    </p>
-                  )}
                 </Field>
-                {mobileVerified && !user && (
-                  <>
-                    <Field label="Account password" error={errors.password} required>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        value={accountPassword}
-                        onChange={(e) => setAccountPassword(sanitizePasswordInput(e.target.value))}
-                        placeholder={PASSWORD_HINT}
-                      />
-                    </Field>
-                    <Field label="Confirm password" error={errors.password_confirm} required>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        value={accountPasswordConfirm}
-                        onChange={(e) => setAccountPasswordConfirm(sanitizePasswordInput(e.target.value))}
-                        placeholder="Re-enter password"
-                      />
-                    </Field>
-                  </>
-                )}
-                {otpStep && !mobileVerified && (
-                  <div className="sm:col-span-2 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+
+                {agreementAccepted ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
+                    <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                    <span className="text-sm font-medium text-success">
+                      Agreement accepted via OTP on +91 {data.mobile}
+                    </span>
+                  </div>
+                ) : otpStep ? (
+                  <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm font-medium">
                       <ShieldCheck className="h-4 w-4 text-primary" />
-                      Enter SMS OTP sent to +91 {data.mobile}
+                      Enter OTP
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       <InputOTP maxLength={6} value={otp} onChange={setOtp}>
@@ -628,7 +888,7 @@ export default function EmitraOnboardingPage() {
                         disabled={otpBusy || otp.length !== 6}
                       >
                         {otpBusy ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                        Confirm OTP
+                        Verify
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -656,274 +916,11 @@ export default function EmitraOnboardingPage() {
                       </button>
                     </p>
                   </div>
-                )}
-                <Field label="Email Address" error={errors.email}>
-                  <Input type="email" value={data.email || ''} onChange={(e) => update({ email: e.target.value })} />
-                </Field>
-                <Field label="PAN Number" error={errors.pan_number} required>
-                  <Input
-                    maxLength={10}
-                    value={data.pan_number || ''}
-                    onChange={(e) => update({ pan_number: e.target.value.toUpperCase() })}
-                  />
-                </Field>
-                <Field label="GST Number (Optional)" error={errors.gst_number}>
-                  <Input
-                    maxLength={15}
-                    value={data.gst_number || ''}
-                    onChange={(e) => update({ gst_number: e.target.value.toUpperCase() })}
-                  />
-                </Field>
-                <Field label="E-Mitra ID" error={errors.emitra_id} required>
-                  <Input value={data.emitra_id || ''} onChange={(e) => update({ emitra_id: e.target.value })} />
-                </Field>
-                <Field label="CSC ID (If Applicable)" error={errors.csc_id}>
-                  <Input value={data.csc_id || ''} onChange={(e) => update({ csc_id: e.target.value })} />
-                </Field>
-              </div>
-            </section>
-          )}
+                ) : null}
 
-          {step === 2 && (
-            <div className="space-y-6">
-              <section className="space-y-4">
-                <h3 className="text-sm font-semibold text-foreground">Shop Address</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Shop Name" error={errors.shop_name}>
-                    <Input value={data.shop_name || ''} onChange={(e) => update({ shop_name: e.target.value })} />
-                  </Field>
-                  <div className="hidden sm:block" />
-                  <Field label="Address Line 1" error={errors.address_line1} required>
-                    <Input value={data.address_line1 || ''} onChange={(e) => update({ address_line1: e.target.value })} />
-                  </Field>
-                  <Field label="Address Line 2" error={errors.address_line2}>
-                    <Input value={data.address_line2 || ''} onChange={(e) => update({ address_line2: e.target.value })} />
-                  </Field>
-                  <Field label="Village" error={errors.village}>
-                    <Input value={data.village || ''} onChange={(e) => update({ village: e.target.value })} />
-                  </Field>
-                  <Field label="Panchayat" error={errors.panchayat}>
-                    <Input value={data.panchayat || ''} onChange={(e) => update({ panchayat: e.target.value })} />
-                  </Field>
-                  <Field label="City / Town" error={errors.city_town}>
-                    <Input value={data.city_town || ''} onChange={(e) => update({ city_town: e.target.value })} />
-                  </Field>
-                  <Field label="District" error={errors.district} required>
-                    <Input value={data.district || ''} onChange={(e) => update({ district: e.target.value })} />
-                  </Field>
-                  <Field label="State" error={errors.state} required>
-                    <Select value={data.state || ''} onValueChange={(v) => update({ state: v })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select state" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-72">
-                        {indianStates.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                  <Field label="PIN Code" error={errors.pincode} required>
-                    <Input
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={data.pincode || ''}
-                      onChange={(e) => update({ pincode: e.target.value.replace(/\D/g, '') })}
-                    />
-                  </Field>
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">Infrastructure</h3>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {(
-                    [
-                      { key: 'has_internet', label: 'Internet Available?' },
-                      { key: 'has_computer', label: 'Computer' },
-                      { key: 'has_printer', label: 'Printer' },
-                      { key: 'has_webcam', label: 'Web Camera' },
-                    ] as const
-                  ).map((q) => (
-                    <Field key={q.key} label={q.label}>
-                      <RadioGroup
-                        value={data[q.key] ? 'yes' : 'no'}
-                        onValueChange={(v) => update({ [q.key]: v === 'yes' })}
-                        className="flex gap-4"
-                      >
-                        <label className="flex items-center gap-2 text-sm">
-                          <RadioGroupItem value="yes" /> Yes
-                        </label>
-                        <label className="flex items-center gap-2 text-sm">
-                          <RadioGroupItem value="no" /> No
-                        </label>
-                      </RadioGroup>
-                    </Field>
-                  ))}
-                </div>
-              </section>
-            </div>
-          )}
-
-          {step === 3 && (
-            <section className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="Account Holder Name" error={errors.account_holder} required>
-                  <Input value={data.account_holder || ''} onChange={(e) => update({ account_holder: e.target.value })} />
-                </Field>
-                <Field label="Bank Name" error={errors.bank_name} required>
-                  <Input value={data.bank_name || ''} onChange={(e) => update({ bank_name: e.target.value })} />
-                </Field>
-                <Field label="Account Number" error={errors.account_number} required>
-                  <Input
-                    inputMode="numeric"
-                    value={data.account_number || ''}
-                    onChange={(e) => update({ account_number: e.target.value.replace(/\D/g, '') })}
-                  />
-                </Field>
-                <Field label="IFSC Code" error={errors.ifsc} required>
-                  <Input
-                    maxLength={11}
-                    value={data.ifsc || ''}
-                    onChange={(e) => update({ ifsc: e.target.value.toUpperCase() })}
-                  />
-                </Field>
-                <Field label="UPI ID" error={errors.upi_id}>
-                  <Input value={data.upi_id || ''} onChange={(e) => update({ upi_id: e.target.value })} />
-                </Field>
-              </div>
-              <div>
-                <PartnerDocUpload
-                  label="Cancelled Cheque Upload"
-                  field="cancelled-cheque"
-                  value={data.cancelled_cheque_url}
-                  onChange={(v) => update({ cancelled_cheque_url: v || '' })}
-                />
-                {errors.cancelled_cheque_url && (
-                  <p className="text-xs text-destructive mt-1">{errors.cancelled_cheque_url}</p>
-                )}
-              </div>
-            </section>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-6">
-              <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">Mandatory Documents</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <DocField label="PAN" field="pan-card" value={data.pan_card_url} error={errors.pan_card_url}
-                    onChange={(v) => update({ pan_card_url: v || '' })} />
-                  <DocField label="E-Mitra Certificate" field="emitra-cert" value={data.emitra_certificate_url}
-                    error={errors.emitra_certificate_url} onChange={(v) => update({ emitra_certificate_url: v || '' })} />
-                  <DocField label="Shop Photo (Front)" field="kiosk-photo" accept="image/*" value={data.shop_photo_url}
-                    error={errors.shop_photo_url} onChange={(v) => update({ shop_photo_url: v || '' })} />
-                  <DocField label="Owner Photo" field="owner-photo" accept="image/*" value={data.owner_photo_url}
-                    error={errors.owner_photo_url} onChange={(v) => update({ owner_photo_url: v || '' })} />
-                  <DocField label="Inside Shop Photo" field="inside-shop" accept="image/*" value={data.inside_shop_photo_url}
-                    error={errors.inside_shop_photo_url} onChange={(v) => update({ inside_shop_photo_url: v || '' })} />
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">Training Declaration</h3>
-                <Decl
-                  id="training"
-                  checked={!!data.training_declaration}
-                  error={errors.training_declaration}
-                  onChange={(v) => update({ training_declaration: v })}
-                  label="I agree to complete the SafeWork E-Mitra Training before onboarding workers."
-                />
-              </section>
-
-              <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">Agreement</h3>
-                <div className="space-y-2">
-                  <Decl id="terms" checked={!!data.accepted_terms} error={errors.accepted_terms}
-                    onChange={(v) => update({ accepted_terms: v })}
-                    label="I agree to the SafeWork Partner Terms." />
-                  <Decl id="mea" checked={!!data.agree_mea_guidelines} error={errors.agree_mea_guidelines}
-                    onChange={(v) => update({ agree_mea_guidelines: v })}
-                    label="I agree to follow the Ministry of External Affairs recruitment guidelines." />
-                  <Decl id="fees" checked={!!data.no_unauthorized_fees} error={errors.no_unauthorized_fees}
-                    onChange={(v) => update({ no_unauthorized_fees: v })}
-                    label="I will not charge any unauthorized fees from workers." />
-                  <Decl id="platform" checked={!!data.agree_platform_only} error={errors.agree_platform_only}
-                    onChange={(v) => update({ agree_platform_only: v })}
-                    label="I will only process candidates through the SafeWork platform." />
-                  <Decl id="confidential" checked={!!data.agree_confidentiality} error={errors.agree_confidentiality}
-                    onChange={(v) => update({ agree_confidentiality: v })}
-                    label="I agree to maintain confidentiality of candidate data." />
-                </div>
-              </section>
-
-              <section className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">
-                  SafeWork–Vesta–E-Mitra Agreement
-                </h3>
-                <VestaEmitraAgreement partnerName={data.owner_name || undefined} />
-
-                {agreementAccepted ? (
-                  <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
-                    <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
-                    <span className="text-sm font-medium text-success">
-                      Agreement accepted via OTP on +91 {data.mobile}
-                    </span>
-                  </div>
-                ) : agreementOtpStep ? (
-                  <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <ShieldCheck className="h-4 w-4 text-primary" />
-                      Enter OTP sent to +91 {data.mobile} to accept the agreement
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      <InputOTP maxLength={6} value={agreementOtp} onChange={setAgreementOtp}>
-                        <InputOTPGroup>
-                          {[0, 1, 2, 3, 4, 5].map((i) => (
-                            <InputOTPSlot key={i} index={i} />
-                          ))}
-                        </InputOTPGroup>
-                      </InputOTP>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-10"
-                        onClick={() => void confirmAgreementOtp()}
-                        disabled={agreementOtpBusy || agreementOtp.length !== 6}
-                      >
-                        {agreementOtpBusy ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                        Confirm & Accept
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Didn&apos;t get the code?{' '}
-                      <button
-                        type="button"
-                        className="text-primary font-medium hover:underline disabled:opacity-50"
-                        onClick={() => void requestAgreementOtp()}
-                        disabled={agreementOtpBusy}
-                      >
-                        Resend OTP
-                      </button>
-                    </p>
-                  </div>
-                ) : (
-                  <Button
-                    id="agreement-otp-btn"
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11"
-                    onClick={() => void requestAgreementOtp()}
-                    disabled={agreementOtpBusy || !mobileVerified}
-                  >
-                    {agreementOtpBusy ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ShieldCheck className="h-4 w-4 mr-1" />}
-                    Accept Agreement via OTP
-                  </Button>
-                )}
-                {!mobileVerified && !agreementAccepted && (
+                {!firebaseOtp.isAvailable && !agreementAccepted && (
                   <p className="text-xs text-amber-600">
-                    Verify your mobile number in Step 1 before accepting the agreement.
+                    SMS verification is temporarily unavailable. Please try again later or contact support.
                   </p>
                 )}
               </section>
@@ -956,10 +953,10 @@ export default function EmitraOnboardingPage() {
               type="button"
               className="h-11 bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
               onClick={() => void handleSubmit()}
-              disabled={saving}
+              disabled={saving || !agreementAccepted}
             >
               {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-1 h-4 w-4" />}
-              Submit application
+              Accept & Complete Registration
             </Button>
           )}
         </div>
@@ -986,14 +983,16 @@ function Field({
   error,
   children,
   required,
+  className,
 }: {
   label: string;
   error?: string;
   children: React.ReactNode;
   required?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className={`space-y-1.5 ${className || ''}`}>
       <Label className="text-sm font-medium">
         {label}
         {required && <span className="text-destructive ml-0.5">*</span>}
@@ -1011,6 +1010,7 @@ function DocField({
   error,
   onChange,
   accept,
+  required,
 }: {
   label: string;
   field: string;
@@ -1018,10 +1018,11 @@ function DocField({
   error?: string;
   onChange: (v: string | null) => void;
   accept?: string;
+  required?: boolean;
 }) {
   return (
     <div>
-      <PartnerDocUpload label={label} field={field} accept={accept} value={value} onChange={onChange} />
+      <PartnerDocUpload label={label} field={field} accept={accept} value={value} onChange={onChange} required={required} />
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>
   );

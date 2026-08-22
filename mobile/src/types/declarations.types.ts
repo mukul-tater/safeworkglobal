@@ -162,7 +162,8 @@ export const PRE_JOURNEY_COPY = {
   next: { en: 'Next Step', hi: 'अगला चरण' },
   submit: { en: 'Validate & Start Worker Journey', hi: 'सत्यापित करें और वर्कर जर्नी शुरू करें' },
   saving: { en: 'Saving Declarations...', hi: 'घोषणाएँ सहेजी जा रही हैं...' },
-  selectAll: { en: 'Select All Declarations', hi: 'सभी घोषणाएँ चुनें' },
+  selectAll: { en: 'Agree to all terms and conditions', hi: 'सभी नियम और शर्तों से सहमत हूँ' },
+  allAccepted: { en: 'All terms accepted', hi: 'सभी शर्तें स्वीकार की गईं' },
   incomplete: { en: 'Incomplete Declarations', hi: 'अधूरी घोषणाएँ' },
   medical: {
     title: { en: '1. Medical & Fitness', hi: '1. चिकित्सा और फिटनेस' },

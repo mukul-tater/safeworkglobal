@@ -169,7 +169,7 @@ export default function WorkerPreJourneyScreeningModal({
     }
   };
 
-  const selectAllAcknowledgements = () => {
+  const agreeAllAcknowledgements = () => {
     const next = { ...ack };
     for (const item of CANDIDATE_ACKNOWLEDGEMENT_ITEMS) next[item.key] = true;
     setAck(next);
@@ -718,9 +718,13 @@ export default function WorkerPreJourneyScreeningModal({
                   <Text style={styles.sectionDesc}>{PRE_JOURNEY_COPY.ack.desc.en}</Text>
                   <Text style={styles.hindiLine}>{PRE_JOURNEY_COPY.ack.desc.hi}</Text>
                 </View>
-                <Pressable onPress={selectAllAcknowledgements} style={styles.selectAllBtn}>
+                <Pressable onPress={agreeAllAcknowledgements} style={styles.selectAllBtn}>
                   <CheckCircle2 size={16} color={colors.worker} />
-                  <Text style={styles.selectAllText}>{PRE_JOURNEY_COPY.selectAll.en}</Text>
+                  <Text style={styles.selectAllText}>
+                    {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.every((item) => ack[item.key])
+                      ? PRE_JOURNEY_COPY.allAccepted.en
+                      : PRE_JOURNEY_COPY.selectAll.en}
+                  </Text>
                 </Pressable>
               </View>
 

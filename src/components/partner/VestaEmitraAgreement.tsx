@@ -68,7 +68,7 @@ export default function VestaEmitraAgreement({
     <div className={className}>
       <div className="mb-4 text-center">
         <h3 className="text-base font-bold font-heading">
-          SafeWork–Vesta–E-Mitra Partner Agreement
+          SafeWork Global E-Mitra/CSC Partner Agreement
         </h3>
         <p className="text-xs text-muted-foreground mt-1">
           Version {AGREEMENT_VERSION}

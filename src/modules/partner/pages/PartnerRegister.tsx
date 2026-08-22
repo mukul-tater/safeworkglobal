@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import AuthSplitLayout from "@/components/AuthSplitLayout";
 import SEOHead from "@/components/SEOHead";
 import FormStepPills from "@/components/FormStepPills";
+import HindiText from "@/components/indian-workforce/HindiText";
 import {
   DEFAULT_PARTNER_SIGNUP_CODE,
   EMITRA_STATE_BRANDS,
@@ -158,10 +159,16 @@ export default function PartnerRegister() {
                             onPointerDown={(e) => e.stopPropagation()}
                           >
                             <div className="border-b px-3 py-2.5">
-                              <p className="text-sm font-semibold">{t("partner.emitraInfoTitle")}</p>
-                              <p className="mt-0.5 text-xs text-muted-foreground">
-                                {t("partner.emitraInfoHint")}
+                              <p className="text-sm font-medium leading-snug text-foreground">
+                                CSC Centres are spread across India and may operate under different
+                                regional names in different states. We have provided a state-wise
+                                list of the corresponding kiosk names for easy reference.
                               </p>
+                              <HindiText className="mt-1.5 text-xs leading-snug text-muted-foreground">
+                                CSC केंद्र पूरे भारत में फैले हुए हैं और अलग-अलग राज्यों में इनके
+                                क्षेत्रीय नाम अलग हो सकते हैं। आपकी सुविधा के लिए हमने राज्यों के
+                                अनुसार संबंधित Kiosk के नामों की सूची उपलब्ध कराई है।
+                              </HindiText>
                             </div>
                             <ul className="max-h-72 divide-y overflow-y-auto">
                               {EMITRA_STATE_BRANDS.map((row) => {

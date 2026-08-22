@@ -2298,34 +2298,54 @@ export type Database = {
           aadhaar_back_url: string | null
           aadhaar_front_url: string | null
           aadhaar_number: string | null
+          aadhaar_url: string | null
           accepted_privacy: boolean | null
           accepted_terms: boolean | null
           account_holder: string | null
           account_number: string | null
           address: string | null
+          address_line1: string | null
+          address_line2: string | null
           address_proof_url: string | null
           agency_name: string | null
+          agree_accurate_info: boolean | null
+          agree_confidentiality: boolean | null
+          agree_mea_guidelines: boolean | null
+          agree_no_misrepresentation: boolean | null
+          agree_not_sub_agent: boolean | null
+          agree_platform_only: boolean | null
+          agreement_accepted_at: string | null
+          agreement_accepted_via_otp: boolean | null
           approval_notes: string | null
           approved_at: string | null
           approved_by: string | null
+          bank_name: string | null
           bio: string | null
+          cancelled_cheque_url: string | null
           center_name: string | null
+          city_town: string | null
           commission_rate: number | null
           compliance_acknowledged_at: string | null
           confirmed_accuracy: boolean | null
           created_at: string | null
+          csc_id: string | null
           current_step: number
+          date_of_birth: string | null
           district: string | null
           email: string | null
           emitra_certificate_url: string | null
           emitra_id: string | null
+          gst_number: string | null
+          google_maps_url: string | null
           has_computer: boolean | null
           has_internet: boolean | null
           has_printer: boolean | null
           has_scanner: boolean | null
+          has_webcam: boolean | null
           id: string
           ifsc: string | null
           info_request_message: string | null
+          inside_shop_photo_url: string | null
           leaderboard_rank: number | null
           license_number: string | null
           lsp_verified_at: string | null
@@ -2341,6 +2361,7 @@ export type Database = {
           owner_photo_url: string | null
           pan_card_url: string | null
           pan_number: string | null
+          panchayat: string | null
           partner_code: string | null
           pincode: string | null
           regions_covered: string[] | null
@@ -2348,6 +2369,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           services_offered: string[] | null
+          shop_name: string | null
           shop_photo_url: string | null
           source_lsp_id: string | null
           state: string | null
@@ -2356,9 +2378,11 @@ export type Database = {
           tier: Database["public"]["Enums"]["partner_tier"] | null
           total_incentives_earned: number | null
           total_placements: number | null
+          training_declaration: boolean | null
           updated_at: string | null
           upi_id: string | null
           user_id: string
+          village: string | null
           village_city: string | null
           whatsapp: string | null
           worker_categories: string[] | null
@@ -2370,34 +2394,54 @@ export type Database = {
           aadhaar_back_url?: string | null
           aadhaar_front_url?: string | null
           aadhaar_number?: string | null
+          aadhaar_url?: string | null
           accepted_privacy?: boolean | null
           accepted_terms?: boolean | null
           account_holder?: string | null
           account_number?: string | null
           address?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
           address_proof_url?: string | null
           agency_name?: string | null
+          agree_accurate_info?: boolean | null
+          agree_confidentiality?: boolean | null
+          agree_mea_guidelines?: boolean | null
+          agree_no_misrepresentation?: boolean | null
+          agree_not_sub_agent?: boolean | null
+          agree_platform_only?: boolean | null
+          agreement_accepted_at?: string | null
+          agreement_accepted_via_otp?: boolean | null
           approval_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          bank_name?: string | null
           bio?: string | null
+          cancelled_cheque_url?: string | null
           center_name?: string | null
+          city_town?: string | null
           commission_rate?: number | null
           compliance_acknowledged_at?: string | null
           confirmed_accuracy?: boolean | null
           created_at?: string | null
+          csc_id?: string | null
           current_step?: number
+          date_of_birth?: string | null
           district?: string | null
           email?: string | null
           emitra_certificate_url?: string | null
           emitra_id?: string | null
+          gst_number?: string | null
+          google_maps_url?: string | null
           has_computer?: boolean | null
           has_internet?: boolean | null
           has_printer?: boolean | null
           has_scanner?: boolean | null
+          has_webcam?: boolean | null
           id?: string
           ifsc?: string | null
           info_request_message?: string | null
+          inside_shop_photo_url?: string | null
           leaderboard_rank?: number | null
           license_number?: string | null
           lsp_verified_at?: string | null
@@ -2413,6 +2457,7 @@ export type Database = {
           owner_photo_url?: string | null
           pan_card_url?: string | null
           pan_number?: string | null
+          panchayat?: string | null
           partner_code?: string | null
           pincode?: string | null
           regions_covered?: string[] | null
@@ -2420,6 +2465,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           services_offered?: string[] | null
+          shop_name?: string | null
           shop_photo_url?: string | null
           source_lsp_id?: string | null
           state?: string | null
@@ -2428,9 +2474,11 @@ export type Database = {
           tier?: Database["public"]["Enums"]["partner_tier"] | null
           total_incentives_earned?: number | null
           total_placements?: number | null
+          training_declaration?: boolean | null
           updated_at?: string | null
           upi_id?: string | null
           user_id: string
+          village?: string | null
           village_city?: string | null
           whatsapp?: string | null
           worker_categories?: string[] | null
@@ -2442,34 +2490,54 @@ export type Database = {
           aadhaar_back_url?: string | null
           aadhaar_front_url?: string | null
           aadhaar_number?: string | null
+          aadhaar_url?: string | null
           accepted_privacy?: boolean | null
           accepted_terms?: boolean | null
           account_holder?: string | null
           account_number?: string | null
           address?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
           address_proof_url?: string | null
           agency_name?: string | null
+          agree_accurate_info?: boolean | null
+          agree_confidentiality?: boolean | null
+          agree_mea_guidelines?: boolean | null
+          agree_no_misrepresentation?: boolean | null
+          agree_not_sub_agent?: boolean | null
+          agree_platform_only?: boolean | null
+          agreement_accepted_at?: string | null
+          agreement_accepted_via_otp?: boolean | null
           approval_notes?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          bank_name?: string | null
           bio?: string | null
+          cancelled_cheque_url?: string | null
           center_name?: string | null
+          city_town?: string | null
           commission_rate?: number | null
           compliance_acknowledged_at?: string | null
           confirmed_accuracy?: boolean | null
           created_at?: string | null
+          csc_id?: string | null
           current_step?: number
+          date_of_birth?: string | null
           district?: string | null
           email?: string | null
           emitra_certificate_url?: string | null
           emitra_id?: string | null
+          gst_number?: string | null
+          google_maps_url?: string | null
           has_computer?: boolean | null
           has_internet?: boolean | null
           has_printer?: boolean | null
           has_scanner?: boolean | null
+          has_webcam?: boolean | null
           id?: string
           ifsc?: string | null
           info_request_message?: string | null
+          inside_shop_photo_url?: string | null
           leaderboard_rank?: number | null
           license_number?: string | null
           lsp_verified_at?: string | null
@@ -2485,6 +2553,7 @@ export type Database = {
           owner_photo_url?: string | null
           pan_card_url?: string | null
           pan_number?: string | null
+          panchayat?: string | null
           partner_code?: string | null
           pincode?: string | null
           regions_covered?: string[] | null
@@ -2492,6 +2561,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           services_offered?: string[] | null
+          shop_name?: string | null
           shop_photo_url?: string | null
           source_lsp_id?: string | null
           state?: string | null
@@ -2500,9 +2570,11 @@ export type Database = {
           tier?: Database["public"]["Enums"]["partner_tier"] | null
           total_incentives_earned?: number | null
           total_placements?: number | null
+          training_declaration?: boolean | null
           updated_at?: string | null
           upi_id?: string | null
           user_id?: string
+          village?: string | null
           village_city?: string | null
           whatsapp?: string | null
           worker_categories?: string[] | null

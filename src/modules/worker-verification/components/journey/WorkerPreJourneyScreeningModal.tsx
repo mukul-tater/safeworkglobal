@@ -164,7 +164,7 @@ export default function WorkerPreJourneyScreeningModal({
     }
   };
 
-  const selectAllAcknowledgements = () => {
+  const agreeAllAcknowledgements = () => {
     const next = { ...ack };
     for (const item of CANDIDATE_ACKNOWLEDGEMENT_ITEMS) next[item.key] = true;
     setAck(next);
@@ -962,14 +962,20 @@ export default function WorkerPreJourneyScreeningModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={selectAllAcknowledgements}
+                  onClick={agreeAllAcknowledgements}
                   className="shrink-0 h-auto flex-col gap-0 text-xs border-primary/40 text-primary hover:bg-primary/10 py-1.5"
                 >
                   <span className="inline-flex items-center gap-1">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    {PRE_JOURNEY_COPY.selectAll.en}
+                    {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.every((item) => ack[item.key])
+                      ? PRE_JOURNEY_COPY.allAccepted.en
+                      : PRE_JOURNEY_COPY.selectAll.en}
                   </span>
-                  <HindiText className="text-[10px] font-medium opacity-80">{PRE_JOURNEY_COPY.selectAll.hi}</HindiText>
+                  <HindiText className="text-[10px] font-medium opacity-80">
+                    {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.every((item) => ack[item.key])
+                      ? PRE_JOURNEY_COPY.allAccepted.hi
+                      : PRE_JOURNEY_COPY.selectAll.hi}
+                  </HindiText>
                 </Button>
               </div>
 

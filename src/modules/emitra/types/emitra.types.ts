@@ -47,6 +47,7 @@ export interface PartnerProfile {
   owner_photo_url: string | null;
   pan_number: string | null;
   aadhaar_number?: string | null;
+  date_of_birth?: string | null;
   gst_number?: string | null;
   csc_id?: string | null;
   shop_name?: string | null;
@@ -55,6 +56,7 @@ export interface PartnerProfile {
   village?: string | null;
   panchayat?: string | null;
   city_town?: string | null;
+  google_maps_url?: string | null;
   cancelled_cheque_url?: string | null;
   aadhaar_url?: string | null;
   inside_shop_photo_url?: string | null;
@@ -62,6 +64,11 @@ export interface PartnerProfile {
   agree_mea_guidelines?: boolean | null;
   agree_platform_only?: boolean | null;
   agree_confidentiality?: boolean | null;
+  agree_no_misrepresentation?: boolean | null;
+  agree_accurate_info?: boolean | null;
+  agree_not_sub_agent?: boolean | null;
+  agreement_accepted_via_otp?: boolean | null;
+  agreement_accepted_at?: string | null;
   status: string;
   partner_code: string | null;
   tier: PartnerTier | null;
