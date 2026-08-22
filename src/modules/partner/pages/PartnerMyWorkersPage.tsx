@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { PARTNER_ADD_WORKER_PATH, CREATED_BY_PARTNER_LABEL, partnerWorkerJourneyPath } from "../lib/partnerAssistedWorker";
+import { loadWorkerJourneyProgress, type WorkerJourneyProgress } from "../lib/workerProfileProgress";
+import WorkerProfileCompletionBar from "../components/WorkerProfileCompletionBar";
 
 type WorkerRow = {
   user_id: string;
@@ -17,6 +19,7 @@ type WorkerRow = {
   current_location: string | null;
   review_status: string | null;
   created_at: string | null;
+  journey?: WorkerJourneyProgress;
 };
 
 export default function PartnerMyWorkersPage() {
@@ -38,6 +41,13 @@ export default function PartnerMyWorkersPage() {
         const list = ((data || []) as WorkerRow[]).slice().sort(
           (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
         );
+        if (list.length) {
+          const journeyMap = await loadWorkerJourneyProgress(list.map((w) => w.user_id));
+          if (cancelled) return;
+          list.forEach((w) => {
+            w.journey = journeyMap.get(w.user_id);
+          });
+        }
         setRows(list);
       }
       setLoading(false);
@@ -104,6 +114,7 @@ export default function PartnerMyWorkersPage() {
                       Registered {new Date(w.created_at).toLocaleString("en-IN")}
                     </p>
                   )}
+                  <WorkerProfileCompletionBar progress={w.journey} />
                 </div>
                 <Button asChild size="sm" variant="outline">
                   <Link to={partnerWorkerJourneyPath(w.user_id)}>Continue GCC</Link>

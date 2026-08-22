@@ -97,7 +97,7 @@ export default function WorkerRegisterPage() {
       return;
     }
     if (!firebaseOtp.isAvailable) {
-      toast.error('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
+      toast.error('SMS verification is not available right now. Please contact support.');
       return;
     }
 
@@ -241,11 +241,11 @@ export default function WorkerRegisterPage() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                SMS verification via Firebase Phone Auth (+91).
+                We&apos;ll send a 6-digit SMS code to verify your number.
               </p>
               {!firebaseOtp.isAvailable && (
                 <p className="text-xs text-amber-600 mt-1">
-                  SMS OTP needs Firebase Phone Auth keys before registration can continue.
+                  SMS verification is temporarily unavailable. Please try again later or contact support.
                 </p>
               )}
             </FormField>

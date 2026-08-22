@@ -165,7 +165,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
     }
     if (!isValidIndianMobile(mobile)) return 'Enter a valid 10-digit Indian mobile number';
     if (!firebaseOtp.isAvailable) {
-      return 'Phone SMS verification is not configured. Ask the admin to add Firebase Phone Auth keys.';
+      return 'SMS verification is not available right now. Please contact support.';
     }
     const passwordIssue = passwordSignupIssue(password, { email: trimmedEmail, mobile });
     if (passwordIssue) return passwordIssue;
@@ -465,7 +465,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false }: Props) 
                     </div>
                     {!firebaseOtp.isAvailable && (
                       <p className="text-xs text-warning">
-                        SMS OTP needs Firebase Phone Auth keys before signup can continue.
+                        SMS verification is temporarily unavailable. Please try again later or contact support.
                       </p>
                     )}
                   </div>

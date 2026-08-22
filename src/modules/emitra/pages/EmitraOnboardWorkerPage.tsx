@@ -60,7 +60,7 @@ function Inner() {
     if (!name.trim() || name.trim().length < 2) return 'Enter the worker full name';
     if (!isValidIndianMobile(mobile)) return 'Enter a valid 10-digit Indian mobile number';
     if (!firebaseOtp.isAvailable) {
-      return 'Phone SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.';
+      return 'SMS verification is not available right now. Please contact support.';
     }
     if (password.length < 6) return 'Password must be at least 6 characters';
     if (password !== confirmPassword) return 'Passwords do not match';
@@ -180,7 +180,7 @@ function Inner() {
         <UserPlus className="h-6 w-6" /> Register Worker
       </h1>
       <p className="text-sm text-muted-foreground mb-4">
-        Same worker account as self-signup: Firebase SMS OTP, password, then the worker can log in
+        Same worker account as self-signup: verify the mobile by SMS, set a password, then the worker can log in
         anytime. This registration is linked to your center
         {emitraId ? ` (${emitraId})` : ''}.
       </p>
@@ -222,11 +222,11 @@ function Inner() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  SMS OTP via Firebase (+91). Worker will use this mobile to log in.
+                  We&apos;ll send a 6-digit SMS code to verify the worker&apos;s number. They will use this mobile to log in.
                 </p>
                 {!firebaseOtp.isAvailable && (
                   <p className="text-xs text-amber-600">
-                    SMS OTP needs Firebase Phone Auth keys before registration can continue.
+                    SMS verification is temporarily unavailable. Please try again later or contact support.
                   </p>
                 )}
               </div>

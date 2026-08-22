@@ -170,7 +170,7 @@ export default function PartnerRegisterLegacy() {
       return;
     }
     if (!firebaseOtp.isAvailable) {
-      toast.error("SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.");
+      toast.error("SMS verification is not available right now. Please contact support.");
       return;
     }
     setOtpBusy(true);

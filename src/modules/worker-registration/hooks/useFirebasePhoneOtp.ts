@@ -14,7 +14,7 @@ function mapFirebaseAuthError(err: unknown): string {
 
   switch (code) {
     case 'auth/operation-not-allowed':
-      return 'Phone sign-in is disabled, or India (+91) is blocked. In Firebase Console → Authentication → Sign-in method, enable Phone. Then Settings → SMS region policy → allow India.';
+      return 'SMS verification is not available for this number. Please contact support.';
     case 'auth/invalid-phone-number':
       return 'Invalid mobile number. Use a valid 10-digit Indian number.';
     case 'auth/too-many-requests':
@@ -22,11 +22,11 @@ function mapFirebaseAuthError(err: unknown): string {
     case 'auth/invalid-app-credential':
     case 'auth/captcha-check-failed':
       if (host === 'localhost') {
-        return 'Open this page as http://127.0.0.1:8080 (not localhost). Firebase Phone Auth reCAPTCHA fails on the hostname "localhost".';
+        return 'Open this page as http://127.0.0.1:8080 (not localhost) to send an SMS code.';
       }
       return 'SMS verification could not start. Please refresh the page and try again in Chrome or Safari.';
     case 'auth/unauthorized-domain':
-      return `Domain "${host}" is not authorized. Add it in Firebase Console → Authentication → Settings → Authorized domains.`;
+      return 'This site is not authorised for SMS verification. Please contact support.';
     case 'auth/code-expired':
       return 'OTP expired. Tap Send OTP again.';
     case 'auth/invalid-verification-code':
@@ -121,7 +121,7 @@ export function useFirebasePhoneOtp() {
       }
 
       if (!isFirebaseConfigured()) {
-        throw new Error('Firebase is not configured');
+        throw new Error('SMS verification is not available right now.');
       }
 
       // Keep phone verification on one authorized canonical hostname. In

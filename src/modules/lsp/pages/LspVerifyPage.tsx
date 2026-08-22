@@ -78,7 +78,7 @@ export default function LspVerifyPage() {
       return;
     }
     if (!firebaseOtp.isAvailable) {
-      setError('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
+      setError('SMS verification is not available right now. Please contact support.');
       return;
     }
 
@@ -221,7 +221,7 @@ export default function LspVerifyPage() {
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  We&apos;ll send an SMS code via Firebase (+91).
+                  We&apos;ll send a 6-digit SMS code to verify your number.
                 </p>
               </div>
               <Button

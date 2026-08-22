@@ -9,6 +9,8 @@ import { Link } from 'react-router-dom';
 import { Loader2, UserPlus, Users } from 'lucide-react';
 import ApprovedPartnerGate, { useApprovedPartner } from '../components/ApprovedPartnerGate';
 import { partnerWorkerJourneyPath } from '@/modules/partner/lib/partnerAssistedWorker';
+import { loadWorkerJourneyProgress, type WorkerJourneyProgress } from '@/modules/partner/lib/workerProfileProgress';
+import WorkerProfileCompletionBar from '@/modules/partner/components/WorkerProfileCompletionBar';
 import { emitraNavGroups, emitraProfileMenu } from '../config/emitraNav';
 
 type WorkerRow = {
@@ -20,6 +22,7 @@ type WorkerRow = {
   profile?: { full_name: string | null; phone: string | null } | null;
   reward?: { status: string; amount: number } | null;
   hired?: boolean;
+  journey?: WorkerJourneyProgress;
 };
 
 const STATUS_TABS = [
@@ -70,6 +73,7 @@ function Inner() {
           .select('worker_id, status').in('worker_id', ids).eq('status', 'HIRED');
         const { data: rewards } = await (supabase as any).from('reward_transactions')
           .select('worker_id, status, amount').eq('partner_id', partnerId);
+        const journeyMap = await loadWorkerJourneyProgress(ids);
         const pmap = new Map((profiles || []).map((p: any) => [p.id, p]));
         const hiredSet = new Set((apps || []).map((a: any) => a.worker_id));
         const rmap = new Map((rewards || []).map((r: any) => [r.worker_id, r]));
@@ -77,6 +81,7 @@ function Inner() {
           w.profile = pmap.get(w.user_id) as any;
           w.hired = hiredSet.has(w.user_id);
           w.reward = rmap.get(w.user_id) as any;
+          w.journey = journeyMap.get(w.user_id);
         });
       }
       setRows(list);
@@ -140,6 +145,7 @@ function Inner() {
                       {w.review_notes && <p className="opacity-80 mt-0.5">{w.review_notes}</p>}
                     </div>
                   )}
+                  <WorkerProfileCompletionBar progress={w.journey} />
                 </div>
                 <Button asChild size="sm" variant="outline">
                   <Link to={partnerWorkerJourneyPath(w.user_id)}>Continue GCC</Link>

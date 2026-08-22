@@ -94,7 +94,7 @@ export default function WorkerBindMobilePage() {
       return;
     }
     if (!firebaseOtp.isAvailable) {
-      setError('Phone SMS verification is not configured. Ask the admin to add Firebase Phone Auth keys.');
+      setError('SMS verification is not available right now. Please contact support.');
       return;
     }
 
@@ -240,7 +240,7 @@ export default function WorkerBindMobilePage() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    We&apos;ll send an SMS code to +91. You only do this once.
+                    We&apos;ll send a 6-digit SMS code to verify your number. You only do this once.
                   </p>
                 </div>
 

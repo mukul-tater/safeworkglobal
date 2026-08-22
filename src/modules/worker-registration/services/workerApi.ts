@@ -32,7 +32,7 @@ function callMockFallback<T>(path: string, options?: RequestInit): T {
   }
 
   throw new Error(
-    'Phone OTP requires Firebase Phone Auth and the worker API (/workers/otp/verify-firebase). Run npm run dev:all.',
+    'Phone verification needs the worker API. Run npm run dev:all.',
   );
 }
 

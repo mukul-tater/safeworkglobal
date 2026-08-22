@@ -126,6 +126,34 @@ function kycTypeFallbacks(docType: string): string[] {
   return [docType];
 }
 
+const SAFE_UPLOAD_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'pdf']);
+
+/** Camera / WhatsApp / signed-URL picks often put a full URL in File.name. */
+function displayFileName(name: string, max = 42): string {
+  let base = name.trim();
+  try {
+    if (/^https?:\/\//i.test(base) || base.includes('?') || base.includes('/')) {
+      const segment = base.split(/[?#]/)[0].split('/').filter(Boolean).pop() || base;
+      base = decodeURIComponent(segment);
+    }
+  } catch {
+    /* keep original */
+  }
+  base = base.replace(/[^\w.\- ()[\]]+/g, '_').replace(/_+/g, '_') || 'photo.jpg';
+  if (base.length <= max) return base;
+  const ext = base.match(/\.[a-z0-9]{1,5}$/i)?.[0] || '';
+  return `${base.slice(0, Math.max(12, max - ext.length - 1))}…${ext}`;
+}
+
+function safeUploadExt(file: File, fallback = 'jpg'): string {
+  const fromName = displayFileName(file.name, 80).split('.').pop()?.toLowerCase() || '';
+  if (SAFE_UPLOAD_EXTS.has(fromName)) return fromName === 'jpeg' ? 'jpg' : fromName;
+  const mime = file.type.split('/')[1]?.toLowerCase() || '';
+  if (mime === 'jpeg') return 'jpg';
+  if (SAFE_UPLOAD_EXTS.has(mime)) return mime;
+  return fallback;
+}
+
 function KycPhotoField({
   label,
   required,
@@ -139,19 +167,38 @@ function KycPhotoField({
   disabled?: boolean;
   onChange: (file: File | null) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const shown = file ? displayFileName(file.name) : null;
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <Label>
         {label}
         {required ? ' *' : ''}
       </Label>
-      <Input
+      <input
+        ref={inputRef}
         type="file"
         accept="image/*,.pdf"
+        className="sr-only"
         disabled={disabled}
         onChange={(e) => onChange(e.target.files?.[0] || null)}
       />
-      {file && <p className="text-xs text-success">✓ {file.name}</p>}
+      <Button
+        type="button"
+        variant="outline"
+        className="h-11 w-full min-w-0 justify-start font-normal"
+        disabled={disabled}
+        onClick={() => inputRef.current?.click()}
+      >
+        <Upload className="mr-2 h-4 w-4 shrink-0" />
+        <span className="truncate">{shown || 'Choose file'}</span>
+      </Button>
+      {file && (
+        <p className="flex min-w-0 items-start gap-1 text-xs text-success">
+          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 break-all">{shown}</span>
+        </p>
+      )}
     </div>
   );
 }
@@ -181,7 +228,7 @@ const STORAGE_BUCKET = 'worker-videos';
 const DOCS_BUCKET = 'worker-documents';
 
 async function uploadJourneyDoc(userId: string, file: File, folder: string): Promise<string> {
-  const ext = file.name.split('.').pop() || 'pdf';
+  const ext = safeUploadExt(file, 'pdf');
   const path = `${userId}/${folder}/${Date.now()}.${ext}`;
   const { error: upErr } = await supabase.storage
     .from(DOCS_BUCKET)
@@ -213,17 +260,36 @@ function MedicalFileField({
   disabled: boolean;
   onChange: (file: File | null) => void;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const shown = file ? displayFileName(file.name) : null;
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <Label>{label} *</Label>
       <p className="text-xs text-muted-foreground">{hint}</p>
-      <Input
+      <input
+        ref={inputRef}
         type="file"
         accept={accept}
+        className="sr-only"
         disabled={disabled}
         onChange={(e) => onChange(e.target.files?.[0] || null)}
       />
-      {file && <p className="text-xs text-success">✓ {file.name}</p>}
+      <Button
+        type="button"
+        variant="outline"
+        className="h-11 w-full min-w-0 justify-start font-normal"
+        disabled={disabled}
+        onClick={() => inputRef.current?.click()}
+      >
+        <Upload className="mr-2 h-4 w-4 shrink-0" />
+        <span className="truncate">{shown || 'Choose file'}</span>
+      </Button>
+      {file && (
+        <p className="flex min-w-0 items-start gap-1 text-xs text-success">
+          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 break-all">{shown}</span>
+        </p>
+      )}
       {!file && existingUrl && (
         <a
           href={existingUrl}
@@ -684,7 +750,7 @@ export default function WorkerVerificationPage({
       }
 
       const uploadDoc = async (file: File, docType: string, name: string) => {
-        const ext = file.name.split('.').pop() || 'jpg';
+        const ext = safeUploadExt(file);
         const path = `${subjectId}/kyc/${docType}-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('worker-documents')

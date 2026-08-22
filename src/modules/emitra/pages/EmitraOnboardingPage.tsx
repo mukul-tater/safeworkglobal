@@ -227,7 +227,7 @@ export default function EmitraOnboardingPage() {
       return;
     }
     if (!firebaseOtp.isAvailable) {
-      toast.error('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
+      toast.error('SMS verification is not available right now. Please contact support.');
       return;
     }
     setOtpBusy(true);
@@ -578,11 +578,11 @@ export default function EmitraOnboardingPage() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    We&apos;ll send an SMS code via Firebase (+91) to verify this number.
+                    We&apos;ll send a 6-digit SMS code to verify your number.
                   </p>
                   {!firebaseOtp.isAvailable && (
                     <p className="text-xs text-amber-600 mt-1">
-                      SMS OTP needs Firebase Phone Auth keys before registration can continue.
+                      SMS verification is temporarily unavailable. Please try again later or contact support.
                     </p>
                   )}
                 </Field>

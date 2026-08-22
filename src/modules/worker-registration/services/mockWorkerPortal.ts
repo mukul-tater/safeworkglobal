@@ -33,7 +33,7 @@ export const mockWorkerPortal = {
 
     if (!raw) {
       validationError(
-        'Mobile must be verified with Firebase SMS OTP first. Ensure the worker API is running.',
+        'Mobile must be verified with an SMS code first. Ensure the worker API is running.',
         'mobileNumber',
       );
     }

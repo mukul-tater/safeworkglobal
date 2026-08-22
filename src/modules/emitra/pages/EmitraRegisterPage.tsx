@@ -183,7 +183,7 @@ export default function EmitraRegisterPage() {
       return;
     }
     if (!firebaseOtp.isAvailable) {
-      toast.error('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
+      toast.error('SMS verification is not available right now. Please contact support.');
       return;
     }
     setOtpBusy(true);
@@ -504,7 +504,7 @@ export default function EmitraRegisterPage() {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">SMS OTP via Firebase (+91)</p>
+              <p className="text-xs text-muted-foreground mt-1">We&apos;ll send a 6-digit SMS code to verify your number.</p>
             </Field>
             {otpStep && !mobileVerified && (
               <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4 space-y-3">

@@ -117,7 +117,7 @@ export default function SsvnLoginPage() {
       return;
     }
     if (!firebaseOtp.isAvailable) {
-      setError('SMS verification is not configured. Ask admin to add Firebase Phone Auth keys.');
+      setError('SMS verification is not available right now. Please contact support.');
       return;
     }
 
@@ -311,7 +311,7 @@ export default function SsvnLoginPage() {
                 onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
               />
               <p className="text-xs text-muted-foreground">
-                Use the mobile from your {typeLabel} registration. SMS via Firebase (+91).
+                Use the mobile from your {typeLabel} registration. We&apos;ll send a 6-digit SMS code to verify your number.
               </p>
             </div>
             <Button
