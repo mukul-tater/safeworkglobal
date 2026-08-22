@@ -55,7 +55,6 @@ const DEFAULTS: FormData = {
   mobile: '',
   mobile_verified: false,
   email: '',
-  aadhaar_number: '',
   pan_number: '',
   gst_number: '',
   emitra_id: '',
@@ -79,7 +78,6 @@ const DEFAULTS: FormData = {
   ifsc: '',
   upi_id: '',
   cancelled_cheque_url: '',
-  aadhaar_url: '',
   pan_card_url: '',
   emitra_certificate_url: '',
   shop_photo_url: '',
@@ -368,7 +366,6 @@ export default function EmitraOnboardingPage() {
       email: displayableEmail(data.email),
       emitra_id: data.emitra_id,
       center_name: data.center_name,
-      aadhaar_number: data.aadhaar_number,
       pan_number: data.pan_number,
       gst_number: data.gst_number || null,
       csc_id: data.csc_id || null,
@@ -393,7 +390,6 @@ export default function EmitraOnboardingPage() {
       ifsc: data.ifsc,
       upi_id: data.upi_id || null,
       cancelled_cheque_url: data.cancelled_cheque_url || null,
-      aadhaar_url: data.aadhaar_url || null,
       pan_card_url: data.pan_card_url || null,
       emitra_certificate_url: data.emitra_certificate_url || null,
       shop_photo_url: data.shop_photo_url || null,
@@ -664,14 +660,6 @@ export default function EmitraOnboardingPage() {
                 <Field label="Email Address" error={errors.email}>
                   <Input type="email" value={data.email || ''} onChange={(e) => update({ email: e.target.value })} />
                 </Field>
-                <Field label="Aadhaar Number" error={errors.aadhaar_number} required>
-                  <Input
-                    inputMode="numeric"
-                    maxLength={12}
-                    value={data.aadhaar_number || ''}
-                    onChange={(e) => update({ aadhaar_number: e.target.value.replace(/\D/g, '') })}
-                  />
-                </Field>
                 <Field label="PAN Number" error={errors.pan_number} required>
                   <Input
                     maxLength={10}
@@ -825,8 +813,6 @@ export default function EmitraOnboardingPage() {
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold text-foreground">Mandatory Documents</h3>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <DocField label="Aadhaar" field="aadhaar" value={data.aadhaar_url} error={errors.aadhaar_url}
-                    onChange={(v) => update({ aadhaar_url: v || '' })} />
                   <DocField label="PAN" field="pan-card" value={data.pan_card_url} error={errors.pan_card_url}
                     onChange={(v) => update({ pan_card_url: v || '' })} />
                   <DocField label="E-Mitra Certificate" field="emitra-cert" value={data.emitra_certificate_url}

@@ -4,7 +4,6 @@ import { indianStates } from '@/lib/validations/partner';
 const phoneRegex = /^[6-9]\d{9}$/;
 const pincodeRegex = /^[1-9]\d{5}$/;
 const panRegex = /^[A-Z]{5}\d{4}[A-Z]$/;
-const aadhaarRegex = /^\d{12}$/;
 const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 const accountRegex = /^\d{6,18}$/;
 const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
@@ -24,7 +23,6 @@ export const emitraV2BasicSchema = z.object({
     .max(255)
     .or(z.literal(''))
     .optional(),
-  aadhaar_number: z.string().regex(aadhaarRegex, 'Enter a valid 12-digit Aadhaar'),
   pan_number: z.string().regex(panRegex, 'PAN format: ABCDE1234F'),
   gst_number: z
     .string()
@@ -70,7 +68,6 @@ export const emitraV2BankSchema = z.object({
 
 /** Step 4 — Documents + declarations */
 export const emitraV2DocumentsSchema = z.object({
-  aadhaar_url: z.string().min(1, 'Upload Aadhaar'),
   pan_card_url: z.string().min(1, 'Upload PAN'),
   emitra_certificate_url: z.string().min(1, 'Upload E-Mitra certificate'),
   shop_photo_url: z.string().min(1, 'Upload shop front photo'),
