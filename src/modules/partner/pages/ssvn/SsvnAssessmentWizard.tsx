@@ -255,8 +255,8 @@ export default function SsvnAssessmentWizard() {
             <CardContent className="p-5 space-y-3">
               <h2 className="font-semibold">Accept assignment</h2>
               <p className="text-sm text-muted-foreground">
-                SafeWork allocated this candidate to your centre. Review identity documents below,
-                then accept to proceed.
+                SafeWork allocated this candidate to your centre. Review PAN and passport below, then
+                accept to proceed. Aadhaar is verified in person from the original card (last 4 on file).
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -311,7 +311,7 @@ export default function SsvnAssessmentWizard() {
         <Card>
           <CardContent className="p-5 space-y-3">
             <h2 className="font-semibold flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" /> Worker identity documents (shared with SSVN)
+              <ShieldCheck className="h-4 w-4" /> Worker identity (PAN, passport, Aadhaar last 4)
             </h2>
             <WorkerIdentityDocsPanel
               pack={identity}
@@ -358,13 +358,13 @@ export default function SsvnAssessmentWizard() {
               ) : !locked && ['accepted', 'scheduled', 'checked_in'].includes(row.status) ? (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    When the worker reaches the centre, compare original Aadhaar and PAN (and passport
-                    if they have one) with the photos above. Confirm it is the same person, then take a
-                    live photo. Who took the photo is recorded with a timestamp.
+                    When the worker reaches the centre, compare original Aadhaar (last 4 on file) and
+                    PAN (and passport if they have one) with the records above. Confirm it is the same
+                    person, then take a live photo. Do not scan or upload the Aadhaar card.
                   </p>
                   <label className="flex items-start gap-2 text-sm">
                     <Checkbox checked={aadhaarMatch} onCheckedChange={(v) => setAadhaarMatch(v === true)} />
-                    Physical Aadhaar matches the uploaded Aadhaar photo
+                    Physical Aadhaar last 4 matches the original card (do not scan or save the card)
                   </label>
                   <label className="flex items-start gap-2 text-sm">
                     <Checkbox checked={panMatch} onCheckedChange={(v) => setPanMatch(v === true)} />
@@ -383,7 +383,7 @@ export default function SsvnAssessmentWizard() {
                   </label>
                   <label className="flex items-start gap-2 text-sm">
                     <Checkbox checked={faceMatch} onCheckedChange={(v) => setFaceMatch(v === true)} />
-                    Face matches the document photos
+                    Face matches the worker and the PAN / passport photos
                   </label>
                   <div className="space-y-1.5">
                     <Label>Staff who is taking the live photo *</Label>

@@ -25,6 +25,8 @@ import {
   ASSESSMENT_FEE_INR,
   ASSESSMENT_FEE_INCLUSIONS,
   MEDICAL_TEST_SCREENING_NOTE,
+  KYC_CONSENT_INDEPENDENT,
+  KYC_CONSENT_PARTNER,
   educationOptionsForTenthPass,
   ecrFromTenthPass,
   GCC_JOURNEY_NAV_STEPS,
@@ -87,6 +89,7 @@ import WorkerDeclarationsSummary from '@/modules/worker-verification/components/
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
 import PassportRequirementInfo from '@/components/worker/PassportRequirementInfo';
+import { AadhaarKycFields } from '@/modules/worker-verification/components/journey/AadhaarKycFields';
 import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
 import { todayDateInputValue } from '@/lib/validations/common';
 import {
@@ -99,9 +102,6 @@ import {
 
 const KYC_DOC_TYPES = [
   'pan',
-  'aadhaar',
-  'aadhaar_front',
-  'aadhaar_back',
   'passport',
   'passport_front',
   'passport_last',
@@ -116,12 +116,10 @@ function hasKycDoc(docs: KycDocument[], types: string[]): boolean {
 
 function kycTypeFallbacks(docType: string): string[] {
   if (docType === 'pan') return ['pan', 'id_proof'];
-  if (docType === 'aadhaar_front') return ['aadhaar_front', 'aadhaar', 'id_proof'];
-  if (docType === 'aadhaar_back') return ['aadhaar_back', 'aadhaar', 'id_proof'];
   if (docType === 'passport_front') return ['passport_front', 'passport', 'id_proof'];
   if (docType === 'passport_last') return ['passport_last', 'passport', 'id_proof'];
   if (docType === 'tenth_marksheet') return ['tenth_marksheet', 'certificate'];
-  if (docType === 'aadhaar' || docType === 'passport') return [docType, 'id_proof'];
+  if (docType === 'passport') return [docType, 'id_proof'];
   return [docType];
 }
 
@@ -322,14 +320,13 @@ export default function WorkerVerificationPage({
   const showDevReset = isJourneyResetEnabled();
 
   const [panNumber, setPanNumber] = useState('');
-  const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [aadhaarOnFile, setAadhaarOnFile] = useState('');
+  const [aadhaarVerified, setAadhaarVerified] = useState(false);
+  const [inPersonAadhaar, setInPersonAadhaar] = useState(false);
   const [bondTemplate, setBondTemplate] = useState<BondTemplate | null>(null);
   const [passportNumber, setPassportNumber] = useState('');
   const [passportExpiry, setPassportExpiry] = useState('');
   const [panFile, setPanFile] = useState<File | null>(null);
-  const [aadhaarFrontFile, setAadhaarFrontFile] = useState<File | null>(null);
-  const [aadhaarBackFile, setAadhaarBackFile] = useState<File | null>(null);
   const [passportFrontFile, setPassportFrontFile] = useState<File | null>(null);
   const [passportLastFile, setPassportLastFile] = useState<File | null>(null);
   const [tenthMarksheetFile, setTenthMarksheetFile] = useState<File | null>(null);
@@ -418,7 +415,7 @@ export default function WorkerVerificationPage({
 
       const { data: wp, error: wpErr } = await supabase
         .from('worker_profiles')
-        .select('kyc_status, pan_number, aadhaar_number, aadhaar_last4, passport_number, passport_expiry, has_passport, ecr_status, ecr_category, source_type, source_partner_id')
+        .select('kyc_status, pan_number, aadhaar_last4, aadhaar_verified, passport_number, passport_expiry, has_passport, ecr_status, ecr_category, source_type, source_partner_id')
         .eq('user_id', subjectId)
         .maybeSingle();
       if (wpErr) {
@@ -481,8 +478,9 @@ export default function WorkerVerificationPage({
         setKycDocs([]);
       }
       if ((wp as any)?.pan_number) setPanNumber(String((wp as any).pan_number));
-      if ((wp as any)?.aadhaar_number) setAadhaarNumber(String((wp as any).aadhaar_number).replace(/\D/g, '').slice(0, 12));
       if ((wp as any)?.aadhaar_last4) setAadhaarOnFile(String((wp as any).aadhaar_last4));
+      setAadhaarVerified(Boolean((wp as any)?.aadhaar_verified));
+      if (Boolean((wp as any)?.aadhaar_verified)) setInPersonAadhaar(true);
       if (v.payment_status === 'paid' || v.paid_at) {
         const { data: pay } = await supabase
           .from('worker_assessment_payments')
@@ -594,25 +592,26 @@ export default function WorkerVerificationPage({
     if (!subjectId) return;
     const pan = panNumber.trim().toUpperCase();
     const passport = normalizePassportNumber(passportNumber);
+    const partnerSourced = createdByPartner || partnerKiosk;
+    const last4 = aadhaarOnFile.replace(/\D/g, '');
     if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
       toast.error('Enter a valid PAN (e.g. ABCDE1234F)');
       return;
     }
-    const aadhaar = aadhaarNumber.replace(/\D/g, '');
-    if (!/^\d{12}$/.test(aadhaar)) {
-      toast.error('Enter your full 12-digit Aadhaar number');
+    if (!/^\d{4}$/.test(last4)) {
+      toast.error(partnerSourced ? 'Enter the last 4 digits of Aadhaar' : 'Verify Aadhaar with OTP first');
+      return;
+    }
+    if (!partnerSourced && !aadhaarVerified) {
+      toast.error('Verify Aadhaar with OTP first');
+      return;
+    }
+    if (partnerKiosk && !aadhaarVerified && !inPersonAadhaar) {
+      toast.error('Confirm you have checked the original Aadhaar in person');
       return;
     }
     if (!panFile && !hasKycDoc(kycDocs, ['pan', 'id_proof'])) {
-      toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
-      return;
-    }
-    if (!aadhaarFrontFile && !hasKycDoc(kycDocs, ['aadhaar_front', 'aadhaar', 'id_proof'])) {
-      toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
-      return;
-    }
-    if (!aadhaarBackFile && !hasKycDoc(kycDocs, ['aadhaar_back', 'aadhaar', 'id_proof'])) {
-      toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
+      toast.error('Upload PAN front photo');
       return;
     }
     if (!isValidPassportNumber(passport)) {
@@ -696,8 +695,6 @@ export default function WorkerVerificationPage({
       };
 
       if (panFile) await uploadDoc(panFile, 'pan', 'PAN Card Front');
-      if (aadhaarFrontFile) await uploadDoc(aadhaarFrontFile, 'aadhaar_front', 'Aadhaar Card Front');
-      if (aadhaarBackFile) await uploadDoc(aadhaarBackFile, 'aadhaar_back', 'Aadhaar Card Back');
       if (passportFrontFile) await uploadDoc(passportFrontFile, 'passport_front', 'Passport First Page');
       if (passportLastFile) await uploadDoc(passportLastFile, 'passport_last', 'Passport Last Page');
       if (needsTenthMarksheet && tenthMarksheetFile) {
@@ -706,15 +703,15 @@ export default function WorkerVerificationPage({
 
       const next = await completeIdentityKyc(subjectId, {
         panNumber: pan,
-        aadhaarNumber: aadhaar,
+        aadhaarLast4: last4,
         passportNumber: passport,
         passportExpiry,
+        partnerSourced,
+        inPersonVerified: partnerKiosk && inPersonAadhaar,
       });
       setRow(next);
       setForceIdentity(false);
       setPanFile(null);
-      setAadhaarFrontFile(null);
-      setAadhaarBackFile(null);
       setPassportFrontFile(null);
       setPassportLastFile(null);
       setTenthMarksheetFile(null);
@@ -1498,8 +1495,8 @@ export default function WorkerVerificationPage({
             title="We're verifying your identity"
             body={
               needsTenthMarksheet
-                ? 'Your PAN, Aadhaar, passport and Class 10 marksheet are submitted. SafeWork reviews them before scheduling your video interview.'
-                : 'Your PAN, Aadhaar and passport are submitted. SafeWork reviews them before scheduling your video interview.'
+                ? 'Your PAN, Aadhaar last 4, passport and Class 10 marksheet are submitted. SafeWork reviews them before scheduling your video interview.'
+                : 'Your PAN, Aadhaar last 4 and passport are submitted. SafeWork reviews them before scheduling your video interview.'
             }
             expected="Usually within a few hours"
             notifyNote="You'll get an SMS and an app notification the moment verification is done — no need to keep this page open."
@@ -1507,8 +1504,8 @@ export default function WorkerVerificationPage({
               {
                 label: 'Identity documents submitted',
                 detail: needsTenthMarksheet
-                  ? 'PAN, Aadhaar, Passport & Class 10 marksheet uploaded'
-                  : 'PAN, Aadhaar & Passport uploaded',
+                  ? 'PAN, Aadhaar last 4, Passport & Class 10 marksheet'
+                  : 'PAN, Aadhaar last 4 & Passport',
                 status: 'done',
               },
               { label: 'SafeWork verifying your documents', status: 'current' },
@@ -1542,8 +1539,8 @@ export default function WorkerVerificationPage({
             title="Identity (KYC)"
             description={
               needsTenthMarksheet
-                ? 'Required before applying to jobs. Upload PAN, Aadhaar, a passport valid for at least 6 months, and your Class 10 marksheet. SafeWork verifies these before your video interview is scheduled.'
-                : 'Required before applying to jobs. Upload PAN, Aadhaar, and a passport that is valid for at least 6 months. SafeWork verifies these before your video interview is scheduled.'
+                ? 'Required before applying to jobs. Submit PAN, Aadhaar verification, a passport valid for at least 6 months, and your Class 10 marksheet. SafeWork reviews these before your video interview is scheduled.'
+                : 'Required before applying to jobs. Submit PAN, Aadhaar verification, and a passport that is valid for at least 6 months. SafeWork reviews these before your video interview is scheduled.'
             }
             timeEstimate="Takes 5–7 minutes"
             footer={
@@ -1562,7 +1559,7 @@ export default function WorkerVerificationPage({
                       <p className="mt-0.5">
                         {row.kyc_rejection_reason
                           ? row.kyc_rejection_reason
-                          : 'Some details did not match. Please re-check your PAN, Aadhaar and passport photos, then upload clear photos again.'}
+                          : 'Some details did not match. Please re-check your PAN and passport photos, then upload clear photos again.'}
                       </p>
                     </div>
                   </div>
@@ -1612,40 +1609,20 @@ export default function WorkerVerificationPage({
                 />
               </div>
 
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label>Aadhaar Number *</Label>
-                  <Input
-                    value={aadhaarNumber}
-                    onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
-                    placeholder="123412341234"
-                    inputMode="numeric"
-                    maxLength={12}
-                    disabled={saving}
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    {aadhaarOnFile
-                      ? `On file: XXXX XXXX ${aadhaarOnFile}`
-                      : 'Stored securely and used only for emigration paperwork'}
-                  </p>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <KycPhotoField
-                    label="Aadhaar Card Front Photo"
-                    required
-                    file={aadhaarFrontFile}
-                    disabled={saving}
-                    onChange={setAadhaarFrontFile}
-                  />
-                  <KycPhotoField
-                    label="Aadhaar Card Back Photo"
-                    required
-                    file={aadhaarBackFile}
-                    disabled={saving}
-                    onChange={setAadhaarBackFile}
-                  />
-                </div>
-              </div>
+              <AadhaarKycFields
+                partnerSourced={createdByPartner || partnerKiosk}
+                partnerKiosk={partnerKiosk}
+                last4={aadhaarOnFile}
+                verified={aadhaarVerified}
+                disabled={saving}
+                inPersonConfirmed={inPersonAadhaar}
+                onLast4Change={setAadhaarOnFile}
+                onVerified={(value) => {
+                  setAadhaarOnFile(value);
+                  setAadhaarVerified(true);
+                }}
+                onInPersonChange={setInPersonAadhaar}
+              />
 
               <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
                 <p className="text-sm font-medium text-foreground inline-flex items-center gap-1.5">
@@ -1725,7 +1702,7 @@ export default function WorkerVerificationPage({
                   onChange={(e) => setKycConsent(e.target.checked)}
                 />
                 <span>
-                  I consent to SafeWork Global verifying my identity documents for job placement. The information is accurate.
+                  {(createdByPartner || partnerKiosk) ? KYC_CONSENT_PARTNER : KYC_CONSENT_INDEPENDENT}
                 </span>
               </label>
           </StageActionShell>

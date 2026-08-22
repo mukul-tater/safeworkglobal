@@ -1,3 +1,9 @@
+export const KYC_CONSENT_INDEPENDENT =
+  'I consent to SafeWork verifying my PAN and passport for job placement, visa and trade tests, and to Aadhaar OTP verification with UIDAI. SafeWork stores only Aadhaar last 4 digits — not the full number or card photo. The information is accurate.';
+
+export const KYC_CONSENT_PARTNER =
+  'I consent to SafeWork verifying my PAN and passport for job placement, visa and trade tests. Aadhaar will be checked in person at the centre. SafeWork stores only Aadhaar last 4 digits — not the full number or card photo. The information is accurate.';
+
 export const WORKER_TERMS_VERSION = 'worker-v1-2026-07';
 
 /** Short summary shown on signup (2–4 lines). */

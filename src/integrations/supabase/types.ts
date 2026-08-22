@@ -1800,6 +1800,27 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -4537,6 +4558,12 @@ export type Database = {
         Row: {
           aadhaar_last4: string | null
           aadhaar_number: string | null
+          aadhaar_otp_ref: string | null
+          aadhaar_verified: boolean
+          aadhaar_verified_at: string | null
+          aadhaar_verified_by: string | null
+          aadhaar_verified_name: string | null
+          aadhaar_verify_method: string | null
           added_by_org_id: string | null
           availability: string | null
           bio: string | null
@@ -4588,6 +4615,12 @@ export type Database = {
         Insert: {
           aadhaar_last4?: string | null
           aadhaar_number?: string | null
+          aadhaar_otp_ref?: string | null
+          aadhaar_verified?: boolean
+          aadhaar_verified_at?: string | null
+          aadhaar_verified_by?: string | null
+          aadhaar_verified_name?: string | null
+          aadhaar_verify_method?: string | null
           added_by_org_id?: string | null
           availability?: string | null
           bio?: string | null
@@ -4639,6 +4672,12 @@ export type Database = {
         Update: {
           aadhaar_last4?: string | null
           aadhaar_number?: string | null
+          aadhaar_otp_ref?: string | null
+          aadhaar_verified?: boolean
+          aadhaar_verified_at?: string | null
+          aadhaar_verified_by?: string | null
+          aadhaar_verified_name?: string | null
+          aadhaar_verify_method?: string | null
           added_by_org_id?: string | null
           availability?: string | null
           bio?: string | null

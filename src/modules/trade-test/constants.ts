@@ -36,9 +36,6 @@ export type TestAngleId = (typeof TEST_ANGLES)[number]['id'];
 
 export const IDENTITY_DOC_TYPES = [
   'pan',
-  'aadhaar',
-  'aadhaar_front',
-  'aadhaar_back',
   'passport',
   'passport_front',
   'passport_last',

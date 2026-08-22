@@ -337,24 +337,42 @@ export async function completeMediaStep(userId: string): Promise<WorkerVerificat
 }
 
 /**
- * KYC — PAN + full Aadhaar + passport (number, expiry ≥ 6 months) + document photos.
- * Stays on the identity stage: an admin must verify KYC before the video
- * interview can be scheduled (admin_verify_worker_kyc advances the stage).
+ * KYC — PAN + Aadhaar last 4 + passport (number, expiry ≥ 6 months) + document photos.
+ * Independent workers must already have Aadhaar OTP-verified. Partner workers store last 4
+ * and may mark in-person verification at the kiosk.
+ * Stays on the identity stage until admin_verify_worker_kyc advances it.
  */
 export async function completeIdentityKyc(
   userId: string,
   opts: {
     panNumber: string;
-    aadhaarNumber: string;
+    aadhaarLast4: string;
     passportNumber: string;
     passportExpiry: string;
+    partnerSourced?: boolean;
+    inPersonVerified?: boolean;
     nextStageIfCurrentIdentity?: boolean;
   },
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
-  const aadhaar = opts.aadhaarNumber.replace(/\D/g, '');
-  if (aadhaar.length !== 12) {
-    throw new Error('Enter your full 12-digit Aadhaar number');
+  const last4 = opts.aadhaarLast4.replace(/\D/g, '');
+  if (!/^\d{4}$/.test(last4)) {
+    throw new Error('Enter the last 4 digits of Aadhaar');
+  }
+
+  const { data: existingKyc } = await supabase
+    .from('worker_profiles')
+    .select('aadhaar_verified, source_type, source_partner_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const partnerSourced =
+    opts.partnerSourced ||
+    existingKyc?.source_type === 'partner' ||
+    existingKyc?.source_type === 'emitra' ||
+    !!existingKyc?.source_partner_id;
+  const alreadyVerified = Boolean((existingKyc as { aadhaar_verified?: boolean } | null)?.aadhaar_verified);
+  if (!partnerSourced && !alreadyVerified) {
+    throw new Error('Verify Aadhaar with OTP before submitting identity');
   }
 
   const { passportNumber, passportExpiry } = assertValidPassportKyc({
@@ -363,11 +381,11 @@ export async function completeIdentityKyc(
   });
 
   const now = new Date().toISOString();
-  const kycPayload = {
+  const inPerson = Boolean(opts.inPersonVerified) && partnerSourced;
+  const kycPayload: Record<string, unknown> = {
     user_id: userId,
     pan_number: opts.panNumber.trim().toUpperCase(),
-    aadhaar_number: aadhaar,
-    aadhaar_last4: aadhaar.slice(-4),
+    aadhaar_last4: last4,
     passport_number: passportNumber,
     passport_expiry: passportExpiry,
     has_passport: true,
@@ -375,6 +393,13 @@ export async function completeIdentityKyc(
     kyc_consent_at: now,
     kyc_submitted_at: now,
   };
+  if (inPerson && !alreadyVerified) {
+    const { data: auth } = await supabase.auth.getUser();
+    kycPayload.aadhaar_verified = true;
+    kycPayload.aadhaar_verify_method = 'in_person';
+    kycPayload.aadhaar_verified_at = now;
+    if (auth.user?.id) kycPayload.aadhaar_verified_by = auth.user.id;
+  }
 
   // Prefer update when a profile already exists (essentials creates it).
   const { data: existingWp } = await supabase
@@ -386,11 +411,11 @@ export async function completeIdentityKyc(
   if (existingWp) {
     const { error: wpErr } = await supabase
       .from('worker_profiles')
-      .update(kycPayload)
+      .update(kycPayload as never)
       .eq('user_id', userId);
     if (wpErr) throw new Error(wpErr.message);
   } else {
-    const { error: wpErr } = await supabase.from('worker_profiles').insert(kycPayload);
+    const { error: wpErr } = await supabase.from('worker_profiles').insert(kycPayload as never);
     if (wpErr) throw new Error(wpErr.message);
   }
 

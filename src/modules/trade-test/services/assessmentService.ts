@@ -432,18 +432,16 @@ export async function getWorkerIdentityPack(workerId: string): Promise<WorkerIde
   ]);
   if (dErr) throw new Error(dErr.message);
 
-  const rows = (docs || []) as Array<{
+  const rows = ((docs || []) as Array<{
     id: string;
     document_type: string;
     document_name: string;
     file_url: string;
     uploaded_at: string | null;
-  }>;
+  }>).filter((d) => !String(d.document_type).toLowerCase().includes('aadhaar'));
 
   const preferred = [
     latestIdentityDoc(rows, ['pan']),
-    latestIdentityDoc(rows, ['aadhaar_front', 'aadhaar']),
-    latestIdentityDoc(rows, ['aadhaar_back']),
     latestIdentityDoc(rows, ['passport_front', 'passport']),
     latestIdentityDoc(rows, ['passport_last']),
   ].filter(Boolean) as typeof rows;

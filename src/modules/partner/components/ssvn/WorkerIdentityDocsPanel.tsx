@@ -6,9 +6,6 @@ import type { WorkerIdentityPack } from '@/modules/trade-test/types';
 function docLabel(type: string): string {
   const map: Record<string, string> = {
     pan: 'PAN',
-    aadhaar: 'Aadhaar',
-    aadhaar_front: 'Aadhaar front',
-    aadhaar_back: 'Aadhaar back',
     passport: 'Passport',
     passport_front: 'Passport first page',
     passport_last: 'Passport last page',
@@ -37,8 +34,8 @@ export default function WorkerIdentityDocsPanel({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Review the Aadhaar, PAN and passport photos the worker uploaded before they arrive. You will
-        physically check the originals again at the centre.
+        Review PAN and passport photos the worker uploaded. Aadhaar is last 4 digits only — check the
+        original card in person. Do not scan or save the Aadhaar.
       </p>
       <div className="grid gap-2 sm:grid-cols-3 text-sm">
         <div className="rounded-md border p-3">
@@ -68,8 +65,8 @@ export default function WorkerIdentityDocsPanel({
 
       {!pack?.documents.length ? (
         <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
-          No identity photos found. Ask the worker to upload Aadhaar, PAN and passport in their
-          journey before the trade test.
+          No identity photos found. Ask the worker to upload PAN and passport in their journey before
+          the trade test.
         </p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">

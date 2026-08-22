@@ -202,12 +202,15 @@ export function KycRecordSummary({
   submittedOn: string | null | undefined;
   verified: boolean;
 }) {
+  const visibleDocs = kycDocs.filter(
+    (d) => !['aadhaar', 'aadhaar_front', 'aadhaar_back'].includes(d.document_type),
+  );
   return (
     <div className="space-y-4">
       <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
         <Detail label="PAN number" value={maskPan(identity.pan)} mono />
         <Detail
-          label="Aadhaar number"
+          label="Aadhaar (last 4)"
           value={identity.aadhaarLast4 ? `XXXX XXXX ${identity.aadhaarLast4}` : '—'}
           mono
         />
@@ -223,11 +226,11 @@ export function KycRecordSummary({
         <Detail label={verified ? 'Verified on' : 'Submitted on'} value={formatDate(submittedOn)} />
       </dl>
 
-      {kycDocs.length > 0 && (
+      {visibleDocs.length > 0 && (
         <div>
           <SectionLabel>Documents on file</SectionLabel>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {kycDocs.map((doc) => (
+            {visibleDocs.map((doc) => (
               <DocumentTile key={`${doc.document_type}-${doc.file_url}`} doc={doc} />
             ))}
           </div>
@@ -377,7 +380,7 @@ export default function CompletedStepReview({
                 </p>
                 <p className="mt-1 text-xs text-foreground">
                   {row.kyc_rejection_reason ||
-                    'Some details did not match. Re-check your PAN, Aadhaar and passport photos, then upload clear photos again.'}
+                    'Some details did not match. Re-check your PAN and passport photos, then upload clear photos again.'}
                 </p>
                 <Button size="sm" className="mt-3" onClick={onGoToCurrent}>
                   Re-submit documents
