@@ -84,44 +84,61 @@ export function isPartnerOperational(profile: PartnerProfile | null): boolean {
 }
 
 export async function getDashboardStats(partnerProfileId: string): Promise<DashboardStats> {
-  const { data: workers } = await supabase
-    .from('partner_workers')
-    .select('status')
-    .eq('partner_profile_id', partnerProfileId);
+  // Same source as My Workers (`partner_list_my_workers` → worker_profiles).
+  // Do not count `partner_workers` — that is the old kiosk table and is not
+  // written by Add Worker, so it stays at 0 while the list shows real accounts.
+  const [{ data: myWorkers }, { data: profile }] = await Promise.all([
+    supabase.rpc('partner_list_my_workers'),
+    supabase
+      .from('partner_profiles')
+      .select('total_incentives_earned')
+      .eq('id', partnerProfileId)
+      .single(),
+  ]);
 
-  const list = workers || [];
-  const { data: profile } = await supabase
-    .from('partner_profiles')
-    .select('total_incentives_earned')
-    .eq('id', partnerProfileId)
-    .single();
-
+  const list: { user_id: string }[] = myWorkers || [];
+  const ids = list.map((w) => w.user_id);
   const earnings = Number(profile?.total_incentives_earned || 0);
-  const verified = list.filter((w: { status: string }) => w.status !== 'registered').length;
-  const interviewed = list.filter((w: { status: string }) =>
-    ['interviewed', 'selected', 'placed'].includes(w.status),
+
+  let stages: { user_id: string; stage: string | null }[] = [];
+  let hiredIds = new Set<string>();
+  if (ids.length) {
+    const [{ data: verification }, { data: apps }] = await Promise.all([
+      supabase.from('worker_verification').select('user_id, stage').in('user_id', ids),
+      supabase.from('job_applications').select('worker_id').in('worker_id', ids).eq('status', 'HIRED'),
+    ]);
+    stages = verification || [];
+    hiredIds = new Set((apps || []).map((a: { worker_id: string }) => a.worker_id));
+  }
+
+  const stageByUser = new Map(stages.map((s) => [s.user_id, s.stage || 'essentials']));
+  const stageOf = (id: string) => stageByUser.get(id) || 'essentials';
+
+  const documentsPending = ids.filter((id) =>
+    ['essentials', 'quiz', 'media', 'identity'].includes(stageOf(id)),
   ).length;
-  const selected = list.filter((w: { status: string }) =>
-    ['selected', 'placed'].includes(w.status),
+  const interviewsScheduled = ids.filter((id) => stageOf(id) === 'awaiting_interview').length;
+  const tradeTestsBooked = ids.filter((id) =>
+    ['trade_test', 'tests'].includes(stageOf(id)),
   ).length;
-  const placed = list.filter((w: { status: string }) => w.status === 'placed').length;
+  const deployed = ids.filter((id) =>
+    ['deployment', 'gcc_ready'].includes(stageOf(id)),
+  ).length;
+  const selected = hiredIds.size;
+  const verified = ids.filter((id) => stageOf(id) !== 'essentials').length;
 
   return {
     totalRegistered: list.length,
-    documentsPending: list.filter((w: { status: string }) => w.status === 'registered').length,
-    interviewsScheduled: list.filter((w: { status: string }) => w.status === 'interview_scheduled')
-      .length,
-    // Trade-test booking not fully modeled yet — show 0 until pipeline status exists
-    tradeTestsBooked: list.filter((w: { status: string }) =>
-      ['trade_test', 'trade_test_booked'].includes(w.status),
-    ).length,
+    documentsPending,
+    interviewsScheduled,
+    tradeTestsBooked,
     workersSelected: selected,
-    workersDeployed: placed,
+    workersDeployed: deployed,
     earnings,
     verified,
-    interviewed,
+    interviewed: interviewsScheduled,
     selected,
-    placed,
+    placed: deployed,
     incentivesEarned: earnings,
   };
 }

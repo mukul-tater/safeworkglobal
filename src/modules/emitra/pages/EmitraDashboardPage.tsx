@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
-  Users, FileWarning, CalendarCheck, Wrench, CheckCircle2, Plane,
+  Users, FileWarning, CheckCircle2, Plane,
   IndianRupee, UserPlus, Clock, ShieldAlert, ArrowRight, Trophy, Store,
 } from 'lucide-react';
 import { emitraNavGroups, emitraProfileMenu } from '../config/emitraNav';
@@ -87,8 +87,6 @@ export default function EmitraDashboardPage() {
   const statCards = [
     { label: 'Total Workers Registered', value: stats.totalRegistered, icon: Users, color: 'text-primary bg-primary/10' },
     { label: 'Documents Pending', value: stats.documentsPending, icon: FileWarning, color: 'text-amber-600 bg-amber-50' },
-    { label: 'Interviews Scheduled', value: stats.interviewsScheduled, icon: CalendarCheck, color: 'text-violet-600 bg-violet-50' },
-    { label: 'Trade Tests Booked', value: stats.tradeTestsBooked, icon: Wrench, color: 'text-blue-600 bg-blue-50' },
     { label: 'Workers Selected', value: stats.workersSelected, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50' },
     { label: 'Workers Deployed', value: stats.workersDeployed, icon: Plane, color: 'text-sky-600 bg-sky-50' },
     { label: 'Earnings', value: `₹${stats.earnings}`, icon: IndianRupee, color: 'text-amber-700 bg-amber-50' },
