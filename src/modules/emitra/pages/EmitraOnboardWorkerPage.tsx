@@ -17,6 +17,7 @@ import { emitraNavGroups, emitraProfileMenu } from '../config/emitraNav';
 import { WORKER_SKILLS } from '../config/constants';
 import { indianStates } from '@/lib/validations/partner';
 import { isValidIndianMobile } from '@/lib/validations/common';
+import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from '@/lib/validations/password';
 import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
@@ -62,7 +63,8 @@ function Inner() {
     if (!firebaseOtp.isAvailable) {
       return 'SMS verification is not available right now. Please contact support.';
     }
-    if (password.length < 6) return 'Password must be at least 6 characters';
+    const passwordIssue = passwordSignupIssue(password);
+    if (passwordIssue) return passwordIssue;
     if (password !== confirmPassword) return 'Passwords do not match';
     if (!primarySkill) return 'Select a primary skill';
     if (!state) return 'Select state';
@@ -240,8 +242,8 @@ function Inner() {
                     type={showPassword ? 'text' : 'password'}
                     className="h-11 pl-10 pr-10"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
+                    onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
+                    placeholder={PASSWORD_HINT}
                     autoComplete="new-password"
                   />
                   <button
@@ -262,7 +264,7 @@ function Inner() {
                   type={showPassword ? 'text' : 'password'}
                   className="h-11"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
                   placeholder="Re-enter password"
                   autoComplete="new-password"
                 />

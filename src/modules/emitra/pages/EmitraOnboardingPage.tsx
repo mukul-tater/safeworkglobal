@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { indianStates } from '@/lib/validations/partner';
+import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from '@/lib/validations/password';
 import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
@@ -321,8 +322,9 @@ export default function EmitraOnboardingPage() {
       toast.error('Verify your mobile number with SMS OTP first');
       return null;
     }
-    if (accountPassword.length < 6) {
-      toast.error('Set a password of at least 6 characters');
+    const passwordIssue = passwordSignupIssue(accountPassword);
+    if (passwordIssue) {
+      toast.error(passwordIssue);
       return null;
     }
     if (accountPassword !== accountPasswordConfirm) {
@@ -593,8 +595,8 @@ export default function EmitraOnboardingPage() {
                         type="password"
                         autoComplete="new-password"
                         value={accountPassword}
-                        onChange={(e) => setAccountPassword(e.target.value)}
-                        placeholder="At least 6 characters"
+                        onChange={(e) => setAccountPassword(sanitizePasswordInput(e.target.value))}
+                        placeholder={PASSWORD_HINT}
                       />
                     </Field>
                     <Field label="Confirm password" error={errors.password_confirm} required>
@@ -602,7 +604,7 @@ export default function EmitraOnboardingPage() {
                         type="password"
                         autoComplete="new-password"
                         value={accountPasswordConfirm}
-                        onChange={(e) => setAccountPasswordConfirm(e.target.value)}
+                        onChange={(e) => setAccountPasswordConfirm(sanitizePasswordInput(e.target.value))}
                         placeholder="Re-enter password"
                       />
                     </Field>

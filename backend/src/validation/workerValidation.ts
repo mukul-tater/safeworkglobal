@@ -16,7 +16,11 @@ export const workerRegisterSchema = z
     mobileNumber: z
       .string()
       .regex(phoneRegex, 'Mobile number must be 10 digits starting with 6-9'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: z
+      .string()
+      .min(6, 'Password must be at least 6 characters')
+      .max(72, 'Password is too long')
+      .regex(/^[a-zA-Z0-9]+$/, 'Password can only contain letters and numbers'),
     confirmPassword: z.string().min(1, 'Confirm password is required'),
     otpToken: z.string().min(1, 'Verify your mobile number with OTP'),
     fullName: z.string().trim().min(2).max(120).optional(),

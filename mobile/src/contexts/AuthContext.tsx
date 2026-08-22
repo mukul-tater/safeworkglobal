@@ -6,6 +6,7 @@ import { assertEnvConfigured } from '../config/env';
 import { supabase } from '../integrations/supabase/client';
 import { completeGoogleAuthFromUrl, signInWithGoogleMobile } from '../services/googleAuthService';
 import { displayableEmail, workerAuthEmailFromIdentifier } from '../lib/workerAuthEmail';
+import { passwordSignupIssue } from '../lib/password';
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner';
 
@@ -269,6 +270,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role: AppRole;
   }) => {
     try {
+      const passwordIssue = passwordSignupIssue(data.password);
+      if (passwordIssue) return { success: false, error: passwordIssue };
+
       const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,

@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { passwordValidation } from '@/components/ValidatedInput';
 import { isValidIndianMobile } from '@/lib/validations/common';
+import { sanitizePasswordInput, PASSWORD_HINT, PASSWORD_MIN_LENGTH } from '@/lib/validations/password';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import { GENERIC_RESET_SENT_MESSAGE, requestPasswordReset } from '@/lib/passwordReset';
 
@@ -618,27 +619,15 @@ export default function Auth() {
                   <div className="space-y-1.5">
                     <Label htmlFor="signup-password">Password *</Label>
                     <div className="relative">
-                      <Input id="signup-password" type={showPassword ? 'text' : 'password'} placeholder="Min 6 characters" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} required minLength={6} className="h-11 pr-10" />
+                      <Input id="signup-password" type={showPassword ? 'text' : 'password'} placeholder={PASSWORD_HINT} value={signupPassword} onChange={e => setSignupPassword(sanitizePasswordInput(e.target.value))} required minLength={PASSWORD_MIN_LENGTH} className="h-11 pr-10" />
                       <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
                         {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                       </Button>
                     </div>
-                    {signupPassword.length > 0 && (
-                      <div className="space-y-1.5 pt-1">
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4].map(level => (
-                            <div key={level} className={cn(
-                              "h-1 flex-1 rounded-full transition-colors",
-                              signupPassword.length >= level * 3 
-                                ? level <= 1 ? "bg-destructive" : level <= 2 ? "bg-warning" : "bg-success"
-                                : "bg-muted"
-                            )} />
-                          ))}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground">
-                          {signupPassword.length < 6 ? "Too short" : signupPassword.length < 8 ? "Fair" : signupPassword.length < 12 ? "Good" : "Strong"}
-                        </p>
-                      </div>
+                    {signupPassword.length > 0 && passwordValidation(signupPassword) && (
+                      <p className="text-[10px] text-muted-foreground pt-1">
+                        {passwordValidation(signupPassword)}
+                      </p>
                     )}
                   </div>
                   <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>

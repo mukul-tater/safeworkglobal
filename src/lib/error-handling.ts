@@ -13,7 +13,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'auth/user-not-found': 'No account found with this email. Please sign up.',
   'auth/wrong-password': 'Incorrect password. Please try again.',
   'auth/email-already-in-use': 'An account with this email already exists.',
-  'auth/weak-password': 'Password must be at least 6 characters.',
+  'auth/weak-password': 'Password can only contain letters and numbers, at least 6 characters.',
   'auth/too-many-requests': 'Too many attempts. Please try again later.',
   'auth/user-disabled': 'This account has been disabled.',
   'invalid_credentials': 'Invalid email or password. Please try again.',

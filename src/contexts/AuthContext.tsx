@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import { hasOAuthCallbackInUrl } from '@/lib/oauthRedirect';
+import { passwordSignupIssue } from '@/lib/validations/password';
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner' | 'interviewer';
 
@@ -422,6 +423,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role: AppRole;
   }) => {
     try {
+      const passwordIssue = passwordSignupIssue(data.password);
+      if (passwordIssue) return { success: false, error: passwordIssue };
+
       const redirectUrl = `${window.location.origin}/`;
       const { error } = await supabase.auth.signUp({
         email: data.email,

@@ -8,6 +8,7 @@ import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Badge, Button, Card, Input, LoadingView, SectionTitle } from '../../components/ui';
+import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from '../../lib/password';
 
 type WorkerProfile = {
   bio: string | null;
@@ -148,14 +149,14 @@ export default function WorkerProfileScreen() {
           <Input
             label="New password"
             value={newPassword}
-            onChangeText={setNewPassword}
+            onChangeText={(v) => setNewPassword(sanitizePasswordInput(v))}
             secureTextEntry
-            placeholder="At least 8 characters"
+            placeholder={PASSWORD_HINT}
           />
           <Input
             label="Confirm new password"
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            onChangeText={(v) => setConfirmPassword(sanitizePasswordInput(v))}
             secureTextEntry
             placeholder="Re-enter new password"
           />
@@ -166,8 +167,9 @@ export default function WorkerProfileScreen() {
                 Alert.alert('Password required', 'Enter and confirm your new password.');
                 return;
               }
-              if (newPassword.length < 8) {
-                Alert.alert('Password too short', 'Use at least 8 characters.');
+              const passwordIssue = passwordSignupIssue(newPassword);
+              if (passwordIssue) {
+                Alert.alert('Password', passwordIssue);
                 return;
               }
               if (newPassword !== confirmPassword) {

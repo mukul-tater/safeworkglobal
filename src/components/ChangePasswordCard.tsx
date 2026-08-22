@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Lock } from 'lucide-react';
-import { isLeakedPassword, passwordSignupIssue, WEAK_PASSWORD_MESSAGE } from '@/lib/validations/password';
+import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from '@/lib/validations/password';
 import ProfileSection from '@/components/profile/ProfileSection';
 import HindiText from '@/components/indian-workforce/HindiText';
 
@@ -38,11 +38,6 @@ export default function ChangePasswordCard({
 
     try {
       setSaving(true);
-      if (await isLeakedPassword(newPassword)) {
-        toast.error(WEAK_PASSWORD_MESSAGE);
-        setSaving(false);
-        return;
-      }
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       toast.success('Password updated successfully');
@@ -81,8 +76,8 @@ export default function ChangePasswordCard({
             type="password"
             autoComplete="new-password"
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="At least 8 characters, letters and numbers"
+            onChange={(e) => setNewPassword(sanitizePasswordInput(e.target.value))}
+            placeholder={PASSWORD_HINT}
             className="h-11"
           />
         </div>
@@ -93,7 +88,7 @@ export default function ChangePasswordCard({
             type="password"
             autoComplete="new-password"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
             placeholder="Re-enter new password"
             className="h-11"
           />

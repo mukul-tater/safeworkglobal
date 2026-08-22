@@ -11,9 +11,10 @@ import {
   readResetLoginPath,
 } from '@/lib/passwordReset';
 import {
-  isLeakedPassword,
   passwordSignupIssue,
-  WEAK_PASSWORD_MESSAGE,
+  sanitizePasswordInput,
+  PASSWORD_HINT,
+  PASSWORD_MIN_LENGTH,
 } from '@/lib/validations/password';
 import { CheckCircle, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -111,12 +112,6 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      if (await isLeakedPassword(password)) {
-        setError(WEAK_PASSWORD_MESSAGE);
-        setLoading(false);
-        return;
-      }
-
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) {
         setError(updateError.message);
@@ -190,7 +185,7 @@ export default function ResetPassword() {
       <Card className="w-full max-w-md shadow-xl border-border/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle>Set new password</CardTitle>
-          <CardDescription>Choose a strong password you have not used elsewhere.</CardDescription>
+          <CardDescription>{PASSWORD_HINT}.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleResetPassword} className="space-y-4">
@@ -206,11 +201,11 @@ export default function ResetPassword() {
                 <Input
                   id="new-password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="At least 8 characters, letters and numbers"
+                  placeholder={PASSWORD_HINT}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                   required
-                  minLength={8}
+                  minLength={PASSWORD_MIN_LENGTH}
                   autoComplete="new-password"
                 />
                 <Button
@@ -233,9 +228,9 @@ export default function ResetPassword() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Re-enter your new password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
                   required
-                  minLength={8}
+                  minLength={PASSWORD_MIN_LENGTH}
                   autoComplete="new-password"
                 />
                 <Button

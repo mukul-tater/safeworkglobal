@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT, PASSWORD_MIN_LENGTH } from '@/lib/validations/password';
 
 export default function AdminRegisterPage() {
   const navigate = useNavigate();
@@ -30,8 +31,9 @@ export default function AdminRegisterPage() {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+    const passwordIssue = passwordSignupIssue(password);
+    if (passwordIssue) {
+      setError(passwordIssue);
       return;
     }
 
@@ -108,8 +110,9 @@ export default function AdminRegisterPage() {
                 type="password"
                 className="h-11"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                minLength={8}
+                onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
+                minLength={PASSWORD_MIN_LENGTH}
+                placeholder={PASSWORD_HINT}
                 required
               />
             </div>

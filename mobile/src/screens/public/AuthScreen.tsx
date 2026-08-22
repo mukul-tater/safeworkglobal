@@ -14,6 +14,7 @@ import { Button, Card, Input, SegmentedControl } from '../../components/ui';
 import { useI18n } from '../../i18n';
 import { isSyntheticAuthEmail, workerAuthEmailFromIdentifier } from '../../lib/workerAuthEmail';
 import { SAFEWORK_CONTACT } from '../../config/workerSupport';
+import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from '../../lib/password';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Auth'>;
 
@@ -127,7 +128,13 @@ export default function AuthScreen({ route }: Props) {
         : 'Email and password are required.');
       return;
     }
-    if (password.length < 6) {
+    if (mode === 'signup') {
+      const passwordIssue = passwordSignupIssue(password);
+      if (passwordIssue) {
+        setError(passwordIssue);
+        return;
+      }
+    } else if (password.length < 6) {
       setError('Password must be at least 6 characters.');
       return;
     }
@@ -306,9 +313,9 @@ export default function AuthScreen({ route }: Props) {
         <Input
           label={t('auth.password')}
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(v) => setPassword(mode === 'signup' ? sanitizePasswordInput(v) : v)}
           secureTextEntry={!showPassword}
-          placeholder={t('auth.passwordPlaceholder')}
+          placeholder={mode === 'signup' ? PASSWORD_HINT : t('auth.passwordPlaceholder')}
           accessibilityLabel="Password"
         />
         <Pressable

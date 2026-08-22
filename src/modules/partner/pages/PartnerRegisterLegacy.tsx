@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { indianStates } from "@/lib/validations/partner";
 import { partnerAuthEmailFromMobile, displayableEmail } from "@/lib/workerAuthEmail";
+import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from "@/lib/validations/password";
 import { lockedPartnerFromPath } from "@/modules/partner/config/partnerPortalRoutes";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
 import FormStepPills from "@/components/FormStepPills";
@@ -118,8 +119,9 @@ export default function PartnerRegisterLegacy() {
     if (!form.email.trim() && !digits) {
       throw new Error("Email or mobile is required to create your login");
     }
-    if (form.password.length < 6) {
-      throw new Error("Password must be at least 6 characters");
+    const passwordIssue = passwordSignupIssue(form.password);
+    if (passwordIssue) {
+      throw new Error(passwordIssue);
     }
     if (form.password !== form.confirmPassword) {
       throw new Error("Passwords do not match");
@@ -362,9 +364,9 @@ export default function PartnerRegisterLegacy() {
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
                     value={form.password}
-                    onChange={(e) => set("password", e.target.value)}
+                    onChange={(e) => set("password", sanitizePasswordInput(e.target.value))}
                     className="h-11 pl-10 pr-9"
-                    placeholder="Min 6 chars"
+                    placeholder={PASSWORD_HINT}
                   />
                   <button
                     type="button"
@@ -385,7 +387,7 @@ export default function PartnerRegisterLegacy() {
                     type={showConfirmPassword ? "text" : "password"}
                     autoComplete="new-password"
                     value={form.confirmPassword}
-                    onChange={(e) => set("confirmPassword", e.target.value)}
+                    onChange={(e) => set("confirmPassword", sanitizePasswordInput(e.target.value))}
                     className="h-11 pl-10 pr-9"
                     placeholder="Re-enter"
                   />

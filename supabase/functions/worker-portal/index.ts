@@ -107,6 +107,14 @@ serve(async (req) => {
         return json({ success: false, message: 'Validation failed', errors: { confirmPassword: ['Passwords do not match'] } }, 400);
       }
 
+      const passwordText = String(password ?? '');
+      if (passwordText.length < 6) {
+        return json({ success: false, message: 'Validation failed', errors: { password: ['Password must be at least 6 characters'] } }, 400);
+      }
+      if (passwordText.length > 72 || !/^[a-zA-Z0-9]+$/.test(passwordText)) {
+        return json({ success: false, message: 'Validation failed', errors: { password: ['Password can only contain letters and numbers'] } }, 400);
+      }
+
       const [{ count: mobileCount }, { count: emailCount }] = await Promise.all([
         supabase
           .from('worker_portal_users')

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { workerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
+import { passwordSignupIssue, WEAK_PASSWORD_MESSAGE } from '@/lib/validations/password';
 import {
   WORKER_TERMS_VERSION,
 } from '@/modules/worker-verification/constants';
@@ -97,6 +98,9 @@ export async function createVerifiedWorkerAccount(
     }
   }
 
+  const passwordIssue = passwordSignupIssue(input.password);
+  if (passwordIssue) throw new Error(passwordIssue);
+
   try {
     const { data: signupData, error: signupErr } = await supabase.auth.signUp({
       email: authEmail,
@@ -119,9 +123,7 @@ export async function createVerifiedWorkerAccount(
         throw new Error('This email or mobile is already registered. Sign in instead.');
       }
       if (/weak|easy to guess|pwned|leaked password/i.test(signupErr.message)) {
-        throw new Error(
-          'That password is too easy to guess. Go back and choose a stronger password, then request a new SMS code.',
-        );
+        throw new Error(WEAK_PASSWORD_MESSAGE);
       }
       throw new Error(signupErr.message);
     }

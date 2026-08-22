@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { INDIAN_MOBILE_REGEX } from '@/lib/validations/common';
+import { alphanumericPasswordSchema } from '@/lib/validations/password';
 
 const phoneRegex = INDIAN_MOBILE_REGEX;
 
@@ -18,7 +19,7 @@ export const workerRegisterSchema = z
       .regex(phoneRegex, 'Enter a valid 10-digit mobile number')
       .optional()
       .or(z.literal('')),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: alphanumericPasswordSchema,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
     otpToken: z.string().optional().or(z.literal('')),
   })

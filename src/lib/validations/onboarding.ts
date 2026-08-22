@@ -4,6 +4,7 @@ import {
   optionalFutureDateString,
   personNameRequired,
 } from '@/lib/validations/common';
+import { alphanumericPasswordSchema } from '@/lib/validations/password';
 
 export const workerOnboardingStep1Schema = z.object({
   fullName: personNameRequired,
@@ -51,7 +52,7 @@ export const quickWorkerSignupSchema = z.object({
 export const quickEmployerSignupSchema = z.object({
   fullName: personNameRequired,
   email: z.string().trim().email('Enter a valid email address').max(255),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: alphanumericPasswordSchema,
 });
 
 /** Legacy step 2 of older employer onboarding — kept for EmployerOnboarding.tsx. */

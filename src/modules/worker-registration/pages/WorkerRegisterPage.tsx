@@ -27,6 +27,7 @@ import {
   workerRegisterSchema,
   type WorkerRegisterFormValues,
 } from '../validation/registrationSchema';
+import { sanitizePasswordInput, PASSWORD_HINT } from '@/lib/validations/password';
 import GoogleAuthButton, { AuthDivider } from '../components/GoogleAuthButton';
 import {
   useFirebasePhoneOtp,
@@ -310,9 +311,9 @@ export default function WorkerRegisterPage() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Min. 6 characters"
+                  placeholder={PASSWORD_HINT}
                   className="h-11 pl-10 pr-10"
-                  {...register('password')}
+                  {...register('password', { setValueAs: sanitizePasswordInput })}
                 />
                 <button
                   type="button"
@@ -332,7 +333,7 @@ export default function WorkerRegisterPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Re-enter password"
                   className="h-11 pl-10 pr-10"
-                  {...register('confirmPassword')}
+                  {...register('confirmPassword', { setValueAs: sanitizePasswordInput })}
                 />
                 <button
                   type="button"

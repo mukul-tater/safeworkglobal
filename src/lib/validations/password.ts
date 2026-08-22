@@ -1,82 +1,38 @@
-const COMMON_PASSWORDS = new Set([
-  'password', 'password1', 'password12', 'password123', 'passw0rd',
-  '123456', '1234567', '12345678', '123456789', '1234567890',
-  'qwerty', 'qwerty123', 'abc123', 'abcd1234', '111111', '11111111',
-  '000000', '654321', 'iloveyou', 'admin', 'welcome', 'welcome1',
-  'monkey', 'dragon', 'master', 'login', 'letmein', 'football',
-  'princess', 'sunshine', 'whatever', 'trustno1', 'hello123',
-  'admin123', 'root123', 'pass123', 'user123', 'test1234',
-]);
+import { z } from 'zod';
+
+export const PASSWORD_MIN_LENGTH = 6;
+export const PASSWORD_MAX_LENGTH = 72;
+export const ALPHANUMERIC_PASSWORD_REGEX = /^[a-zA-Z0-9]+$/;
+export const PASSWORD_HINT = 'Letters and numbers only, at least 6 characters';
+export const PASSWORD_PATTERN = `[A-Za-z0-9]{${PASSWORD_MIN_LENGTH},${PASSWORD_MAX_LENGTH}}`;
 
 export const WEAK_PASSWORD_MESSAGE =
-  'That password is too easy to guess. Use at least 8 characters, mix letters and numbers, and avoid common passwords.';
+  'Use letters and numbers only, at least 6 characters. No spaces or symbols.';
 
 export function isWeakPasswordAuthError(message: string): boolean {
   return /weak|easy to guess|pwned|leaked password|not strong enough/i.test(message);
 }
 
-/** Sync checks before sending OTP so a weak password is not discovered on the SMS step. */
-export function passwordSignupIssue(
-  password: string,
-  extras?: { email?: string; mobile?: string },
-): string | null {
-  if (password.length < 8) {
-    return 'Password must be at least 8 characters';
+/** Shared rule for signup, reset, and change-password. Login stays unrestricted. */
+export function passwordSignupIssue(password: string): string | null {
+  if (!password) return 'Password is required';
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return `Password must be at least ${PASSWORD_MIN_LENGTH} characters`;
   }
-  if (password.length > 72) {
+  if (password.length > PASSWORD_MAX_LENGTH) {
     return 'Password is too long';
   }
-  const lower = password.toLowerCase();
-  if (COMMON_PASSWORDS.has(lower)) {
-    return WEAK_PASSWORD_MESSAGE;
-  }
-  if (/^(.)\1+$/.test(password) || /^(0123456789|9876543210)/.test(password)) {
-    return WEAK_PASSWORD_MESSAGE;
-  }
-  if (!/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
-    return 'Use letters and numbers in the password';
-  }
-  const mobile = (extras?.mobile || '').replace(/\D/g, '').slice(-10);
-  if (mobile && password.includes(mobile)) {
-    return 'Password should not include the mobile number';
-  }
-  const emailLocal = (extras?.email || '').split('@')[0]?.toLowerCase();
-  if (emailLocal && emailLocal.length >= 4 && lower.includes(emailLocal)) {
-    return 'Password should not include the email name';
+  if (!ALPHANUMERIC_PASSWORD_REGEX.test(password)) {
+    return 'Password can only contain letters and numbers';
   }
   return null;
 }
 
-async function sha1HexUpper(value: string): Promise<string> {
-  const data = new TextEncoder().encode(value);
-  const buf = await crypto.subtle.digest('SHA-1', data);
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-    .toUpperCase();
+export function sanitizePasswordInput(value: string): string {
+  return value.replace(/[^a-zA-Z0-9]/g, '').slice(0, PASSWORD_MAX_LENGTH);
 }
 
-/**
- * Have I Been Pwned k-anonymity check (same class of protection as Supabase Auth).
- * Returns true when the password appears in known leaks. Network failure → false.
- */
-export async function isLeakedPassword(password: string): Promise<boolean> {
-  if (!password || typeof crypto?.subtle?.digest !== 'function') return false;
-  try {
-    const hash = await sha1HexUpper(password);
-    const prefix = hash.slice(0, 5);
-    const suffix = hash.slice(5);
-    const ctrl = new AbortController();
-    const timer = window.setTimeout(() => ctrl.abort(), 4000);
-    const res = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
-      headers: { 'Add-Padding': 'true' },
-      signal: ctrl.signal,
-    });
-    window.clearTimeout(timer);
-    if (!res.ok) return false;
-    const body = await res.text();
-    return body.split(/\r?\n/).some((line) => line.split(':')[0]?.trim().toUpperCase() === suffix);
-  } catch {
-    return false;
-  }
-}
+export const alphanumericPasswordSchema = z.string().superRefine((val, ctx) => {
+  const issue = passwordSignupIssue(val);
+  if (issue) ctx.addIssue({ code: 'custom', message: issue });
+});

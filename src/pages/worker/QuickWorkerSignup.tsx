@@ -12,9 +12,11 @@ import {
 } from 'lucide-react';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import {
-  isLeakedPassword,
   isWeakPasswordAuthError,
   passwordSignupIssue,
+  sanitizePasswordInput,
+  PASSWORD_HINT,
+  PASSWORD_MIN_LENGTH,
   WEAK_PASSWORD_MESSAGE,
 } from '@/lib/validations/password';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
@@ -170,7 +172,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
     if (!firebaseOtp.isAvailable) {
       return 'SMS verification is not available right now. Please contact support.';
     }
-    const passwordIssue = passwordSignupIssue(password, { email: trimmedEmail, mobile });
+    const passwordIssue = passwordSignupIssue(password);
     if (passwordIssue) return passwordIssue;
     if (password !== confirmPassword) return 'Passwords do not match';
     if (!acceptedTerms) return 'Please agree to the terms and declarations';
@@ -210,10 +212,6 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
 
     setFormLoading(true);
     try {
-      if (await isLeakedPassword(password)) {
-        setError(WEAK_PASSWORD_MESSAGE);
-        return;
-      }
       const digits = mobile.replace(/\D/g, '');
       await firebaseOtp.sendOtp(digits);
       toast.success(`Verification code sent to +91 ${digits}`);
@@ -498,11 +496,11 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
                         <Input
                           id="password"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="8+ chars"
+                          placeholder={PASSWORD_HINT}
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                           required
-                          minLength={8}
+                          minLength={PASSWORD_MIN_LENGTH}
                           className="h-11 pl-10 pr-9"
                           autoComplete="new-password"
                         />
@@ -527,9 +525,9 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
                           type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="Re-enter"
                           value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
                           required
-                          minLength={8}
+                          minLength={PASSWORD_MIN_LENGTH}
                           className="h-11 pl-10 pr-9"
                           autoComplete="new-password"
                         />
@@ -566,7 +564,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Use 8+ characters with letters and numbers. Avoid common or leaked passwords.
+                      {PASSWORD_HINT}.
                     </p>
                   )}
 

@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { validateSchema } from "@/lib/validations/common";
 import { quickEmployerSignupSchema } from "@/lib/validations/onboarding";
+import { sanitizePasswordInput, PASSWORD_HINT, PASSWORD_MIN_LENGTH } from "@/lib/validations/password";
 import {
   employerCompanySchema,
   employerContactSchema,
@@ -482,11 +483,11 @@ export default function QuickEmployerSignup() {
                           <Input
                             id="password"
                             type={showPassword ? "text" : "password"}
-                            placeholder="Min 6 chars"
+                            placeholder={PASSWORD_HINT}
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
                             required
-                            minLength={6}
+                            minLength={PASSWORD_MIN_LENGTH}
                             className="h-11 pl-10 pr-9"
                             autoComplete="new-password"
                             disabled={busy}
@@ -511,9 +512,9 @@ export default function QuickEmployerSignup() {
                             type={showConfirmPassword ? "text" : "password"}
                             placeholder="Re-enter"
                             value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
                             required
-                            minLength={6}
+                            minLength={PASSWORD_MIN_LENGTH}
                             className="h-11 pl-10 pr-9"
                             autoComplete="new-password"
                             disabled={busy}
