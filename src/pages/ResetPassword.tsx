@@ -1,16 +1,42 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Loader2, CheckCircle, KeyRound } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  clearResetLoginPath,
+  readResetLoginPath,
+} from '@/lib/passwordReset';
+import {
+  isLeakedPassword,
+  passwordSignupIssue,
+  WEAK_PASSWORD_MESSAGE,
+} from '@/lib/validations/password';
+import { CheckCircle, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+function hasRecoveryHint(): boolean {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const search = new URLSearchParams(window.location.search);
+  return (
+    hash.get('type') === 'recovery' ||
+    search.get('type') === 'recovery' ||
+    Boolean(hash.get('access_token')) ||
+    search.has('code')
+  );
+}
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const loginPath = useMemo(
+    () => readResetLoginPath(searchParams.get('next')),
+    [searchParams],
+  );
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -22,76 +48,91 @@ export default function ResetPassword() {
   const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    // Check if user has a valid recovery session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // Check if this is a recovery session (user clicked reset link)
-      if (session) {
-        setIsValidSession(true);
-      } else {
-        // Listen for auth state changes (when user arrives from email link)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          if (event === 'PASSWORD_RECOVERY') {
-            setIsValidSession(true);
-          }
-        });
+    let cancelled = false;
+    let settled = false;
 
-        // Check URL for recovery token
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const type = hashParams.get('type');
-        
-        if (accessToken && type === 'recovery') {
-          setIsValidSession(true);
-        }
-
-        return () => subscription.unsubscribe();
-      }
-      
+    const finish = (valid: boolean) => {
+      if (cancelled || settled) return;
+      settled = true;
+      setIsValidSession(valid);
       setCheckingSession(false);
     };
 
-    checkSession();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        finish(true);
+        return;
+      }
+      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && hasRecoveryHint()) {
+        finish(true);
+      }
+    });
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled || settled) return;
+      if (session && hasRecoveryHint()) {
+        finish(true);
+        return;
+      }
+      if (!hasRecoveryHint()) {
+        finish(false);
+      }
+    });
+
+    const timeout = window.setTimeout(() => {
+      if (!settled) finish(false);
+    }, 8000);
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+      window.clearTimeout(timeout);
+    };
   }, []);
+
+  const goToLogin = () => {
+    clearResetLoginPath();
+    navigate(loginPath, { replace: true });
+  };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    const strengthError = passwordSignupIssue(password);
+    if (strengthError) {
+      setError(strengthError);
       return;
     }
-
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
     setLoading(true);
-
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
-
-      if (error) {
-        setError(error.message);
-      } else {
-        setSuccess(true);
-        toast.success('Password updated successfully!');
-        
-        // Sign out and redirect to login after 2 seconds
-        setTimeout(async () => {
-          await supabase.auth.signOut();
-          navigate('/auth');
-        }, 2000);
+      if (await isLeakedPassword(password)) {
+        setError(WEAK_PASSWORD_MESSAGE);
+        setLoading(false);
+        return;
       }
-    } catch (err) {
+
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) {
+        setError(updateError.message);
+        setLoading(false);
+        return;
+      }
+
+      setSuccess(true);
+      toast.success('Password updated successfully');
+      window.setTimeout(async () => {
+        await supabase.auth.signOut();
+        goToLogin();
+      }, 1600);
+    } catch {
       setError('Failed to update password. Please try again.');
     }
-
     setLoading(false);
   };
 
@@ -107,23 +148,20 @@ export default function ResetPassword() {
     );
   }
 
-  if (!isValidSession && !checkingSession) {
+  if (!isValidSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4 pb-24 md:pb-8">
         <Card className="w-full max-w-md shadow-xl border-border/50">
           <CardHeader className="text-center">
             <KeyRound className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-            <CardTitle>Invalid or Expired Link</CardTitle>
+            <CardTitle>Invalid or expired link</CardTitle>
             <CardDescription>
-              This password reset link is invalid or has expired. Please request a new one.
+              This password reset link is invalid or has expired. Request a new one from the sign-in page.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              className="w-full" 
-              onClick={() => navigate('/auth')}
-            >
-              Back to Login
+            <Button className="w-full" onClick={goToLogin}>
+              Back to login
             </Button>
           </CardContent>
         </Card>
@@ -137,9 +175,9 @@ export default function ResetPassword() {
         <Card className="w-full max-w-md shadow-xl border-border/50">
           <CardHeader className="text-center">
             <CheckCircle className="h-12 w-12 mx-auto text-success mb-2" />
-            <CardTitle>Password Updated!</CardTitle>
+            <CardTitle>Password updated</CardTitle>
             <CardDescription>
-              Your password has been successfully updated. Redirecting to login...
+              Your password has been updated. Redirecting to sign in...
             </CardDescription>
           </CardHeader>
         </Card>
@@ -151,8 +189,8 @@ export default function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4 pb-24 md:pb-8 pt-8">
       <Card className="w-full max-w-md shadow-xl border-border/50 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle>Set New Password</CardTitle>
-          <CardDescription>Enter your new password below</CardDescription>
+          <CardTitle>Set new password</CardTitle>
+          <CardDescription>Choose a strong password you have not used elsewhere.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleResetPassword} className="space-y-4">
@@ -163,16 +201,17 @@ export default function ResetPassword() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">New password</Label>
               <div className="relative">
                 <Input
                   id="new-password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Minimum 6 characters"
+                  placeholder="At least 8 characters, letters and numbers"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
+                  autoComplete="new-password"
                 />
                 <Button
                   type="button"
@@ -187,16 +226,17 @@ export default function ResetPassword() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Label htmlFor="confirm-password">Confirm password</Label>
               <div className="relative">
                 <Input
                   id="confirm-password"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Confirm your password"
+                  placeholder="Re-enter your new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
+                  autoComplete="new-password"
                 />
                 <Button
                   type="button"
@@ -212,18 +252,14 @@ export default function ResetPassword() {
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Update Password
+              Update password
             </Button>
 
             <p className="text-sm text-muted-foreground text-center">
               Remember your password?{' '}
-              <button
-                type="button"
-                onClick={() => navigate('/auth')}
-                className="text-primary hover:underline"
-              >
+              <Link to={loginPath} className="text-primary hover:underline" onClick={clearResetLoginPath}>
                 Back to login
-              </button>
+              </Link>
             </p>
           </form>
         </CardContent>

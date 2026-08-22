@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Video } from 'lucide-react';
+import ForgotPasswordControl from '@/components/ForgotPasswordControl';
 
 export default function InterviewerLoginPage() {
   const navigate = useNavigate();
@@ -84,7 +85,16 @@ export default function InterviewerLoginPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="int-password">Password</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="int-password">Password</Label>
+                <ForgotPasswordControl
+                  loginPath="/interviewer/login"
+                  initialIdentifier={email}
+                  title="Reset interviewer password"
+                  description="Enter the email for your interviewer account. We'll send a secure link to set a new password."
+                  triggerClassName="text-xs"
+                />
+              </div>
               <Input
                 id="int-password"
                 type="password"

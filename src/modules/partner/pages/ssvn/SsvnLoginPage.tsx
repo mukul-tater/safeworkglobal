@@ -27,6 +27,7 @@ import { lockedPartnerFromPath, LOCKED_PARTNER_PORTALS } from '../../config/part
 import AuthSplitLayout from '@/components/AuthSplitLayout';
 import { cn } from '@/lib/utils';
 import DevOtpHint from '@/components/DevOtpHint';
+import ForgotPasswordControl from '@/components/ForgotPasswordControl';
 
 type Method = 'mobile' | 'email';
 type Step = 'credentials' | 'otp';
@@ -341,7 +342,16 @@ export default function SsvnLoginPage() {
               </InputOTP>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="ssvn-otp-password">Password</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="ssvn-otp-password">Password</Label>
+                <ForgotPasswordControl
+                  loginPath={portal.loginPath}
+                  initialIdentifier={email}
+                  title={`Reset ${typeLabel} password`}
+                  description="Enter the email from your partner application. We'll send a secure link to set a new password."
+                  triggerClassName="text-xs"
+                />
+              </div>
               <Input
                 id="ssvn-otp-password"
                 type="password"
@@ -389,7 +399,16 @@ export default function SsvnLoginPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ssvn-password">Password</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="ssvn-password">Password</Label>
+              <ForgotPasswordControl
+                loginPath={portal.loginPath}
+                initialIdentifier={email}
+                title={`Reset ${typeLabel} password`}
+                description="Enter the email from your partner application. We'll send a secure link to set a new password."
+                triggerClassName="text-xs"
+              />
+            </div>
             <Input
               id="ssvn-password"
               type="password"

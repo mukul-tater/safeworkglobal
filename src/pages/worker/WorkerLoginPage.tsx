@@ -19,6 +19,7 @@ import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 import SignupJourneyPanel from '@/components/SignupJourneyPanel';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import ForgotPasswordControl from '@/components/ForgotPasswordControl';
 
 type LoginMethod = 'mobile' | 'email';
 
@@ -266,7 +267,16 @@ export default function WorkerLoginPage() {
                 )}
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="worker-password">Password</Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="worker-password">Password</Label>
+                    <ForgotPasswordControl
+                      loginPath="/worker/login"
+                      initialIdentifier={method === 'email' ? email : ''}
+                      title="Reset worker password"
+                      description="Enter the email you used to create your worker account. We'll send a secure link to set a new password. Mobile-only accounts should contact SafeWork support."
+                      triggerClassName="text-xs"
+                    />
+                  </div>
                   <div className="relative">
                     <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input

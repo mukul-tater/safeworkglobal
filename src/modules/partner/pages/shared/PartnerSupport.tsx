@@ -1,5 +1,6 @@
 import PartnerLayout from "../../layout/PartnerLayout";
 import { Card } from "@/components/ui/card";
+import ChangePasswordCard from "@/components/ChangePasswordCard";
 
 export default function PartnerSupport() {
   return (
@@ -9,6 +10,7 @@ export default function PartnerSupport() {
         <Card className="p-6 text-sm text-muted-foreground">
           Reach us at <a className="text-primary underline" href="mailto:support@safeworkglobal.com">support@safeworkglobal.com</a>. Ticketing and live chat coming soon.
         </Card>
+        <ChangePasswordCard />
       </div>
     </PartnerLayout>
   );

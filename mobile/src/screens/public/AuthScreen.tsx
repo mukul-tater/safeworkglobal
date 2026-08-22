@@ -12,6 +12,8 @@ import { BrandLogo } from '../../components/layout/AppHeader';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Button, Card, Input, SegmentedControl } from '../../components/ui';
 import { useI18n } from '../../i18n';
+import { isSyntheticAuthEmail, workerAuthEmailFromIdentifier } from '../../lib/workerAuthEmail';
+import { SAFEWORK_CONTACT } from '../../config/workerSupport';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Auth'>;
 
@@ -94,16 +96,27 @@ export default function AuthScreen({ route }: Props) {
 
   const handleForgotPassword = async () => {
     setError('');
-    if (!email.trim() || !email.includes('@')) {
-      setError('Enter your account email to reset password.');
+    const resolved = workerAuthEmailFromIdentifier(email);
+    if (!resolved || !resolved.includes('@')) {
+      setError('Enter the email you use to sign in. Password reset is sent by email.');
+      return;
+    }
+    if (isSyntheticAuthEmail(resolved)) {
+      setError(
+        'This account was created with mobile only and has no email inbox. Use the email from signup, or contact SafeWork support.',
+      );
       return;
     }
     setLoading(true);
     const { supabase } = await import('../../integrations/supabase/client');
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim());
+    const rolePath =
+      role === 'employer' ? '/employer/login' : role === 'partner' ? '/partner/login' : '/worker/login';
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(resolved, {
+      redirectTo: `${SAFEWORK_CONTACT.websiteUrl}/reset-password?next=${encodeURIComponent(rolePath)}`,
+    });
     setLoading(false);
     if (resetError) setError(resetError.message);
-    else setError('Password reset email sent (if the account exists).');
+    else setError('If an account exists for that email, a reset link has been sent. Open it in your browser, then sign in here.');
   };
 
   const handleSubmit = async () => {

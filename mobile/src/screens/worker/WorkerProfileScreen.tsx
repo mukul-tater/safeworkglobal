@@ -30,6 +30,9 @@ export default function WorkerProfileScreen() {
   const [years, setYears] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,6 +141,58 @@ export default function WorkerProfileScreen() {
             style={{ minHeight: 96, textAlignVertical: 'top' }}
           />
           <Button title="Save profile" onPress={save} loading={saving} fullWidth />
+        </Card>
+
+        <SectionTitle title="Change password" subtitle="Use a password only you know" />
+        <Card>
+          <Input
+            label="New password"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+            placeholder="At least 8 characters"
+          />
+          <Input
+            label="Confirm new password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            placeholder="Re-enter new password"
+          />
+          <Button
+            title="Update password"
+            onPress={async () => {
+              if (!newPassword.trim() || !confirmPassword.trim()) {
+                Alert.alert('Password required', 'Enter and confirm your new password.');
+                return;
+              }
+              if (newPassword.length < 8) {
+                Alert.alert('Password too short', 'Use at least 8 characters.');
+                return;
+              }
+              if (newPassword !== confirmPassword) {
+                Alert.alert('Passwords do not match', 'Re-enter the same password in both fields.');
+                return;
+              }
+              setSavingPassword(true);
+              try {
+                const { error: pwErr } = await supabase.auth.updateUser({ password: newPassword });
+                if (pwErr) throw pwErr;
+                setNewPassword('');
+                setConfirmPassword('');
+                Alert.alert('Password updated', 'Sign in with this password next time.');
+              } catch (e) {
+                Alert.alert(
+                  'Update failed',
+                  e instanceof Error ? e.message : 'Could not update password',
+                );
+              } finally {
+                setSavingPassword(false);
+              }
+            }}
+            loading={savingPassword}
+            fullWidth
+          />
         </Card>
       </ScrollView>
     </ScreenLayout>

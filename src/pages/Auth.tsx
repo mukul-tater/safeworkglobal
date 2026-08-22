@@ -20,6 +20,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { passwordValidation } from '@/components/ValidatedInput';
 import { isValidIndianMobile } from '@/lib/validations/common';
+import { displayableEmail } from '@/lib/workerAuthEmail';
+import { GENERIC_RESET_SENT_MESSAGE, requestPasswordReset } from '@/lib/passwordReset';
 
 type AuthView = 'login' | 'signup' | 'forgot' | 'role-select';
 type LoginMethod = 'email' | 'mobile';
@@ -319,18 +321,28 @@ export default function Auth() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) { setError(error.message); }
-      else {
-        toast.success('Reset link sent! Check your inbox.');
-        setResetEmail('');
-        setView('login');
-      }
-    } catch { setError('Failed to send reset email'); }
+    const result = await requestPasswordReset(resetEmail, {
+      loginPath: '/auth',
+      resolveAuthEmail: async (raw) => {
+        if (raw.includes('@')) return raw.toLowerCase();
+        if (!isValidIndianMobile(raw)) return null;
+        const digits = raw.replace(/\D/g, '').slice(-10);
+        const { data } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('phone', digits)
+          .maybeSingle();
+        return displayableEmail(data?.email);
+      },
+    });
     setLoading(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    toast.success(GENERIC_RESET_SENT_MESSAGE);
+    setResetEmail('');
+    setView('login');
   };
 
   const handleRoleSelect = async (selectedRole: AppRole) => {
@@ -498,7 +510,19 @@ export default function Auth() {
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="login-password">Password</Label>
-                      <button type="button" onClick={() => { setError(''); setView('forgot'); }} className="text-xs text-primary hover:underline">Forgot password?</button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setError('');
+                          if (loginMethod === 'email' && loginIdentifier.includes('@')) {
+                            setResetEmail(loginIdentifier.trim().toLowerCase());
+                          }
+                          setView('forgot');
+                        }}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Forgot password?
+                      </button>
                     </div>
                     <div className="relative">
                       <Input id="login-password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required minLength={6} className="h-11 pr-10" />
@@ -636,8 +660,20 @@ export default function Auth() {
                   <ArrowLeft className="h-3.5 w-3.5" /> Back to sign in
                 </button>
                 <div className="space-y-1.5">
-                  <Label htmlFor="reset-email">Email</Label>
-                  <Input id="reset-email" type="email" placeholder="you@example.com" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required className="h-11" />
+                  <Label htmlFor="reset-email">Email or mobile</Label>
+                  <Input
+                    id="reset-email"
+                    type="text"
+                    autoComplete="username"
+                    placeholder="you@example.com or 10-digit mobile"
+                    value={resetEmail}
+                    onChange={e => setResetEmail(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Reset links are sent by email. If you signed up with mobile only, contact SafeWork support.
+                  </p>
                 </div>
                 <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -9,17 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { hasValidLspSession } from '@/modules/lsp/services/lspSession';
+import ForgotPasswordControl from '@/components/ForgotPasswordControl';
 
 export default function EmitraLoginPage() {
   const navigate = useNavigate();
@@ -29,10 +22,6 @@ export default function EmitraLoginPage() {
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [resetOpen, setResetOpen] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
-  const [resetError, setResetError] = useState('');
 
   const nextPath = searchParams.get('next') || '';
 
@@ -96,28 +85,6 @@ export default function EmitraLoginPage() {
     setLoading(false);
   };
 
-  const handleSendReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResetError('');
-    const authEmail = await resolveEmitraAuthEmail(resetEmail);
-    if (!authEmail) {
-      setResetError('Enter the email from your partner application, or your 10-digit mobile number.');
-      return;
-    }
-    setResetLoading(true);
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(authEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setResetLoading(false);
-    if (resetErr) {
-      setResetError(resetErr.message);
-      return;
-    }
-    toast.success('If this partner email exists, a reset link has been sent.');
-    setResetOpen(false);
-    setResetEmail('');
-  };
-
   return (
     <EmitraLayout
       centered
@@ -151,7 +118,28 @@ export default function EmitraLoginPage() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="emitra-password">Password</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="emitra-password">Password</Label>
+                <ForgotPasswordControl
+                  loginPath="/emitra/login"
+                  initialIdentifier={email}
+                  title="Reset partner password"
+                  description="Enter the email from your partner application. We'll send a secure link to set a new password."
+                  identifierLabel="Partner email"
+                  identifierPlaceholder="partner@email.com"
+                  identifierType="text"
+                  triggerClassName="text-sm"
+                  resolveAuthEmail={async (raw) => {
+                    const authEmail = await resolveEmitraAuthEmail(raw);
+                    if (!authEmail) {
+                      throw new Error(
+                        'Enter the email from your partner application, or your 10-digit mobile number.',
+                      );
+                    }
+                    return authEmail;
+                  }}
+                />
+              </div>
               <Input
                 id="emitra-password"
                 type="password"
@@ -166,20 +154,6 @@ export default function EmitraLoginPage() {
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Sign In to E-Mitra Portal
             </Button>
-
-            <div className="text-right">
-              <button
-                type="button"
-                onClick={() => {
-                  setResetEmail(email);
-                  setResetError('');
-                  setResetOpen(true);
-                }}
-                className="text-sm text-primary hover:underline"
-              >
-                Forgot password?
-              </button>
-            </div>
           </form>
 
           <div className="text-center text-sm text-muted-foreground mt-6 pt-6 border-t border-border space-y-2">
@@ -198,46 +172,6 @@ export default function EmitraLoginPage() {
           </div>
         </CardContent>
       </Card>
-
-      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reset partner password</DialogTitle>
-            <DialogDescription>
-              Enter the email from your partner application. We&apos;ll send a secure link to set a new
-              password.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSendReset} className="space-y-4">
-            {resetError && (
-              <Alert variant="destructive">
-                <AlertDescription className="text-sm">{resetError}</AlertDescription>
-              </Alert>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="emitra-reset-email">Partner email</Label>
-              <Input
-                id="emitra-reset-email"
-                type="text"
-                autoComplete="username"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                placeholder="partner@email.com"
-                required
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setResetOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={resetLoading}>
-                {resetLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Send reset link
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </EmitraLayout>
   );
 }

@@ -21,6 +21,16 @@ export default function OAuthLandingHandler() {
   const handled = useRef(false);
 
   useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const search = new URLSearchParams(location.search);
+    const isRecovery = hash.get('type') === 'recovery' || search.get('type') === 'recovery';
+    if (isRecovery && location.pathname !== '/reset-password') {
+      navigate(`/reset-password${location.search}${location.hash}`, { replace: true });
+    }
+  }, [location.hash, location.pathname, location.search, navigate]);
+
+  useEffect(() => {
+    if (location.pathname === '/reset-password') return;
     if (loading || !isAuthenticated || handled.current) return;
     // Role may still be fetching — wait so we send new Google users to role
     // select instead of a login form, and existing users to /dashboard.

@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { signInWithGoogle } from '@/lib/googleAuth';
 import { clearPendingOAuthRole, setPendingOAuthRole } from '@/lib/oauthRedirect';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import ForgotPasswordControl from '@/components/ForgotPasswordControl';
 
 export default function EmployerLoginPage() {
   const navigate = useNavigate();
@@ -156,7 +157,16 @@ export default function EmployerLoginPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="employer-password">Password</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="employer-password">Password</Label>
+                  <ForgotPasswordControl
+                    loginPath="/employer/login"
+                    initialIdentifier={email}
+                    title="Reset employer password"
+                    description="Enter the work email you use to sign in. We'll send a secure link to set a new password."
+                    triggerClassName="text-xs"
+                  />
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   <Input

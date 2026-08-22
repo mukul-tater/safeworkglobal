@@ -7,6 +7,7 @@ import { emitraNavGroups, emitraProfileMenu } from '../config/emitraNav';
 import ComplianceGate from '../components/ComplianceGate';
 import { getPartnerProfile, isComplianceAcknowledged } from '../services/emitraService';
 import type { PartnerProfile } from '../types/emitra.types';
+import ChangePasswordCard from '@/components/ChangePasswordCard';
 
 const RULES = [
   'Do NOT promise jobs or guarantee employment',
@@ -56,6 +57,10 @@ export default function EmitraCompliancePage() {
           </div>
         </Card>
       )}
+
+      <div className="mt-8">
+        <ChangePasswordCard />
+      </div>
     </DashboardLayout>
   );
 }

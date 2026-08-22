@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Lock } from 'lucide-react';
+import { isLeakedPassword, passwordSignupIssue, WEAK_PASSWORD_MESSAGE } from '@/lib/validations/password';
 import ProfileSection from '@/components/profile/ProfileSection';
 import HindiText from '@/components/indian-workforce/HindiText';
 
@@ -25,8 +26,9 @@ export default function ChangePasswordCard({
       toast.error('Please enter and confirm your new password');
       return;
     }
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    const strengthError = passwordSignupIssue(newPassword);
+    if (strengthError) {
+      toast.error(strengthError);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -36,6 +38,11 @@ export default function ChangePasswordCard({
 
     try {
       setSaving(true);
+      if (await isLeakedPassword(newPassword)) {
+        toast.error(WEAK_PASSWORD_MESSAGE);
+        setSaving(false);
+        return;
+      }
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       toast.success('Password updated successfully');
@@ -75,7 +82,7 @@ export default function ChangePasswordCard({
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="At least 6 characters"
+            placeholder="At least 8 characters, letters and numbers"
             className="h-11"
           />
         </div>

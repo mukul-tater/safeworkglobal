@@ -15,6 +15,7 @@ import Jobs from "./pages/Jobs";
 import JobDetail from "./pages/JobDetail";
 import JobCategories from "./pages/JobCategories";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -160,6 +161,7 @@ function AppShell() {
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/benefits-for-employers" element={<BenefitsForEmployers />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Public pages used by employer hiring flow + marketing footer */}
           {legacyPublicRoutes}
