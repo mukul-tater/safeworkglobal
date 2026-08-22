@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Loader2, UserPlus, Users } from 'lucide-react';
 import ApprovedPartnerGate, { useApprovedPartner } from '../components/ApprovedPartnerGate';
 import { partnerWorkerJourneyPath } from '@/modules/partner/lib/partnerAssistedWorker';
@@ -25,12 +25,17 @@ type WorkerRow = {
   journey?: WorkerJourneyProgress;
 };
 
+const DOC_PENDING_STAGES = ['essentials', 'quiz', 'media', 'identity'];
+const DEPLOYED_STAGES = ['deployment', 'gcc_ready'];
+
 const STATUS_TABS = [
   { key: 'all', label: 'All' },
+  { key: 'documents', label: 'Documents Pending' },
   { key: 'pending', label: 'Pending Review' },
   { key: 'approved', label: 'Approved' },
   { key: 'rejected', label: 'Rejected' },
   { key: 'placed', label: 'Placed' },
+  { key: 'deployed', label: 'Deployed' },
   { key: 'rewarded', label: 'Reward Earned' },
 ];
 
@@ -43,10 +48,17 @@ function reviewBadge(s: string) {
 
 function Inner() {
   const { partnerId } = useApprovedPartner();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [rows, setRows] = useState<WorkerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState('all');
+  const viewParam = searchParams.get('view');
+  const tab = STATUS_TABS.some((t) => t.key === viewParam) ? viewParam! : 'all';
+
+  const setTab = (next: string) => {
+    if (next === 'all') setSearchParams({});
+    else setSearchParams({ view: next });
+  };
 
   useEffect(() => {
     if (!partnerId) return;
@@ -91,7 +103,12 @@ function Inner() {
 
   const filtered = rows.filter(w => {
     if (tab === 'all') return true;
+    if (tab === 'documents') {
+      const stage = w.journey?.stage || 'essentials';
+      return DOC_PENDING_STAGES.includes(stage);
+    }
     if (tab === 'placed') return w.hired;
+    if (tab === 'deployed') return DEPLOYED_STAGES.includes(w.journey?.stage || '');
     if (tab === 'rewarded') return !!w.reward;
     return w.review_status === tab;
   });

@@ -85,11 +85,11 @@ export default function EmitraDashboardPage() {
   }
 
   const statCards = [
-    { label: 'Total Workers Registered', value: stats.totalRegistered, icon: Users, color: 'text-primary bg-primary/10' },
-    { label: 'Documents Pending', value: stats.documentsPending, icon: FileWarning, color: 'text-amber-600 bg-amber-50' },
-    { label: 'Workers Selected', value: stats.workersSelected, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50' },
-    { label: 'Workers Deployed', value: stats.workersDeployed, icon: Plane, color: 'text-sky-600 bg-sky-50' },
-    { label: 'Earnings', value: `₹${stats.earnings}`, icon: IndianRupee, color: 'text-amber-700 bg-amber-50' },
+    { label: 'Total Workers Registered', value: stats.totalRegistered, icon: Users, color: 'text-primary bg-primary/10', to: '/emitra/my-workers' },
+    { label: 'Documents Pending', value: stats.documentsPending, icon: FileWarning, color: 'text-amber-600 bg-amber-50', to: '/emitra/my-workers?view=documents' },
+    { label: 'Workers Selected', value: stats.workersSelected, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50', to: '/emitra/my-workers?view=placed' },
+    { label: 'Workers Deployed', value: stats.workersDeployed, icon: Plane, color: 'text-sky-600 bg-sky-50', to: '/emitra/my-workers?view=deployed' },
+    { label: 'Earnings', value: `₹${stats.earnings}`, icon: IndianRupee, color: 'text-amber-700 bg-amber-50', to: '/emitra/rewards' },
   ];
 
   return (
@@ -137,15 +137,21 @@ export default function EmitraDashboardPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
         {statCards.map((s) => (
-          <Card key={s.label}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className={`p-2.5 rounded-xl ${s.color}`}><s.icon className="h-5 w-5" /></div>
-              <div>
-                <p className="text-xl md:text-2xl font-bold">{s.value}</p>
-                <p className="text-xs text-muted-foreground leading-snug">{s.label}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <Link
+            key={s.label}
+            to={s.to}
+            className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Card className="h-full cursor-pointer hover:border-primary/40 hover:-translate-y-0.5">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl ${s.color}`}><s.icon className="h-5 w-5" /></div>
+                <div>
+                  <p className="text-xl md:text-2xl font-bold">{s.value}</p>
+                  <p className="text-xs text-muted-foreground leading-snug">{s.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
@@ -203,7 +209,7 @@ export default function EmitraDashboardPage() {
             </Link>
           </Button>
           <Button variant="outline" asChild className="justify-between h-11">
-            <Link to="/emitra/workers">
+            <Link to="/emitra/my-workers">
               <span className="flex items-center gap-2"><Users className="h-4 w-4" /> Manage Workers</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
