@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import WorkerPortalLayout from '@/components/layout/WorkerPortalLayout';
@@ -276,6 +276,17 @@ function formatAppointmentDate(iso: string | null | undefined): string {
     : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function JourneyShell({
+  embedded,
+  children,
+}: {
+  embedded: boolean;
+  children: ReactNode;
+}) {
+  if (embedded) return <>{children}</>;
+  return <WorkerPortalLayout>{children}</WorkerPortalLayout>;
+}
+
 /**
  * Full worker verification wizard:
  * essentials → quiz → media → interview → payment → tests → bond → GCC ready
@@ -547,9 +558,6 @@ export default function WorkerVerificationPage({
   }, [subjectId, profile?.email, partnerKiosk]);
 
   const displayProfile = subjectProfile || profile;
-
-  const JourneyShell = ({ children }: { children: React.ReactNode }) =>
-    embedded ? <>{children}</> : <WorkerPortalLayout>{children}</WorkerPortalLayout>;
 
   useEffect(() => {
     void load();
@@ -972,7 +980,7 @@ export default function WorkerVerificationPage({
 
   if (loading) {
     return (
-      <JourneyShell>
+      <JourneyShell embedded={embedded}>
         <div className="py-16 text-center text-muted-foreground">Loading your journey…</div>
       </JourneyShell>
     );
@@ -980,7 +988,7 @@ export default function WorkerVerificationPage({
 
   if (loadError || !row) {
     return (
-      <JourneyShell>
+      <JourneyShell embedded={embedded}>
         <Card className="max-w-lg mx-auto">
           <CardContent className="p-8 text-center space-y-4">
             <h1 className="text-xl font-bold font-heading">Could not load GCC journey</h1>
@@ -999,7 +1007,7 @@ export default function WorkerVerificationPage({
 
   if (rawStage === 'gcc_ready' && !forceIdentity) {
     return (
-      <JourneyShell>
+      <JourneyShell embedded={embedded}>
         <div className="mx-auto max-w-lg">
           <StageResultShell
             tone="success"
@@ -1049,7 +1057,7 @@ export default function WorkerVerificationPage({
   }
 
   return (
-    <JourneyShell>
+    <JourneyShell embedded={embedded}>
       <WorkerPreJourneyScreeningModal
         userId={subjectId || ''}
         isOpen={showDeclarationModal && !emitraNoticeOpen}
