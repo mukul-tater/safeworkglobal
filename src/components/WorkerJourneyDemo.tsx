@@ -94,7 +94,7 @@ const STEPS: JourneyStep[] = [
     ],
     branch: {
       pass: "Trade test required → pay fee, then book nearest center",
-      fail: "Retest available after a few days",
+      fail: "Retest available after 24-48 hours",
     },
   },
   {
