@@ -67,7 +67,7 @@ const STEPS: JourneyStep[] = [
     shortTitle: "Documents",
     description: "Upload identity and skill documents so we can build your candidate file.",
     icon: FileUp,
-    bullets: ["PAN card front", "Aadhaar front & back", "Passport first & last page (if available)", "Experience", "Education", "Photograph"],
+    bullets: ["PAN card front", "Aadhaar front & back", "Passport first & last page (if available)", , "Education", "Photograph"],
   },
   {
     id: "verbal",
