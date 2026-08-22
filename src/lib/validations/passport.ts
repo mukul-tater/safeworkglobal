@@ -36,13 +36,9 @@ export function formatMinPassportExpiryDate(from = new Date()): string {
   });
 }
 
-/** Same helper shown on Identity (KYC) and the passport info popup. */
+/** Helper under the Identity (KYC) passport expiry date field. */
 export function passportMinValidityHintEn(from = new Date()): string {
   return `Must not be expired, and must stay valid until at least ${formatMinPassportExpiryDate(from)} (6 months from today).`;
-}
-
-export function passportMinValidityHintHi(from = new Date()): string {
-  return `समाप्त नहीं होना चाहिए, और कम से कम ${formatMinPassportExpiryDate(from)} तक वैध रहना चाहिए (आज से 6 महीने)।`;
 }
 
 export function toDateInputValue(date: Date): string {
