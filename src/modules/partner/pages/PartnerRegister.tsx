@@ -36,16 +36,34 @@ export default function PartnerRegister() {
   const { t, locale } = useI18n();
   const [selectedCode, setSelectedCode] = useState(DEFAULT_PARTNER_SIGNUP_CODE);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [emitraInfoOpen, setEmitraInfoOpen] = useState(false);
+  const [emitraBrandName, setEmitraBrandName] = useState<string | null>(null);
 
   const selected = useMemo(
     () => getPartnerSignupOption(selectedCode) ?? PARTNER_SIGNUP_OPTIONS[0],
     [selectedCode],
   );
 
-  const requestContinue = (option: PartnerSignupOption) => {
+  const continueName =
+    selected.code === "EMITRA" && emitraBrandName ? emitraBrandName : selected.name;
+
+  const requestContinue = (option: PartnerSignupOption, brandName?: string | null) => {
     setSelectedCode(option.code);
+    if (option.code !== "EMITRA") {
+      setEmitraBrandName(null);
+    } else if (brandName !== undefined) {
+      setEmitraBrandName(brandName);
+    }
     if (option.status !== "live" || !option.registerPath) return;
     setConfirmOpen(true);
+  };
+
+  const chooseEmitraState = (brand: string) => {
+    setEmitraInfoOpen(false);
+    const emitra = getPartnerSignupOption("EMITRA");
+    if (!emitra) return;
+    // Close the info popover before opening the confirm dialog so focus traps don't clash.
+    window.setTimeout(() => requestContinue(emitra, brand), 0);
   };
 
   const goToOnboarding = () => {
@@ -121,7 +139,7 @@ export default function PartnerRegister() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-sm font-semibold">{option.name}</span>
                       {option.code === "EMITRA" && (
-                        <Popover>
+                        <Popover open={emitraInfoOpen} onOpenChange={setEmitraInfoOpen}>
                           <PopoverTrigger asChild>
                             <button
                               type="button"
@@ -137,6 +155,7 @@ export default function PartnerRegister() {
                             align="start"
                             className="w-[22rem] p-0 sm:w-96"
                             onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
                           >
                             <div className="border-b px-3 py-2.5">
                               <p className="text-sm font-semibold">{t("partner.emitraInfoTitle")}</p>
@@ -145,14 +164,27 @@ export default function PartnerRegister() {
                               </p>
                             </div>
                             <ul className="max-h-72 divide-y overflow-y-auto">
-                              {EMITRA_STATE_BRANDS.map((row) => (
-                                <li key={row.stateEn} className="px-3 py-2">
-                                  <p className="text-xs text-muted-foreground">
-                                    {locale === "hi" ? row.stateHi : row.stateEn}
-                                  </p>
-                                  <p className="text-sm font-medium leading-snug">{row.brand}</p>
-                                </li>
-                              ))}
+                              {EMITRA_STATE_BRANDS.map((row) => {
+                                const isActive = emitraBrandName === row.brand;
+                                return (
+                                  <li key={row.stateEn}>
+                                    <button
+                                      type="button"
+                                      className={cn(
+                                        "w-full px-3 py-2 text-left transition-colors hover:bg-primary/5",
+                                        isActive && "bg-primary/5",
+                                      )}
+                                      aria-label={`${row.stateEn}: ${row.brand}`}
+                                      onClick={() => chooseEmitraState(row.brand)}
+                                    >
+                                      <p className="text-xs text-muted-foreground">
+                                        {locale === "hi" ? row.stateHi : row.stateEn}
+                                      </p>
+                                      <p className="text-sm font-medium leading-snug">{row.brand}</p>
+                                    </button>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </PopoverContent>
                         </Popover>
@@ -180,7 +212,7 @@ export default function PartnerRegister() {
           onClick={() => selected && requestContinue(selected)}
           className="mt-5 h-11 w-full gap-1.5 bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
         >
-          {t("partner.continue", { name: selected.name })}
+          {t("partner.continue", { name: continueName })}
           <ArrowRight className="h-4 w-4" />
         </Button>
 
@@ -199,10 +231,10 @@ export default function PartnerRegister() {
               <Handshake className="h-6 w-6" />
             </div>
             <AlertDialogTitle className="text-center">
-              {t("partner.confirmTitle", { name: selected?.name ?? "Partner" })}
+              {t("partner.confirmTitle", { name: continueName })}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center">
-              {t("partner.confirmBody", { name: selected?.name ?? "partner" })}
+              {t("partner.confirmBody", { name: continueName })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:justify-center">
