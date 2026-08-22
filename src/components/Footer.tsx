@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Mail, Facebook, Twitter, Linkedin, Instagram, ArrowRight, MapPin } from "lucide-react";
+import { Mail, Facebook, Twitter, Linkedin, Instagram, MapPin } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -143,15 +142,10 @@ const Footer = () => {
                 {t("footer.staySub")}
               </p>
               <div className="p-1 rounded-xl bg-white/5 border border-white/10">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder={t("footer.email")}
-                    type="email"
-                    className="h-10 sm:h-11 bg-transparent border-0 text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
-                  />
-                  <Button className="h-10 sm:h-11 px-4 rounded-lg bg-gradient-to-r from-primary to-info hover:opacity-90 gap-1.5 shrink-0 text-sm text-white">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                <div className="h-10 sm:h-11 flex items-center justify-center px-4">
+                  <span className="text-xs sm:text-sm font-medium uppercase tracking-wider text-white/50">
+                    {t("footer.comingSoon")}
+                  </span>
                 </div>
               </div>
             </div>

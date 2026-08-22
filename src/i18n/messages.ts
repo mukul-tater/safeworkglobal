@@ -131,7 +131,7 @@ const en = {
   "footer.legal": "Legal Advice",
   "footer.stay": "Stay Updated",
   "footer.staySub": "Get weekly updates on new opportunities and career insights.",
-  "footer.email": "Enter your email",
+  "footer.comingSoon": "Coming soon",
   "footer.privacy": "Privacy",
   "footer.terms": "Terms",
   "footer.ra":
@@ -297,7 +297,7 @@ const hi: Record<AppMessageKey, string> = {
   "footer.legal": "कानूनी सलाह",
   "footer.stay": "अपडेट रहें",
   "footer.staySub": "नए अवसरों और करियर जानकारी के साप्ताहिक अपडेट पाएँ।",
-  "footer.email": "ईमेल दर्ज करें",
+  "footer.comingSoon": "जल्द आ रहा है",
   "footer.privacy": "गोपनीयता",
   "footer.terms": "नियम",
   "footer.ra":
