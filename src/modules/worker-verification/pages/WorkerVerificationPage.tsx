@@ -1179,7 +1179,13 @@ export default function WorkerVerificationPage({
         <JourneyHero
           stage={stage}
           subheading={heroSubheading}
-          attributionLabel={createdByPartner ? CREATED_BY_PARTNER_LABEL : null}
+          attributionLabel={
+            createdByEmitra
+              ? 'Created by eMitra'
+              : createdByPartner
+                ? CREATED_BY_PARTNER_LABEL
+                : null
+          }
         />
 
         {declaration && (

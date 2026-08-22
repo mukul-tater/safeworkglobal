@@ -10,7 +10,7 @@ import WorkerPreJourneyScreeningModal from "@/modules/worker-verification/compon
 import { useWorkerNavGroups } from "@/modules/worker-registration/hooks/useWorkerNavGroups";
 import { WorkerKioskProvider } from "@/modules/partner/context/WorkerKioskContext";
 import {
-  CREATED_BY_PARTNER_LABEL,
+  createdByAttribution,
   PARTNER_ADD_WORKER_PATH,
   PARTNER_MY_WORKERS_PATH,
   resolvePartnerAddWorkerContext,
@@ -25,10 +25,12 @@ function PartnerAddWorkerShell({
   declarationsDone,
   onDeclarationsDone,
   myWorkersPath,
+  attributionLabel,
 }: {
   declarationsDone: boolean;
   onDeclarationsDone: () => void;
   myWorkersPath: string;
+  attributionLabel: string;
 }) {
   const { navGroups } = useWorkerNavGroups();
 
@@ -36,7 +38,7 @@ function PartnerAddWorkerShell({
     <DashboardLayout
       navGroups={navGroups}
       portalLabel="Worker Portal"
-      portalName="Add Worker"
+      portalName="Worker creation"
       profileMenuItems={workerProfileMenu}
       portalHomePath={myWorkersPath}
     >
@@ -46,15 +48,15 @@ function PartnerAddWorkerShell({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Partner service
             </p>
-            <Badge variant="secondary">{CREATED_BY_PARTNER_LABEL}</Badge>
+            <Badge variant="secondary">{attributionLabel}</Badge>
           </div>
           <h1 className="mt-1 font-heading text-xl font-semibold tracking-tight">
-            {declarationsDone ? "Create their worker login" : "Pre-declaration"}
+            {declarationsDone ? "Worker creation" : "Pre-declaration"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {declarationsDone
-              ? "Name, email, mobile OTP and password. You stay signed in as the partner."
-              : "Complete declarations first, then create the worker login."}
+              ? "Name, email, mobile OTP, and password. You stay signed in as the partner."
+              : "Complete declarations first, then create the worker account."}
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
@@ -87,11 +89,18 @@ export default function PartnerAddWorkerPage() {
   const { user } = useAuth();
   const [declarationsDone, setDeclarationsDone] = useState(hasPartnerDraftDeclarations);
   const [myWorkersPath, setMyWorkersPath] = useState(PARTNER_MY_WORKERS_PATH);
+  const [attributionLabel, setAttributionLabel] = useState("Created by partner");
 
   useEffect(() => {
     if (!user?.id) return;
     void resolvePartnerAddWorkerContext(user.id).then((ctx) => {
       setMyWorkersPath(ctx.myWorkersPath);
+      setAttributionLabel(
+        createdByAttribution({
+          sourceType: ctx.source.type,
+          partnerTypeCode: ctx.partnerTypeCode,
+        }),
+      );
     });
   }, [user?.id]);
 
@@ -112,6 +121,7 @@ export default function PartnerAddWorkerPage() {
         declarationsDone={declarationsDone}
         onDeclarationsDone={() => setDeclarationsDone(true)}
         myWorkersPath={myWorkersPath}
+        attributionLabel={attributionLabel}
       />
     </WorkerKioskProvider>
   );

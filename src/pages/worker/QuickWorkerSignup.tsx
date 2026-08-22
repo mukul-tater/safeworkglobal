@@ -33,7 +33,7 @@ import SEOHead from '@/components/SEOHead';
 import DevOtpHint from '@/components/DevOtpHint';
 import FormStepPills from '@/components/FormStepPills';
 import {
-  CREATED_BY_PARTNER_LABEL,
+  createdByAttribution,
   partnerWorkerJourneyPath,
   resolvePartnerAddWorkerContext,
   type PartnerAddWorkerContext,
@@ -120,6 +120,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
             myWorkersPath: '/partner/my-workers',
             source: { type: 'partner' },
             status: null,
+            partnerTypeCode: null,
           });
           setPartnerCtxLoading(false);
         }
@@ -376,30 +377,35 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
                 </button>
               )}
               <div className="mb-5">
-                <FormStepPills
-                  current={step === 'form' ? 1 : 2}
-                  total={2}
-                  maxReachable={otpReached ? 2 : 1}
-                  onSelect={goToSignupStep}
-                />
-                {partnerAssisted && (
+                {!partnerAssisted && (
+                  <FormStepPills
+                    current={step === 'form' ? 1 : 2}
+                    total={2}
+                    maxReachable={otpReached ? 2 : 1}
+                    onSelect={goToSignupStep}
+                  />
+                )}
+                {partnerAssisted && !embedded && (
                   <Badge variant="secondary" className="mb-2">
-                    {CREATED_BY_PARTNER_LABEL}
+                    {createdByAttribution({
+                      sourceType: partnerCtx?.source.type,
+                      partnerTypeCode: partnerCtx?.partnerTypeCode,
+                    })}
                   </Badge>
                 )}
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
                   {step === 'form'
                     ? partnerAssisted
-                      ? 'Create their worker login'
+                      ? 'Worker creation'
                       : 'Create your worker profile'
                     : partnerAssisted
-                      ? 'Verify the worker mobile'
+                      ? 'Verify worker mobile'
                       : 'Verify your mobile'}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {step === 'form'
                     ? partnerAssisted
-                      ? 'Create their account, then fill their full GCC journey here. You stay signed in as partner. They can also sign in later with this mobile and password.'
+                      ? 'Add the worker’s name, email, mobile, and a password. You stay signed in. They can sign in later with this mobile and password.'
                       : 'Takes about 2 minutes. We’ll SMS a code to confirm your number.'
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>

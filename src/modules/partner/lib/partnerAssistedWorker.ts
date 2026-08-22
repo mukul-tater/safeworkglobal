@@ -9,6 +9,34 @@ export const PARTNER_ADD_WORKER_PATH = "/partner/add-worker";
 export const PARTNER_MY_WORKERS_PATH = "/partner/my-workers";
 export const CREATED_BY_PARTNER_LABEL = "Created by partner";
 
+const PARTNER_TYPE_DISPLAY_NAMES: Record<string, string> = {
+  SEN: "eMitra",
+  SSVN: "SSVN",
+  ITI: "ITI",
+  SRN: "SRN",
+  CONSULTANT: "Consultant",
+  SEN_GLOBAL: "SEN Global",
+};
+
+export function partnerDisplayName(opts: {
+  sourceType?: "emitra" | "partner" | string | null;
+  partnerTypeCode?: string | null;
+}): string {
+  if (opts.sourceType === "emitra") return "eMitra";
+  const code = (opts.partnerTypeCode || "").toUpperCase();
+  if (code === "SEN") return "eMitra";
+  return PARTNER_TYPE_DISPLAY_NAMES[code] || "partner";
+}
+
+/** e.g. "Created by eMitra" / "Created by ITI". */
+export function createdByAttribution(opts: {
+  sourceType?: "emitra" | "partner" | string | null;
+  partnerTypeCode?: string | null;
+}): string {
+  const name = partnerDisplayName(opts);
+  return name === "partner" ? CREATED_BY_PARTNER_LABEL : `Created by ${name}`;
+}
+
 export function partnerWorkerJourneyPath(workerUserId: string) {
   return `/partner/workers/${workerUserId}/journey`;
 }
@@ -37,6 +65,7 @@ export type PartnerAddWorkerContext = {
   myWorkersPath: string;
   source: PartnerWorkerSource;
   status: string | null;
+  partnerTypeCode: string | null;
 };
 
 const BLOCKED_ADD_WORKER_STATUSES = new Set(["rejected", "suspended"]);
@@ -197,9 +226,10 @@ export async function resolvePartnerAddWorkerContext(
   const org = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   const status = (org?.status as string | undefined) ?? emitra?.status ?? null;
   const emitraProfile = !!emitra?.id;
+  const partnerTypeCode = (org?.partner_type_code as string | undefined) || (emitraProfile ? "SEN" : null);
 
   const returnTo =
-    landingForPartnerType(org?.partner_type_code) ||
+    landingForPartnerType(partnerTypeCode) ||
     (emitraProfile ? "/emitra/dashboard" : "/partner/dashboard");
 
   const source: PartnerWorkerSource = emitraProfile
@@ -212,5 +242,6 @@ export async function resolvePartnerAddWorkerContext(
     myWorkersPath: emitraProfile ? "/emitra/my-workers" : "/partner/my-workers",
     source,
     status,
+    partnerTypeCode,
   };
 }

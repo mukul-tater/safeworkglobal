@@ -313,7 +313,7 @@ export default function CompletedStepReview({
 
         {stepId === 'account_details' && (
           <p className="text-sm text-muted-foreground">
-            Worker login (name, email, mobile and password) is set. They can also sign in later with
+            Worker account (name, email, mobile and password) is set. They can also sign in later with
             this mobile and password.
           </p>
         )}

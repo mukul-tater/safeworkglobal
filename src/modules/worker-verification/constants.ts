@@ -225,9 +225,9 @@ export type GccNavStepMeta = {
 
 const ACCOUNT_DETAILS_NAV_STEP: GccNavStepMeta = {
   id: 'account_details',
-  label: 'Worker login',
-  shortLabel: 'Login',
-  navLabel: 'Worker login',
+  label: 'Worker creation',
+  shortLabel: 'Creation',
+  navLabel: 'Worker creation',
   stages: [],
 };
 
