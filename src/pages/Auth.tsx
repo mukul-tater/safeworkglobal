@@ -337,7 +337,7 @@ export default function Auth() {
       },
     });
     setLoading(false);
-    if (!result.ok) {
+    if (result.ok === false) {
       setError(result.error);
       return;
     }

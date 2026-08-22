@@ -59,7 +59,7 @@ export default function ForgotPasswordControl({
     setLoading(true);
     const result = await requestPasswordReset(identifier, { loginPath, resolveAuthEmail });
     setLoading(false);
-    if (!result.ok) {
+    if (result.ok === false) {
       setError(result.error);
       return;
     }
