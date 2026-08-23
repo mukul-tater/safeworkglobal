@@ -86,7 +86,12 @@ interface Props {
   onAdvanced: (next: WorkerVerification) => void;
 }
 
-export default function JourneyJobPicker({ workerUserId, mode, primarySkill, onAdvanced }: Props) {
+export default function JourneyJobPicker({
+  workerUserId,
+  mode,
+  primarySkill,
+  onAdvanced,
+}: Props) {
   const [jobs, setJobs] = useState<JobListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');

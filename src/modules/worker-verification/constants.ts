@@ -403,7 +403,7 @@ export function youtubeEmbedUrl(url: string | null | undefined): string | null {
 }
 
 /**
- * Journey reset control — local / Lovable preview only.
+ * Preview-only shortcuts (skip interview / waive payment).
  * Never on safeworkglobal.com production hosts.
  */
 export function isJourneyResetEnabled(): boolean {

@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
-  Calendar, CreditCard, Stethoscope, RotateCcw, ShieldCheck, Wrench,
+  Calendar, CreditCard, Stethoscope, ShieldCheck, Wrench,
   GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList, Info,
   MapPin, Phone, ExternalLink, Search, Briefcase,
 } from 'lucide-react';
@@ -46,7 +46,6 @@ import {
   getOrCreateVerification,
   loadActiveBondTemplate,
   loadQuizItems,
-  resetVerificationJourney,
   saveEssentials,
   medicalTestDocumentsComplete,
   submitMedicalResult,
@@ -397,7 +396,6 @@ export default function WorkerVerificationPage({
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
-  const [resetting, setResetting] = useState(false);
   const showDevReset = isJourneyResetEnabled();
 
   const [panNumber, setPanNumber] = useState('');
@@ -1043,36 +1041,6 @@ export default function WorkerVerificationPage({
     }
   };
 
-  const onDevResetJourney = async () => {
-    if (!subjectId || !showDevReset) return;
-    if (!window.confirm('DEV ONLY: Reset GCC journey to Essentials and clear quiz/payment/bond progress?')) {
-      return;
-    }
-    setResetting(true);
-    try {
-      const next = await resetVerificationJourney(subjectId);
-      setRow(next);
-      setEmail('');
-      setCity('');
-      setState('');
-      setEducation('');
-      setPrimarySkill('');
-      setQuizItems([]);
-      setQuizAnswers({});
-      setQuizIndex(0);
-      setPhotoCount(0);
-      setVideoCount(0);
-      setSkillId(null);
-      notifyVerificationUpdated();
-      toast.success('Journey reset to Essentials (dev)');
-      await load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Reset failed');
-    } finally {
-      setResetting(false);
-    }
-  };
-
   if (loading) {
     return (
       <JourneyShell embedded={embedded}>
@@ -1131,19 +1099,6 @@ export default function WorkerVerificationPage({
               <Link to="/worker/dashboard">Go to dashboard</Link>
             </Button>
               </>
-            )}
-            {showDevReset && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="border border-dashed border-amber-500/50 text-amber-700"
-                disabled={resetting}
-                onClick={() => void onDevResetJourney()}
-              >
-                {resetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                Dev: reset journey
-              </Button>
             )}
           </StageResultShell>
         </div>
@@ -2699,28 +2654,6 @@ export default function WorkerVerificationPage({
 
           <aside className="space-y-4 lg:sticky lg:top-6">
             <JourneySupportPanel stage={stage} />
-            {showDevReset && (
-              <div className="rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5 p-3">
-                <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                  Dev / preview only — hidden on safeworkglobal.com
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="mt-2 h-8 w-full border-amber-500/40 text-amber-700 dark:text-amber-300"
-                  disabled={resetting}
-                  onClick={() => void onDevResetJourney()}
-                >
-                  {resetting ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                  ) : (
-                    <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                  )}
-                  Reset journey
-                </Button>
-              </div>
-            )}
           </aside>
         </div>
       </div>
