@@ -13,6 +13,7 @@ import {
   completeFindJobsStep,
   listAppliedJobIds,
   listFavouriteJobIds,
+  skipJobStepsToQuiz,
   toggleFavouriteJob,
 } from '@/modules/worker-verification/services/jobJourneyService';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
@@ -27,31 +28,53 @@ function inferCategory(title: string, description: string): string {
 async function fetchActiveJobs(): Promise<JobListItem[]> {
   const { data, error } = await supabase
     .from('jobs')
-    .select('*, job_skills (skill_name)')
+    .select('*')
     .eq('status', 'ACTIVE')
-    .order('posted_at', { ascending: false })
+    .order('posted_at', { ascending: false, nullsFirst: false })
     .limit(80);
   if (error) throw new Error(error.message);
 
-  const employerIds = [...new Set((data || []).map((job: { employer_id: string }) => job.employer_id).filter(Boolean))];
+  const rows = data || [];
+  const jobIds = rows.map((job: { id: string }) => job.id);
+  const employerIds = [
+    ...new Set(rows.map((job: { employer_id: string }) => job.employer_id).filter(Boolean)),
+  ];
+
   const companyMap = new Map<string, { name: string; logoUrl: string | null }>();
+  const skillsByJob = new Map<string, string[]>();
+
   if (employerIds.length > 0) {
     const { data: companies } = await supabase
       .from('employer_company_info' as never)
       .select('user_id, company_name, company_logo_url')
       .in('user_id', employerIds);
-    (companies || []).forEach((company: { user_id: string; company_name: string; company_logo_url: string | null }) => {
-      companyMap.set(company.user_id, {
-        name: company.company_name,
-        logoUrl: company.company_logo_url ?? null,
-      });
+    (companies || []).forEach(
+      (company: { user_id: string; company_name: string; company_logo_url: string | null }) => {
+        companyMap.set(company.user_id, {
+          name: company.company_name,
+          logoUrl: company.company_logo_url ?? null,
+        });
+      },
+    );
+  }
+
+  if (jobIds.length > 0) {
+    const { data: skillRows } = await supabase
+      .from('job_skills')
+      .select('job_id, skill_name')
+      .in('job_id', jobIds);
+    (skillRows || []).forEach((row: { job_id: string; skill_name: string }) => {
+      const list = skillsByJob.get(row.job_id) ?? [];
+      list.push(row.skill_name);
+      skillsByJob.set(row.job_id, list);
     });
   }
 
-  return (data || []).map((job: Record<string, unknown>) => {
+  return rows.map((job: Record<string, unknown>) => {
     const company = companyMap.get(String(job.employer_id));
     const description = String(job.description ?? '');
-    const skills = ((job.job_skills as { skill_name: string }[]) || []).map((s) => s.skill_name);
+    const skills = skillsByJob.get(String(job.id)) ?? [];
+    const postedRaw = job.posted_at ?? job.created_at;
     return {
       id: String(job.id),
       slug: String(job.slug || job.id),
@@ -70,7 +93,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       category: inferCategory(String(job.title), description),
       experienceLevel: String(job.experience_level ?? ''),
       visaSponsorship: Boolean(job.visa_sponsorship),
-      postedAt: new Date(String(job.posted_at)),
+      postedAt: postedRaw ? new Date(String(postedRaw)) : new Date(),
       description: description.length > 180 ? `${description.slice(0, 180).trimEnd()}…` : description,
       skills,
     };
@@ -95,7 +118,7 @@ export default function JourneyJobPicker({
   const [jobs, setJobs] = useState<JobListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
-  const [favouritesOnly, setFavouritesOnly] = useState(mode === 'apply');
+  const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [pendingSaveId, setPendingSaveId] = useState<string | null>(null);
@@ -115,12 +138,17 @@ export default function JourneyJobPicker({
     let cancelled = false;
     void (async () => {
       try {
-        const [list] = await Promise.all([fetchActiveJobs(), reloadMeta()]);
+        const list = await fetchActiveJobs();
         if (!cancelled) setJobs(list);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Could not load jobs');
       } finally {
         if (!cancelled) setLoading(false);
+      }
+      try {
+        await reloadMeta();
+      } catch {
+        // Favourites / applied metadata must not hide the job list.
       }
     })();
     return () => {
@@ -130,7 +158,7 @@ export default function JourneyJobPicker({
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return jobs.filter((job) => {
+    const filtered = jobs.filter((job) => {
       if (favouritesOnly && !savedIds.has(job.id)) return false;
       if (!q) return true;
       return (
@@ -140,7 +168,15 @@ export default function JourneyJobPicker({
         job.skills.some((s) => s.toLowerCase().includes(q))
       );
     });
-  }, [jobs, query, favouritesOnly, savedIds]);
+    if (mode === 'apply' && !favouritesOnly) {
+      return [...filtered].sort((a, b) => Number(savedIds.has(b.id)) - Number(savedIds.has(a.id)));
+    }
+    return filtered;
+  }, [jobs, query, favouritesOnly, savedIds, mode]);
+
+  const alreadyApplied = appliedIds.size > 0;
+  const canSkipEmptyApply = mode === 'apply' && jobs.length === 0;
+  const canContinueAfterApply = mode === 'apply' && alreadyApplied;
 
   const onToggleSave = async (job: JobListItem) => {
     setPendingSaveId(job.id);
@@ -189,7 +225,22 @@ export default function JourneyJobPicker({
   const onContinueFind = async () => {
     setContinuing(true);
     try {
-      const next = await completeFindJobsStep(workerUserId);
+      const next =
+        jobs.length === 0
+          ? await skipJobStepsToQuiz(workerUserId)
+          : await completeFindJobsStep(workerUserId);
+      onAdvanced(next);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not continue');
+    } finally {
+      setContinuing(false);
+    }
+  };
+
+  const onContinueToTest1 = async () => {
+    setContinuing(true);
+    try {
+      const next = await skipJobStepsToQuiz(workerUserId);
       onAdvanced(next);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not continue');
@@ -206,6 +257,21 @@ export default function JourneyJobPicker({
       </div>
     );
   }
+
+  const emptyMessage = (() => {
+    if (jobs.length === 0) {
+      return mode === 'apply'
+        ? 'No live job postings yet. Continue to Test 1 — it will use your primary skill from Essentials.'
+        : 'No live job postings yet. You can continue; Test 1 will use your primary skill from Essentials.';
+    }
+    if (favouritesOnly) {
+      return 'No favourite jobs yet. Turn off Favourites to see all live jobs, or tap the bookmark on a job to save it.';
+    }
+    if (query.trim()) {
+      return 'No matching jobs right now. Try a different search.';
+    }
+    return 'No matching jobs right now.';
+  })();
 
   return (
     <div className="space-y-4">
@@ -230,12 +296,24 @@ export default function JourneyJobPicker({
         </Button>
       </div>
 
-      {visible.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+      {jobs.length > 0 && (
+        <p className="text-xs text-muted-foreground">
           {favouritesOnly
-            ? 'No favourite jobs yet. Tap the bookmark on a job to save it here.'
-            : 'No matching jobs right now. Try a different search.'}
+            ? `${visible.length} favourite ${visible.length === 1 ? 'job' : 'jobs'}`
+            : `${visible.length} live ${visible.length === 1 ? 'job' : 'jobs'}`}
+          {query.trim() ? ' matching your search' : ''}
         </p>
+      )}
+
+      {visible.length === 0 ? (
+        <div className="space-y-3 rounded-xl border border-dashed border-border px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+          {favouritesOnly && jobs.length > 0 && (
+            <Button type="button" variant="outline" onClick={() => setFavouritesOnly(false)}>
+              Show all jobs
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="space-y-3">
           {visible.map((job) => {
@@ -280,7 +358,16 @@ export default function JourneyJobPicker({
         <div className="flex justify-end pt-2">
           <Button onClick={() => void onContinueFind()} disabled={continuing}>
             {continuing && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            Continue to apply
+            {jobs.length === 0 ? 'Continue to Test 1' : 'Continue to apply'}
+          </Button>
+        </div>
+      )}
+
+      {(canSkipEmptyApply || canContinueAfterApply) && (
+        <div className="flex justify-end pt-2">
+          <Button onClick={() => void onContinueToTest1()} disabled={continuing}>
+            {continuing && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+            Continue to Test 1
           </Button>
         </div>
       )}

@@ -20,6 +20,34 @@ export async function completeFindJobsStep(userId: string): Promise<WorkerVerifi
   return data as WorkerVerification;
 }
 
+/** Advance Find/Apply to Test 1 when there are no live jobs, or the worker already applied. */
+export async function skipJobStepsToQuiz(userId: string): Promise<WorkerVerification> {
+  const row = await getOrCreateVerification(userId);
+  if (row.stage !== 'find_jobs' && row.stage !== 'apply_job') {
+    return row as WorkerVerification;
+  }
+
+  const patch: Record<string, unknown> = {
+    stage: 'quiz',
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!row.journey_job_id) {
+    const applied = await listAppliedJobIds(userId);
+    const first = applied.values().next().value as string | undefined;
+    if (first) patch.journey_job_id = first;
+  }
+
+  const { data, error } = await supabase
+    .from('worker_verification')
+    .update(patch)
+    .eq('id', row.id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as WorkerVerification;
+}
+
 export async function applyToJobForJourney(opts: {
   jobId: string;
   workerUserId: string;
@@ -86,7 +114,7 @@ export async function listFavouriteJobIds(workerUserId: string): Promise<Set<str
     .from('saved_jobs')
     .select('job_id')
     .eq('user_id', workerUserId);
-  if (error) throw new Error(error.message);
+  if (error) return new Set();
   return new Set((data || []).map((row: { job_id: string }) => row.job_id));
 }
 
@@ -95,6 +123,6 @@ export async function listAppliedJobIds(workerUserId: string): Promise<Set<strin
     .from('job_applications')
     .select('job_id')
     .eq('worker_id', workerUserId);
-  if (error) throw new Error(error.message);
+  if (error) return new Set();
   return new Set((data || []).map((row: { job_id: string }) => row.job_id));
 }

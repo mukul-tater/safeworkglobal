@@ -1351,16 +1351,22 @@ export default function WorkerVerificationPage({
             icon={Search}
             title="Find jobs"
             description="Browse overseas openings, favourite the ones that fit, then continue to apply. Test 1 will match the job you apply to."
-            timeEstimate="Browse and save favourites"
+            timeEstimate="Browse jobs — you can continue even if none are live yet"
           >
             <JourneyJobPicker
               workerUserId={subjectId}
               mode="find"
               primarySkill={row.primary_skill}
-              onAdvanced={(next) => {
+              onAdvanced={async (next) => {
                 setRow(next);
                 notifyVerificationUpdated();
                 clearJourneyQuery();
+                if (next.stage === 'quiz' && next.primary_skill) {
+                  const items = await loadQuizItems(next.primary_skill, next.state);
+                  setQuizItems(items);
+                  setQuizIndex(0);
+                  setQuizAnswers({});
+                }
               }}
             />
           </StageActionShell>
@@ -1370,8 +1376,8 @@ export default function WorkerVerificationPage({
           <StageActionShell
             icon={Briefcase}
             title="Apply to a job"
-            description="Apply to one job to unlock Test 1. The work quiz uses that job’s trade."
-            timeEstimate="One application required"
+            description="Apply to one live job to unlock Test 1. The work quiz uses that job’s trade. If no jobs are listed yet, you can continue with your primary skill."
+            timeEstimate="One application when jobs are live"
           >
             <JourneyJobPicker
               workerUserId={subjectId}
