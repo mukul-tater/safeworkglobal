@@ -49,6 +49,7 @@ export default function SearchSelect({
   };
 
   return (
+    <div className="min-w-0 w-full">
     <Popover
       open={open}
       onOpenChange={(next) => {
@@ -64,7 +65,7 @@ export default function SearchSelect({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className="h-10 w-full justify-between font-normal"
+          className="h-10 w-full min-w-0 max-w-full justify-between font-normal"
         >
           <span className={cn('truncate', !value && 'text-muted-foreground')}>{value || placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -106,5 +107,6 @@ export default function SearchSelect({
         </Command>
       </PopoverContent>
     </Popover>
+    </div>
   );
 }

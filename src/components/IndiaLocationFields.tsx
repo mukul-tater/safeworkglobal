@@ -41,7 +41,7 @@ function FieldWrap({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <Label className="text-sm font-medium">
         {label}
         {required ? <span className="ml-0.5 text-destructive">*</span> : null}

@@ -129,12 +129,12 @@ export default function PartnerDocUpload({
   const hasFile = !!value || !!pendingFile;
 
   return (
-    <div className="space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <Label className="text-sm font-medium">
         {label}
         {required && <span className="text-destructive ml-0.5">*</span>}
       </Label>
-      <div className={`border-2 border-dashed rounded-lg p-4 transition-colors ${hasFile ? "border-success bg-success/5" : "border-muted"}`}>
+      <div className={`min-w-0 overflow-hidden rounded-lg border-2 border-dashed p-3 transition-colors sm:p-4 ${hasFile ? "border-success bg-success/5" : "border-muted"}`}>
         <input
           ref={inputRef}
           type="file"
@@ -143,20 +143,30 @@ export default function PartnerDocUpload({
           onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
         />
         {hasFile ? (
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-4 w-4 text-success" />
-              <span className="truncate max-w-[200px]">{value ? "Uploaded" : pendingFile?.name || "Selected"}</span>
-              {previewUrl && <a href={previewUrl} target="_blank" rel="noreferrer" className="text-primary underline text-xs">Preview</a>}
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+              <span className="min-w-0 truncate">{value ? "Uploaded" : pendingFile?.name || "Selected"}</span>
+              {previewUrl && (
+                <a href={previewUrl} target="_blank" rel="noreferrer" className="shrink-0 text-xs text-primary underline">
+                  Preview
+                </a>
+              )}
             </div>
-            <Button type="button" size="sm" variant="ghost" onClick={clear}>
+            <Button type="button" size="sm" variant="ghost" className="shrink-0" onClick={clear}>
               <X className="h-4 w-4" />
             </Button>
           </div>
         ) : (
-          <Button type="button" variant="outline" className="w-full" disabled={uploading} onClick={() => inputRef.current?.click()}>
-            {uploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-            {uploading ? "Uploading…" : `Upload ${label}`}
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto min-h-11 w-full min-w-0 whitespace-normal px-3 py-2 text-sm font-medium leading-snug"
+            disabled={uploading}
+            onClick={() => inputRef.current?.click()}
+          >
+            {uploading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <Upload className="h-4 w-4 shrink-0" />}
+            <span className="min-w-0 text-left">{uploading ? "Uploading…" : "Choose file"}</span>
           </Button>
         )}
       </div>

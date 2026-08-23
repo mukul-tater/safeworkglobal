@@ -28,13 +28,13 @@ export default function AuthSplitLayout({
   uncarded?: boolean;
 }) {
   return (
-    <div className="fixed inset-0 overflow-hidden bg-muted/40">
-      <div className="flex h-full flex-col pb-16 md:h-full md:flex-row md:pb-0">
+    <div className="min-h-dvh bg-muted/40 has-mobile-nav md:h-dvh md:overflow-hidden md:pb-0">
+      <div className="flex min-h-dvh flex-col md:h-full md:flex-row">
         <SignupJourneyPanel audience={audience} variant={variant} activeStep={activeStep} />
 
         <main
           className={cn(
-            'relative flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5 sm:px-8 md:px-8 lg:px-12',
+            'relative flex min-h-0 flex-1 flex-col px-4 py-5 sm:px-8 md:overflow-y-auto md:px-8 lg:px-12',
             centerVertically ? 'justify-start sm:justify-center' : 'justify-start',
           )}
         >

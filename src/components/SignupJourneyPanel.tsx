@@ -163,7 +163,7 @@ export default function SignupJourneyPanel({
     : copy.body;
 
   return (
-    <aside className="relative flex shrink-0 flex-col overflow-hidden bg-[hsl(230_25%_10%)] text-white md:h-full md:w-[44%] lg:w-[46%]">
+    <aside className="relative flex w-full min-w-0 shrink-0 flex-col overflow-hidden bg-[hsl(230_25%_10%)] text-white md:h-full md:w-[44%] lg:w-[46%]">
       <div
         className="pointer-events-none absolute inset-0"
         aria-hidden
@@ -186,21 +186,23 @@ export default function SignupJourneyPanel({
             {mobileBadge}
           </span>
         </div>
-        <div className="px-4 pb-3 pt-3">
-          <p className="font-heading text-base font-bold leading-snug">{headline}</p>
-          <div className={`mt-3 grid gap-1.5 ${copy.steps.length >= 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        <div className="px-4 pb-2.5 pt-2">
+          <p className="font-heading text-sm font-bold leading-snug line-clamp-2">{headline}</p>
+          <p className="mt-2 text-xs text-white/65">
+            Step {copy.steps[activeStep]?.n} of {copy.steps.length}
+            <span className="text-white"> · {copy.steps[activeStep]?.title}</span>
+          </p>
+          <ol className="mt-2 flex gap-1.5" aria-hidden>
             {copy.steps.map((step, i) => (
-              <div
-                key={step.n}
-                className={`rounded-lg border px-2 py-2 text-center ${
-                  i === activeStep ? 'border-primary/50 bg-primary/20' : 'border-white/10 bg-white/5'
-                }`}
-              >
-                <p className="text-[10px] font-bold text-white">{step.title}</p>
-                <p className="mt-0.5 text-[9px] text-white/50">Step {step.n}</p>
-              </div>
+              <li key={step.n} className="min-w-0 flex-1">
+                <div
+                  className={`h-1.5 rounded-full ${
+                    i <= activeStep ? 'bg-primary' : 'bg-white/20'
+                  }`}
+                />
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </div>
 

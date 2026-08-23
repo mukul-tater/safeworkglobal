@@ -394,7 +394,7 @@ export default function EmitraRegisterPage() {
           <Progress value={progress} className="h-1.5 bg-muted" />
         </div>
         <div className="px-3 py-4 sm:px-5 overflow-x-auto">
-          <div className="flex min-w-[520px] sm:min-w-0 items-start justify-between gap-1">
+          <div className="flex min-w-0 items-start justify-between gap-1">
             {STEPS.map((s, idx) => {
               const Icon = s.icon;
               const done = step > s.id;

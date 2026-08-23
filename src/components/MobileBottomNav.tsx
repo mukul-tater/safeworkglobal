@@ -24,12 +24,12 @@ export default function MobileBottomNav() {
 
   return (
     <>
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-lg safe-area-bottom">
-        <div className="flex items-center justify-around h-16 px-2">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 overflow-x-hidden bg-card/95 backdrop-blur-md border-t border-border shadow-lg safe-area-bottom">
+        <div className="flex min-w-0 items-center justify-around h-16 px-1">
           <Link
             to="/"
             className={cn(
-              "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-200",
+              "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden transition-all duration-200",
               location.pathname === "/"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground active:scale-95",
@@ -38,13 +38,13 @@ export default function MobileBottomNav() {
             <div className={cn("p-1.5 rounded-xl transition-colors", location.pathname === "/" && "bg-primary/10")}>
               <Home className={cn("h-5 w-5", location.pathname === "/" && "stroke-[2.5]")} />
             </div>
-            <span className="text-[10px] font-medium">{t("nav.home")}</span>
+            <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight">{t("nav.home")}</span>
           </Link>
 
           <Link
             to="/jobs"
             className={cn(
-              "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-200",
+              "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden transition-all duration-200",
               location.pathname === "/jobs"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground active:scale-95",
@@ -53,14 +53,14 @@ export default function MobileBottomNav() {
             <div className={cn("p-1.5 rounded-xl transition-colors", location.pathname === "/jobs" && "bg-primary/10")}>
               <Search className={cn("h-5 w-5", location.pathname === "/jobs" && "stroke-[2.5]")} />
             </div>
-            <span className="text-[10px] font-medium">{t("nav.jobs")}</span>
+            <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight">{t("nav.jobs")}</span>
           </Link>
 
           {isAuthenticated ? (
             <Link
               to="/dashboard"
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-200",
+                "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden transition-all duration-200",
                 location.pathname === "/dashboard"
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground active:scale-95",
@@ -69,14 +69,14 @@ export default function MobileBottomNav() {
               <div className={cn("p-1.5 rounded-xl transition-colors", location.pathname === "/dashboard" && "bg-primary/10")}>
                 <User className={cn("h-5 w-5", location.pathname === "/dashboard" && "stroke-[2.5]")} />
               </div>
-              <span className="text-[10px] font-medium">{t("nav.account")}</span>
+              <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight">{t("nav.account")}</span>
             </Link>
           ) : (
             <button
               type="button"
               onClick={() => setGetStartedOpen(true)}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-200",
+                "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden transition-all duration-200",
                 getStartedActive
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground active:scale-95",
@@ -85,7 +85,9 @@ export default function MobileBottomNav() {
               <div className={cn("p-1.5 rounded-xl transition-colors", getStartedActive && "bg-primary/10")}>
                 <User className={cn("h-5 w-5", getStartedActive && "stroke-[2.5]")} />
               </div>
-              <span className="text-[10px] font-medium">{t("header.getStarted")}</span>
+            <span className="max-w-full px-0.5 text-center text-[10px] font-medium leading-tight whitespace-normal">
+              {t("header.getStarted")}
+            </span>
             </button>
           )}
 
@@ -93,12 +95,12 @@ export default function MobileBottomNav() {
             <button
               type="button"
               onClick={handleLogout}
-              className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full text-muted-foreground hover:text-destructive active:scale-95 transition-all duration-200"
+              className="flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden text-muted-foreground transition-all duration-200 hover:text-destructive active:scale-95"
             >
               <div className="p-1.5 rounded-xl">
                 <LogOut className="h-5 w-5" />
               </div>
-              <span className="text-[10px] font-medium">{t("nav.logout")}</span>
+              <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight">{t("nav.logout")}</span>
             </button>
           )}
         </div>

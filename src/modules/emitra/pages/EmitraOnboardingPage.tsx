@@ -653,9 +653,9 @@ export default function EmitraOnboardingPage() {
       activeStep={1}
       maxWidthClassName="max-w-2xl"
       centerVertically={false}
-      cardClassName="overflow-hidden p-0 sm:p-0"
+      cardClassName="overflow-x-hidden p-0 sm:p-0"
     >
-      <div className="px-5 pt-5 md:px-7 md:pt-6">
+      <div className="min-w-0 px-5 pt-5 md:px-7 md:pt-6">
           <div className="mb-4">
             <FormStepPills
               current={2}
@@ -665,8 +665,8 @@ export default function EmitraOnboardingPage() {
                 if (n === 1) navigate('/partner/register');
               }}
             />
-            <div className="flex items-start justify-between gap-3">
-              <div>
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
                   E-Mitra partner onboarding
                 </h2>
@@ -699,7 +699,7 @@ export default function EmitraOnboardingPage() {
             </span>
           </div>
           <Progress value={progress} className="h-2 mb-4" />
-          <div className="flex justify-between gap-1 text-[10px] sm:text-xs text-muted-foreground mb-2">
+          <div className="mb-2 grid min-w-0 grid-cols-3 gap-1 text-[10px] text-muted-foreground sm:text-xs">
             {STEPS.map((s) => {
               const canGo = s.id !== step && s.id <= maxReached;
               return (
@@ -709,9 +709,9 @@ export default function EmitraOnboardingPage() {
                   disabled={!canGo}
                   aria-current={step === s.id ? 'step' : undefined}
                   onClick={() => canGo && setStep(s.id)}
-                  className={`${
+                  className={`min-w-0 truncate px-0.5 text-center disabled:cursor-default ${
                     step === s.id ? 'text-primary font-medium' : step > s.id ? 'text-foreground' : ''
-                  } disabled:cursor-default ${canGo ? 'hover:text-primary' : ''}`}
+                  } ${canGo ? 'hover:text-primary' : ''}`}
                 >
                   {s.title.split(' ')[0]}
                 </button>
@@ -720,12 +720,12 @@ export default function EmitraOnboardingPage() {
           </div>
         </div>
 
-        <div className="px-5 py-5 md:px-7 md:py-6 space-y-5">
+        <div className="min-w-0 space-y-5 px-5 py-5 md:px-7 md:py-6">
           {step === 1 && (
             <div className="space-y-8">
               <section className="space-y-4">
                 <h3 className="text-sm font-semibold text-foreground">Centre Details</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                   <Field label="Centre / Shop Name" error={errors.center_name} required>
                     <Input
                       value={data.center_name || ''}
@@ -799,7 +799,7 @@ export default function EmitraOnboardingPage() {
 
               <section className="space-y-4">
                 <h3 className="text-sm font-semibold text-foreground">Owner Details</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                   <Field label="Date of Birth" error={errors.date_of_birth} required>
                     <Input
                       type="date"
@@ -816,8 +816,8 @@ export default function EmitraOnboardingPage() {
                     />
                   </Field>
                   <Field label="Mobile / WhatsApp Number" error={errors.mobile || errors.mobile_verified} required className="sm:col-span-2">
-                    <div className="flex gap-2">
-                      <div className="flex flex-1">
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                      <div className="flex min-w-0 w-full flex-1">
                         <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
                           +91
                         </span>
@@ -827,7 +827,7 @@ export default function EmitraOnboardingPage() {
                           value={data.mobile || ''}
                           onChange={(e) => setMobile(e.target.value)}
                           disabled={mobileVerified || !!continuePrefill.mobile}
-                          className="rounded-l-none"
+                          className="min-w-0 rounded-l-none"
                           placeholder="10-digit Indian mobile"
                         />
                       </div>
@@ -838,7 +838,7 @@ export default function EmitraOnboardingPage() {
                           id={otpStep ? undefined : WORKER_OTP_RECAPTCHA_BTN_ID}
                           type="button"
                           variant="secondary"
-                          className="h-10 shrink-0 px-4"
+                          className="h-10 w-full shrink-0 px-4 sm:w-auto"
                           onClick={() => void requestMobileOtp()}
                           disabled={otpBusy || otpStep}
                         >
@@ -935,7 +935,7 @@ export default function EmitraOnboardingPage() {
             <div className="space-y-8">
               <section className="space-y-4">
                 <h3 className="text-sm font-semibold text-foreground">Identity</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                   <Field label="Aadhaar / Government ID" error={errors.aadhaar_number}>
                     <Input
                       inputMode="numeric"
@@ -958,7 +958,7 @@ export default function EmitraOnboardingPage() {
 
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold text-foreground">Upload</h3>
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                   <DocField
                     label="ID Proof"
                     field="id-proof"
@@ -1055,8 +1055,8 @@ export default function EmitraOnboardingPage() {
                   />
                 </Field>
                 <Field label="Mobile" error={errors.mobile} required>
-                  <div className="flex gap-2">
-                    <div className="flex flex-1">
+                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="flex min-w-0 w-full flex-1">
                       <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
                         +91
                       </span>
@@ -1066,7 +1066,7 @@ export default function EmitraOnboardingPage() {
                         value={data.mobile || ''}
                         onChange={(e) => setMobile(e.target.value)}
                         disabled={agreementAccepted}
-                        className="rounded-l-none"
+                        className="min-w-0 rounded-l-none"
                         placeholder="XXXXX XXXXX"
                       />
                     </div>
@@ -1077,7 +1077,7 @@ export default function EmitraOnboardingPage() {
                         id={agreementOtpStep ? undefined : WORKER_OTP_RECAPTCHA_BTN_ID}
                         type="button"
                         variant="secondary"
-                        className="h-10 shrink-0 px-4"
+                        className="h-10 w-full shrink-0 px-4 sm:w-auto"
                         onClick={() => void requestOtp()}
                         disabled={agreementOtpBusy || agreementOtpStep}
                       >
@@ -1156,11 +1156,11 @@ export default function EmitraOnboardingPage() {
           )}
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-border bg-muted/20 px-5 py-5 sm:flex-row sm:justify-between md:px-7">
+        <div className="flex min-w-0 flex-col gap-3 border-t border-border bg-muted/20 px-5 py-5 sm:flex-row sm:justify-between md:px-7">
           <Button
             type="button"
             variant="outline"
-            className="h-11"
+            className="h-11 w-full sm:w-auto"
             onClick={() => setStep((s) => Math.max(1, s - 1))}
             disabled={step === 1 || saving}
           >
@@ -1169,7 +1169,7 @@ export default function EmitraOnboardingPage() {
           {step < STEPS.length ? (
             <Button
               type="button"
-              className="h-11 bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+              className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95 sm:w-auto"
               onClick={() => void handleNext()}
               disabled={saving}
             >
@@ -1179,7 +1179,7 @@ export default function EmitraOnboardingPage() {
           ) : (
             <Button
               type="button"
-              className="h-11 bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+              className="h-auto min-h-11 w-full whitespace-normal bg-gradient-to-r from-primary to-info px-4 py-2 font-semibold leading-snug text-white hover:opacity-95 sm:w-auto"
               onClick={() => void handleSubmit()}
               disabled={saving || !agreementAccepted}
             >
@@ -1221,7 +1221,7 @@ function Field({
   className?: string;
 }) {
   return (
-    <div className={`space-y-1.5 ${className || ''}`}>
+    <div className={`min-w-0 space-y-1.5 ${className || ''}`}>
       <Label className="text-sm font-medium">
         {label}
         {required && <span className="text-destructive ml-0.5">*</span>}
@@ -1294,7 +1294,7 @@ function DocField({
   onPendingFile?: (file: File | null) => void;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <PartnerDocUpload
         label={label}
         field={field}
