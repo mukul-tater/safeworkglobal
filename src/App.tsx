@@ -167,9 +167,9 @@ function AppShell() {
           {legacyPublicRoutes}
 
           {/* Worker auth — dedicated pages (legacy Supabase flow) */}
-          <Route path="/register" element={<Navigate to="/worker/quick-signup" replace />} />
+          <Route path="/register" element={<Navigate to="/worker/login" replace />} />
           <Route path="/login" element={<Navigate to="/worker/login" replace />} />
-          <Route path="/worker-start" element={<Navigate to="/worker/quick-signup" replace />} />
+          <Route path="/worker-start" element={<Navigate to="/worker/login" replace />} />
           <Route path="/home" element={<Navigate to="/worker/dashboard" replace />} />
           <Route path="/onboarding" element={<Navigate to="/worker/journey" replace />} />
 

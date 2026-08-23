@@ -41,7 +41,7 @@ export default function AccessDenied() {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
-              <Button onClick={() => navigate("/auth", { replace: true })} className="w-full">
+              <Button onClick={() => navigate("/worker/login", { replace: true })} className="w-full">
                 Sign in
               </Button>
             )}

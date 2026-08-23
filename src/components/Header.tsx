@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, Search, Globe, User, Bell, X, LogOut, ChevronRight, HardHat, Briefcase, Handshake, CircleHelp } from "lucide-react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Menu, Search, Globe, User, Bell, X, LogOut, ChevronRight, CircleHelp } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import BrandLockup from "@/components/BrandLockup";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
+import GetStartedChoices from "@/components/GetStartedChoices";
 import { useI18n } from "@/i18n";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -16,7 +17,6 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { isAuthenticated, profile, role, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const { t } = useI18n();
 
@@ -110,6 +110,7 @@ const Header = () => {
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-3">
               <div className={`flex items-center gap-3 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
+              <AboutLanguageToggle variant={overlaysHomeHero ? "onDark" : "default"} className="w-[9rem]" />
               <ThemeToggle />
               {isAuthenticated ? (
                 <>
@@ -147,45 +148,7 @@ const Header = () => {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-72 p-3">
-                    <p className="text-xs font-semibold text-muted-foreground mb-2 px-1">
-                      {t("header.iWantTo")}
-                    </p>
-                    <button
-                      onClick={() => navigate('/worker/login')}
-                      className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors"
-                    >
-                      <div className="p-2 rounded-lg bg-success/10 text-success">
-                        <HardHat className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-sm">{t("header.findJob")}</div>
-                        <div className="text-xs text-muted-foreground">{t("header.findJobSub")}</div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => navigate('/employer/login')}
-                      className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors mt-1"
-                    >
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <Briefcase className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-sm">{t("header.hire")}</div>
-                        <div className="text-xs text-muted-foreground">{t("header.hireSub")}</div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => navigate('/partner/register')}
-                      className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors mt-1"
-                    >
-                      <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                        <Handshake className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-sm">{t("header.partner")}</div>
-                        <div className="text-xs text-muted-foreground">{t("header.partnerSub")}</div>
-                      </div>
-                    </button>
+                    <GetStartedChoices />
                   </PopoverContent>
                 </Popover>
               )}
@@ -194,7 +157,20 @@ const Header = () => {
 
             {/* Mobile Actions */}
             <div className="flex items-center gap-1 md:hidden">
-              <div className={`flex items-center ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
+              <div className={`flex items-center gap-1 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
+              {!isAuthenticated && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="default" size="sm" className="h-9 gap-1.5 px-2.5 text-xs">
+                      <User className="h-3.5 w-3.5" />
+                      {t("header.getStarted")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-72 p-3">
+                    <GetStartedChoices />
+                  </PopoverContent>
+                </Popover>
+              )}
               <ThemeToggle />
             {/* Mobile Menu Toggle */}
             <Button 
@@ -257,68 +233,34 @@ const Header = () => {
                 </Link>
               ))}
               
-              {/* Mobile Auth Section */}
-              <div className="pt-6 mt-6 border-t border-border">
-                {isAuthenticated ? (
-                  <div className="space-y-3">
-                    <Link 
-                      to="/dashboard" 
-                      onClick={closeMobileMenu}
-                      className="flex items-center gap-3 px-4 py-4 rounded-xl bg-primary/5 text-primary"
-                    >
-                      <Avatar className="h-10 w-10 border-2 border-primary/20">
-                        <AvatarImage src={profile?.avatar_url || undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                          {profile?.full_name?.[0] || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold">{profile?.full_name || t("header.myAccount")}</p>
-                        <p className="text-sm text-muted-foreground">{t("header.goDashboard")}</p>
-                      </div>
-                    </Link>
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-center gap-2 text-destructive border-destructive/30 hover:bg-destructive/5"
-                      onClick={handleLogout}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {t("header.signOut")}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground px-1">{t("header.iWantTo")}</p>
-                    <Button
-                      variant="default"
-                      size="lg"
-                      className="w-full justify-start gap-3"
-                      onClick={() => { navigate('/worker/login'); closeMobileMenu(); }}
-                    >
-                      <HardHat className="h-4 w-4" />
-                      {t("header.findJobCta")}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="lg"
-                      className="w-full justify-start gap-3"
-                      onClick={() => { navigate('/employer/login'); closeMobileMenu(); }}
-                    >
-                      <Briefcase className="h-4 w-4" />
-                      {t("header.hireCta")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="w-full justify-start gap-3"
-                      onClick={() => { navigate('/partner/register'); closeMobileMenu(); }}
-                    >
-                      <Handshake className="h-4 w-4" />
-                      {t("header.partner")}
-                    </Button>
-                  </div>
-                )}
-              </div>
+              {isAuthenticated && (
+                <div className="pt-6 mt-6 border-t border-border space-y-3">
+                  <Link
+                    to="/dashboard"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-3 px-4 py-4 rounded-xl bg-primary/5 text-primary"
+                  >
+                    <Avatar className="h-10 w-10 border-2 border-primary/20">
+                      <AvatarImage src={profile?.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {profile?.full_name?.[0] || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold">{profile?.full_name || t("header.myAccount")}</p>
+                      <p className="text-sm text-muted-foreground">{t("header.goDashboard")}</p>
+                    </div>
+                  </Link>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-center gap-2 text-destructive border-destructive/30 hover:bg-destructive/5"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t("header.signOut")}
+                  </Button>
+                </div>
+              )}
             </nav>
           </div>
         </>

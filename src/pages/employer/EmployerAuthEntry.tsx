@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ForgotPasswordControl from '@/components/ForgotPasswordControl';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import AuthContinueIdentifier from '@/components/auth/AuthContinueIdentifier';
 import AuthConflictPanel from '@/components/auth/AuthConflictPanel';
 import { validateSchema } from '@/lib/validations/common';
@@ -24,6 +25,7 @@ import {
   portalAuthPath,
   type AuthIdentifierMethod,
 } from '@/lib/authContinue';
+import { GET_STARTED_PATHS } from '@/lib/getStarted';
 
 type Step = 'identifier' | 'login' | 'signup' | 'conflict';
 
@@ -412,7 +414,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
               <Link to={portalAuthPath('worker')}>Worker</Link>
             </Button>
             <Button asChild variant="outline" className="h-10 text-sm font-medium">
-              <Link to={portalAuthPath('partner')}>Partner</Link>
+              <Link to={GET_STARTED_PATHS.partner}>Partner</Link>
             </Button>
           </div>
         </div>
@@ -423,7 +425,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
   if (embedded) return body;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 pb-24 md:pb-4">
       <div className="fixed inset-0 pointer-events-none" style={{ background: 'var(--gradient-mesh)' }} />
       <div className="w-full max-w-[440px] relative z-10">
         <div className="text-center mb-8">
@@ -440,6 +442,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
           <CardContent className="p-6">{body}</CardContent>
         </Card>
       </div>
+      <MobileBottomNav />
     </div>
   );
 }

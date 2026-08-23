@@ -4,6 +4,7 @@ import SignupJourneyPanel, {
   type SignupAudience,
   type SignupVariant,
 } from '@/components/SignupJourneyPanel';
+import MobileBottomNav from '@/components/MobileBottomNav';
 
 /** Split auth shell used by worker / employer / partner signup & login. */
 export default function AuthSplitLayout({
@@ -28,7 +29,7 @@ export default function AuthSplitLayout({
 }) {
   return (
     <div className="fixed inset-0 overflow-hidden bg-muted/40">
-      <div className="flex h-full flex-col md:flex-row">
+      <div className="flex h-full flex-col pb-16 md:h-full md:flex-row md:pb-0">
         <SignupJourneyPanel audience={audience} variant={variant} activeStep={activeStep} />
 
         <main
@@ -53,6 +54,7 @@ export default function AuthSplitLayout({
           </div>
         </main>
       </div>
+      <MobileBottomNav />
     </div>
   );
 }

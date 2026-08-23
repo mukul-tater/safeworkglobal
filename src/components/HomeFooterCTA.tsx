@@ -10,7 +10,7 @@ export default function HomeFooterCTA() {
   const { t } = useI18n();
 
   const handleSignUp = () => {
-    navigate(isAuthenticated ? "/jobs" : "/worker/quick-signup");
+    navigate(isAuthenticated ? "/jobs" : "/worker/login");
   };
 
   return (

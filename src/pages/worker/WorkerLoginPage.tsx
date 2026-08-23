@@ -13,7 +13,7 @@ import { getEmitraReviewBlockMessage, isWorkerGccReady } from '@/lib/workerPorta
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
 import TermsAgreeRow from '@/components/TermsAgreeRow';
 import WorkerTermsDialog from '@/components/WorkerTermsDialog';
-import SignupJourneyPanel from '@/components/SignupJourneyPanel';
+import AuthSplitLayout from '@/components/AuthSplitLayout';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ForgotPasswordControl from '@/components/ForgotPasswordControl';
@@ -27,6 +27,7 @@ import {
   portalAuthPath,
   type AuthIdentifierMethod,
 } from '@/lib/authContinue';
+import { GET_STARTED_PATHS } from '@/lib/getStarted';
 
 type Step = 'identifier' | 'login' | 'signup' | 'conflict';
 
@@ -190,13 +191,7 @@ export default function WorkerLoginPage() {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-muted/40">
-      <div className="flex h-full flex-col md:flex-row">
-        <SignupJourneyPanel variant={step === 'login' ? 'login' : 'continue'} />
-
-        <main className="relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:px-8 md:px-8 lg:px-12">
-          <div className="mx-auto w-full max-w-[420px]">
-            <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5 sm:p-7">
+    <AuthSplitLayout audience="worker" variant={step === 'login' ? 'login' : 'continue'}>
               <div className="mb-5">
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
                   {step === 'login' ? 'Enter your password' : 'Continue as a worker'}
@@ -338,22 +333,17 @@ export default function WorkerLoginPage() {
                       <Link to={portalAuthPath('employer')}>Employer</Link>
                     </Button>
                     <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                      <Link to={portalAuthPath('partner')}>Partner</Link>
+                      <Link to={GET_STARTED_PATHS.partner}>Partner</Link>
                     </Button>
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </main>
-      </div>
-
       <WorkerTermsDialog
         open={termsOpen}
         onOpenChange={setTermsOpen}
         onAgree={() => setAcceptedTerms(true)}
         description="Please review these terms before continuing."
       />
-    </div>
+    </AuthSplitLayout>
   );
 }

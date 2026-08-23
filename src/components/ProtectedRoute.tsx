@@ -20,7 +20,7 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({
   children,
   allowedRoles,
-  loginPath = '/auth',
+  loginPath = '/worker/login',
   requireMobileVerified,
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, role, loading, profileLoading, needsRoleSelection, isMobileVerified } =

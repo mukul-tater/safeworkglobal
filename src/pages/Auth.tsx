@@ -14,7 +14,11 @@ import {
   clearPendingOAuthRole,
   peekPendingOAuthRole,
   setPendingOAuthRole,
+  hasOAuthCallbackInUrl,
 } from '@/lib/oauthRedirect';
+import Header from '@/components/Header';
+import MobileBottomNav from '@/components/MobileBottomNav';
+import { GET_STARTED_PATHS, PARTNER_EXISTING_ACCOUNT_PATH } from '@/lib/getStarted';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { passwordValidation } from '@/components/ValidatedInput';
@@ -28,7 +32,7 @@ type AuthView = 'login' | 'signup' | 'forgot' | 'role-select';
 const roles: { value: AppRole; label: string; description: string; icon: React.ReactNode; color: string }[] = [
   { value: 'worker', label: 'Worker', description: 'Find international job opportunities', icon: <HardHat className="h-6 w-6" />, color: 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-400' },
   { value: 'employer', label: 'Employer', description: 'Hire skilled workers globally', icon: <Briefcase className="h-6 w-6" />, color: 'bg-blue-50 text-blue-600 border-blue-200 hover:border-blue-400' },
-  { value: 'partner', label: 'Partner (e-Mitra)', description: 'Register workers from your service center', icon: <Users className="h-6 w-6" />, color: 'bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-400' },
+  { value: 'partner', label: 'Partner', description: 'E-Mitra, SSVN, ITI, MEA Licensed RA, consultants & employers', icon: <Users className="h-6 w-6" />, color: 'bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-400' },
 ];
 
 export default function Auth() {
@@ -80,9 +84,19 @@ export default function Auth() {
     } else if (roleHint === 'employer') {
       navigate('/employer/login', { replace: true });
     } else if (roleHint === 'partner') {
-      navigate('/partner/login', { replace: true });
+      navigate(GET_STARTED_PATHS.partner, { replace: true });
     }
   }, [roleHint, modeHint, isAuthenticated, navigate]);
+
+  // Guests do not use /auth as Login or Partner Get Started.
+  // Worker / employer / partner continue pages are the desktop destinations.
+  useEffect(() => {
+    if (authLoading || profileLoading) return;
+    if (isAuthenticated || needsRoleSelection) return;
+    if (hasOAuthCallbackInUrl()) return;
+    if (roleHint) return;
+    navigate(GET_STARTED_PATHS.worker, { replace: true });
+  }, [authLoading, profileLoading, isAuthenticated, needsRoleSelection, roleHint, navigate]);
 
   // If an authenticated user lands here without a role (e.g. fresh Google
   // sign-in), force them into the role-select flow instead of redirecting.
@@ -111,7 +125,7 @@ export default function Auth() {
     clearPendingOAuthRole();
     if (pending !== role) {
       const labelMap: Record<AppRole, string> = {
-        worker: 'Worker', employer: 'Employer', partner: 'Partner (e-Mitra)', admin: 'Admin',
+        worker: 'Worker', employer: 'Employer', partner: 'Partner', admin: 'Admin',
             interviewer: 'Interviewer',
       };
       (async () => {
@@ -236,7 +250,7 @@ export default function Auth() {
     setError('');
     setLoading(true);
     const result = await requestPasswordReset(resetEmail, {
-      loginPath: '/auth',
+      loginPath: GET_STARTED_PATHS.worker,
       resolveAuthEmail: async (raw) => {
         if (raw.includes('@')) return raw.toLowerCase();
         if (!isValidIndianMobile(raw)) return null;
@@ -302,21 +316,21 @@ export default function Auth() {
         }
         navigate(isMobileVerified ? '/employer/quick-signup' : '/employer/bind-mobile', { replace: true });
       } else {
-        navigate(isMobileVerified ? '/emitra/register' : '/partner/bind-mobile', { replace: true });
+        navigate(isMobileVerified ? GET_STARTED_PATHS.partner : '/partner/bind-mobile', { replace: true });
       }
       return;
     }
 
     // Not authenticated yet — send to the role-specific portal page.
     if (selectedRole === 'worker') {
-      navigate('/worker/login');
+      navigate(GET_STARTED_PATHS.worker);
       return;
     }
     if (selectedRole === 'employer') {
-      navigate('/employer/login');
+      navigate(GET_STARTED_PATHS.employer);
       return;
     }
-    navigate('/partner/login');
+    navigate(GET_STARTED_PATHS.partner);
   };
 
   const GoogleButton = ({ label, context = 'login' }: { label: string; context?: 'login' | 'signup' }) => (
@@ -346,6 +360,7 @@ export default function Auth() {
     authLoading ||
     googleLoading ||
     !!assigningRole ||
+    hasOAuthCallbackInUrl() ||
     (isAuthenticated && !needsRoleSelection && (profileLoading || !!role));
 
   if (continuing) {
@@ -359,8 +374,22 @@ export default function Auth() {
     );
   }
 
+  // Guests never stay on /auth — Login and Partner Get Started use dedicated pages.
+  if (!isAuthenticated && !needsRoleSelection) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-muted-foreground">Continuing...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen bg-background pb-16 md:pb-0">
+      <Header />
+      <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <div className="fixed inset-0 pointer-events-none" style={{ background: 'var(--gradient-mesh)' }} />
 
       <div className="w-full max-w-[440px] relative z-10">
@@ -369,13 +398,13 @@ export default function Auth() {
             <img src="/safework-global-logo.png" alt="SafeWorkGlobal" className="h-8 w-8" />
           </div>
           <h1 className="text-2xl font-heading font-bold text-foreground">
-            {view === 'login' && 'Continue'}
+            {view === 'login' && 'Get Started'}
             {view === 'role-select' && (needsRoleSelection ? 'One last step' : 'Continue as')}
             {view === 'signup' && 'Let’s create your account'}
             {view === 'forgot' && 'Reset password'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {view === 'login' && 'Enter your portal. We’ll take you to the next step.'}
+            {view === 'login' && 'Choose Worker, Employer, or Partner. We’ll take you to the next step.'}
             {view === 'role-select' && (needsRoleSelection
               ? `Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! Choose how you want to use SafeWorkGlobal.`
               : 'Choose how you want to use the platform')}
@@ -390,36 +419,6 @@ export default function Auth() {
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription className="text-sm">{error}</AlertDescription>
               </Alert>
-            )}
-
-            {/* LOGIN */}
-            {view === 'login' && (
-              <div className="space-y-4">
-                <GoogleButton label="Continue with Google" />
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">or continue as</span></div>
-                </div>
-                <div className="space-y-2">
-                  {roles.map((r) => (
-                    <button
-                      key={r.value}
-                      type="button"
-                      onClick={() => handleRoleSelect(r.value)}
-                      className={cn(
-                        'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-left',
-                        r.color,
-                      )}
-                    >
-                      <div className="shrink-0">{r.icon}</div>
-                      <div>
-                        <div className="font-semibold text-foreground">{r.label}</div>
-                        <div className="text-xs text-muted-foreground">{r.description}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
             )}
 
             {/* ROLE SELECT */}
@@ -554,13 +553,17 @@ export default function Auth() {
           <Link to="/privacy" className="underline">Privacy Policy</Link>.
         </p>
         <p className="text-xs text-center text-muted-foreground/60 mt-3">
+          Already a partner?{' '}
+          <Link to={PARTNER_EXISTING_ACCOUNT_PATH} className="underline hover:text-muted-foreground">
+            Continue
+          </Link>
+          {' · '}
           Platform staff?{' '}
           <Link to="/admin/login" className="underline hover:text-muted-foreground">Admin Portal</Link>
-          {' · '}
-          E-Mitra partner?{' '}
-          <Link to="/emitra/login" className="underline hover:text-muted-foreground">Partner continue</Link>
         </p>
       </div>
+      </div>
+      <MobileBottomNav />
 
       {/* Google role chooser — shown BEFORE OAuth so we know the user's
           intended role (Worker vs Employer) up front. */}

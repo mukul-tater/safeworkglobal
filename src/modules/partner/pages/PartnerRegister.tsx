@@ -27,6 +27,7 @@ import {
   getPartnerSignupOption,
   type PartnerSignupOption,
 } from "@/modules/partner/config/partnerSignupOptions";
+import { PARTNER_EXISTING_ACCOUNT_PATH } from "@/lib/getStarted";
 
 /**
  * Partner signup hub — choose a partner type.
@@ -225,7 +226,7 @@ export default function PartnerRegister() {
 
         <p className="pt-4 text-center text-sm text-muted-foreground">
           {t("partner.already")}{" "}
-          <Link to="/partner/login" className="font-medium text-primary hover:underline">
+          <Link to={PARTNER_EXISTING_ACCOUNT_PATH} className="font-medium text-primary hover:underline">
             Continue
           </Link>
         </p>

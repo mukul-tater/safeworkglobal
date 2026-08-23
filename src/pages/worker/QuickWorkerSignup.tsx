@@ -28,10 +28,12 @@ import { getFirebaseAuth, redirectToPhoneAuthHost } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
 import { AUTH_CONTINUE_MESSAGES, continueAuth } from '@/lib/authContinue';
+import { GET_STARTED_PATHS } from '@/lib/getStarted';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 import TermsAgreeRow from '@/components/TermsAgreeRow';
 import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 import SignupJourneyPanel from '@/components/SignupJourneyPanel';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import SEOHead from '@/components/SEOHead';
 import DevOtpHint from '@/components/DevOtpHint';
 import FormStepPills from '@/components/FormStepPills';
@@ -426,7 +428,7 @@ export default function QuickWorkerSignup({
   };
 
   return (
-    <div className={embedded ? 'w-full' : 'fixed inset-0 overflow-hidden bg-muted/40'}>
+    <div className={embedded ? 'w-full' : 'fixed inset-0 overflow-hidden bg-muted/40 pb-16 md:pb-0'}>
       <SEOHead
         title="Worker Registration | SafeWork Global"
         description="Create a free SafeWork Global worker profile to complete skill verification and connect with global employment opportunities."
@@ -684,7 +686,7 @@ export default function QuickWorkerSignup({
                           <Link to="/employer/login">Employer</Link>
                         </Button>
                         <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                          <Link to="/partner/login">Partner</Link>
+                          <Link to={GET_STARTED_PATHS.partner}>Partner</Link>
                         </Button>
                       </div>
                     </div>
@@ -831,6 +833,7 @@ export default function QuickWorkerSignup({
           }}
         />
       )}
+      {!embedded && <MobileBottomNav />}
     </div>
   );
 }

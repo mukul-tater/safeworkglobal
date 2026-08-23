@@ -504,7 +504,7 @@ export default function JobCategories() {
                           <ArrowRight className="h-4 w-4 ml-2" />
                         </Button>
                       </Link>
-                      <Link to="/auth">
+                      <Link to="/worker/login">
                         <Button size="lg" variant="outline">
                           Create Job Alert
                         </Button>
