@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, Lock, Mail, Phone } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -8,10 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { isValidIndianMobile } from '@/lib/validations/common';
-import {
-  workerAuthEmailFromIdentifier,
-} from '@/lib/workerAuthEmail';
+import { workerAuthEmailFromIdentifier } from '@/lib/workerAuthEmail';
 import { getEmitraReviewBlockMessage, isWorkerGccReady } from '@/lib/workerPortalAccess';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
 import TermsAgreeRow from '@/components/TermsAgreeRow';
@@ -20,24 +17,33 @@ import SignupJourneyPanel from '@/components/SignupJourneyPanel';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ForgotPasswordControl from '@/components/ForgotPasswordControl';
+import AuthContinueIdentifier from '@/components/auth/AuthContinueIdentifier';
+import AuthConflictPanel from '@/components/auth/AuthConflictPanel';
+import QuickWorkerSignup from '@/pages/worker/QuickWorkerSignup';
+import {
+  AUTH_CONTINUE_MESSAGES,
+  buildAuthContinueRequest,
+  continueAuth,
+  portalAuthPath,
+  type AuthIdentifierMethod,
+} from '@/lib/authContinue';
 
-type LoginMethod = 'mobile' | 'email';
+type Step = 'identifier' | 'login' | 'signup' | 'conflict';
 
 async function resolveAuthEmail(identifier: string): Promise<string | null> {
   const trimmed = identifier.trim();
   if (!trimmed) return null;
-  // Resolved locally only: a public lookup RPC would let anyone enumerate
-  // which emails/phone numbers are registered accounts.
   return workerAuthEmailFromIdentifier(trimmed);
 }
 
 /**
- * Worker sign-in — Mobile or Email + password + terms acceptance.
+ * Unified worker authentication — one Continue entry for login and signup.
  */
 export default function WorkerLoginPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated, role, isMobileVerified, profileLoading, loading: authLoading } = useAuth();
-  const [method, setMethod] = useState<LoginMethod>('mobile');
+  const [step, setStep] = useState<Step>('identifier');
+  const [method, setMethod] = useState<AuthIdentifierMethod>('mobile');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
@@ -46,6 +52,8 @@ export default function WorkerLoginPage() {
   const [termsOpen, setTermsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [conflictMessage, setConflictMessage] = useState('');
+  const [wrongPortal, setWrongPortal] = useState<'worker' | 'employer' | 'partner' | null>(null);
 
   useEffect(() => {
     if (authLoading || profileLoading) return;
@@ -62,6 +70,41 @@ export default function WorkerLoginPage() {
     );
   }
 
+  const handleContinue = async () => {
+    setError('');
+    const built = buildAuthContinueRequest('worker', method, email, mobile);
+    if ('error' in built) {
+      setError(built.error);
+      return;
+    }
+
+    setLoading(true);
+    const result = await continueAuth(built.request);
+    setLoading(false);
+
+    if (result.nextStep === 'RATE_LIMITED' || result.nextStep === 'ERROR') {
+      setError(result.error || AUTH_CONTINUE_MESSAGES.server);
+      return;
+    }
+    if (result.nextStep === 'ACCOUNT_CONFLICT') {
+      setConflictMessage(result.error || AUTH_CONTINUE_MESSAGES.conflict);
+      setWrongPortal(null);
+      setStep('conflict');
+      return;
+    }
+    if (result.nextStep === 'WRONG_PORTAL') {
+      setConflictMessage(result.error || AUTH_CONTINUE_MESSAGES.wrong_portal(result.portal));
+      setWrongPortal(result.portal ?? null);
+      setStep('conflict');
+      return;
+    }
+    if (result.nextStep === 'SIGNUP') {
+      setStep('signup');
+      return;
+    }
+    setStep('login');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -71,29 +114,11 @@ export default function WorkerLoginPage() {
       return;
     }
 
-    let authEmail = '';
-    if (method === 'mobile') {
-      if (!isValidIndianMobile(mobile)) {
-        setError('Enter a valid 10-digit Indian mobile number');
-        return;
-      }
-      const resolved = await resolveAuthEmail(mobile);
-      if (!resolved) {
-        setError('No worker account found for this mobile number');
-        return;
-      }
-      authEmail = resolved;
-    } else {
-      if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-        setError('Please enter a valid email');
-        return;
-      }
-      const resolved = await resolveAuthEmail(email.trim());
-      if (!resolved) {
-        setError('No worker account found for this email');
-        return;
-      }
-      authEmail = resolved;
+    const identifier = method === 'mobile' ? mobile : email;
+    const resolved = await resolveAuthEmail(identifier);
+    if (!resolved) {
+      setError(method === 'mobile' ? 'Enter a valid 10-digit Indian mobile number' : 'Please enter a valid email');
+      return;
     }
 
     if (!password) {
@@ -102,7 +127,7 @@ export default function WorkerLoginPage() {
     }
 
     setLoading(true);
-    const result = await login(authEmail, password);
+    const result = await login(resolved, password);
     if (!result.success) {
       setError(result.error || 'Login failed');
       setLoading(false);
@@ -118,7 +143,7 @@ export default function WorkerLoginPage() {
       if (roleRow?.role && roleRow.role !== 'worker') {
         await supabase.auth.signOut();
         setError(
-          `This account is registered as a ${roleRow.role}. Please sign in from the correct portal.`,
+          `This account is registered as a ${roleRow.role}. Please continue from the correct portal.`,
         );
         setLoading(false);
         return;
@@ -150,195 +175,174 @@ export default function WorkerLoginPage() {
     setLoading(false);
   };
 
+  if (step === 'signup') {
+    return (
+      <QuickWorkerSignup
+        unified
+        prefillEmail={method === 'email' ? email.trim().toLowerCase() : ''}
+        prefillMobile={method === 'mobile' ? mobile : ''}
+        onBackToContinue={() => {
+          setStep('identifier');
+          setError('');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="fixed inset-0 overflow-hidden bg-muted/40">
       <div className="flex h-full flex-col md:flex-row">
-        <SignupJourneyPanel variant="login" />
+        <SignupJourneyPanel variant={step === 'login' ? 'login' : 'continue'} />
 
         <main className="relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:px-8 md:px-8 lg:px-12">
           <div className="mx-auto w-full max-w-[420px]">
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5 sm:p-7">
               <div className="mb-5">
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
-                  Sign in to continue
+                  {step === 'login' ? 'Enter your password' : 'Continue as a worker'}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Sign in with Google, or use mobile / email and your password.
+                  {step === 'login'
+                    ? method === 'mobile'
+                      ? `Welcome back. Enter the password for +91 ${mobile}.`
+                      : `Welcome back. Enter the password for ${email.trim()}.`
+                    : 'Enter your mobile number or email. We’ll take you to the next step.'}
                 </p>
               </div>
 
-              {error && (
+              {error && step !== 'conflict' && (
                 <Alert variant="destructive" className="mb-4 py-2">
                   <AlertDescription className="text-sm">{error}</AlertDescription>
                 </Alert>
               )}
 
-              <div className="mb-4 space-y-3">
-                <GoogleAuthButton label="Sign in with Google" role="worker" />
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="bg-card px-2 text-muted-foreground">or continue with mobile / email</span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                role="tablist"
-                aria-label="Sign-in method"
-                className="mb-4 grid h-11 w-full grid-cols-2 gap-1 rounded-lg bg-muted p-1"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={method === 'mobile'}
-                  data-inline
-                  onClick={() => {
-                    setMethod('mobile');
-                    setError('');
+              {step === 'conflict' && (
+                <AuthConflictPanel
+                  message={conflictMessage}
+                  portal={wrongPortal && wrongPortal !== 'worker' ? wrongPortal : null}
+                  onUseSingleIdentifier={() => {
+                    setStep('identifier');
+                    setConflictMessage('');
+                    setWrongPortal(null);
                   }}
-                  className={`inline-flex h-full min-h-0 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors ${
-                    method === 'mobile'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Phone className="h-3.5 w-3.5" /> Mobile
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={method === 'email'}
-                  data-inline
-                  onClick={() => {
-                    setMethod('email');
-                    setError('');
-                  }}
-                  className={`inline-flex h-full min-h-0 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors ${
-                    method === 'email'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  <Mail className="h-3.5 w-3.5" /> Email
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
-                {method === 'mobile' ? (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="worker-mobile">Mobile number</Label>
-                    <div className="flex h-11 overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                      <span className="inline-flex shrink-0 items-center gap-1.5 border-r border-input bg-muted/40 px-3 text-sm font-medium text-muted-foreground">
-                        <Phone className="h-3.5 w-3.5" />
-                        +91
-                      </span>
-                      <Input
-                        id="worker-mobile"
-                        type="tel"
-                        placeholder="10-digit mobile"
-                        value={mobile}
-                        onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                        required
-                        className="h-full border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                        autoComplete="tel"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="worker-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="worker-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="h-11 pl-10"
-                        autoComplete="email"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <Label htmlFor="worker-password">Password</Label>
-                    <ForgotPasswordControl
-                      loginPath="/worker/login"
-                      initialIdentifier={method === 'email' ? email : ''}
-                      title="Reset worker password"
-                      description="Enter the email you used to create your worker account. We'll send a secure link to set a new password. Mobile-only accounts should contact SafeWork support."
-                      triggerClassName="text-xs"
-                    />
-                  </div>
-                  <div className="relative">
-                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="worker-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="h-11 pl-10 pr-10"
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      data-inline
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <TermsAgreeRow
-                  id="worker-login-terms"
-                  checked={acceptedTerms}
-                  onCheckedChange={setAcceptedTerms}
-                  onOpenTerms={() => setTermsOpen(true)}
                 />
+              )}
 
-                <Button
-                  type="submit"
-                  className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
-                  disabled={loading || !acceptedTerms}
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign in
-                </Button>
-              </form>
+              {step === 'identifier' && (
+                <>
+                  <div className="mb-4 space-y-3">
+                    <GoogleAuthButton label="Continue with Google" role="worker" />
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="bg-card px-2 text-muted-foreground">or continue with mobile / email</span>
+                      </div>
+                    </div>
+                  </div>
 
-              <p className="mt-5 text-center text-sm text-muted-foreground">
-                New worker?{' '}
-                <Link to="/worker/quick-signup" className="font-medium text-primary hover:underline">
-                  Create your profile
-                </Link>
-              </p>
+                  <AuthContinueIdentifier
+                    method={method}
+                    onMethodChange={(next) => {
+                      setMethod(next);
+                      setError('');
+                    }}
+                    email={email}
+                    mobile={mobile}
+                    onEmailChange={setEmail}
+                    onMobileChange={setMobile}
+                    onSubmit={() => void handleContinue()}
+                    loading={loading}
+                    idPrefix="worker"
+                  />
+                </>
+              )}
 
-              <div className="mt-5 border-t border-border pt-4">
-                <p className="mb-2.5 text-center text-xs text-muted-foreground">
-                  Looking for a different portal?
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                    <Link to="/employer/login">Employer sign in</Link>
+              {step === 'login' && (
+                <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="worker-password">Password</Label>
+                      <ForgotPasswordControl
+                        loginPath="/worker/login"
+                        initialIdentifier={method === 'email' ? email : ''}
+                        title="Reset worker password"
+                        description="Enter the email you used to create your worker account. We'll send a secure link to set a new password. Mobile-only accounts should contact SafeWork support."
+                        triggerClassName="text-xs"
+                      />
+                    </div>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="worker-password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="h-11 pl-10 pr-10"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        data-inline
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <TermsAgreeRow
+                    id="worker-login-terms"
+                    checked={acceptedTerms}
+                    onCheckedChange={setAcceptedTerms}
+                    onOpenTerms={() => setTermsOpen(true)}
+                  />
+
+                  <Button
+                    type="submit"
+                    className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+                    disabled={loading || !acceptedTerms}
+                  >
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Continue
                   </Button>
-                  <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                    <Link to="/partner/login">Partner sign in</Link>
-                  </Button>
+
+                  <button
+                    type="button"
+                    data-inline
+                    onClick={() => {
+                      setStep('identifier');
+                      setPassword('');
+                      setError('');
+                    }}
+                    className="w-full text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    ← Use a different mobile or email
+                  </button>
+                </form>
+              )}
+
+              {step !== 'conflict' && (
+                <div className="mt-5 border-t border-border pt-4">
+                  <p className="mb-2.5 text-center text-xs text-muted-foreground">
+                    Looking for a different portal?
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                      <Link to={portalAuthPath('employer')}>Employer</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                      <Link to={portalAuthPath('partner')}>Partner</Link>
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </main>
@@ -348,7 +352,7 @@ export default function WorkerLoginPage() {
         open={termsOpen}
         onOpenChange={setTermsOpen}
         onAgree={() => setAcceptedTerms(true)}
-        description="Please review these terms before signing in."
+        description="Please review these terms before continuing."
       />
     </div>
   );

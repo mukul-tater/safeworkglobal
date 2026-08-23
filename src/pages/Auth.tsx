@@ -6,9 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Eye, EyeOff, Loader2, Briefcase, HardHat, Users, ArrowLeft, Mail, Phone } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Briefcase, HardHat, Users, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { signInWithGoogle } from '@/lib/googleAuth';
 import {
@@ -25,7 +24,6 @@ import { displayableEmail } from '@/lib/workerAuthEmail';
 import { GENERIC_RESET_SENT_MESSAGE, requestPasswordReset } from '@/lib/passwordReset';
 
 type AuthView = 'login' | 'signup' | 'forgot' | 'role-select';
-type LoginMethod = 'email' | 'mobile';
 
 const roles: { value: AppRole; label: string; description: string; icon: React.ReactNode; color: string }[] = [
   { value: 'worker', label: 'Worker', description: 'Find international job opportunities', icon: <HardHat className="h-6 w-6" />, color: 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-400' },
@@ -33,34 +31,12 @@ const roles: { value: AppRole; label: string; description: string; icon: React.R
   { value: 'partner', label: 'Partner (e-Mitra)', description: 'Register workers from your service center', icon: <Users className="h-6 w-6" />, color: 'bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-400' },
 ];
 
-function PortalSwitchLinks() {
-  return (
-    <div className="mt-4 border-t border-border pt-4">
-      <p className="mb-2.5 text-center text-xs text-muted-foreground">
-        Looking for a different portal?
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <Button asChild variant="outline" className="h-10 text-sm font-medium">
-          <Link to="/worker/login">Worker sign in</Link>
-        </Button>
-        <Button asChild variant="outline" className="h-10 text-sm font-medium">
-          <Link to="/employer/login">Employer sign in</Link>
-        </Button>
-        <Button asChild variant="outline" className="h-10 text-sm font-medium col-span-2">
-          <Link to="/partner/login">Partner sign in</Link>
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roleHint = (searchParams.get('role') as AppRole | null) || null;
   const modeHint = searchParams.get('mode'); // "signup" forces signup view
   const {
-    login,
     signup,
     isAuthenticated,
     role,
@@ -75,7 +51,6 @@ export default function Auth() {
   const [view, setView] = useState<AuthView>(
     modeHint === 'signup' ? 'role-select' : 'login'
   );
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>('email');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
@@ -86,10 +61,6 @@ export default function Auth() {
   // and consumed after the OAuth redirect lands back on /auth.
   const [googleRoleOpen, setGoogleRoleOpen] = useState(false);
   const [googleRoleContext, setGoogleRoleContext] = useState<'login' | 'signup'>('login');
-
-  // Login
-  const [loginIdentifier, setLoginIdentifier] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
 
   // Signup
   const [signupName, setSignupName] = useState('');
@@ -105,11 +76,11 @@ export default function Auth() {
   useEffect(() => {
     if (!roleHint || isAuthenticated) return;
     if (roleHint === 'worker') {
-      navigate(modeHint === 'signup' ? '/worker/quick-signup' : '/worker/login', { replace: true });
+      navigate('/worker/login', { replace: true });
     } else if (roleHint === 'employer') {
-      navigate(modeHint === 'signup' ? '/employer/quick-signup' : '/employer/login', { replace: true });
+      navigate('/employer/login', { replace: true });
     } else if (roleHint === 'partner') {
-      navigate(modeHint === 'signup' ? '/emitra/register' : '/partner/login', { replace: true });
+      navigate('/partner/login', { replace: true });
     }
   }, [roleHint, modeHint, isAuthenticated, navigate]);
 
@@ -226,64 +197,6 @@ export default function Auth() {
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    let emailToUse = loginIdentifier;
-
-    if (loginMethod === 'mobile') {
-      const { data, error: lookupError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('phone', loginIdentifier)
-        .maybeSingle();
-
-      if (lookupError || !data) {
-        setError('No account found with this mobile number');
-        setLoading(false);
-        return;
-      }
-      emailToUse = data.email;
-    }
-
-    const result = await login(emailToUse, loginPassword);
-    if (!result.success) {
-      setError(result.error || 'Login failed');
-      setLoading(false);
-      return;
-    }
-
-    // Enforce one-role-per-account: if a role hint was supplied, verify the
-    // signed-in user actually holds that role. Otherwise sign them out.
-    if (roleHint) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: roleRow } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .maybeSingle();
-        const storedRole = roleRow?.role as AppRole | undefined;
-        if (storedRole && storedRole !== roleHint) {
-          await supabase.auth.signOut();
-          const labelMap: Record<AppRole, string> = {
-            worker: 'Worker', employer: 'Employer', partner: 'Partner (e-Mitra)', admin: 'Admin',
-            interviewer: 'Interviewer',
-          };
-          setError(
-            `This account is already registered as a ${labelMap[storedRole]}. ` +
-            `Please log in with the correct role.`
-          );
-          setLoading(false);
-          return;
-        }
-      }
-    }
-    setLoading(false);
-  };
-
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -396,14 +309,14 @@ export default function Auth() {
 
     // Not authenticated yet — send to the role-specific portal page.
     if (selectedRole === 'worker') {
-      navigate('/worker/quick-signup');
+      navigate('/worker/login');
       return;
     }
     if (selectedRole === 'employer') {
-      navigate('/employer/quick-signup');
+      navigate('/employer/login');
       return;
     }
-    navigate('/emitra/register');
+    navigate('/partner/login');
   };
 
   const GoogleButton = ({ label, context = 'login' }: { label: string; context?: 'login' | 'signup' }) => (
@@ -456,17 +369,17 @@ export default function Auth() {
             <img src="/safework-global-logo.png" alt="SafeWorkGlobal" className="h-8 w-8" />
           </div>
           <h1 className="text-2xl font-heading font-bold text-foreground">
-            {view === 'login' && 'Welcome back'}
-            {view === 'role-select' && (needsRoleSelection ? 'One last step' : 'Join as')}
-            {view === 'signup' && 'Create your account'}
+            {view === 'login' && 'Continue'}
+            {view === 'role-select' && (needsRoleSelection ? 'One last step' : 'Continue as')}
+            {view === 'signup' && 'Let’s create your account'}
             {view === 'forgot' && 'Reset password'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {view === 'login' && 'Sign in to your SafeWorkGlobal account'}
+            {view === 'login' && 'Enter your portal. We’ll take you to the next step.'}
             {view === 'role-select' && (needsRoleSelection
               ? `Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! Choose how you want to use SafeWorkGlobal.`
               : 'Choose how you want to use the platform')}
-            {view === 'signup' && `Signing up as ${roles.find(r => r.value === signupRole)?.label}`}
+            {view === 'signup' && `Continuing as ${roles.find(r => r.value === signupRole)?.label}`}
             {view === 'forgot' && "We'll send you a link to reset it"}
           </p>
         </div>
@@ -482,66 +395,30 @@ export default function Auth() {
             {/* LOGIN */}
             {view === 'login' && (
               <div className="space-y-4">
-                <GoogleButton label="Sign in with Google" />
-                
+                <GoogleButton label="Continue with Google" />
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">or continue with</span></div>
+                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">or continue as</span></div>
                 </div>
-
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <Tabs value={loginMethod} onValueChange={(v) => { setLoginMethod(v as LoginMethod); setLoginIdentifier(''); setError(''); }}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="email" className="gap-1.5"><Mail className="h-3.5 w-3.5" /> Email</TabsTrigger>
-                      <TabsTrigger value="mobile" className="gap-1.5"><Phone className="h-3.5 w-3.5" /> Mobile</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="login-id">{loginMethod === 'email' ? 'Email' : 'Mobile Number'}</Label>
-                    <Input
-                      id="login-id"
-                      type={loginMethod === 'email' ? 'email' : 'tel'}
-                      placeholder={loginMethod === 'email' ? 'you@example.com' : '+91 98765 43210'}
-                      value={loginIdentifier}
-                      onChange={e => setLoginIdentifier(e.target.value)}
-                      required
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="login-password">Password</Label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setError('');
-                          if (loginMethod === 'email' && loginIdentifier.includes('@')) {
-                            setResetEmail(loginIdentifier.trim().toLowerCase());
-                          }
-                          setView('forgot');
-                        }}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Forgot password?
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Input id="login-password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required minLength={6} className="h-11 pr-10" />
-                      <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
-                      </Button>
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign in
-                  </Button>
-                  <p className="text-sm text-center text-muted-foreground pt-2">
-                    Don't have an account?{' '}
-                    <button type="button" onClick={() => { setError(''); setView('role-select'); }} className="text-primary font-medium hover:underline">Sign up</button>
-                  </p>
-                  <PortalSwitchLinks />
-                </form>
+                <div className="space-y-2">
+                  {roles.map((r) => (
+                    <button
+                      key={r.value}
+                      type="button"
+                      onClick={() => handleRoleSelect(r.value)}
+                      className={cn(
+                        'w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-left',
+                        r.color,
+                      )}
+                    >
+                      <div className="shrink-0">{r.icon}</div>
+                      <div>
+                        <div className="font-semibold text-foreground">{r.label}</div>
+                        <div className="text-xs text-muted-foreground">{r.description}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -572,8 +449,7 @@ export default function Auth() {
                 })}
                 {!needsRoleSelection && (
                   <p className="text-sm text-center text-muted-foreground pt-2">
-                    Already have an account?{' '}
-                    <button type="button" onClick={() => { setError(''); setView('login'); }} className="text-primary font-medium hover:underline">Sign in</button>
+                    <button type="button" onClick={() => { setError(''); setView('login'); }} className="text-primary font-medium hover:underline">Back</button>
                   </p>
                 )}
               </div>
@@ -635,8 +511,7 @@ export default function Auth() {
                     Create Account
                   </Button>
                   <p className="text-sm text-center text-muted-foreground pt-1">
-                    Already have an account?{' '}
-                    <button type="button" onClick={() => { setError(''); setView('login'); }} className="text-primary font-medium hover:underline">Sign in</button>
+                    Already have an account? Continue from the same email on this page after we send you back.
                   </p>
                 </form>
               </div>
@@ -683,7 +558,7 @@ export default function Auth() {
           <Link to="/admin/login" className="underline hover:text-muted-foreground">Admin Portal</Link>
           {' · '}
           E-Mitra partner?{' '}
-          <Link to="/emitra/login" className="underline hover:text-muted-foreground">Partner sign in</Link>
+          <Link to="/emitra/login" className="underline hover:text-muted-foreground">Partner continue</Link>
         </p>
       </div>
 

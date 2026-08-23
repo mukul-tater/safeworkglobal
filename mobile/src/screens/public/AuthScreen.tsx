@@ -10,21 +10,21 @@ import { radius, spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { BrandLogo } from '../../components/layout/AppHeader';
 import ScreenLayout from '../../components/layout/ScreenLayout';
-import { Button, Card, Input, SegmentedControl } from '../../components/ui';
+import { Button, Card, Input } from '../../components/ui';
 import { useI18n } from '../../i18n';
 import { isSyntheticAuthEmail, workerAuthEmailFromIdentifier } from '../../lib/workerAuthEmail';
 import { SAFEWORK_CONTACT } from '../../config/workerSupport';
 import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from '../../lib/password';
+import { continueAuth, parseAuthIdentifier, type AuthPortalRole } from '../../lib/authContinue';
 
 type Props = NativeStackScreenProps<PublicStackParamList, 'Auth'>;
 
 export default function AuthScreen({ route }: Props) {
   const { t } = useI18n();
-  const initialMode = route.params?.mode ?? 'login';
   const roleHint = route.params?.role;
   const { login, signup, assignRole, loginWithGoogle } = useAuth();
 
-  const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
+  const [phase, setPhase] = useState<'identifier' | 'login' | 'signup'>('identifier');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -71,28 +71,39 @@ export default function AuthScreen({ route }: Props) {
     },
   ];
 
-  const AUTH_COPY: Record<
-    AppRole,
-    { loginTitle: string; loginBody: string; signupTitle: string; signupBody: string }
-  > = {
-    worker: {
-      loginTitle: t('auth.workerLoginTitle'),
-      loginBody: t('auth.signInBody'),
-      signupTitle: t('auth.workerSignupTitle'),
-      signupBody: t('auth.signUpBody'),
-    },
-    employer: {
-      loginTitle: t('auth.employerLoginTitle'),
-      loginBody: t('auth.signInBody'),
-      signupTitle: t('auth.employerSignupTitle'),
-      signupBody: t('auth.signUpBody'),
-    },
-    partner: {
-      loginTitle: t('auth.partnerLoginTitle'),
-      loginBody: t('auth.signInBody'),
-      signupTitle: t('auth.partnerSignupTitle'),
-      signupBody: t('auth.signUpBody'),
-    },
+  const handleContinue = async () => {
+    setError('');
+    if (!role) {
+      setError('Select Worker, Employer, or Partner to continue.');
+      return;
+    }
+    const parsed = parseAuthIdentifier(email || phone);
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
+    setLoading(true);
+    const result = await continueAuth({
+      role: role as AuthPortalRole,
+      email: parsed.method === 'email' ? parsed.email : undefined,
+      mobile: parsed.method === 'mobile' ? parsed.mobile : undefined,
+    });
+    setLoading(false);
+    if (parsed.method === 'email') setEmail(parsed.email);
+    if (parsed.method === 'mobile') setPhone(parsed.mobile);
+    if (result.nextStep === 'RATE_LIMITED' || result.nextStep === 'ERROR') {
+      setError(result.error ?? 'Something went wrong. Please try again.');
+      return;
+    }
+    if (result.nextStep === 'ACCOUNT_CONFLICT' || result.nextStep === 'WRONG_PORTAL') {
+      setError(result.error ?? 'This identifier belongs to a different account.');
+      return;
+    }
+    if (result.nextStep === 'SIGNUP') {
+      setPhase('signup');
+      return;
+    }
+    setPhase('login');
   };
 
   const handleForgotPassword = async () => {
@@ -122,13 +133,11 @@ export default function AuthScreen({ route }: Props) {
 
   const handleSubmit = async () => {
     setError('');
-    if (!email || !password) {
-      setError(mode === 'login'
-        ? 'Email/mobile and password are required.'
-        : 'Email and password are required.');
+    if (phase === 'login' && !password) {
+      setError('Password is required.');
       return;
     }
-    if (mode === 'signup') {
+    if (phase === 'signup') {
       const passwordIssue = passwordSignupIssue(password);
       if (passwordIssue) {
         setError(passwordIssue);
@@ -140,12 +149,13 @@ export default function AuthScreen({ route }: Props) {
     }
 
     setLoading(true);
-    if (mode === 'login') {
-      const result = await login(email.trim(), password);
+    if (phase === 'login') {
+      const identifier = email.includes('@') ? email.trim() : workerAuthEmailFromIdentifier(phone || email) || email.trim();
+      const result = await login(identifier, password);
       if (!result.success) setError(result.error ?? 'Login failed');
     } else {
       if (!fullName || !phone || !role) {
-        setError('Name, phone, and role are required for signup.');
+        setError('Name, phone, and role are required to create your account.');
         setLoading(false);
         return;
       }
@@ -155,7 +165,7 @@ export default function AuthScreen({ route }: Props) {
         return;
       }
       if (!email.includes('@')) {
-        setError('Use a real email for signup. You can sign in later with mobile or email.');
+        setError('Use a real email to create your account. You can continue later with mobile or email.');
         setLoading(false);
         return;
       }
@@ -171,8 +181,8 @@ export default function AuthScreen({ route }: Props) {
       } else {
         const loginResult = await login(email.trim(), password);
         if (!loginResult.success) {
-          setMode('login');
-          setError('Account created. Sign in after verifying your email.');
+          setPhase('login');
+          setError('Account created. Continue after verifying your email.');
         } else if (role) {
           await assignRole(role);
         }
@@ -196,34 +206,78 @@ export default function AuthScreen({ route }: Props) {
       <View style={styles.hero}>
         <BrandLogo size={52} />
         <Text style={styles.heroTitle}>
-          {role
-            ? mode === 'login'
-              ? AUTH_COPY[role].loginTitle
-              : AUTH_COPY[role].signupTitle
-            : mode === 'login'
+          {phase === 'signup'
+            ? t('auth.createAccount')
+            : phase === 'login'
               ? t('auth.welcomeBack')
-              : t('auth.createAccount')}
+              : 'Continue'}
         </Text>
         <Text style={styles.heroSubtitle}>
-          {role
-            ? mode === 'login'
-              ? AUTH_COPY[role].loginBody
-              : AUTH_COPY[role].signupBody
-            : mode === 'login'
+          {phase === 'identifier'
+            ? 'Enter your mobile number or email. We’ll take you to the next step.'
+            : phase === 'login'
               ? t('auth.signInBody')
               : t('auth.signUpBody')}
         </Text>
       </View>
 
       <Card elevated style={styles.formCard}>
-        <SegmentedControl
-          options={[
-            { value: 'login', label: t('auth.signIn') },
-            { value: 'signup', label: t('auth.signUp') },
-          ]}
-          value={mode}
-          onChange={setMode}
-        />
+        {phase === 'identifier' ? (
+          <>
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>{t('auth.selectRole')}</Text>
+              <View style={styles.roleList}>
+                {roles.map((item) => {
+                  const selected = role === item.value;
+                  return (
+                    <Pressable
+                      key={item.value}
+                      onPress={() => setRole(item.value)}
+                      style={({ pressed }) => [
+                        styles.roleCard,
+                        selected && styles.roleCardSelected,
+                        pressed && styles.roleCardPressed,
+                      ]}
+                    >
+                      <View style={[styles.roleIcon, { backgroundColor: item.bg }]}>
+                        {item.icon}
+                      </View>
+                      <View style={styles.roleCopy}>
+                        <Text style={styles.roleTitle}>{item.label}</Text>
+                        <Text style={styles.roleDesc}>{item.description}</Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.roleCheck,
+                          selected && { backgroundColor: item.accent, borderColor: item.accent },
+                        ]}
+                      >
+                        {selected ? <Check size={14} color="#fff" strokeWidth={3} /> : null}
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+            <Input
+              label={t('auth.emailOrMobile')}
+              value={email || phone}
+              onChangeText={(v) => {
+                if (v.includes('@') || /[a-zA-Z]/.test(v)) {
+                  setEmail(v);
+                  setPhone('');
+                } else {
+                  setPhone(v.replace(/\D/g, '').slice(0, 10));
+                  setEmail('');
+                }
+              }}
+              keyboardType="default"
+              autoCapitalize="none"
+              placeholder="email@example.com or 10-digit mobile"
+              accessibilityLabel="Email or mobile"
+            />
+          </>
+        ) : null}
 
         {error ? (
           <View style={styles.errorBox}>
@@ -231,42 +285,8 @@ export default function AuthScreen({ route }: Props) {
           </View>
         ) : null}
 
-        {mode === 'signup' ? (
+        {phase === 'signup' ? (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('auth.selectRole')}</Text>
-            <View style={styles.roleList}>
-              {roles.map((item) => {
-                const selected = role === item.value;
-                return (
-                  <Pressable
-                    key={item.value}
-                    onPress={() => setRole(item.value)}
-                    style={({ pressed }) => [
-                      styles.roleCard,
-                      selected && styles.roleCardSelected,
-                      pressed && styles.roleCardPressed,
-                    ]}
-                  >
-                    <View style={[styles.roleIcon, { backgroundColor: item.bg }]}>
-                      {item.icon}
-                    </View>
-                    <View style={styles.roleCopy}>
-                      <Text style={styles.roleTitle}>{item.label}</Text>
-                      <Text style={styles.roleDesc}>{item.description}</Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.roleCheck,
-                        selected && { backgroundColor: item.accent, borderColor: item.accent },
-                      ]}
-                    >
-                      {selected ? <Check size={14} color="#fff" strokeWidth={3} /> : null}
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-
             <Input
               label={t('auth.fullName')}
               value={fullName}
@@ -282,6 +302,15 @@ export default function AuthScreen({ route }: Props) {
               keyboardType="phone-pad"
               placeholder="+91 98765 43210"
               accessibilityLabel="Phone number"
+            />
+            <Input
+              label={t('auth.email')}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder="you@email.com"
+              accessibilityLabel="Email"
             />
             {role === 'worker' ? (
               <Pressable
@@ -301,43 +330,52 @@ export default function AuthScreen({ route }: Props) {
           </View>
         ) : null}
 
-        <Input
-          label={mode === 'login' ? t('auth.emailOrMobile') : t('auth.email')}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType={mode === 'login' ? 'default' : 'email-address'}
-          autoCapitalize="none"
-          placeholder={mode === 'login' ? 'email@example.com or 10-digit mobile' : 'you@email.com'}
-          accessibilityLabel={mode === 'login' ? 'Email or mobile' : 'Email'}
-        />
-        <Input
-          label={t('auth.password')}
-          value={password}
-          onChangeText={(v) => setPassword(mode === 'signup' ? sanitizePasswordInput(v) : v)}
-          secureTextEntry={!showPassword}
-          placeholder={mode === 'signup' ? PASSWORD_HINT : t('auth.passwordPlaceholder')}
-          accessibilityLabel="Password"
-        />
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setShowPassword((v) => !v)}
-          style={styles.linkBtn}
-        >
-          <Text style={styles.linkText}>{showPassword ? t('auth.hidePassword') : t('auth.showPassword')}</Text>
-        </Pressable>
-        {mode === 'login' ? (
+        {phase !== 'identifier' ? (
+          <>
+            <Input
+              label={t('auth.password')}
+              value={password}
+              onChangeText={(v) => setPassword(phase === 'signup' ? sanitizePasswordInput(v) : v)}
+              secureTextEntry={!showPassword}
+              placeholder={phase === 'signup' ? PASSWORD_HINT : t('auth.passwordPlaceholder')}
+              accessibilityLabel="Password"
+            />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setShowPassword((v) => !v)}
+              style={styles.linkBtn}
+            >
+              <Text style={styles.linkText}>{showPassword ? t('auth.hidePassword') : t('auth.showPassword')}</Text>
+            </Pressable>
+          </>
+        ) : null}
+        {phase === 'login' ? (
           <Pressable accessibilityRole="button" onPress={handleForgotPassword} style={styles.linkBtn}>
             <Text style={styles.linkText}>{t('auth.forgot')}</Text>
           </Pressable>
         ) : null}
 
         <Button
-          title={mode === 'login' ? t('auth.signIn') : t('home.createAccount')}
-          onPress={handleSubmit}
+          title={phase === 'identifier' ? 'Continue' : phase === 'login' ? 'Continue' : t('home.createAccount')}
+          onPress={phase === 'identifier' ? handleContinue : handleSubmit}
           loading={loading}
           size="lg"
           fullWidth
         />
+
+        {phase !== 'identifier' ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setError('');
+              setPhase('identifier');
+              setPassword('');
+            }}
+            style={styles.linkBtn}
+          >
+            <Text style={styles.linkText}>Use a different mobile or email</Text>
+          </Pressable>
+        ) : null}
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
@@ -357,19 +395,6 @@ export default function AuthScreen({ route }: Props) {
         >
           <Text style={styles.googleBtnText}>{t('auth.google')}</Text>
         </Pressable>
-
-        <Text style={styles.footerHint}>
-          {mode === 'login' ? t('auth.noAccount') : t('auth.haveAccount')}
-          <Text
-            style={styles.footerLink}
-            onPress={() => {
-              setError('');
-              setMode(mode === 'login' ? 'signup' : 'login');
-            }}
-          >
-            {mode === 'login' ? t('auth.signUp') : t('auth.signIn')}
-          </Text>
-        </Text>
       </Card>
     </ScreenLayout>
   );

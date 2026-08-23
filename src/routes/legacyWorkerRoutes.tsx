@@ -23,7 +23,6 @@ import WorkerContractHistory from '@/pages/worker/ContractHistory';
 import WorkerPayments from '@/pages/worker/WorkerPayments';
 import ApplicationSuccess from '@/pages/worker/ApplicationSuccess';
 import WorkerGoogleLandingRedirect from '@/modules/worker-registration/pages/WorkerGoogleLandingRedirect';
-import QuickWorkerSignup from '@/pages/worker/QuickWorkerSignup';
 import WorkerLoginPage from '@/pages/worker/WorkerLoginPage';
 import WorkerBindMobilePage from '@/pages/worker/WorkerBindMobilePage';
 import WorkerVerificationPage from '@/modules/worker-verification/pages/WorkerVerificationPage';
@@ -50,7 +49,7 @@ function workerRoute(path: string, page: ReactNode) {
 /** Supabase/Lovable worker portal routes (restored from legacy App.tsx). */
 export const legacyWorkerRoutes = (
   <>
-    <Route path="/worker/quick-signup" element={<QuickWorkerSignup />} />
+    <Route path="/worker/quick-signup" element={<WorkerLoginPage />} />
     <Route path="/worker/login" element={<WorkerLoginPage />} />
     <Route
       path="/worker/bind-mobile"

@@ -226,7 +226,7 @@ export default function PartnerRegister() {
         <p className="pt-4 text-center text-sm text-muted-foreground">
           {t("partner.already")}{" "}
           <Link to="/partner/login" className="font-medium text-primary hover:underline">
-            {t("partner.signIn")}
+            Continue
           </Link>
         </p>
       </AuthSplitLayout>

@@ -27,6 +27,7 @@ import {
 import { getFirebaseAuth, redirectToPhoneAuthHost } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
+import { AUTH_CONTINUE_MESSAGES, continueAuth } from '@/lib/authContinue';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 import TermsAgreeRow from '@/components/TermsAgreeRow';
 import WorkerTermsDialog from '@/components/WorkerTermsDialog';
@@ -56,6 +57,12 @@ type Props = {
   assistedByPartner?: boolean;
   /** Render only the form card (used inside the worker-portal sidebar). */
   embedded?: boolean;
+  /** Prefill from the unified Continue step. */
+  prefillEmail?: string;
+  prefillMobile?: string;
+  /** Hide competing sign-in/sign-up CTAs and lock prefilled identifiers. */
+  unified?: boolean;
+  onBackToContinue?: () => void;
 };
 
 /**
@@ -63,7 +70,14 @@ type Props = {
  * Independent workers continue to /worker/journey.
  * Partners stay signed in and fill the worker GCC journey as a kiosk service.
  */
-export default function QuickWorkerSignup({ assistedByPartner = false, embedded = false }: Props) {
+export default function QuickWorkerSignup({
+  assistedByPartner = false,
+  embedded = false,
+  prefillEmail = '',
+  prefillMobile = '',
+  unified = false,
+  onBackToContinue,
+}: Props) {
   const navigate = useNavigate();
   const {
     user, isAuthenticated, role, isMobileVerified, profileLoading, refreshProfile, refreshRole, markMobileVerified,
@@ -83,8 +97,8 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
   const [termsOpen, setTermsOpen] = useState(false);
 
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState(prefillEmail);
+  const [mobile, setMobile] = useState(prefillMobile);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const country = 'India';
@@ -212,6 +226,29 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
 
     setFormLoading(true);
     try {
+      if (!partnerAssisted) {
+        const check = await continueAuth({
+          role: 'worker',
+          email: email.trim().toLowerCase(),
+          mobile,
+        });
+        if (check.nextStep === 'ACCOUNT_CONFLICT') {
+          setError(check.error || AUTH_CONTINUE_MESSAGES.conflict);
+          return;
+        }
+        if (check.nextStep === 'LOGIN' || check.nextStep === 'WRONG_PORTAL') {
+          setError(
+            check.error ||
+              'An account already exists for these details. Go back and continue to sign in.',
+          );
+          return;
+        }
+        if (check.nextStep === 'RATE_LIMITED' || check.nextStep === 'ERROR') {
+          setError(check.error || AUTH_CONTINUE_MESSAGES.server);
+          return;
+        }
+      }
+
       const digits = mobile.replace(/\D/g, '');
       await firebaseOtp.sendOtp(digits);
       toast.success(`Verification code sent to +91 ${digits}`);
@@ -359,7 +396,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
         description="Create a free SafeWork Global worker profile to complete skill verification and connect with global employment opportunities."
       />
       <div className={embedded ? '' : 'flex h-full flex-col md:flex-row'}>
-        {!embedded && <SignupJourneyPanel createdByPartner={partnerAssisted} />}
+        {!embedded && <SignupJourneyPanel variant={unified ? 'continue' : 'signup'} createdByPartner={partnerAssisted} />}
 
         <main className={embedded ? 'w-full' : 'relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:px-8 md:px-8 lg:px-12'}>
           <div className="mx-auto w-full max-w-[480px]">
@@ -395,16 +432,16 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
                   {step === 'form'
                     ? partnerAssisted
                       ? 'Worker creation'
-                      : 'Create your worker profile'
+                      : 'Let’s create your account'
                     : partnerAssisted
                       ? 'Verify worker mobile'
-                      : 'Verify your mobile'}
+                      : 'Enter the OTP sent to your mobile'}
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {step === 'form'
                     ? partnerAssisted
                       ? 'Add the worker’s name, email, mobile, and a password. You stay signed in. They can sign in later with this mobile and password.'
-                      : 'Takes about 2 minutes. We’ll SMS a code to confirm your number.'
+                      : 'We’ll use the details you already entered and only ask for what’s still needed.'
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>
               </div>
@@ -415,9 +452,9 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
                 </Alert>
               )}
 
-              {step === 'form' && !partnerAssisted && (
+              {step === 'form' && !partnerAssisted && !unified && (
                 <div className="mb-4 space-y-3">
-                  <GoogleAuthButton label="Sign up with Google" role="worker" />
+                  <GoogleAuthButton label="Continue with Google" role="worker" />
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t border-border" />
@@ -455,6 +492,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        readOnly={unified && !!prefillEmail}
                         className="h-11 pl-10"
                         autoComplete="email"
                       />
@@ -475,6 +513,7 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
                         value={mobile}
                         onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
                         required
+                        readOnly={unified && !!prefillMobile}
                         className="h-full border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
                         autoComplete="tel"
                       />
@@ -585,29 +624,30 @@ export default function QuickWorkerSignup({ assistedByPartner = false, embedded 
                     Send SMS code
                   </Button>
 
-                  {!partnerAssisted && (
-                    <>
-                      <p className="pt-1 text-center text-sm text-muted-foreground">
-                        Already have an account?{' '}
-                        <Link to="/worker/login" className="font-medium text-primary hover:underline">
-                          Sign in
-                        </Link>
+                  {!partnerAssisted && unified && onBackToContinue && (
+                    <button
+                      type="button"
+                      data-inline
+                      onClick={onBackToContinue}
+                      className="w-full text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      ← Use a different mobile or email
+                    </button>
+                  )}
+                  {!partnerAssisted && !unified && (
+                    <div className="mt-4 border-t border-border pt-4">
+                      <p className="mb-2.5 text-center text-xs text-muted-foreground">
+                        Looking for a different portal?
                       </p>
-
-                      <div className="mt-4 border-t border-border pt-4">
-                        <p className="mb-2.5 text-center text-xs text-muted-foreground">
-                          Looking for a different portal?
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                            <Link to="/employer/login">Employer sign in</Link>
-                          </Button>
-                          <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                            <Link to="/partner/login">Partner sign in</Link>
-                          </Button>
-                        </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                          <Link to="/employer/login">Employer</Link>
+                        </Button>
+                        <Button asChild variant="outline" className="h-10 text-sm font-medium">
+                          <Link to="/partner/login">Partner</Link>
+                        </Button>
                       </div>
-                    </>
+                    </div>
                   )}
                 </form>
               )}

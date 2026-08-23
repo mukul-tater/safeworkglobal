@@ -17,10 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { validateSchema } from "@/lib/validations/common";
-import { quickEmployerSignupSchema } from "@/lib/validations/onboarding";
-import { sanitizePasswordInput, PASSWORD_HINT, PASSWORD_MIN_LENGTH } from "@/lib/validations/password";
 import {
   employerCompanySchema,
   employerContactSchema,
@@ -36,9 +34,9 @@ import {
   PARTNERSHIP_SERVICES,
   UAE_EMIRATES,
 } from "@/lib/employerTradeSkills";
-import GoogleAuthButton from "@/modules/worker-registration/components/GoogleAuthButton";
 import SignupJourneyPanel from "@/components/SignupJourneyPanel";
 import SEOHead from "@/components/SEOHead";
+import EmployerAuthEntry from "@/pages/employer/EmployerAuthEntry";
 import EmployerSignupStepper from "@/components/employer/EmployerSignupStepper";
 import EmployerDocUpload from "@/components/employer/EmployerDocUpload";
 import UaePhoneField from "@/components/employer/UaePhoneField";
@@ -87,20 +85,12 @@ export default function QuickEmployerSignup() {
   const [maxSection, setMaxSection] = useState<RegistrationSection>(1);
   const [ready, setReady] = useState(false);
   const bootstrappedRef = useRef(false);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
   const [editingRequirementId, setEditingRequirementId] = useState<string | null>(null);
   const [referenceId, setReferenceId] = useState("");
   const [draft, setDraft] = useState<EmployerRegistrationDraft>(emptyDraft);
-
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const patchDraft = useCallback((patch: Partial<EmployerRegistrationDraft>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -125,8 +115,6 @@ export default function QuickEmployerSignup() {
         const loaded = await loadEmployerRegistration(user.id);
         if (cancelled) return;
         setDraft(loaded.draft);
-        setFullName(profile?.full_name || loaded.draft.contactFullName);
-        setEmail(profile?.email || loaded.draft.businessEmail);
         if (loaded.draft.referenceId) setReferenceId(loaded.draft.referenceId);
         if (loaded.completed) {
           navigate("/employer/dashboard", { replace: true });
@@ -154,77 +142,6 @@ export default function QuickEmployerSignup() {
       throw new Error("Please sign in to save your details.");
     }
     return saveEmployerRegistration(current.id, draft, completed);
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    const validation = validateSchema(quickEmployerSignupSchema, { fullName, email, password });
-    if (!validation.success) {
-      const message = Object.values(validation.errors)[0];
-      setError(message);
-      toast.error(message);
-      return;
-    }
-    if (password !== confirmPassword) {
-      const message = "Passwords do not match";
-      setError(message);
-      toast.error(message);
-      return;
-    }
-    setLoading(true);
-    try {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: validation.data.email.trim(),
-        password: validation.data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/employer/quick-signup`,
-          data: { full_name: validation.data.fullName.trim(), role: "employer" },
-        },
-      });
-      if (signUpError) {
-        if (/already registered|already exists/i.test(signUpError.message)) {
-          toast.error("This email is already registered. Please sign in instead.");
-          navigate("/employer/login");
-          return;
-        }
-        throw signUpError;
-      }
-
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (signInErr) {
-        toast.success("Check your email to verify your account");
-        navigate("/verify-email");
-        return;
-      }
-
-      const { data: { user: created } } = await supabase.auth.getUser();
-      if (created) {
-        const { data: roleRow } = await supabase.from("user_roles").select("role").eq("user_id", created.id).maybeSingle();
-        if (roleRow && roleRow.role !== "employer") {
-          await supabase.auth.signOut();
-          toast.error(`This account is already registered as a ${roleRow.role}. Please log in with the correct role.`);
-          navigate("/employer/login");
-          return;
-        }
-        patchDraft({
-          contactFullName: fullName.trim(),
-          businessEmail: email.trim(),
-        });
-      }
-
-      toast.success("Account created. Verify your mobile number to continue.");
-      navigate("/employer/bind-mobile", { replace: true });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Signup failed";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const validateCurrentSection = (): boolean => {
@@ -358,7 +275,7 @@ export default function QuickEmployerSignup() {
     if (editingRequirementId === id) setEditingRequirementId(next[0]?.id ?? null);
   };
 
-  const busy = loading || saving;
+  const busy = saving;
   const panelStep = screen === "form" ? section - 1 : -1;
 
   if (profileLoading || !ready) {
@@ -376,7 +293,7 @@ export default function QuickEmployerSignup() {
         description="Tell us your manpower requirement. SafeWork Global helps UAE employers source, screen and skill-verify skilled workers from India."
       />
       <div className="flex h-full flex-col md:flex-row">
-        <SignupJourneyPanel audience="employer" activeStep={panelStep} />
+        <SignupJourneyPanel audience="employer" variant={screen === "account" ? "continue" : "signup"} activeStep={panelStep} />
 
         <main
           className={`relative flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5 sm:px-8 md:px-8 lg:px-12 ${
@@ -391,17 +308,6 @@ export default function QuickEmployerSignup() {
                   maxReachable={maxSection}
                   onSelect={setSection}
                 />
-              )}
-
-              {screen === "account" && (
-                <div className="mb-5">
-                  <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
-                    Create your employer account
-                  </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Then tell us your manpower requirement. No government fee — SafeWork commercial terms are agreed with you.
-                  </p>
-                </div>
               )}
 
               {screen === "form" && (
@@ -425,139 +331,7 @@ export default function QuickEmployerSignup() {
               )}
 
               {screen === "account" && (
-                <>
-                  <div className="mb-4 space-y-3">
-                    <GoogleAuthButton
-                      label="Sign up with Google"
-                      role="employer"
-                      onBeforeOAuth={() => {
-                        if (fullName.trim()) sessionStorage.setItem("pending_employer_full_name", fullName.trim());
-                      }}
-                    />
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-border" />
-                      </div>
-                      <div className="relative flex justify-center text-xs">
-                        <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleSignup} className="space-y-3.5" noValidate>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="name">Full name</Label>
-                      <Input
-                        id="name"
-                        placeholder="Your full name"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                        className="h-11"
-                        autoComplete="name"
-                        disabled={busy}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="email">Work email</Label>
-                      <div className="relative">
-                        <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="you@company.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                          className="h-11 pl-10"
-                          autoComplete="email"
-                          disabled={busy}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="password">Password</Label>
-                        <div className="relative">
-                          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="password"
-                            type={showPassword ? "text" : "password"}
-                            placeholder={PASSWORD_HINT}
-                            value={password}
-                            onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
-                            required
-                            minLength={PASSWORD_MIN_LENGTH}
-                            className="h-11 pl-10 pr-9"
-                            autoComplete="new-password"
-                            disabled={busy}
-                          />
-                          <button
-                            type="button"
-                            data-inline
-                            onClick={() => setShowPassword((v) => !v)}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                            aria-label={showPassword ? "Hide password" : "Show password"}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="confirmPassword">Confirm</Label>
-                        <div className="relative">
-                          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="confirmPassword"
-                            type={showConfirmPassword ? "text" : "password"}
-                            placeholder="Re-enter"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
-                            required
-                            minLength={PASSWORD_MIN_LENGTH}
-                            className="h-11 pl-10 pr-9"
-                            autoComplete="new-password"
-                            disabled={busy}
-                          />
-                          <button
-                            type="button"
-                            data-inline
-                            onClick={() => setShowConfirmPassword((v) => !v)}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                            aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                          >
-                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      type="submit"
-                      className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
-                      disabled={busy}
-                    >
-                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Create account
-                    </Button>
-                    <p className="pt-1 text-center text-sm text-muted-foreground">
-                      Already have an account?{" "}
-                      <Link to="/employer/login" className="font-medium text-primary hover:underline">
-                        Sign in
-                      </Link>
-                    </p>
-                    <div className="mt-4 border-t border-border pt-4">
-                      <p className="mb-2.5 text-center text-xs text-muted-foreground">Looking for a different portal?</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                          <Link to="/worker/login">Worker sign in</Link>
-                        </Button>
-                        <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                          <Link to="/partner/login">Partner sign in</Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </form>
-                </>
+                <EmployerAuthEntry embedded />
               )}
 
               {screen === "form" && section === 1 && (

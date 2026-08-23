@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +38,7 @@ import {
 } from '../validations/emitraOnboardingV2';
 import { getPartnerProfile, savePartnerApplication } from '../services/emitraService';
 import { getLspSession } from '@/modules/lsp/services/lspSession';
+import type { AuthContinueLocationState } from '@/lib/authContinue';
 import SearchSelect from '@/components/SearchSelect';
 import { getIndiaStates, getIndiaDistricts, getIndiaCities } from '@/lib/indiaLocations';
 
@@ -85,10 +86,12 @@ const DEFAULTS: FormData = {
  */
 export default function EmitraOnboardingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user, markMobileVerified } = useAuth();
   const lspSession = getLspSession();
   const sourceLspCode = searchParams.get('source_lsp') || lspSession?.code || null;
+  const continuePrefill = (location.state || {}) as AuthContinueLocationState;
   const [sourceLspId, setSourceLspId] = useState<string | null>(lspSession?.lspId ?? null);
   const firebaseOtp = useFirebasePhoneOtp();
   const [step, setStep] = useState(1);
@@ -105,7 +108,15 @@ export default function EmitraOnboardingPage() {
   const [accountPassword, setAccountPassword] = useState('');
   const [accountPasswordConfirm, setAccountPasswordConfirm] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [data, setData] = useState<FormData>({ ...DEFAULTS });
+  const [data, setData] = useState<FormData>(() => {
+    const prefill = (location.state || {}) as AuthContinueLocationState;
+    return {
+      ...DEFAULTS,
+      mobile: prefill.mobile || '',
+      whatsapp: prefill.mobile || '',
+      email: prefill.email || '',
+    };
+  });
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [pendingShopPhoto, setPendingShopPhoto] = useState<File | null>(null);
   const profileHydratedFor = useRef<string | null>(null);
@@ -785,6 +796,7 @@ export default function EmitraOnboardingPage() {
                       type="email"
                       value={data.email || ''}
                       onChange={(e) => update({ email: e.target.value })}
+                      readOnly={!!continuePrefill.email}
                     />
                   </Field>
                   <Field label="Mobile / WhatsApp Number" error={errors.mobile || errors.mobile_verified} required className="sm:col-span-2">
@@ -798,7 +810,7 @@ export default function EmitraOnboardingPage() {
                           maxLength={10}
                           value={data.mobile || ''}
                           onChange={(e) => setMobile(e.target.value)}
-                          disabled={mobileVerified}
+                          disabled={mobileVerified || !!continuePrefill.mobile}
                           className="rounded-l-none"
                           placeholder="10-digit Indian mobile"
                         />
@@ -1155,10 +1167,11 @@ export default function EmitraOnboardingPage() {
           )}
         </div>
         <p className="px-5 pb-5 text-center text-sm text-muted-foreground md:px-7">
-          Already a partner?{' '}
+          Already started? Continue from the same mobile or email on the{' '}
           <Link to="/emitra/login" className="font-medium text-primary hover:underline">
-            Sign in
+            E-Mitra continue
           </Link>
+          {' '}page.
         </p>
     </AuthSplitLayout>
   );

@@ -40,6 +40,17 @@ const COPY = {
         { n: '3', title: 'Get matched', detail: 'Verified Gulf employers' },
       ],
     },
+    continue: {
+      badge: 'Worker',
+      BadgeIcon: LogIn,
+      headline: 'Continue the safe way',
+      body: 'Enter your mobile or email. We’ll take you to sign in or create your profile — you don’t have to choose.',
+      steps: [
+        { n: '1', title: 'Continue', detail: 'Mobile or email' },
+        { n: '2', title: 'Verify', detail: 'Password or SMS OTP' },
+        { n: '3', title: 'Get matched', detail: 'Verified Gulf employers' },
+      ],
+    },
   },
   employer: {
     signup: {
@@ -65,6 +76,17 @@ const COPY = {
         { n: '3', title: 'Pay safely', detail: 'Escrow release after you hire' },
       ],
     },
+    continue: {
+      badge: 'Employer',
+      BadgeIcon: LogIn,
+      headline: 'Continue as an employer',
+      body: 'Enter your work email. We’ll take you to sign in or create your company account.',
+      steps: [
+        { n: '1', title: 'Continue', detail: 'Work email' },
+        { n: '2', title: 'Account', detail: 'Password or remaining details' },
+        { n: '3', title: 'Hire', detail: 'Jobs, shortlist & offers' },
+      ],
+    },
   },
   partner: {
     signup: {
@@ -86,6 +108,17 @@ const COPY = {
       steps: [
         { n: '1', title: 'Sign in', detail: 'Mobile OTP or email + password' },
         { n: '2', title: 'Open your portal', detail: 'Dashboard for your partner type' },
+        { n: '3', title: 'Serve workers', detail: 'Register, verify and place talent' },
+      ],
+    },
+    continue: {
+      badge: 'Partner',
+      BadgeIcon: LogIn,
+      headline: 'Continue as a partner',
+      body: 'Enter your mobile or email. We’ll take you to your portal or the remaining application steps.',
+      steps: [
+        { n: '1', title: 'Continue', detail: 'Mobile or email' },
+        { n: '2', title: 'Next step', detail: 'Password, OTP, or application' },
         { n: '3', title: 'Serve workers', detail: 'Register, verify and place talent' },
       ],
     },

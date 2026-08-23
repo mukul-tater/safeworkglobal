@@ -156,7 +156,7 @@ const Header = () => {
                       {t("header.iWantTo")}
                     </p>
                     <button
-                      onClick={() => navigate('/worker/quick-signup')}
+                      onClick={() => navigate('/worker/login')}
                       className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors"
                     >
                       <div className="p-2 rounded-lg bg-success/10 text-success">
@@ -168,7 +168,7 @@ const Header = () => {
                       </div>
                     </button>
                     <button
-                      onClick={() => navigate('/employer/quick-signup')}
+                      onClick={() => navigate('/employer/login')}
                       className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors mt-1"
                     >
                       <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -180,7 +180,7 @@ const Header = () => {
                       </div>
                     </button>
                     <button
-                      onClick={() => navigate('/partner/register')}
+                      onClick={() => navigate('/partner/login')}
                       className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors mt-1"
                     >
                       <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
@@ -190,25 +190,6 @@ const Header = () => {
                         <div className="font-semibold text-sm">{t("header.partner")}</div>
                         <div className="text-xs text-muted-foreground">{t("header.partnerSub")}</div>
                       </div>
-                    </button>
-                    <div className="border-t border-border my-2" />
-                    <button
-                      onClick={() => navigate('/worker/login')}
-                      className="w-full text-xs text-center text-primary hover:underline py-1"
-                    >
-                      {t("header.workerSignIn")}
-                    </button>
-                    <button
-                      onClick={() => navigate('/employer/login')}
-                      className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
-                    >
-                      {t("header.employerSignIn")}
-                    </button>
-                    <button
-                      onClick={() => navigate('/partner/login')}
-                      className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
-                    >
-                      {t("header.partnerSignIn")}
                     </button>
                   </PopoverContent>
                 </Popover>
@@ -317,7 +298,7 @@ const Header = () => {
                       variant="default"
                       size="lg"
                       className="w-full justify-start gap-3"
-                      onClick={() => { navigate('/worker/quick-signup'); closeMobileMenu(); }}
+                      onClick={() => { navigate('/worker/login'); closeMobileMenu(); }}
                     >
                       <HardHat className="h-4 w-4" />
                       {t("header.findJobCta")}
@@ -326,7 +307,7 @@ const Header = () => {
                       variant="secondary"
                       size="lg"
                       className="w-full justify-start gap-3"
-                      onClick={() => { navigate('/employer/quick-signup'); closeMobileMenu(); }}
+                      onClick={() => { navigate('/employer/login'); closeMobileMenu(); }}
                     >
                       <Briefcase className="h-4 w-4" />
                       {t("header.hireCta")}
@@ -335,23 +316,11 @@ const Header = () => {
                       variant="outline"
                       size="lg"
                       className="w-full justify-start gap-3"
-                      onClick={() => { navigate('/partner/register'); closeMobileMenu(); }}
+                      onClick={() => { navigate('/partner/login'); closeMobileMenu(); }}
                     >
                       <Handshake className="h-4 w-4" />
                       {t("header.partner")}
                     </Button>
-                    <button
-                      onClick={() => { navigate('/worker/login'); closeMobileMenu(); }}
-                      className="w-full text-xs text-center text-primary hover:underline py-1"
-                    >
-                      {t("header.workerSignIn")}
-                    </button>
-                    <button
-                      onClick={() => { navigate('/partner/login'); closeMobileMenu(); }}
-                      className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-1"
-                    >
-                      {t("header.partnerSignIn")}
-                    </button>
                   </div>
                 )}
               </div>

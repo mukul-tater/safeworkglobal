@@ -58,16 +58,16 @@ export default function PartnerLoginChooser() {
   return (
     <AuthSplitLayout
       audience="partner"
-      variant="login"
+      variant="continue"
       maxWidthClassName="max-w-[480px]"
       centerVertically={false}
     >
       <div className="mb-5">
         <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
-          Sign in to continue
+          Continue as a partner
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choose your account type. Trade test centres use SSVN login — not E-Mitra.
+          Choose your account type. We’ll take you to the next step.
         </p>
       </div>
 
@@ -91,9 +91,9 @@ export default function PartnerLoginChooser() {
       </div>
 
       <p className="pt-5 text-center text-sm text-muted-foreground">
-        New partner?{' '}
+        Need to pick a partner type first?{' '}
         <Link to="/partner/register" className="font-medium text-primary hover:underline">
-          Apply here
+          View partner types
         </Link>
       </p>
 
@@ -101,10 +101,10 @@ export default function PartnerLoginChooser() {
         <p className="mb-2.5 text-center text-xs text-muted-foreground">Looking for a different portal?</p>
         <div className="grid grid-cols-2 gap-2">
           <Button asChild variant="outline" className="h-10 text-sm font-medium">
-            <Link to="/worker/login">Worker sign in</Link>
+            <Link to="/worker/login">Worker</Link>
           </Button>
           <Button asChild variant="outline" className="h-10 text-sm font-medium">
-            <Link to="/employer/login">Employer sign in</Link>
+            <Link to="/employer/login">Employer</Link>
           </Button>
         </div>
       </div>

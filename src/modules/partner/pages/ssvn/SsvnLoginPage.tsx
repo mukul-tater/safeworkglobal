@@ -28,6 +28,7 @@ import AuthSplitLayout from '@/components/AuthSplitLayout';
 import { cn } from '@/lib/utils';
 import DevOtpHint from '@/components/DevOtpHint';
 import ForgotPasswordControl from '@/components/ForgotPasswordControl';
+import { AUTH_CONTINUE_MESSAGES, continueAuth, type AuthContinueLocationState } from '@/lib/authContinue';
 
 type Method = 'mobile' | 'email';
 type Step = 'credentials' | 'otp';
@@ -124,6 +125,21 @@ export default function SsvnLoginPage() {
 
     setLoading(true);
     try {
+      const check = await continueAuth({ role: 'partner', mobile: digits });
+      if (check.nextStep === 'RATE_LIMITED' || check.nextStep === 'ERROR') {
+        setError(check.error || AUTH_CONTINUE_MESSAGES.server);
+        return;
+      }
+      if (check.nextStep === 'ACCOUNT_CONFLICT' || check.nextStep === 'WRONG_PORTAL') {
+        setError(check.error || AUTH_CONTINUE_MESSAGES.conflict);
+        return;
+      }
+      if (check.nextStep === 'SIGNUP') {
+        const state: AuthContinueLocationState = { mobile: digits, method: 'mobile' };
+        navigate(registerPath, { state });
+        return;
+      }
+
       const userId = await findUserIdByPartnerMobile(digits);
       if (!userId) {
         setError('No partner account found with this mobile. Please apply first.');
@@ -221,6 +237,30 @@ export default function SsvnLoginPage() {
     setError('');
     setLoading(true);
 
+    const check = await continueAuth({ role: 'partner', email: email.trim().toLowerCase() });
+    if (check.nextStep === 'RATE_LIMITED' || check.nextStep === 'ERROR') {
+      setError(check.error || AUTH_CONTINUE_MESSAGES.server);
+      setLoading(false);
+      return;
+    }
+    if (check.nextStep === 'ACCOUNT_CONFLICT' || check.nextStep === 'WRONG_PORTAL') {
+      setError(check.error || AUTH_CONTINUE_MESSAGES.conflict);
+      setLoading(false);
+      return;
+    }
+    if (check.nextStep === 'SIGNUP') {
+      const state: AuthContinueLocationState = { email: email.trim().toLowerCase(), method: 'email' };
+      navigate(registerPath, { state });
+      setLoading(false);
+      return;
+    }
+
+    if (!password) {
+      setError('Enter your password to continue');
+      setLoading(false);
+      return;
+    }
+
     const result = await login(email.trim(), password);
     if (!result.success) {
       setError(result.error || 'Login failed');
@@ -257,7 +297,7 @@ export default function SsvnLoginPage() {
   }
 
   return (
-    <AuthSplitLayout audience="partner" variant="login">
+    <AuthSplitLayout audience="partner" variant="continue">
       <div className="mb-5">
         <div className="mb-3 flex items-center gap-2">
           <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', portal.accentClass)}>
@@ -269,7 +309,9 @@ export default function SsvnLoginPage() {
             </h2>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">{portal.loginBlurb}</p>
+        <p className="text-sm text-muted-foreground">
+          {portal.loginBlurb} Enter your mobile or email — we’ll take you to the next step.
+        </p>
       </div>
 
       <Tabs
@@ -322,7 +364,7 @@ export default function SsvnLoginPage() {
               disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Send OTP
+              Continue
             </Button>
           </form>
         ) : (
@@ -423,22 +465,16 @@ export default function SsvnLoginPage() {
             disabled={loading}
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in
+            Continue
           </Button>
         </form>
       )}
 
       <div className="mt-5 space-y-2 border-t border-border pt-4 text-center text-sm text-muted-foreground">
         <p>
-          New {portal.applyNoun}?{' '}
-          <Link to={registerPath} className="font-medium text-primary hover:underline">
-            Apply as {typeLabel} partner
-          </Link>
-        </p>
-        <p>
           E-Mitra partner?{' '}
           <Link to="/emitra/login" className="font-medium text-primary hover:underline">
-            Use E-Mitra login
+            Continue as E-Mitra
           </Link>
         </p>
       </div>

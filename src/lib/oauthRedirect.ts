@@ -104,11 +104,16 @@ function isLoginFormPath(path: string): boolean {
   return (
     pathname === '/auth' ||
     pathname === '/login' ||
+    pathname === '/register' ||
     pathname === '/worker/login' ||
+    pathname === '/worker/quick-signup' ||
     pathname === '/employer/login' ||
+    pathname === '/employer/quick-signup' ||
     pathname === '/partner/login' ||
+    pathname === '/partner/register' ||
     pathname === '/admin/login' ||
-    pathname === '/emitra/login'
+    pathname === '/emitra/login' ||
+    pathname === '/emitra/register'
   );
 }
 

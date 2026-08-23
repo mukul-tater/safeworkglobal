@@ -23,6 +23,7 @@ import { indianStates } from "@/lib/validations/partner";
 import { partnerAuthEmailFromMobile, displayableEmail } from "@/lib/workerAuthEmail";
 import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from "@/lib/validations/password";
 import { lockedPartnerFromPath } from "@/modules/partner/config/partnerPortalRoutes";
+import type { AuthContinueLocationState } from "@/lib/authContinue";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
 import FormStepPills from "@/components/FormStepPills";
 import { cn } from "@/lib/utils";
@@ -45,7 +46,8 @@ interface PartnerType {
 export default function PartnerRegisterLegacy() {
   const { user, isAuthenticated, assignRole, signup, refreshProfile, refreshRole } = useAuth();
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const { pathname, state: locationState } = useLocation();
+  const continuePrefill = (locationState || {}) as AuthContinueLocationState;
   const portal = lockedPartnerFromPath(pathname);
   const lockedTypeCode = portal?.code ?? null;
   const loginPath = portal?.loginPath ?? "/partner/ssvn/login";
@@ -65,8 +67,8 @@ export default function PartnerRegisterLegacy() {
     partner_type_id: "",
     company_name: "",
     owner_name: "",
-    mobile: "",
-    email: "",
+    mobile: continuePrefill.mobile || "",
+    email: continuePrefill.email || "",
     password: "",
     confirmPassword: "",
     state: "",
@@ -575,10 +577,11 @@ export default function PartnerRegisterLegacy() {
         </Button>
 
         <p className="pt-1 text-center text-sm text-muted-foreground">
-          Already registered?{" "}
+          Already started? Continue from the same mobile or email on the{" "}
           <Link to={loginPath} className="font-medium text-primary hover:underline">
-            {signInLabel}
+            {portal?.typeLabel ?? "partner"} continue
           </Link>
+          {" "}page.
         </p>
       </div>
     </AuthSplitLayout>

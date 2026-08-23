@@ -4691,6 +4691,10 @@ export type Database = {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: undefined
       }
+      auth_continue: {
+        Args: { p_email?: string; p_phone?: string; p_role?: string }
+        Returns: Json
+      }
       bind_partner_to_lsp: {
         Args: { p_emitra_id?: string; p_lsp_id: string }
         Returns: Json
