@@ -367,7 +367,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`${CHOICE_BTN} transition-all ${}
+                      className={`${CHOICE_BTN} transition-all ${
                         medical.fitForDuties === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -488,7 +488,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`${CHOICE_BTN} transition-all ${}
+                      className={`${CHOICE_BTN} transition-all ${
                         overseas.workedOutsideIndia === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -531,7 +531,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`${CHOICE_BTN} transition-all ${}
+                      className={`${CHOICE_BTN} transition-all ${
                         overseas.gccReturn === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -669,7 +669,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`${CHOICE_BTN} transition-all ${}
+                      className={`${CHOICE_BTN} transition-all ${
                         overseas.beenDeported === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -717,7 +717,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`${CHOICE_BTN} transition-all ${}
+                      className={`${CHOICE_BTN} transition-all ${
                         overseas.refusedVisaOrEntry === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -765,7 +765,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`${CHOICE_BTN} transition-all ${}
+                      className={`${CHOICE_BTN} transition-all ${
                         overseas.overstayedVisa === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -832,7 +832,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`${CHOICE_BTN} transition-all ${}
+                      className={`${CHOICE_BTN} transition-all ${
                         recruitment.registeredWithOtherAgency === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -881,7 +881,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`${CHOICE_BTN} transition-all ${}
+                      className={`${CHOICE_BTN} transition-all ${
                         recruitment.paidMoneyForJob === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -929,7 +929,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`${CHOICE_BTN} transition-all ${}
+                      className={`${CHOICE_BTN} transition-all ${
                         recruitment.promisedGuaranteedJobForMoney === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
