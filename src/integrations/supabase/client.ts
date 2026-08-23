@@ -1,6 +1,7 @@
 // Lovable / Vite client. Public anon key is safe in the browser.
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { brokeredPreviewStorage } from './previewAuthStorage';
 
 /** Public project defaults (anon key). Override with VITE_* when present. */
 const DEFAULT_SUPABASE_URL = 'https://etpiadoqryvtlpmiuxia.supabase.co';
@@ -16,7 +17,7 @@ const SUPABASE_PUBLISHABLE_KEY = String(
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    storage: brokeredPreviewStorage(),
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
