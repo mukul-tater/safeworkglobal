@@ -18,7 +18,7 @@ import {
   FileText, FileSignature, ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from '@/lib/validations/password';
+import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT, isWeakPasswordAuthError, WEAK_PASSWORD_MESSAGE } from '@/lib/validations/password';
 import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
@@ -86,7 +86,7 @@ const DEFAULTS: FormData = {
 export default function EmitraOnboardingPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signup, user } = useAuth();
+  const { user, markMobileVerified } = useAuth();
   const lspSession = getLspSession();
   const sourceLspCode = searchParams.get('source_lsp') || lspSession?.code || null;
   const [sourceLspId, setSourceLspId] = useState<string | null>(lspSession?.lspId ?? null);
@@ -395,24 +395,79 @@ export default function EmitraOnboardingPage() {
     const realEmail = displayableEmail(data.email);
     const authEmail = realEmail || partnerAuthEmailFromMobile(digits);
 
-    const result = await signup({
+    const fail = (message: string) => {
+      toast.error(message);
+      return null;
+    };
+
+    const signIn = async (): Promise<string | null> => {
+      const { data: signedIn, error } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: accountPassword,
+      });
+      if (signedIn.session?.user?.id) return signedIn.session.user.id;
+      if (error && /email not confirmed/i.test(error.message)) {
+        await new Promise((r) => setTimeout(r, 700));
+        const retry = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: accountPassword,
+        });
+        if (retry.data.session?.user?.id) return retry.data.session.user.id;
+        return fail(
+          'Account created. Confirm the email we sent, then tap Continue again (or sign in).',
+        );
+      }
+      if (error) {
+        if (isWeakPasswordAuthError(error.message)) return fail(WEAK_PASSWORD_MESSAGE);
+        if (/invalid login/i.test(error.message)) {
+          return fail('This email is already registered. Sign in, or use a different email.');
+        }
+        return fail(error.message);
+      }
+      return signedIn.user?.id ?? null;
+    };
+
+    const { data: signupData, error: signupErr } = await supabase.auth.signUp({
       email: authEmail,
       password: accountPassword,
-      full_name: data.owner_name,
-      phone: digits,
-      role: 'partner',
+      options: {
+        emailRedirectTo: `${window.location.origin}/emitra/register`,
+        data: {
+          full_name: data.owner_name,
+          phone: digits,
+          role: 'partner',
+          mobile_verified: true,
+        },
+      },
     });
 
-    if (!result.success) {
-      toast.error(result.error || 'Account creation failed');
-      return null;
+    if (signupErr) {
+      if (/already registered|already exists/i.test(signupErr.message)) {
+        const existingId = await signIn();
+        if (existingId) {
+          profileHydratedFor.current = existingId;
+          markMobileVerified(digits, existingId);
+        }
+        return existingId;
+      }
+      if (isWeakPasswordAuthError(signupErr.message)) return fail(WEAK_PASSWORD_MESSAGE);
+      return fail(signupErr.message);
     }
 
-    const {
-      data: { user: newUser },
-    } = await supabase.auth.getUser();
-    if (newUser?.id) profileHydratedFor.current = newUser.id;
-    return newUser?.id || null;
+    let uid = signupData.session?.user?.id || signupData.user?.id || null;
+    if (!signupData.session) {
+      uid = await signIn();
+      if (!uid) return null;
+    }
+    if (!uid) {
+      const { data: { user: current } } = await supabase.auth.getUser();
+      uid = current?.id ?? null;
+    }
+    if (!uid) return fail('Could not start your account session. Please try again.');
+
+    profileHydratedFor.current = uid;
+    markMobileVerified(digits, uid);
+    return uid;
   };
 
   const buildPayload = (overrides: Record<string, unknown> = {}) => {
@@ -466,7 +521,7 @@ export default function EmitraOnboardingPage() {
 
   const persistProgress = async (overrides: Record<string, unknown> = {}) => {
     const uid = user?.id || (await ensureAccount());
-    if (!uid) throw new Error('Account not ready. Please try again.');
+    if (!uid) return null;
     let shopPhotoUrl = data.shop_photo_url as string;
     if (pendingShopPhoto) {
       shopPhotoUrl = await uploadPartnerDocFile(uid, 'kiosk-photo', pendingShopPhoto);
@@ -481,7 +536,8 @@ export default function EmitraOnboardingPage() {
     if (!validateStep()) return;
     setSaving(true);
     try {
-      await persistProgress({ current_step: Math.min(step + 1, STEPS.length) });
+      const uid = await persistProgress({ current_step: Math.min(step + 1, STEPS.length) });
+      if (!uid) return;
       setStep((s) => Math.min(s + 1, STEPS.length));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not save progress');
@@ -498,11 +554,12 @@ export default function EmitraOnboardingPage() {
     }
     setSaving(true);
     try {
-      await persistProgress({
+      const uid = await persistProgress({
         status: 'under_review',
         submitted_at: new Date().toISOString(),
         current_step: STEPS.length,
       });
+      if (!uid) return;
       toast.success('Application submitted! Our team will review it shortly.');
       navigate('/emitra/login');
     } catch (e) {
