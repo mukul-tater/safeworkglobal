@@ -5736,6 +5736,15 @@ export type Database = {
         }
         Returns: string
       }
+      create_phone_verified_worker_account: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_password: string
+          p_phone: string
+        }
+        Returns: string
+      }
       current_employer_org: { Args: never; Returns: string }
       current_partner: {
         Args: never

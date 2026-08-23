@@ -1,6 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { workerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
-import { passwordSignupIssue, WEAK_PASSWORD_MESSAGE } from '@/lib/validations/password';
+import {
+  isWeakPasswordAuthError,
+  passwordSignupIssue,
+  WEAK_PASSWORD_MESSAGE,
+} from '@/lib/validations/password';
 import {
   WORKER_TERMS_VERSION,
 } from '@/modules/worker-verification/constants';
@@ -102,60 +106,102 @@ export async function createVerifiedWorkerAccount(
   if (passwordIssue) throw new Error(passwordIssue);
 
   try {
-    const { data: signupData, error: signupErr } = await supabase.auth.signUp({
-      email: authEmail,
-      password: input.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/worker/journey`,
-        data: {
-          full_name: input.fullName.trim(),
-          phone: digits,
-          role: 'worker',
-          // OTP already verified — handle_new_user + AuthContext honor this.
-          mobile_verified: true,
-          terms_version: WORKER_TERMS_VERSION,
-        },
+    const { data: rpcId, error: rpcErr } = await supabase.rpc(
+      'create_phone_verified_worker_account',
+      {
+        p_email: authEmail,
+        p_password: input.password,
+        p_full_name: input.fullName.trim(),
+        p_phone: digits,
       },
-    });
+    );
+    const rpcMissing = !!rpcErr && /could not find|does not exist|schema cache/i.test(rpcErr.message);
 
-    if (signupErr) {
-      if (/already registered|already exists/i.test(signupErr.message)) {
+    if (!rpcMissing) {
+      if (rpcErr && /already registered|already exists|duplicate/i.test(rpcErr.message)) {
         throw new Error('This email or mobile is already registered. Sign in instead.');
       }
-      if (/weak|easy to guess|pwned|leaked password/i.test(signupErr.message)) {
-        throw new Error(WEAK_PASSWORD_MESSAGE);
+      if (rpcErr) {
+        if (isWeakPasswordAuthError(rpcErr.message)) throw new Error(WEAK_PASSWORD_MESSAGE);
+        throw new Error(rpcErr.message);
       }
-      throw new Error(signupErr.message);
-    }
+      if (!rpcId) throw new Error('Could not create account. Please try again.');
 
-    // Email confirmation is enabled in production. In that configuration the
-    // account is created successfully but signUp intentionally returns no
-    // session. Do not immediately call signInWithPassword (it can only return
-    // "Email not confirmed") or continue with authenticated profile writes.
-    if (!signupData.session) {
-      const userId = signupData.user?.id;
-      if (!userId) {
-        throw new Error('Account was created, but confirmation status could not be read.');
+      const { data: signedIn, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: authEmail,
+        password: input.password,
+      });
+      if (!signedIn?.session) {
+        if (signInErr && /email not confirmed/i.test(signInErr.message)) {
+          await new Promise((r) => setTimeout(r, 700));
+          const retry = await supabase.auth.signInWithPassword({
+            email: authEmail,
+            password: input.password,
+          });
+          if (!retry.data.session) {
+            throw new Error('Account created. Confirm the email we sent, then sign in.');
+          }
+        } else if (signInErr) {
+          throw new Error(signInErr.message);
+        } else {
+          throw new Error('Account created but session could not be established.');
+        }
       }
-      if (input.preserveCallerSession) {
-        await attachWorkerToCallingPartner({
-          workerUserId: userId,
-          fullName: input.fullName.trim(),
+      switchedAwayFromCaller = true;
+    } else {
+      const { data: signupData, error: signupErr } = await supabase.auth.signUp({
+        email: authEmail,
+        password: input.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/worker/journey`,
+          data: {
+            full_name: input.fullName.trim(),
+            phone: digits,
+            role: 'worker',
+            // OTP already verified — handle_new_user + AuthContext honor this.
+            mobile_verified: true,
+            terms_version: WORKER_TERMS_VERSION,
+          },
+        },
+      });
+
+      if (signupErr) {
+        if (/already registered|already exists/i.test(signupErr.message)) {
+          throw new Error('This email or mobile is already registered. Sign in instead.');
+        }
+        if (isWeakPasswordAuthError(signupErr.message)) {
+          throw new Error(WEAK_PASSWORD_MESSAGE);
+        }
+        throw new Error(signupErr.message);
+      }
+
+      // Email confirmation is enabled in production. In that configuration the
+      // account is created successfully but signUp intentionally returns no
+      // session. Do not immediately call signInWithPassword (it can only return
+      // "Email not confirmed") or continue with authenticated profile writes.
+      if (!signupData.session) {
+        const userId = signupData.user?.id;
+        if (!userId) {
+          throw new Error('Account was created, but confirmation status could not be read.');
+        }
+        if (input.preserveCallerSession) {
+          await attachWorkerToCallingPartner({
+            workerUserId: userId,
+            fullName: input.fullName.trim(),
+            mobile: digits,
+            email: authEmail,
+          });
+        }
+        return {
+          userId,
+          authEmail,
           mobile: digits,
-          email: authEmail,
-        });
+          requiresEmailConfirmation: true,
+        };
       }
-      return {
-        userId,
-        authEmail,
-        mobile: digits,
-        requiresEmailConfirmation: true,
-      };
-    }
 
-    // signUp already established the session when confirmation is not
-    // required. Avoid a second auth request and the races it causes on mobile.
-    switchedAwayFromCaller = true;
+      switchedAwayFromCaller = true;
+    }
 
     const {
       data: { user },

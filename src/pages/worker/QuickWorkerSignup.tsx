@@ -12,12 +12,12 @@ import {
 } from 'lucide-react';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import {
+  COMMON_PASSWORD_MESSAGE,
   isWeakPasswordAuthError,
   passwordSignupIssue,
   sanitizePasswordInput,
   PASSWORD_HINT,
   PASSWORD_MIN_LENGTH,
-  WEAK_PASSWORD_MESSAGE,
 } from '@/lib/validations/password';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import {
@@ -103,6 +103,8 @@ export default function QuickWorkerSignup({
   const [confirmPassword, setConfirmPassword] = useState('');
   const country = 'India';
   const [otp, setOtp] = useState('');
+  const [phoneOtpVerified, setPhoneOtpVerified] = useState(false);
+  const [needsPasswordRetry, setNeedsPasswordRetry] = useState(false);
   const [emitraNoticeOpen, setEmitraNoticeOpen] = useState(false);
   const isEmitraAssisted = partnerAssisted && partnerCtx?.source.type === 'emitra';
 
@@ -196,9 +198,9 @@ export default function QuickWorkerSignup({
   const goToSignupStep = (n: number) => {
     if (n === 1) {
       setStep('form');
-      setOtp('');
+      if (!phoneOtpVerified) setOtp('');
       setError('');
-      firebaseOtp.resetRecaptcha();
+      if (!phoneOtpVerified) firebaseOtp.resetRecaptcha();
       return;
     }
     if (n === 2 && otpReached) {
@@ -249,6 +251,12 @@ export default function QuickWorkerSignup({
         }
       }
 
+      if (phoneOtpVerified) {
+        setNeedsPasswordRetry(false);
+        await createAccountAfterOtp();
+        return;
+      }
+
       const digits = mobile.replace(/\D/g, '');
       await firebaseOtp.sendOtp(digits);
       toast.success(`Verification code sent to +91 ${digits}`);
@@ -256,91 +264,119 @@ export default function QuickWorkerSignup({
       setStep('otp');
       setOtp('');
     } catch (err: unknown) {
-      firebaseOtp.resetRecaptcha();
-      setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.');
+      const message = err instanceof Error ? err.message : 'Failed to send OTP. Please try again.';
+      if (phoneOtpVerified && isWeakPasswordAuthError(message)) {
+        handlePasswordRetryFailure(message);
+      } else if (phoneOtpVerified) {
+        setError(message);
+      } else {
+        firebaseOtp.resetRecaptcha();
+        setError(message);
+      }
     } finally {
       setFormLoading(false);
     }
   };
 
+  const createAccountAfterOtp = async () => {
+    const created = await createVerifiedWorkerAccount({
+      fullName: name.trim(),
+      email: email.trim().toLowerCase(),
+      mobile,
+      password,
+      country,
+      source: partnerAssisted ? (partnerCtx?.source ?? { type: 'partner' }) : { type: 'organic' },
+      ...(partnerAssisted
+        ? {
+            preserveCallerSession: true,
+            restoreCallerAfterSuccess: true,
+            partnerReturnTo: partnerCtx?.myWorkersPath || '/partner/my-workers',
+          }
+        : {}),
+    });
+    if (partnerAssisted) {
+      try {
+        const { attachDraftDeclarationsToWorker } = await import(
+          '@/modules/worker-verification/services/declarationService'
+        );
+        await attachDraftDeclarationsToWorker(created.userId);
+      } catch {
+        /* declarations can be re-done on the journey */
+      }
+    }
+    if (created.requiresEmailConfirmation) {
+      toast.success(
+        partnerAssisted
+          ? 'Worker created and listed in My Workers. Continue their GCC journey — they should also confirm email.'
+          : 'Account created. Check your email to confirm your account, then sign in.',
+      );
+      navigate(partnerAssisted ? partnerWorkerJourneyPath(created.userId) : '/worker/login', {
+        replace: true,
+      });
+      return;
+    }
+    // Persist flag BEFORE navigation so ProtectedRoute does not bounce to
+    // /worker/bind-mobile (signup OTP already verified this number).
+    // Pass userId — AuthContext user may not be set yet after signIn.
+    if (!partnerAssisted) {
+      markMobileVerified(created.mobile, created.userId);
+      await refreshRole();
+      await refreshProfile();
+      markMobileVerified(created.mobile, created.userId);
+      toast.success('Welcome to SafeWorkGlobal!');
+      navigate('/worker/journey', { replace: true });
+      return;
+    }
+    await refreshRole();
+    await refreshProfile();
+    toast.success('Worker created. Continue their GCC journey — you stay signed in as partner.');
+    navigate(partnerWorkerJourneyPath(created.userId), { replace: true });
+  };
+
+  const handlePasswordRetryFailure = (message: string) => {
+    setNeedsPasswordRetry(true);
+    setStep('otp');
+    setOtpReached(true);
+    setError(isWeakPasswordAuthError(message) ? COMMON_PASSWORD_MESSAGE : message);
+    toast.error('Mobile is verified. Choose a different password to finish creating the account.');
+  };
+
   const handleVerifyAndCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (otp.length !== 6) {
+    if (!phoneOtpVerified && otp.length !== 6) {
       setError('Enter the 6-digit verification code');
       return;
+    }
+    if (needsPasswordRetry) {
+      const passwordIssue = passwordSignupIssue(password);
+      if (passwordIssue) {
+        setError(passwordIssue);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
     }
 
     setFormLoading(true);
     try {
-      await firebaseOtp.verifyOtp(otp);
-
-      try {
-        await firebaseSignOut(getFirebaseAuth());
-      } catch {
-        /* ignore */
-      }
-
-      const created = await createVerifiedWorkerAccount({
-        fullName: name.trim(),
-        email: email.trim().toLowerCase(),
-        mobile,
-        password,
-        country,
-        source: partnerAssisted ? (partnerCtx?.source ?? { type: 'partner' }) : { type: 'organic' },
-        ...(partnerAssisted
-          ? {
-              preserveCallerSession: true,
-              restoreCallerAfterSuccess: true,
-              partnerReturnTo: partnerCtx?.myWorkersPath || '/partner/my-workers',
-            }
-          : {}),
-      });
-      if (partnerAssisted) {
+      if (!phoneOtpVerified) {
+        await firebaseOtp.verifyOtp(otp);
+        setPhoneOtpVerified(true);
         try {
-          const { attachDraftDeclarationsToWorker } = await import(
-            '@/modules/worker-verification/services/declarationService'
-          );
-          await attachDraftDeclarationsToWorker(created.userId);
+          await firebaseSignOut(getFirebaseAuth());
         } catch {
-          /* declarations can be re-done on the journey */
+          /* ignore */
         }
       }
-      if (created.requiresEmailConfirmation) {
-        toast.success(
-          partnerAssisted
-            ? 'Worker created and listed in My Workers. Continue their GCC journey — they should also confirm email.'
-            : 'Account created. Check your email to confirm your account, then sign in.',
-        );
-        navigate(partnerAssisted ? partnerWorkerJourneyPath(created.userId) : '/worker/login', {
-          replace: true,
-        });
-        return;
-      }
-      // Persist flag BEFORE navigation so ProtectedRoute does not bounce to
-      // /worker/bind-mobile (signup OTP already verified this number).
-      // Pass userId — AuthContext user may not be set yet after signIn.
-      if (!partnerAssisted) {
-        markMobileVerified(created.mobile, created.userId);
-        await refreshRole();
-        await refreshProfile();
-        markMobileVerified(created.mobile, created.userId);
-        toast.success('Welcome to SafeWorkGlobal!');
-        navigate('/worker/journey', { replace: true });
-        return;
-      }
-      await refreshRole();
-      await refreshProfile();
-      toast.success('Worker created. Continue their GCC journey — you stay signed in as partner.');
-      navigate(partnerWorkerJourneyPath(created.userId), { replace: true });
+
+      await createAccountAfterOtp();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       if (isWeakPasswordAuthError(message)) {
-        firebaseOtp.resetRecaptcha();
-        setOtp('');
-        setStep('form');
-        setError(WEAK_PASSWORD_MESSAGE);
-        toast.error('Choose a stronger password, then send a new SMS code.');
+        handlePasswordRetryFailure(message);
       } else {
         setError(message);
       }
@@ -433,6 +469,8 @@ export default function QuickWorkerSignup({
                     ? partnerAssisted
                       ? 'Worker creation'
                       : 'Let’s create your account'
+                    : needsPasswordRetry
+                      ? 'Choose a different password'
                     : partnerAssisted
                       ? 'Verify worker mobile'
                       : 'Enter the OTP sent to your mobile'}
@@ -442,6 +480,8 @@ export default function QuickWorkerSignup({
                     ? partnerAssisted
                       ? 'Add the worker’s name, email, mobile, and a password. You stay signed in. They can sign in later with this mobile and password.'
                       : 'We’ll use the details you already entered and only ask for what’s still needed.'
+                    : needsPasswordRetry
+                      ? 'Your mobile is already verified. Set a password with letters and numbers (for example Udai9549).'
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>
               </div>
@@ -621,7 +661,7 @@ export default function QuickWorkerSignup({
                     disabled={formLoading}
                   >
                     {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Send SMS code
+                    {phoneOtpVerified ? 'Create account' : 'Send SMS code'}
                   </Button>
 
                   {!partnerAssisted && unified && onBackToContinue && (
@@ -654,41 +694,112 @@ export default function QuickWorkerSignup({
 
               {step === 'otp' && (
                 <form onSubmit={handleVerifyAndCreate} className="space-y-5">
-                  <DevOtpHint />
-                  <div className="flex justify-center py-1">
-                    <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-                      <InputOTPGroup>
-                        <InputOTPSlot index={0} />
-                        <InputOTPSlot index={1} />
-                        <InputOTPSlot index={2} />
-                        <InputOTPSlot index={3} />
-                        <InputOTPSlot index={4} />
-                        <InputOTPSlot index={5} />
-                      </InputOTPGroup>
-                    </InputOTP>
-                  </div>
+                  {!needsPasswordRetry && <DevOtpHint />}
+                  {!needsPasswordRetry && (
+                    <div className="flex justify-center py-1">
+                      <InputOTP
+                        maxLength={6}
+                        value={otp}
+                        onChange={setOtp}
+                        disabled={formLoading || phoneOtpVerified}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  )}
 
-                  <p className="text-center text-sm text-muted-foreground">
-                    Didn&apos;t get the code?{' '}
-                    <button
-                      id={WORKER_OTP_RECAPTCHA_BTN_ID}
-                      type="button"
-                      data-inline
-                      onClick={handleResendOtp}
-                      disabled={formLoading}
-                      className="font-medium text-primary hover:underline disabled:opacity-50"
-                    >
-                      Resend SMS
-                    </button>
-                  </p>
+                  {needsPasswordRetry && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="otp-password">Password</Label>
+                        <div className="relative">
+                          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            id="otp-password"
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder={PASSWORD_HINT}
+                            value={password}
+                            onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
+                            required
+                            minLength={PASSWORD_MIN_LENGTH}
+                            className="h-11 pl-10 pr-9"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            data-inline
+                            onClick={() => setShowPassword((v) => !v)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="otp-confirmPassword">Confirm</Label>
+                        <div className="relative">
+                          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            id="otp-confirmPassword"
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            placeholder="Re-enter"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
+                            required
+                            minLength={PASSWORD_MIN_LENGTH}
+                            className="h-11 pl-10 pr-9"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            data-inline
+                            onClick={() => setShowConfirmPassword((v) => !v)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <p className="col-span-2 text-xs text-muted-foreground">{PASSWORD_HINT}.</p>
+                    </div>
+                  )}
+
+                  {!needsPasswordRetry && (
+                    <p className="text-center text-sm text-muted-foreground">
+                      Didn&apos;t get the code?{' '}
+                      <button
+                        id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                        type="button"
+                        data-inline
+                        onClick={handleResendOtp}
+                        disabled={formLoading || phoneOtpVerified}
+                        className="font-medium text-primary hover:underline disabled:opacity-50"
+                      >
+                        Resend SMS
+                      </button>
+                    </p>
+                  )}
 
                   <Button
                     type="submit"
                     className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
-                    disabled={formLoading || otp.length !== 6}
+                    disabled={formLoading || (!phoneOtpVerified && otp.length !== 6)}
                   >
                     {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {partnerAssisted ? 'Verify & add worker' : 'Verify & create account'}
+                    {needsPasswordRetry
+                      ? 'Create account'
+                      : partnerAssisted
+                        ? 'Verify & add worker'
+                        : 'Verify & create account'}
                   </Button>
 
                   <button

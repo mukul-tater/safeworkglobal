@@ -13,7 +13,11 @@ export const COMMON_PASSWORD_MESSAGE =
   'This password is too common. Use a less guessable mix of letters and numbers (for example Udai9549).';
 
 export function isWeakPasswordAuthError(message: string): boolean {
-  return /weak|easy to guess|pwned|leaked password|not strong enough/i.test(message);
+  if (!message) return false;
+  if (message === WEAK_PASSWORD_MESSAGE || message === COMMON_PASSWORD_MESSAGE) return true;
+  return /weak|easy to guess|pwned|leaked password|not strong enough|letters and numbers only/i.test(
+    message,
+  );
 }
 
 /** Shared rule for signup, reset, and change-password. Login stays unrestricted. */
