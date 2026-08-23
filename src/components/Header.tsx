@@ -5,6 +5,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import BrandLockup from "@/components/BrandLockup";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 import { useI18n } from "@/i18n";
 import {
@@ -77,18 +78,12 @@ const Header = () => {
         <div className="container mx-auto px-4 lg:px-6">
           <div className="flex items-center justify-between h-16 lg:h-[72px]">
             {/* Logo */}
-            <Link 
-              to="/" 
-              className="flex items-center gap-2.5 hover:opacity-90 transition-opacity group"
+            <Link
+              to="/"
+              aria-label="SafeWork Global home"
+              className="flex items-center hover:opacity-90 transition-opacity group shrink-0"
             >
-              <img 
-                src="/safework-global-logo.png" 
-                alt="SafeWorkGlobal" 
-                className={`h-9 w-9 transition-transform group-hover:scale-105 ${overlaysHomeHero ? "drop-shadow-sm" : ""}`}
-              />
-              <span className={`text-xl font-bold font-heading tracking-tight transition-colors ${overlaysHomeHero ? "text-white" : "text-foreground"} hidden md:inline`}>
-                SafeWorkGlobal
-              </span>
+              <BrandLockup variant={overlaysHomeHero ? "onDark" : "default"} />
             </Link>
 
             {/* Navigation - Desktop */}
