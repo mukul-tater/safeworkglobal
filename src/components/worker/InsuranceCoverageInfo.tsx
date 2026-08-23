@@ -52,7 +52,7 @@ export default function InsuranceCoverageInfo() {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded-full p-0.5 text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full p-1.5 text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Insurance coverage | बीमा कवर"
           onClick={(e) => e.stopPropagation()}
         >

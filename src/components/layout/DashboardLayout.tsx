@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import DashboardSidebar, { NavItem, NavGroup, itemIsActive } from "./DashboardSidebar";
 import DashboardHeader from "./DashboardHeader";
@@ -55,17 +56,26 @@ export default function DashboardLayout({
   showLanguageSwitcher = false,
 }: DashboardLayoutProps) {
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   const pageTitle = resolvePageTitle(portalName, location.pathname, location.search, navItems, navGroups);
 
   return (
     <div className="flex min-h-screen bg-background w-full">
-      <DashboardSidebar navItems={navItems} navGroups={navGroups} portalLabel={portalLabel} portalHomePath={portalHomePath} />
+      <DashboardSidebar
+        navItems={navItems}
+        navGroups={navGroups}
+        portalLabel={portalLabel}
+        portalHomePath={portalHomePath}
+        menuOpen={menuOpen}
+        onMenuOpenChange={setMenuOpen}
+      />
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader
           portalLabel={shortPortalLabel(portalLabel)}
           pageTitle={pageTitle}
           profileMenuItems={profileMenuItems}
           showLanguageSwitcher={showLanguageSwitcher}
+          onOpenMenu={() => setMenuOpen(true)}
         />
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden animate-in fade-in duration-300">
           {children}

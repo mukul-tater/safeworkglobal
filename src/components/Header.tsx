@@ -158,19 +158,6 @@ const Header = () => {
             {/* Mobile Actions */}
             <div className="flex items-center gap-1 md:hidden">
               <div className={`flex items-center gap-1 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
-              {!isAuthenticated && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="default" size="sm" className="h-9 gap-1.5 px-2.5 text-xs">
-                      <User className="h-3.5 w-3.5" />
-                      {t("header.getStarted")}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-72 p-3">
-                    <GetStartedChoices />
-                  </PopoverContent>
-                </Popover>
-              )}
               <ThemeToggle />
             {/* Mobile Menu Toggle */}
             <Button 
@@ -232,6 +219,12 @@ const Header = () => {
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </Link>
               ))}
+
+              {!isAuthenticated && (
+                <div className="pt-6 mt-6 border-t border-border">
+                  <GetStartedChoices onChosen={closeMobileMenu} />
+                </div>
+              )}
               
               {isAuthenticated && (
                 <div className="pt-6 mt-6 border-t border-border space-y-3">

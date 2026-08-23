@@ -259,14 +259,15 @@ export default function FeaturedJobs() {
                   ))}
                 </div>
 
-                <div className="flex gap-2 mt-auto pt-2">
+                <div className="flex flex-col gap-2 mt-auto pt-2 sm:flex-row">
                   <Button
-                    className="flex-1 rounded-xl group/btn"
+                    className="w-full rounded-xl group/btn sm:flex-1"
                     onClick={(e) => { e.stopPropagation(); handleQuickApply(job.slug || job.id); }}
                   >
                     View & Apply
                     <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
                   </Button>
+                  <div className="flex gap-2">
                   <Button
                     size="icon"
                     variant="outline"
@@ -283,6 +284,7 @@ export default function FeaturedJobs() {
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

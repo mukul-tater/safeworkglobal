@@ -1,9 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { Menu, LucideIcon, ChevronDown, Sun, Moon, Monitor } from "lucide-react";
+import { LucideIcon, ChevronDown, Sun, Moon, Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 
@@ -35,6 +34,8 @@ interface DashboardSidebarProps {
   navGroups?: NavGroup[];
   portalLabel: string;
   portalHomePath?: string;
+  menuOpen?: boolean;
+  onMenuOpenChange?: (open: boolean) => void;
 }
 
 export function itemIsActive(item: NavItem, pathname: string, search: string): boolean {
@@ -291,43 +292,33 @@ export default function DashboardSidebar({
   navGroups,
   portalLabel,
   portalHomePath = "/",
+  menuOpen = false,
+  onMenuOpenChange,
 }: DashboardSidebarProps) {
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const isMobile = useIsMobile();
-
-  const handleNavigate = () => setSheetOpen(false);
-
-  const body = (
-    <SidebarBody
-      navItems={navItems}
-      navGroups={navGroups}
-      portalLabel={portalLabel}
-      portalHomePath={portalHomePath}
-      onNavigate={handleNavigate}
-    />
-  );
-
-  if (isMobile) {
-    return (
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetTrigger asChild>
-          <button
-            className="fixed top-3 left-3 z-50 p-2.5 bg-card border border-border rounded-xl shadow-lg md:hidden hover:bg-muted transition-colors"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-72 p-4 pt-6 flex flex-col">
-          {body}
-        </SheetContent>
-      </Sheet>
-    );
-  }
+  const handleNavigate = () => onMenuOpenChange?.(false);
 
   return (
-    <aside className="hidden md:flex flex-col w-64 shrink-0 bg-card border-r h-screen sticky top-0 p-4 lg:p-5">
-      {body}
-    </aside>
+    <>
+      <Sheet open={menuOpen} onOpenChange={onMenuOpenChange}>
+        <SheetContent side="left" className="flex w-72 flex-col p-4 pt-6 md:hidden">
+          <SidebarBody
+            navItems={navItems}
+            navGroups={navGroups}
+            portalLabel={portalLabel}
+            portalHomePath={portalHomePath}
+            onNavigate={handleNavigate}
+          />
+        </SheetContent>
+      </Sheet>
+      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-card border-r h-screen sticky top-0 p-4 lg:p-5">
+        <SidebarBody
+          navItems={navItems}
+          navGroups={navGroups}
+          portalLabel={portalLabel}
+          portalHomePath={portalHomePath}
+          onNavigate={handleNavigate}
+        />
+      </aside>
+    </>
   );
 }

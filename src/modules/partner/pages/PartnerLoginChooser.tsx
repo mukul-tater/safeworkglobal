@@ -66,7 +66,7 @@ export default function PartnerLoginChooser() {
         <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
           Continue as a partner
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 min-w-0 break-words text-sm text-muted-foreground">
           Choose your account type. We’ll take you to the next step.
         </p>
       </div>

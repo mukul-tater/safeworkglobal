@@ -43,6 +43,7 @@ export function CountryComparison({ country }: { country: CountryInsight }) {
   return (
     <SectionShell id="country-comparison" heading={data.heading}>
       <div className="overflow-x-auto rounded-xl border border-border mb-4">
+        <p className="px-3 pt-3 text-xs text-muted-foreground lg:hidden">Swipe to compare countries</p>
         <table className="w-full text-xs sm:text-sm min-w-[44rem]">
           <thead>
             <tr className="bg-muted/50">

@@ -189,7 +189,7 @@ export default function MessagingInbox() {
   // Mobile: show either list or chat
   if (selectedUser) {
     return (
-      <Card className="flex flex-col h-[calc(100vh-220px)] min-h-[400px]">
+      <Card className="flex flex-col h-[min(70dvh,calc(100dvh-12rem))] min-h-[360px]">
         {/* Chat Header */}
         <div className="flex items-center gap-3 p-4 border-b">
           <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setSelectedUser(null)}>
@@ -276,7 +276,7 @@ export default function MessagingInbox() {
           />
         </div>
       </div>
-      <ScrollArea className="h-[calc(100vh-320px)] min-h-[300px]">
+      <ScrollArea className="h-[min(60dvh,calc(100dvh-16rem))] min-h-[240px]">
         {filteredConversations.map((conv) => (
           <button
             key={conv.userId}

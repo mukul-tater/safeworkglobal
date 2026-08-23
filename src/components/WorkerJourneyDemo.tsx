@@ -13,17 +13,11 @@ import {
   XCircle,
   MapPin,
   ArrowRight,
-  Building2,
   CreditCard,
   FileSignature,
   Plane,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import {
   Dialog,
   DialogContent,
@@ -67,7 +61,7 @@ const STEPS: JourneyStep[] = [
     shortTitle: "Documents",
     description: "Upload identity and skill documents so we can build your candidate file.",
     icon: FileUp,
-    bullets: ["PAN card front", "Aadhaar front & back", "Passport first & last page (if available)", , "Education", "Photograph"],
+    bullets: ["PAN card front", "Aadhaar front & back", "Passport first & last page (if available)", "Education", "Photograph"],
   },
   {
     id: "verbal",
@@ -196,71 +190,29 @@ function CentersList() {
 
 function TradeTestCentersInfo() {
   return (
-    <>
-      {/* Desktop / hover */}
-      <HoverCard openDelay={120} closeDelay={100}>
-        <HoverCardTrigger asChild>
-          <button
-            type="button"
-            className="hidden sm:inline-flex items-center justify-center rounded-full p-1 text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
-            aria-label="Trade test center locations"
-          >
-            <Info className="h-4 w-4" />
-          </button>
-        </HoverCardTrigger>
-        <HoverCardContent
-          align="start"
-          side="top"
-          className="w-[min(100vw-2rem,22rem)] p-0 overflow-hidden rounded-2xl border-border/70 shadow-xl"
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="inline-flex items-center justify-center rounded-full p-1.5 min-h-11 min-w-11 text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Trade test center locations"
+          onClick={(e) => e.stopPropagation()}
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 380, damping: 28 }}
-            className="p-4"
-          >
-            <div className="flex items-start gap-2.5 mb-3">
-              <div className="rounded-lg bg-primary/10 p-2">
-                <Building2 className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-bold font-heading text-foreground">
-                  Trade test centers
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Book your physical trade test at a center near you.
-                </p>
-              </div>
-            </div>
-            <CentersList />
-          </motion.div>
-        </HoverCardContent>
-      </HoverCard>
-
-      {/* Mobile / tap dialog */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex sm:hidden items-center justify-center rounded-full p-1 text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Trade test center locations"
-          >
-            <Info className="h-4 w-4" />
-          </button>
-        </DialogTrigger>
-        <DialogContent className="max-w-md rounded-2xl sm:rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-heading">
-              Trade test centers
-            </DialogTitle>
-            <DialogDescription>
-              Physical trade test locations — pick the city closest to you.
-            </DialogDescription>
-          </DialogHeader>
-          <CentersList />
-        </DialogContent>
-      </Dialog>
-    </>
+          <Info className="h-4 w-4" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="font-heading">
+            Trade test centers
+          </DialogTitle>
+          <DialogDescription>
+            Physical trade test locations — pick the city closest to you.
+          </DialogDescription>
+        </DialogHeader>
+        <CentersList />
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -402,7 +354,7 @@ function StepDetail({
         {isTradeTest && (
           <p className="text-xs text-muted-foreground mb-5 flex items-center gap-1.5">
             <Info className="h-3.5 w-3.5 text-primary shrink-0" />
-            Hover or tap the info icon to see trade test center locations.
+            Tap the info icon to see trade test center locations.
           </p>
         )}
 

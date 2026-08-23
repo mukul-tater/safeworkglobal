@@ -36,6 +36,7 @@ import {
 } from "@/lib/employerTradeSkills";
 import SignupJourneyPanel from "@/components/SignupJourneyPanel";
 import SEOHead from "@/components/SEOHead";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import EmployerAuthEntry from "@/pages/employer/EmployerAuthEntry";
 import EmployerSignupStepper from "@/components/employer/EmployerSignupStepper";
 import EmployerDocUpload from "@/components/employer/EmployerDocUpload";
@@ -287,16 +288,16 @@ export default function QuickEmployerSignup() {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-muted/40">
+    <div className="min-h-dvh bg-muted/40 has-mobile-nav md:h-dvh md:overflow-hidden md:pb-0">
       <SEOHead
         title="Employer Registration | SafeWork Global"
         description="Tell us your manpower requirement. SafeWork Global helps UAE employers source, screen and skill-verify skilled workers from India."
       />
-      <div className="flex h-full flex-col md:flex-row">
+      <div className="flex min-h-dvh flex-col md:h-full md:flex-row">
         <SignupJourneyPanel audience="employer" variant={screen === "account" ? "continue" : "signup"} activeStep={panelStep} />
 
         <main
-          className={`relative flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-5 sm:px-8 md:px-8 lg:px-12 ${
+          className={`relative flex min-h-0 flex-1 flex-col px-4 py-5 sm:px-8 md:overflow-y-auto md:px-8 lg:px-12 ${
             screen === "account" ? "justify-start sm:justify-center" : "justify-start py-6 sm:py-8"
           }`}
         >
@@ -774,6 +775,7 @@ export default function QuickEmployerSignup() {
           </div>
         </main>
       </div>
+      <MobileBottomNav />
     </div>
   );
 }

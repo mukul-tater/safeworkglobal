@@ -428,15 +428,15 @@ export default function QuickWorkerSignup({
   };
 
   return (
-    <div className={embedded ? 'w-full' : 'fixed inset-0 overflow-hidden bg-muted/40 pb-16 md:pb-0'}>
+    <div className={embedded ? 'w-full' : 'min-h-dvh bg-muted/40 has-mobile-nav md:h-dvh md:overflow-hidden md:pb-0'}>
       <SEOHead
         title="Worker Registration | SafeWork Global"
         description="Create a free SafeWork Global worker profile to complete skill verification and connect with global employment opportunities."
       />
-      <div className={embedded ? '' : 'flex h-full flex-col md:flex-row'}>
+      <div className={embedded ? '' : 'flex min-h-dvh flex-col md:h-full md:flex-row'}>
         {!embedded && <SignupJourneyPanel variant={unified ? 'continue' : 'signup'} createdByPartner={partnerAssisted} />}
 
-        <main className={embedded ? 'w-full' : 'relative flex min-h-0 flex-1 flex-col justify-start overflow-y-auto px-4 py-5 sm:justify-center sm:px-8 md:px-8 lg:px-12'}>
+        <main className={embedded ? 'w-full' : 'relative flex min-h-0 flex-1 flex-col justify-start px-4 py-5 sm:justify-center sm:px-8 md:overflow-y-auto md:px-8 lg:px-12'}>
           <div className="mx-auto w-full max-w-[480px]">
             <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5 sm:p-7">
               {partnerAssisted && !embedded && (

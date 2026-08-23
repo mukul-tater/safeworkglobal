@@ -172,6 +172,7 @@ export default function WorkerComparisonDrawer({ open, onOpenChange, workers, on
             </div>
           ) : (
             <div className="overflow-x-auto pb-4">
+              <p className="mb-2 text-xs text-muted-foreground lg:hidden">Swipe to compare</p>
               <table className="w-full min-w-[760px] border-separate border-spacing-0">
                 <thead>
                   <tr>

@@ -214,7 +214,7 @@ export default function AboutUs() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0 overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-background has-mobile-nav overflow-x-hidden">
       <SEOHead
         title="About SafeWork Global"
         description="SafeWork Global is a technology and workforce mobility platform connecting India's skilled workforce with global employment opportunities through worker onboarding, skill verification and a transparent workforce ecosystem."
@@ -245,7 +245,7 @@ export default function AboutUs() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(230_85%_55%/0.12),transparent_55%),radial-gradient(ellipse_at_bottom_right,hsl(192_95%_48%/0.08),transparent_45%)]" />
           <div className="container mx-auto px-4 sm:px-6 relative z-10">
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-              <ScrollReveal>
+              <ScrollReveal className="min-w-0">
                 <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-muted-foreground mb-1">
                   About SafeWork Global
                 </p>
@@ -261,7 +261,7 @@ export default function AboutUs() {
                 <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground mb-5">
                   {pick(locale, "India's Workforce Mobility Infrastructure", "भारत का Workforce Mobility Infrastructure")}
                 </p>
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-4">
+                <p className="mb-4 min-w-0 break-words text-base leading-relaxed text-muted-foreground sm:text-lg">
                   {pick(
                     locale,
                     "SafeWork Global is a technology and workforce mobility platform built to connect India's skilled workforce with trusted global employment opportunities through a structured, transparent and skill-first ecosystem.",

@@ -85,7 +85,7 @@ export default function MobileBottomNav() {
               <div className={cn("p-1.5 rounded-xl transition-colors", getStartedActive && "bg-primary/10")}>
                 <User className={cn("h-5 w-5", getStartedActive && "stroke-[2.5]")} />
               </div>
-            <span className="max-w-full px-0.5 text-center text-[10px] font-medium leading-tight whitespace-normal">
+            <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight">
               {t("header.getStarted")}
             </span>
             </button>

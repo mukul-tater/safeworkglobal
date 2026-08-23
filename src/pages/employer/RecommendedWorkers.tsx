@@ -204,7 +204,7 @@ export default function RecommendedWorkers() {
                         )}
 
                         {/* Score breakdown */}
-                        <div className="mt-3 grid grid-cols-4 gap-2">
+                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                           {[
                             { label: "Skill", val: m.breakdown.skill, max: 40 },
                             { label: "Salary", val: m.breakdown.salary, max: 20 },

@@ -28,7 +28,7 @@ const collage = [
 export default function WorkerPhotoCollage() {
   return (
     <div className="relative">
-      <div className="grid aspect-[4/5] grid-cols-12 grid-rows-2 gap-2.5 sm:aspect-[5/4] sm:gap-3 lg:aspect-auto lg:h-[440px]">
+      <div className="grid aspect-[5/4] grid-cols-12 grid-rows-2 gap-2.5 sm:aspect-[5/4] sm:gap-3 lg:aspect-auto lg:h-[440px]">
         {collage.map((photo, index) => (
           <motion.div
             key={photo.alt}

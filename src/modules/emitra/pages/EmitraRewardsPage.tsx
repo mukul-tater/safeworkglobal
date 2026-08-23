@@ -83,8 +83,8 @@ function Inner() {
       ) : rewards.length === 0 ? (
         <Card className="p-10 text-center text-muted-foreground">No rewards yet. Rewards are credited when your workers are hired.</Card>
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
+        <Card className="overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-sm">
             <thead className="bg-muted/50 text-xs uppercase">
               <tr><th className="text-left p-3">Worker</th><th className="text-left p-3">Job</th><th className="text-left p-3">Date</th><th className="text-right p-3">Amount</th><th className="text-left p-3">Status</th></tr>
             </thead>

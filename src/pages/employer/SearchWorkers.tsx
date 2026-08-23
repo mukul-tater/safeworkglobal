@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MapPin, Award, Globe, Mail, Star, Check, Play, ShieldCheck, Video, Languages, X, GitCompareArrows } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { MapPin, Award, Globe, Mail, Star, Check, Play, ShieldCheck, Video, Languages, X, GitCompareArrows, SlidersHorizontal } from 'lucide-react';
 import WorkerSearchFilters, { type WorkerFilters } from '@/components/search/WorkerSearchFilters';
 import SavedSearchDialog from '@/components/search/SavedSearchDialog';
 import WorkerComparisonDrawer, { type CompareWorker } from '@/components/employer/WorkerComparisonDrawer';
@@ -88,6 +89,7 @@ export default function SearchWorkers() {
   const [videoOpen, setVideoOpen] = useState<{ url: string; name: string } | null>(null);
   const [sortBy, setSortBy] = useState<string>('best_match');
   const [visibleFields, setVisibleFields] = useState<FieldVisibilityMap>({});
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
 
   const hiddenFieldNote = useMemo(() => {
     const restricted = ['mobile', 'email', 'expected_salary', 'passport', 'aadhaar', 'pan', 'medical']
@@ -367,7 +369,7 @@ export default function SearchWorkers() {
       </div>
 
       <div className="grid lg:grid-cols-[350px_1fr] gap-4 md:gap-6">
-        <aside className="order-2 lg:order-1">
+        <aside className="hidden self-start lg:sticky lg:top-24 lg:block lg:order-1">
           <WorkerSearchFilters
             filters={filters}
             onFiltersChange={setFilters}
@@ -382,11 +384,40 @@ export default function SearchWorkers() {
           </Card>
         </aside>
 
-        <div className="space-y-4 order-1 lg:order-2">
+        <div className="space-y-4 lg:order-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h2 className="text-lg md:text-xl font-semibold">{sortedWorkers.length} Workers Found</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 lg:hidden">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-full overflow-y-auto p-0 sm:max-w-sm">
+                  <SheetHeader className="border-b border-border/60 px-5 py-4">
+                    <SheetTitle className="text-base">Filters</SheetTitle>
+                  </SheetHeader>
+                  <div className="p-4">
+                    <WorkerSearchFilters
+                      filters={filters}
+                      onFiltersChange={setFilters}
+                      onSearch={() => {
+                        handleSearch();
+                        setFiltersSheetOpen(false);
+                      }}
+                      onSaveSearch={() => setShowSaveDialog(true)}
+                      loading={loading}
+                    />
+                    <Button asChild variant="outline" className="mt-4 w-full">
+                      <Link to="/employer/saved-searches">View Saved Searches</Link>
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
             <select
-              className="border rounded-md px-3 py-2 text-sm bg-card w-full sm:w-auto"
+              className="border rounded-md px-3 py-2 text-sm bg-card w-full min-w-0 sm:w-auto"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
@@ -394,6 +425,7 @@ export default function SearchWorkers() {
                 <option key={o.value} value={o.value}>Sort by: {o.label}</option>
               ))}
             </select>
+            </div>
           </div>
 
           {/* Active Filter Chips */}

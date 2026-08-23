@@ -387,7 +387,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background has-mobile-nav">
       <Header />
       <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <div className="fixed inset-0 pointer-events-none" style={{ background: 'var(--gradient-mesh)' }} />

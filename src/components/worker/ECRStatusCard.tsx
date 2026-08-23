@@ -3,11 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface ECRStatusCardProps {
   ecrStatus: string;
@@ -76,21 +78,22 @@ export default function ECRStatusCard({
             <p className="text-sm text-muted-foreground">Emigration Check Required</p>
           </div>
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <HelpCircle className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p>
-                ECR (Emigration Check Required) applies to Indian passport holders with education below 10th grade. 
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button type="button" variant="ghost" size="icon" className="h-11 w-11" aria-label="What is ECR?">
+              <HelpCircle className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>ECR / ECNR</DialogTitle>
+              <DialogDescription>
+                ECR (Emigration Check Required) applies to Indian passport holders with education below 10th grade.
                 ECNR passport holders don't need emigration clearance.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="space-y-4">

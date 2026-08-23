@@ -6,7 +6,7 @@ import { SAFEWORK_CONTACT } from "@/config/workerSupport";
 
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background has-mobile-nav">
       <SEOHead
         title="Terms of Service | SafeWork Global"
         description="Read the terms and conditions governing your use of the SafeWork Global platform."

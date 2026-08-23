@@ -67,10 +67,10 @@ export default function InteractiveChart({ title, type, data, dataKeys }: Intera
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h3 className="text-lg font-semibold">{title}</h3>
         <Select value={timePeriod} onValueChange={setTimePeriod}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -93,7 +93,8 @@ export default function InteractiveChart({ title, type, data, dataKeys }: Intera
               stroke="hsl(var(--muted-foreground))"
             />
             <YAxis 
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 10 }}
+              width={36}
               stroke="hsl(var(--muted-foreground))"
             />
             <Tooltip content={<CustomTooltip />} />
@@ -125,7 +126,8 @@ export default function InteractiveChart({ title, type, data, dataKeys }: Intera
               stroke="hsl(var(--muted-foreground))"
             />
             <YAxis 
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 10 }}
+              width={36}
               stroke="hsl(var(--muted-foreground))"
             />
             <Tooltip content={<CustomTooltip />} />

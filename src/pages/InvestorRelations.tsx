@@ -142,7 +142,7 @@ const InvestorRelations = () => {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-background has-mobile-nav">
       <SEOHead
         title="Investor Relations | SafeWork Global"
         description="Explore investment opportunities with SafeWork Global - the leading global blue-collar workforce platform connecting verified workers with international employers."

@@ -55,12 +55,12 @@ const ProcessTimeline = () => {
           </p>
         </div>
 
-        {/* Steps Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 lg:gap-4">
-          {steps.map((step, index) => (
+        {/* Steps */}
+        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-6 lg:gap-4">
+          {steps.map((step) => (
             <div
               key={step.number}
-              className="relative flex flex-col items-center text-center group"
+              className="relative flex w-[11.5rem] shrink-0 snap-start flex-col items-center text-center group sm:w-auto"
             >
               {/* Step number */}
               <div className="relative mb-4">
@@ -79,7 +79,7 @@ const ProcessTimeline = () => {
               <h3 className="font-semibold font-heading text-foreground text-sm sm:text-base mb-1">
                 {step.title}
               </h3>
-              <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed max-w-[140px] sm:max-w-[160px]">
+              <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed max-w-[11rem] sm:max-w-[160px]">
                 {step.description}
               </p>
             </div>

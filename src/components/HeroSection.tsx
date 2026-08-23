@@ -1,4 +1,3 @@
-import { useLayoutEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import heroImage from "@/assets/hero-indian-workers.jpg";
@@ -6,44 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useI18n } from "@/i18n";
-
-function FitSingleLine({
-  children,
-  className,
-  lang,
-}: {
-  children: string;
-  className?: string;
-  lang?: string;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    const parent = el?.parentElement;
-    if (!el || !parent) return;
-
-    const fit = () => {
-      const available = parent.clientWidth;
-      if (available <= 0) return;
-      const maxPx = parseFloat(getComputedStyle(parent).fontSize);
-      el.style.fontSize = `${maxPx}px`;
-      const width = el.scrollWidth;
-      el.style.fontSize = `${width > available ? Math.max(12, (maxPx * available) / width) : maxPx}px`;
-    };
-
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(parent);
-    return () => ro.disconnect();
-  }, [children]);
-
-  return (
-    <span ref={ref} lang={lang} className={className}>
-      {children}
-    </span>
-  );
-}
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -76,16 +37,8 @@ const HeroSection = () => {
     navigate("/employer/dashboard");
   };
 
-  const handleEmployerCta = () => {
-    if (isEmployer) {
-      handleHireWorkers();
-      return;
-    }
-    navigate("/employer/login");
-  };
-
   return (
-    <section className="relative -mt-16 lg:-mt-[72px] min-h-[88vh] overflow-hidden flex items-end sm:items-center">
+    <section className="relative -mt-16 lg:-mt-[72px] min-h-[min(88vh,44rem)] sm:min-h-[88vh] overflow-hidden flex items-center">
       {/* Full-bleed photographic background — Design A */}
       <div className="absolute inset-0">
         <img
@@ -100,7 +53,7 @@ const HeroSection = () => {
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 relative z-10 pt-28 pb-16 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-28 w-full">
-        <div className="max-w-2xl text-left">
+        <div className="min-w-0 max-w-2xl text-left">
           {/* Brand as hero-level signal */}
           <p className="font-heading text-sm sm:text-base font-semibold tracking-[0.18em] uppercase text-white/80 mb-3">
             SafeWork Global
@@ -109,7 +62,7 @@ const HeroSection = () => {
             {t("hero.values")}
           </p>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold font-heading text-white mb-5 leading-[1.08] tracking-tight">
+          <h1 className="text-3xl sm:text-5xl lg:text-[3.5rem] font-bold font-heading text-white mb-5 leading-[1.12] tracking-tight">
             {isEmployer ? (
               <>
                 {t("hero.employerTitle1")}
@@ -119,17 +72,14 @@ const HeroSection = () => {
               <>
                 {t("hero.workerTitle1")}
                 <span className="block mt-1 text-white/90">{t("hero.workerTitle2")}</span>
-                <FitSingleLine
-                  lang="hi"
-                  className="mt-2 block w-full whitespace-nowrap leading-none tracking-tight text-white/90"
-                >
+                <span lang="hi" className="mt-2 block leading-tight tracking-tight text-white/90 text-[1.35rem] sm:text-[1.75rem] lg:text-[2.15rem]">
                   {t("hero.workerTitle3")}
-                </FitSingleLine>
+                </span>
               </>
             )}
           </h1>
 
-          <p className="text-base sm:text-lg text-white/80 mb-8 max-w-xl leading-relaxed">
+          <p className="mb-8 max-w-xl min-w-0 break-words text-base leading-relaxed text-white/80 sm:text-lg">
             {isEmployer ? t("hero.employerBody") : t("hero.workerBody")}
           </p>
 
@@ -147,7 +97,7 @@ const HeroSection = () => {
                 <>
                   <Button
                     size="lg"
-                    className="h-12 px-7 gap-2 text-base font-semibold rounded-xl shadow-primary"
+                    className="h-12 w-full sm:w-auto px-7 gap-2 text-base font-semibold rounded-xl shadow-primary"
                     onClick={handleFindJobs}
                   >
                     {t("hero.browseJobs")} <ArrowRight className="h-5 w-5" />

@@ -8,7 +8,7 @@ import { Bi } from "@/modules/country-insights/components/Bi";
 
 export default function CountryInsightsPage() {
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0 overflow-x-hidden">
+    <div className="min-h-screen bg-background has-mobile-nav overflow-x-hidden">
       <SEOHead
         title="Country Insights | SafeWork Global"
         description="Know the country, understand the work, and learn about living conditions before you travel."

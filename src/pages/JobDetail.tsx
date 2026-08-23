@@ -381,14 +381,14 @@ export default function JobDetail() {
                     </Badge>
                   </div>
 
-                  <h1 className="text-3xl font-bold mb-3">{job.title}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{job.title}</h1>
                   
                   <div className="flex items-center gap-2 text-lg text-muted-foreground mb-4">
                     <Building2 className="h-5 w-5" />
                     <span className="font-medium">{companyName}</span>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="h-4 w-4 shrink-0" />
                       <span>{job.location}, {job.country}</span>
@@ -493,7 +493,7 @@ export default function JobDetail() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
+            <div className="space-y-6 pb-28 lg:pb-0">
               {/* Apply Card */}
               <Card className="sticky top-24">
                 <CardContent className="p-6 space-y-4">
@@ -509,7 +509,7 @@ export default function JobDetail() {
                         size="lg" 
                         onClick={handleApplyClick}
                         disabled={hasApplied || applying || job.status !== 'ACTIVE'}
-                        className="w-full"
+                        className="hidden w-full lg:inline-flex"
                       >
                         {applying ? (
                           <>
@@ -629,6 +629,40 @@ export default function JobDetail() {
               </Card>
             </div>
           </div>
+          {role !== 'employer' && (
+            <div
+              className={`lg:hidden fixed inset-x-0 z-40 border-t border-border bg-card/95 px-4 py-3 backdrop-blur-md ${
+                role === 'worker'
+                  ? 'bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]'
+                  : 'bottom-[calc(4rem+env(safe-area-inset-bottom,0px))]'
+              }`}
+            >
+              <Button
+                size="lg"
+                onClick={handleApplyClick}
+                disabled={hasApplied || applying || job.status !== 'ACTIVE'}
+                className="w-full"
+              >
+                {applying ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Applying...
+                  </>
+                ) : hasApplied ? (
+                  <>
+                    <CheckCircle2 className="mr-2 h-5 w-5" />
+                    Already Applied
+                  </>
+                ) : !isLoggedIn ? (
+                  'Sign Up to Apply'
+                ) : isWorker && !canApplyToJobs ? (
+                  'Finish Essentials to apply'
+                ) : (
+                  'Apply Now'
+                )}
+              </Button>
+            </div>
+          )}
     </>,
     <SEOHead
       title={`${job.title} at ${companyName} | SafeWork Global`}

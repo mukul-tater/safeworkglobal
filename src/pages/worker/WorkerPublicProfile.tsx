@@ -529,7 +529,7 @@ export default function WorkerPublicProfile() {
 
           {/* Detailed Information Tabs */}
           <Tabs defaultValue="skills" className="mb-6">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
               <TabsTrigger value="skills">Skills</TabsTrigger>
               <TabsTrigger value="experience">Experience</TabsTrigger>
               <TabsTrigger value="certifications">Certifications</TabsTrigger>

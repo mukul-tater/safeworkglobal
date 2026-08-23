@@ -10,7 +10,6 @@ import {
   Clock, 
   FileText, 
   Shield,
-  HelpCircle,
   Upload,
   Loader2,
   Info
@@ -20,12 +19,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import ECRStatusCard from "@/components/worker/ECRStatusCard";
 
 interface VerificationData {

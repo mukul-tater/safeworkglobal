@@ -24,7 +24,7 @@ function BenefitInfoButton({ text }: { text: string }) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="More information"
           onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}

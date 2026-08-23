@@ -274,6 +274,7 @@ export default function JobComparisonDrawer({
             </div>
           ) : (
             <div className="overflow-x-auto">
+              <p className="mb-2 text-xs text-muted-foreground lg:hidden">Swipe to compare</p>
               <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b">

@@ -19,7 +19,7 @@ type Props = {
   label?: string;
 };
 
-const pillClass = "h-1.5 w-6 shrink-0 rounded-full";
+const pillClass = "h-2 w-7 shrink-0 rounded-full";
 
 /** Capsule step bar used on signup / onboarding forms. Completed pills are clickable. */
 export default function FormStepPills({
@@ -34,7 +34,7 @@ export default function FormStepPills({
 
   return (
     <div
-      className={cn("mb-3 flex items-center gap-2", className)}
+      className={cn("mb-3 flex items-center gap-1", className)}
       role="group"
       aria-label={label ?? `Step ${current} of ${total}`}
     >
@@ -58,11 +58,10 @@ export default function FormStepPills({
               data-inline
               aria-label={`Step ${n} of ${total}`}
               onClick={() => onSelect(n)}
-              className={cn(
-                tone,
-                "!min-h-0 p-0 cursor-pointer hover:scale-110 hover:ring-2 hover:ring-primary/30 hover:ring-offset-2",
-              )}
-            />
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md"
+            >
+              <span className={cn(tone, "block")} />
+            </button>
           );
         }
 
@@ -71,8 +70,10 @@ export default function FormStepPills({
             key={n}
             aria-hidden
             aria-current={active ? "step" : undefined}
-            className={cn(tone, "inline-block")}
-          />
+            className="flex h-11 w-11 shrink-0 items-center justify-center"
+          >
+            <span className={cn(tone, "inline-block")} />
+          </span>
         );
       })}
       <span className="ml-1 text-[11px] font-medium text-muted-foreground">

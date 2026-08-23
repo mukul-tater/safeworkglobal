@@ -167,7 +167,7 @@ export default function BenefitsForEmployers() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0 overflow-x-hidden">
+    <div className="min-h-screen bg-background has-mobile-nav overflow-x-hidden">
       <SEOHead
         title="Benefits for Employers | SafeWork Global"
         description="Access India's skilled workforce through a structured, technology-enabled and skill-first pipeline. Simple 1% monthly model for UAE and GCC employers."

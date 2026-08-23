@@ -55,7 +55,8 @@ export default function EmployerFlowStepper({ current, className }: Props) {
                 >
                   {done ? <Check className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
                 </span>
-                <span className="whitespace-nowrap">{step.label}</span>
+                <span className="hidden whitespace-nowrap sm:inline">{step.label}</span>
+                <span className="sm:hidden">{step.label.split(" ")[0]}</span>
               </Link>
               {idx < STEPS.length - 1 && (
                 <div className={cn("h-px w-4 sm:w-6", done ? "bg-success/40" : "bg-border")} />

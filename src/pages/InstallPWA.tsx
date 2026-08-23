@@ -80,7 +80,7 @@ export default function InstallPWA() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-16 md:pb-0">
+    <div className="min-h-screen bg-background has-mobile-nav">
       <Header />
       <MobileBottomNav />
 

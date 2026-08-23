@@ -215,7 +215,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
               ? 'Let’s create your account'
               : 'Continue as an employer'}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 min-w-0 break-words text-sm text-muted-foreground">
           {step === 'login'
             ? `Welcome back. Enter the password for ${email.trim()}.`
             : step === 'signup'

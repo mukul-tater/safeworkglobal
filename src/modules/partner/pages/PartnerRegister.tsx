@@ -145,7 +145,7 @@ export default function PartnerRegister() {
                           <PopoverTrigger asChild>
                             <button
                               type="button"
-                              className="inline-flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary"
                               aria-label={t("partner.emitraInfoAria")}
                               onClick={(e) => e.stopPropagation()}
                               onPointerDown={(e) => e.stopPropagation()}
@@ -155,7 +155,7 @@ export default function PartnerRegister() {
                           </PopoverTrigger>
                           <PopoverContent
                             align="start"
-                            className="w-[22rem] p-0 sm:w-96"
+                            className="w-[min(22rem,calc(100vw-2rem))] p-0 sm:w-96"
                             onClick={(e) => e.stopPropagation()}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
@@ -204,7 +204,7 @@ export default function PartnerRegister() {
                         </Badge>
                       )}
                     </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{option.shortDescription}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground break-words">{option.shortDescription}</p>
                   </div>
                   {isSelected && (
                     <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />

@@ -44,7 +44,7 @@ export default function AuthSplitLayout({
             ) : (
               <div
                 className={cn(
-                  'rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5 sm:p-7',
+                  'min-w-0 rounded-2xl border border-border/60 bg-card p-5 shadow-lg shadow-black/5 sm:p-7',
                   cardClassName,
                 )}
               >

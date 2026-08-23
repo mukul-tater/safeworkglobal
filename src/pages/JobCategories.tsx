@@ -265,7 +265,7 @@ export default function JobCategories() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   return (
-    <div className="min-h-screen flex flex-col bg-background pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col bg-background has-mobile-nav">
       <SEOHead
         title="Job Categories | SafeWork Global"
         description="Explore skilled-work categories connecting India's workforce with global employment opportunities."
@@ -322,7 +322,7 @@ export default function JobCategories() {
       </section>
 
       {/* Category Filter Tabs */}
-      <section className="py-8 border-b bg-background sticky top-0 z-10">
+      <section className="py-8 border-b bg-background sticky top-16 z-10">
         <div className="container mx-auto px-4 lg:px-6">
           <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
             <TabsList className="w-full justify-start overflow-x-auto flex-wrap h-auto">

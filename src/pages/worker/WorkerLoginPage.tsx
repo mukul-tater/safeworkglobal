@@ -196,7 +196,7 @@ export default function WorkerLoginPage() {
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
                   {step === 'login' ? 'Enter your password' : 'Continue as a worker'}
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 min-w-0 break-words text-sm text-muted-foreground">
                   {step === 'login'
                     ? method === 'mobile'
                       ? `Welcome back. Enter the password for +91 ${mobile}.`

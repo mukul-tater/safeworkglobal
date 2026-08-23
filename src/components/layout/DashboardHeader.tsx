@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, HelpCircle, LucideIcon } from "lucide-react";
+import { LogOut, HelpCircle, LucideIcon, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import NotificationDrawer from "@/components/NotificationDrawer";
@@ -29,6 +29,7 @@ interface DashboardHeaderProps {
   pageTitle: string;
   profileMenuItems?: ProfileMenuItem[];
   showLanguageSwitcher?: boolean;
+  onOpenMenu?: () => void;
 }
 
 export default function DashboardHeader({
@@ -36,6 +37,7 @@ export default function DashboardHeader({
   pageTitle,
   profileMenuItems = [],
   showLanguageSwitcher = false,
+  onOpenMenu,
 }: DashboardHeaderProps) {
   const { user, profile, logout } = useAuth();
   const { worker, clearWorkerSession, isAuthenticated: isWorkerSession } = useWorkerAuth();
@@ -68,11 +70,25 @@ export default function DashboardHeader({
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80">
       <div className="flex h-14 md:h-16 items-center justify-between gap-3 px-4 md:px-6">
-        <div className="min-w-0 ml-12 md:ml-0">
+        <div className="flex min-w-0 items-center gap-2">
+          {onOpenMenu && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 shrink-0 md:hidden"
+              onClick={onOpenMenu}
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+        <div className="min-w-0">
           <p className="text-[11px] leading-none text-muted-foreground font-medium truncate">{portalLabel}</p>
           <h1 className="text-base md:text-[17px] font-semibold text-foreground truncate leading-tight mt-0.5">
             {pageTitle}
           </h1>
+        </div>
         </div>
 
         <div className="flex items-center gap-1.5 md:gap-2 shrink-0">

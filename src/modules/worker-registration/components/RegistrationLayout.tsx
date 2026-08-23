@@ -18,9 +18,9 @@ interface RegistrationLayoutProps {
 }
 
 const publicNavPaths = [
-  { path: '/worker-start', key: 'registration.findJob' as const, icon: Briefcase },
-  { path: '/register', key: 'registration.createAccount' as const, icon: UserPlus },
-  { path: '/login', key: 'registration.signIn' as const, icon: LogIn },
+  { path: '/jobs', key: 'registration.findJob' as const, icon: Briefcase },
+  { path: '/worker/quick-signup', key: 'registration.createAccount' as const, icon: UserPlus },
+  { path: '/worker/login', key: 'registration.signIn' as const, icon: LogIn },
 ] as const;
 
 const maxWidthClass = {
@@ -47,14 +47,14 @@ function TopNav({ onNavigate }: { onNavigate?: () => void }) {
             to={item.path}
             onClick={onNavigate}
             className={cn(
-              'inline-flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium',
+              'inline-flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 text-sm font-medium min-h-11',
               isActive
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'hover:bg-muted text-muted-foreground hover:text-foreground',
             )}
           >
             <Icon className={cn('h-4 w-4 shrink-0', !isActive && 'opacity-70')} />
-            <span className="hidden sm:inline truncate">{t(item.key)}</span>
+            <span className="truncate text-xs sm:text-sm">{t(item.key)}</span>
           </Link>
         );
       })}
@@ -95,9 +95,9 @@ export default function RegistrationLayout({
         />
 
         <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
-          <div className="flex h-14 items-center justify-between gap-3 px-4 md:px-6">
+          <div className="flex h-14 items-center justify-between gap-2 px-3 md:px-6">
             <Brand portalHomePath={portalHomePath} />
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto sm:gap-2">
               <TopNav />
               <div className="hidden sm:block h-6 w-px bg-border mx-1" />
               <ThemeToggle />

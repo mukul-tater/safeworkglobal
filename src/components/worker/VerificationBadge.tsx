@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CheckCircle2, Shield, ShieldCheck, ShieldAlert, Clock } from 'lucide-react';
 
 export type VerificationLevel = 'fully_verified' | 'partially_verified' | 'pending' | 'not_verified';
@@ -87,7 +87,7 @@ export default function VerificationBadge({
   const badgeContent = (
     <Badge 
       variant="outline" 
-      className={`${config.className} ${sizeClasses[size]} gap-1.5 cursor-default`}
+      className={`${config.className} ${sizeClasses[size]} gap-1.5`}
     >
       <Icon className={iconSizes[size]} />
       {config.label}
@@ -99,12 +99,13 @@ export default function VerificationBadge({
   }
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
+        <button type="button" className="inline-flex min-h-11 items-center" aria-label={`${config.label} details`}>
           {badgeContent}
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="max-w-xs">
           <div className="space-y-2">
             <p className="font-medium">{config.description}</p>
             <div className="space-y-1 text-xs">
@@ -138,8 +139,7 @@ export default function VerificationBadge({
               )}
             </div>
           </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+      </PopoverContent>
+    </Popover>
   );
 }

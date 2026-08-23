@@ -451,12 +451,12 @@ export default function Jobs() {
         </aside>
 
         <div className="min-w-0">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <p className="text-sm font-medium">
               {loading ? 'Searching…' : `${jobs.length} ${jobs.length === 1 ? 'job' : 'jobs'} found`}
             </p>
 
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2 lg:hidden">
@@ -488,7 +488,7 @@ export default function Jobs() {
               </Button>
 
               <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
-                <SelectTrigger className="h-9 w-[168px] text-sm" aria-label="Sort jobs">
+                <SelectTrigger className="h-9 min-w-0 flex-1 text-sm sm:w-[168px] sm:flex-none sm:max-w-[11rem]" aria-label="Sort jobs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="z-50 bg-card">
