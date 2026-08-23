@@ -14,11 +14,11 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import {
-  ArrowLeft, ArrowRight, CheckCircle2, Loader2, MapPin,
+  ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff, Loader2, MapPin,
   FileText, FileSignature, ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT, isWeakPasswordAuthError, WEAK_PASSWORD_MESSAGE } from '@/lib/validations/password';
+import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT, isWeakPasswordAuthError, COMMON_PASSWORD_MESSAGE } from '@/lib/validations/password';
 import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
@@ -418,7 +418,7 @@ export default function EmitraOnboardingPage() {
         );
       }
       if (error) {
-        if (isWeakPasswordAuthError(error.message)) return fail(WEAK_PASSWORD_MESSAGE);
+        if (isWeakPasswordAuthError(error.message)) return fail(COMMON_PASSWORD_MESSAGE);
         if (/invalid login/i.test(error.message)) {
           return fail('This email is already registered. Sign in, or use a different email.');
         }
@@ -426,6 +426,32 @@ export default function EmitraOnboardingPage() {
       }
       return signedIn.user?.id ?? null;
     };
+
+    const finish = async (uid: string | null) => {
+      if (!uid) return null;
+      profileHydratedFor.current = uid;
+      markMobileVerified(digits, uid);
+      return uid;
+    };
+
+    const { data: rpcId, error: rpcErr } = await supabase.rpc(
+      'create_phone_verified_partner_account',
+      {
+        p_email: authEmail,
+        p_password: accountPassword,
+        p_full_name: data.owner_name || '',
+        p_phone: digits,
+      },
+    );
+
+    const rpcMissing = !!rpcErr && /could not find|does not exist|schema cache/i.test(rpcErr.message);
+    if (!rpcMissing) {
+      if (rpcErr && /already registered|already exists|duplicate/i.test(rpcErr.message)) {
+        return finish(await signIn());
+      }
+      if (rpcErr) return fail(rpcErr.message);
+      if (rpcId) return finish(await signIn());
+    }
 
     const { data: signupData, error: signupErr } = await supabase.auth.signUp({
       email: authEmail,
@@ -443,14 +469,9 @@ export default function EmitraOnboardingPage() {
 
     if (signupErr) {
       if (/already registered|already exists/i.test(signupErr.message)) {
-        const existingId = await signIn();
-        if (existingId) {
-          profileHydratedFor.current = existingId;
-          markMobileVerified(digits, existingId);
-        }
-        return existingId;
+        return finish(await signIn());
       }
-      if (isWeakPasswordAuthError(signupErr.message)) return fail(WEAK_PASSWORD_MESSAGE);
+      if (isWeakPasswordAuthError(signupErr.message)) return fail(COMMON_PASSWORD_MESSAGE);
       return fail(signupErr.message);
     }
 
@@ -465,9 +486,7 @@ export default function EmitraOnboardingPage() {
     }
     if (!uid) return fail('Could not start your account session. Please try again.');
 
-    profileHydratedFor.current = uid;
-    markMobileVerified(digits, uid);
-    return uid;
+    return finish(uid);
   };
 
   const buildPayload = (overrides: Record<string, unknown> = {}) => {
@@ -861,24 +880,22 @@ export default function EmitraOnboardingPage() {
                   )}
                   {!user && (
                     <>
-                      <Field label="Account password" error={errors.password} required>
-                        <Input
-                          type="password"
-                          autoComplete="new-password"
-                          value={accountPassword}
-                          onChange={(e) => setAccountPassword(sanitizePasswordInput(e.target.value))}
-                          placeholder={PASSWORD_HINT}
-                        />
-                      </Field>
-                      <Field label="Confirm password" error={errors.password_confirm} required>
-                        <Input
-                          type="password"
-                          autoComplete="new-password"
-                          value={accountPasswordConfirm}
-                          onChange={(e) => setAccountPasswordConfirm(sanitizePasswordInput(e.target.value))}
-                          placeholder="Re-enter password"
-                        />
-                      </Field>
+                      <PasswordField
+                        label="Account password"
+                        error={errors.password}
+                        required
+                        value={accountPassword}
+                        onChange={setAccountPassword}
+                        placeholder={PASSWORD_HINT}
+                      />
+                      <PasswordField
+                        label="Confirm password"
+                        error={errors.password_confirm}
+                        required
+                        value={accountPasswordConfirm}
+                        onChange={setAccountPasswordConfirm}
+                        placeholder="Re-enter password"
+                      />
                     </>
                   )}
                 </div>
@@ -1177,6 +1194,46 @@ function Field({
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
+  );
+}
+
+function PasswordField({
+  label,
+  value,
+  onChange,
+  error,
+  placeholder,
+  required,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <Field label={label} error={error} required={required}>
+      <div className="relative">
+        <Input
+          type={visible ? 'text' : 'password'}
+          autoComplete="new-password"
+          value={value}
+          onChange={(e) => onChange(sanitizePasswordInput(e.target.value))}
+          placeholder={placeholder}
+          className="pr-10"
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          className="absolute right-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
+          aria-label={visible ? 'Hide password' : 'Show password'}
+        >
+          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
+    </Field>
   );
 }
 

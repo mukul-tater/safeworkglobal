@@ -9,6 +9,9 @@ export const PASSWORD_PATTERN = `[A-Za-z0-9]{${PASSWORD_MIN_LENGTH},${PASSWORD_M
 export const WEAK_PASSWORD_MESSAGE =
   'Use letters and numbers only, at least 6 characters. No spaces or symbols.';
 
+export const COMMON_PASSWORD_MESSAGE =
+  'This password is too common. Use a less guessable mix of letters and numbers (for example Udai9549).';
+
 export function isWeakPasswordAuthError(message: string): boolean {
   return /weak|easy to guess|pwned|leaked password|not strong enough/i.test(message);
 }

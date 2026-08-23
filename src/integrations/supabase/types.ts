@@ -5723,6 +5723,15 @@ export type Database = {
         Returns: undefined
       }
       consume_lsp_launch_token: { Args: { p_token: string }; Returns: Json }
+      create_phone_verified_partner_account: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_password: string
+          p_phone: string
+        }
+        Returns: string
+      }
       current_employer_org: { Args: never; Returns: string }
       current_partner: {
         Args: never
