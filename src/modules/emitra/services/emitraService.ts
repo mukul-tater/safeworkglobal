@@ -58,6 +58,31 @@ const EMITRA_V2_COLUMNS = [
   'agreement_accepted_at',
 ] as const;
 
+const IDENTITY_COLUMNS = [
+  'aadhaar_number',
+  'pan_number',
+  'account_number',
+  'ifsc',
+  'account_holder',
+  'aadhaar_front_url',
+  'aadhaar_back_url',
+  'pan_card_url',
+] as const;
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message?: unknown }).message || '');
+  }
+  return String(error || '');
+}
+
+function isNetworkError(error: unknown): boolean {
+  return /failed to fetch|load failed|networkerror|network request failed|fetch failed/i.test(
+    errorMessage(error),
+  );
+}
+
 function missingColumnFromPostgrest(message: string): string | null {
   const match = message.match(/could not find the '([^']+)' column/i);
   return match?.[1] ?? null;
@@ -77,8 +102,18 @@ function isPrivilegedFieldError(error: { code?: string; message?: string }): boo
   );
 }
 
+function isIdentityLockError(error: { code?: string; message?: string }): boolean {
+  return /cannot modify identity|sensitive identity|bank details after initial/i.test(
+    error.message || '',
+  );
+}
+
 function mapPartnerProfileError(error: { code?: string; message?: string }): Error {
   const message = error.message || 'Failed to save partner application';
+
+  if (isNetworkError(error)) {
+    return new Error('Could not save progress. Check your connection and try again.');
+  }
 
   if (isMissingColumnError(error)) {
     return new Error(
@@ -104,11 +139,27 @@ function stripBlockedKeys(
   row: Record<string, unknown>,
   error: { code?: string; message?: string },
 ): boolean {
+  if (isNetworkError(error)) {
+    let stripped = false;
+    for (const key of IDENTITY_COLUMNS) {
+      stripped = deleteKey(row, key) || stripped;
+    }
+    return stripped;
+  }
+
   if (isMissingColumnError(error)) {
     let stripped = false;
     const missing = missingColumnFromPostgrest(error.message || '');
     if (missing) stripped = deleteKey(row, missing) || stripped;
     for (const key of EMITRA_V2_COLUMNS) {
+      stripped = deleteKey(row, key) || stripped;
+    }
+    return stripped;
+  }
+
+  if (isIdentityLockError(error)) {
+    let stripped = false;
+    for (const key of IDENTITY_COLUMNS) {
       stripped = deleteKey(row, key) || stripped;
     }
     return stripped;
@@ -125,18 +176,59 @@ function stripBlockedKeys(
   return false;
 }
 
+function takeIdentityFields(row: Record<string, unknown>): Record<string, unknown> {
+  const identity: Record<string, unknown> = {};
+  for (const key of ['aadhaar_number', 'pan_number'] as const) {
+    const value = row[key];
+    if (value) identity[key] = value;
+    delete row[key];
+  }
+  return identity;
+}
+
+async function writePartnerRow(
+  userId: string,
+  existing: boolean,
+  row: Record<string, unknown>,
+): Promise<void> {
+  let update = existing;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const { error } = update
+      ? await supabase.from('partner_profiles').update(row).eq('user_id', userId)
+      : await supabase.from('partner_profiles').insert(row);
+
+    if (!error) return;
+    if (/duplicate|unique/i.test(error.message || '')) {
+      update = true;
+      delete row.user_id;
+      continue;
+    }
+    if (!stripBlockedKeys(row, error)) throw mapPartnerProfileError(error);
+    if (isNetworkError(error)) await new Promise((r) => setTimeout(r, 400));
+  }
+
+  throw new Error('Failed to save partner application');
+}
+
 /** Update or insert partner_profiles without PostgREST upsert (more reliable with RLS). */
 export async function savePartnerApplication(
   userId: string,
   payload: PartnerApplicationPayload,
 ): Promise<void> {
-  const { data: existing, error: fetchError } = await supabase
-    .from('partner_profiles')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (fetchError) throw mapPartnerProfileError(fetchError);
+  let existing: { id: string } | null = null;
+  let fetchError: { code?: string; message?: string } | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const result = await supabase
+      .from('partner_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    existing = result.data;
+    fetchError = result.error;
+    if (!fetchError) break;
+    if (!isNetworkError(fetchError) || attempt === 1) throw mapPartnerProfileError(fetchError);
+    await new Promise((r) => setTimeout(r, 400));
+  }
 
   const row: Record<string, unknown> = { ...payload };
   delete row.id;
@@ -146,16 +238,19 @@ export async function savePartnerApplication(
     row.user_id = userId;
   }
 
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const { error } = existing
-      ? await supabase.from('partner_profiles').update(row).eq('user_id', userId)
-      : await supabase.from('partner_profiles').insert(row);
+  // Aadhaar (12 digits) in the same PATCH as the rest of the form can be
+  // dropped by bot/WAF filters as "Failed to fetch". Save it separately.
+  const identity = takeIdentityFields(row);
+  await writePartnerRow(userId, !!existing, row);
 
-    if (!error) return;
-    if (!stripBlockedKeys(row, error)) throw mapPartnerProfileError(error);
+  if (Object.keys(identity).length === 0) return;
+  try {
+    await writePartnerRow(userId, true, identity);
+  } catch (error) {
+    // Aadhaar/PAN are optional. A blocked or filtered identity write must not
+    // fail the rest of the application (step 2 Continue).
+    console.warn('Could not save partner identity numbers', error);
   }
-
-  throw new Error('Failed to save partner application');
 }
 
 export function isPartnerOperational(profile: PartnerProfile | null): boolean {

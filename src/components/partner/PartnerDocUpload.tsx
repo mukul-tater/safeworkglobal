@@ -18,15 +18,51 @@ interface Props {
 }
 
 const BUCKET = "partner-documents";
+const MAX_BYTES = 8 * 1024 * 1024;
+
+function mimeFromExt(ext: string): string {
+  switch (ext.toLowerCase()) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    case "gif":
+      return "image/gif";
+    case "pdf":
+      return "application/pdf";
+    default:
+      return "application/octet-stream";
+  }
+}
+
+function isNetworkError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error || "");
+  return /failed to fetch|load failed|networkerror|network request failed|fetch failed/i.test(message);
+}
 
 export async function uploadPartnerDocFile(userId: string, field: string, file: File): Promise<string> {
-  if (file.size > 8 * 1024 * 1024) {
+  if (file.size > MAX_BYTES) {
     throw new Error("File must be under 8 MB");
   }
-  const ext = file.name.split(".").pop() || "bin";
+  const ext = (file.name.split(".").pop() || "bin").replace(/[^a-z0-9]/gi, "").toLowerCase() || "bin";
   const path = `${userId}/${field}-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: file.type });
-  if (error) throw error;
+  const contentType = file.type || mimeFromExt(ext);
+  // ArrayBuffer uses the standard upload path (avoids resumable/TUS, which can
+  // surface as a browser "Failed to fetch" on some networks).
+  const body = await file.arrayBuffer();
+  const { error } = await supabase.storage.from(BUCKET).upload(path, body, {
+    upsert: true,
+    contentType,
+  });
+  if (error) {
+    if (isNetworkError(error)) {
+      throw new Error("Could not upload the file. Try a smaller JPG or PDF and check your connection.");
+    }
+    throw new Error(error.message || "Upload failed");
+  }
   return path;
 }
 
@@ -46,14 +82,24 @@ export default function PartnerDocUpload({
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  const keepPending = (file: File) => {
+    if (file.size > MAX_BYTES) {
+      toast.error("File must be under 8 MB");
+      return false;
+    }
+    if (!onPendingFile) return false;
+    onPendingFile(file);
+    toast.success(`${label} selected — it will upload when you continue`);
+    return true;
+  };
+
   const handleFile = async (file: File) => {
+    if (file.size > MAX_BYTES) {
+      toast.error("File must be under 8 MB");
+      return;
+    }
     if (!user) {
-      if (file.size > 8 * 1024 * 1024) {
-        toast.error("File must be under 8 MB");
-        return;
-      }
-      onPendingFile?.(file);
-      toast.success(`${label} selected — it will upload when you continue`);
+      if (!keepPending(file)) toast.error("Sign in to upload this document");
       return;
     }
     setUploading(true);
@@ -66,6 +112,7 @@ export default function PartnerDocUpload({
       toast.success(`${label} uploaded`);
     } catch (e) {
       console.error(e);
+      if (isNetworkError(e) && keepPending(file)) return;
       toast.error(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setUploading(false);

@@ -118,7 +118,12 @@ export default function EmitraOnboardingPage() {
   });
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [pendingShopPhoto, setPendingShopPhoto] = useState<File | null>(null);
+  const [pendingDocs, setPendingDocs] = useState<Record<string, File | null>>({});
   const profileHydratedFor = useRef<string | null>(null);
+
+  const setPendingDoc = (field: string, file: File | null) => {
+    setPendingDocs((prev) => ({ ...prev, [field]: file }));
+  };
 
   const update = (patch: Partial<FormData>) => setData((d) => ({ ...d, ...patch }));
 
@@ -250,7 +255,15 @@ export default function EmitraOnboardingPage() {
             mobile_verified: mobileVerified,
             whatsapp: data.mobile,
           }
-        : data;
+        : step === 2
+          ? {
+              ...data,
+              aadhaar_url: data.aadhaar_url || (pendingDocs['id-proof'] ? 'pending' : ''),
+              address_proof_url: data.address_proof_url || (pendingDocs['address-proof'] ? 'pending' : ''),
+              emitra_certificate_url:
+                data.emitra_certificate_url || (pendingDocs['emitra-cert'] ? 'pending' : ''),
+            }
+          : data;
     const result = schema.safeParse(payload);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
@@ -552,13 +565,37 @@ export default function EmitraOnboardingPage() {
   const persistProgress = async (overrides: Record<string, unknown> = {}) => {
     const uid = user?.id || (await ensureAccount());
     if (!uid) return null;
+    if (!user) {
+      await supabase.auth.getSession();
+    }
+    const uploaded: Record<string, string> = {};
     let shopPhotoUrl = data.shop_photo_url as string;
     if (pendingShopPhoto) {
       shopPhotoUrl = await uploadPartnerDocFile(uid, 'kiosk-photo', pendingShopPhoto);
+      uploaded.shop_photo_url = shopPhotoUrl;
       setPendingShopPhoto(null);
-      update({ shop_photo_url: shopPhotoUrl });
     }
-    await savePartnerApplication(uid, buildPayload({ shop_photo_url: shopPhotoUrl, ...overrides }) as any);
+    const docFields: Array<[string, string]> = [
+      ['id-proof', 'aadhaar_url'],
+      ['address-proof', 'address_proof_url'],
+      ['emitra-cert', 'emitra_certificate_url'],
+    ];
+    const uploadedDocFields: string[] = [];
+    for (const [field, key] of docFields) {
+      const file = pendingDocs[field];
+      if (!file) continue;
+      uploaded[key] = await uploadPartnerDocFile(uid, field, file);
+      uploadedDocFields.push(field);
+    }
+    if (uploadedDocFields.length) {
+      setPendingDocs((prev) => {
+        const next = { ...prev };
+        for (const field of uploadedDocFields) next[field] = null;
+        return next;
+      });
+    }
+    if (Object.keys(uploaded).length) update(uploaded);
+    await savePartnerApplication(uid, buildPayload({ shop_photo_url: shopPhotoUrl, ...uploaded, ...overrides }) as any);
     return uid;
   };
 
@@ -928,6 +965,8 @@ export default function EmitraOnboardingPage() {
                     value={data.aadhaar_url}
                     error={errors.aadhaar_url}
                     required
+                    pendingFile={pendingDocs['id-proof']}
+                    onPendingFile={(file) => setPendingDoc('id-proof', file)}
                     onChange={(v) => update({ aadhaar_url: v || '' })}
                   />
                   <DocField
@@ -936,6 +975,8 @@ export default function EmitraOnboardingPage() {
                     value={data.address_proof_url}
                     error={errors.address_proof_url}
                     required
+                    pendingFile={pendingDocs['address-proof']}
+                    onPendingFile={(file) => setPendingDoc('address-proof', file)}
                     onChange={(v) => update({ address_proof_url: v || '' })}
                   />
                   <DocField
@@ -944,6 +985,8 @@ export default function EmitraOnboardingPage() {
                     value={data.emitra_certificate_url}
                     error={errors.emitra_certificate_url}
                     required
+                    pendingFile={pendingDocs['emitra-cert']}
+                    onPendingFile={(file) => setPendingDoc('emitra-cert', file)}
                     onChange={(v) => update({ emitra_certificate_url: v || '' })}
                   />
                 </div>
@@ -1237,6 +1280,8 @@ function DocField({
   onChange,
   accept,
   required,
+  pendingFile,
+  onPendingFile,
 }: {
   label: string;
   field: string;
@@ -1245,10 +1290,21 @@ function DocField({
   onChange: (v: string | null) => void;
   accept?: string;
   required?: boolean;
+  pendingFile?: File | null;
+  onPendingFile?: (file: File | null) => void;
 }) {
   return (
     <div>
-      <PartnerDocUpload label={label} field={field} accept={accept} value={value} onChange={onChange} required={required} />
+      <PartnerDocUpload
+        label={label}
+        field={field}
+        accept={accept}
+        value={value}
+        onChange={onChange}
+        required={required}
+        pendingFile={pendingFile}
+        onPendingFile={onPendingFile}
+      />
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>
   );
