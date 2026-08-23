@@ -174,8 +174,8 @@
     @apply font-semibold tracking-tight;
   }
 
-  /* Enhanced Focus Indicators */
-  *:focus-visible {
+  /* Enhanced Focus Indicators — skip cmdk search, which styles its own field */
+  *:focus-visible:not([cmdk-input]) {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
@@ -183,7 +183,7 @@
   @media (pointer: coarse) {
     button:not([role="checkbox"]):not([role="radio"]):not([role="tab"]):not([data-inline]),
     a:not([data-inline]),
-    input:not([type="checkbox"]):not([type="radio"]),
+    input:not([type="checkbox"]):not([type="radio"]):not([cmdk-input]),
     select,
     textarea {
       min-height: 44px;

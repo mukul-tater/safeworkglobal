@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getIndiaStates } from '@/lib/indiaLocations';
+import { getIndiaDistricts, getIndiaStates } from '@/lib/indiaLocations';
 
 const phoneRegex = /^[6-9]\d{9}$/;
 const pincodeRegex = /^[1-9]\d{5}$/;
@@ -36,8 +36,8 @@ export const emitraV2BasicSchema = z.object({
   emitra_id: z.string().trim().min(3, 'E-Mitra ID / CSC ID is required').max(50),
   owner_name: z.string().trim().min(2, 'Centre owner / proprietor name is required').max(120),
   address_line1: z.string().trim().min(5, 'Centre address is required').max(400),
-  city_town: z.string().trim().min(2, 'Village / town / city is required').max(80),
   district: z.string().trim().min(2, 'District is required').max(80),
+  city_town: z.string().trim().min(2, 'Village / town / city is required').max(80),
   state: z
     .string()
     .min(1, 'State is required')
@@ -54,6 +54,11 @@ export const emitraV2BasicSchema = z.object({
     .string()
     .min(1, 'Date of birth is required')
     .refine(isAdult, 'You must be at least 18 years old'),
+}).superRefine((data, ctx) => {
+  const districts = getIndiaDistricts(data.state);
+  if (data.state && districts.length > 0 && !districts.includes(data.district)) {
+    ctx.addIssue({ code: 'custom', path: ['district'], message: 'Select a district in the chosen state' });
+  }
 });
 
 /** Step 2 — Identity, uploads, partner declaration */

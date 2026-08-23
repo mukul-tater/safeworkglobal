@@ -34,7 +34,7 @@ import type { ReactNode } from "react";
 import { displayableEmail, formatIndianMobile, isWorkerMobileAuthEmail } from "@/lib/workerAuthEmail";
 import { getGoogleEmailFromUser } from "@/modules/worker-verification/lib/connectGoogleEmail";
 import { Badge } from "@/components/ui/badge";
-import { indianStates } from "@/lib/validations/partner";
+import IndiaLocationFields from "@/components/IndiaLocationFields";
 
 const NATIONALITIES = [
   'India', 'Bangladesh', 'Pakistan', 'Nepal', 'Sri Lanka', 'Philippines',
@@ -442,32 +442,23 @@ export default function WorkerProfile() {
               )}
             </div>
 
-            <div>
-              <Label>Registered state *</Label>
-              <Select value={registeredState} onValueChange={setRegisteredState}>
-                <SelectTrigger className="mt-1.5 h-11">
-                  <SelectValue placeholder="Select your state / UT" />
-                </SelectTrigger>
-                <SelectContent>
-                  {indianStates.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground mt-1">Used for Bond &amp; Security stamp paper value.</p>
-            </div>
-
-            <div>
-              <Label htmlFor="registered_city">City</Label>
-              <Input
-                id="registered_city"
-                className="mt-1.5 h-11"
-                value={registeredCity}
-                onChange={(e) => setRegisteredCity(e.target.value)}
-              />
-            </div>
+            <IndiaLocationFields
+              className="contents"
+              showDistrict={false}
+              showPincode={false}
+              cityLabel="City"
+              cityAllowCustom
+              value={{
+                state: registeredState,
+                district: '',
+                city: registeredCity,
+                pincode: '',
+              }}
+              onChange={(loc) => {
+                setRegisteredState(loc.state);
+                setRegisteredCity(loc.city);
+              }}
+            />
 
             <div className="sm:col-span-2">
               <Label htmlFor="nationality">Nationality *</Label>

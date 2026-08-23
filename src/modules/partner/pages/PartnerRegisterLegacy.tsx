@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
-import { indianStates } from "@/lib/validations/partner";
+import IndiaLocationFields from "@/components/IndiaLocationFields";
 import { partnerAuthEmailFromMobile, displayableEmail } from "@/lib/workerAuthEmail";
 import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from "@/lib/validations/password";
 import { lockedPartnerFromPath } from "@/modules/partner/config/partnerPortalRoutes";
@@ -481,33 +481,25 @@ export default function PartnerRegisterLegacy() {
         </section>
 
         <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label>State</Label>
-            <Select value={form.state} onValueChange={(v) => set("state", v)}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select state" />
-              </SelectTrigger>
-              <SelectContent>
-                {indianStates.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>District</Label>
-            <Input className="h-11" value={form.district} onChange={(e) => set("district", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>City</Label>
-            <Input className="h-11" value={form.city} onChange={(e) => set("city", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Pincode</Label>
-            <Input className="h-11" value={form.pincode} onChange={(e) => set("pincode", e.target.value)} />
-          </div>
+          <IndiaLocationFields
+            className="contents"
+            cityLabel="City"
+            value={{
+              state: form.state,
+              district: form.district,
+              city: form.city,
+              pincode: form.pincode,
+            }}
+            onChange={(loc) =>
+              setForm((f) => ({
+                ...f,
+                state: loc.state,
+                district: loc.district,
+                city: loc.city,
+                pincode: loc.pincode,
+              }))
+            }
+          />
           <div className="space-y-1.5 sm:col-span-2">
             <Label>Address</Label>
             <Textarea value={form.address} onChange={(e) => set("address", e.target.value)} rows={2} />

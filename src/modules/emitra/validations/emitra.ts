@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { indianStates } from '@/lib/validations/partner';
+import { getIndiaDistricts, getIndiaStates } from '@/lib/indiaLocations';
 
 const phoneRegex = /^[6-9]\d{9}$/;
 const pincodeRegex = /^[1-9]\d{5}$/;
@@ -20,13 +20,23 @@ export const emitraDetailsSchema = z.object({
   worker_categories: z.array(z.string()).min(1, 'Select at least one worker category'),
 });
 
-export const emitraLocationSchema = z.object({
-  address: z.string().trim().min(10, 'Address is required').max(500),
-  village_city: z.string().trim().min(2, 'Village/City is required').max(80),
-  district: z.string().trim().min(2, 'District is required').max(80),
-  state: z.enum(indianStates as unknown as [string, ...string[]], { message: 'State is required' }),
-  pincode: z.string().regex(pincodeRegex, 'Enter a valid 6-digit PIN code'),
-});
+export const emitraLocationSchema = z
+  .object({
+    address: z.string().trim().min(10, 'Address is required').max(500),
+    village_city: z.string().trim().min(2, 'Village/City is required').max(80),
+    district: z.string().trim().min(2, 'District is required').max(80),
+    state: z
+      .string()
+      .min(1, 'State is required')
+      .refine((value) => getIndiaStates().includes(value), 'Select a valid state'),
+    pincode: z.string().regex(pincodeRegex, 'Enter a valid 6-digit PIN code'),
+  })
+  .superRefine((data, ctx) => {
+    const districts = getIndiaDistricts(data.state);
+    if (data.state && districts.length > 0 && !districts.includes(data.district)) {
+      ctx.addIssue({ code: 'custom', path: ['district'], message: 'Select a district in the chosen state' });
+    }
+  });
 
 export const emitraInfrastructureSchema = z.object({
   has_computer: z.boolean(),
@@ -71,7 +81,10 @@ export const workerJobInfoSchema = z.object({
   experience_level: z.string().min(1, 'Select experience'),
   passport_available: z.boolean(),
   preferred_country: z.string().optional(),
-  state: z.enum(indianStates as unknown as [string, ...string[]], { message: 'State is required' }),
+  state: z
+    .string()
+    .min(1, 'State is required')
+    .refine((value) => getIndiaStates().includes(value), 'Select a valid state'),
   district: z.string().trim().min(2, 'District is required').max(80),
 });
 

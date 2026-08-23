@@ -28,7 +28,6 @@ export function getIndiaCities(state: string, district: string): string[] {
   return [...(TREE[state]?.[district]?.cities ?? [])].sort((a, b) => a.localeCompare(b));
 }
 
-/** All cities in a state (used when district is not collected). */
 export function getIndiaCitiesInState(state: string): string[] {
   const districts = TREE[state];
   if (!districts) return [];
@@ -41,15 +40,4 @@ export function getIndiaPincodes(state: string, district: string, city = ''): st
   const cityPins = city.trim() ? node.cityPincodes?.[city.trim()] : undefined;
   if (cityPins && cityPins.length > 0) return [...cityPins].sort();
   return [...(node.pincodes ?? [])].sort();
-}
-
-export function isIndiaPincodeForLocation(
-  pincode: string,
-  state: string,
-  district: string,
-  city = '',
-): boolean {
-  if (!/^[1-9]\d{5}$/.test(pincode)) return false;
-  const pins = getIndiaPincodes(state, district, city);
-  return pins.length === 0 || pins.includes(pincode);
 }

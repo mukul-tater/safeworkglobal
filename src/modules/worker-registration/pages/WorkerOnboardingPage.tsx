@@ -16,9 +16,9 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SearchSelect from '@/components/SearchSelect';
+import { getIndiaPincodes } from '@/lib/indiaLocations';
 import { useWorkerAuth } from '../context/WorkerAuthContext';
 import { useWorkerLanguage } from '../context/WorkerLanguageContext';
 import { workerApi } from '../services/workerApi';
@@ -532,7 +532,7 @@ export default function WorkerOnboardingPage() {
                 </Select>
               </FormField>
               <FormField label="State" required error={fieldErrors.stateId}>
-                <Select value={stateId} onValueChange={(v) => { setStateId(v); setDistrictId(''); }}>
+                <Select value={stateId} onValueChange={(v) => { setStateId(v); setDistrictId(''); setPincode(''); }}>
                   <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
                   <SelectContent>
                     {states.map((s) => (
@@ -542,7 +542,7 @@ export default function WorkerOnboardingPage() {
                 </Select>
               </FormField>
               <FormField label="District" required error={fieldErrors.districtId}>
-                <Select value={districtId} onValueChange={setDistrictId} disabled={!stateId}>
+                <Select value={districtId} onValueChange={(v) => { setDistrictId(v); setPincode(''); }} disabled={!stateId}>
                   <SelectTrigger><SelectValue placeholder="Select district" /></SelectTrigger>
                   <SelectContent>
                     {districts.map((d) => (
@@ -568,8 +568,22 @@ export default function WorkerOnboardingPage() {
                 <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Village, street, landmark" />
               </FormField>
               <FormField label="Pincode" required error={fieldErrors.pincode}>
-                <Input inputMode="numeric" maxLength={6} value={pincode}
-                  onChange={(e) => setPincode(e.target.value.replace(/\D/g, ''))} placeholder="6-digit pincode" />
+                <SearchSelect
+                  value={pincode}
+                  onChange={setPincode}
+                  options={getIndiaPincodes(
+                    states.find((s) => String(s.id) === stateId)?.name || '',
+                    districts.find((d) => String(d.id) === districtId)?.name || '',
+                  )}
+                  placeholder={districtId ? 'Select PIN code' : 'Select district first'}
+                  searchPlaceholder="Search PIN code"
+                  disabled={!districtId}
+                  emptyText="No PIN codes for this district"
+                  allowCustom
+                  isValidCustom={(q) => /^[1-9]\d{5}$/.test(q.trim())}
+                  customHint="Use this PIN code"
+                  inputMode="numeric"
+                />
               </FormField>
             </div>
           )}

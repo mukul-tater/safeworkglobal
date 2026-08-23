@@ -8,16 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Store, ShieldCheck, Building2, Landmark, FileSignature, SkipForward } from "lucide-react";
 import { toast } from "sonner";
 import PartnerDocUpload from "@/components/partner/PartnerDocUpload";
+import IndiaLocationFields from "@/components/IndiaLocationFields";
 import { useMaxReachedStep } from "@/components/FormStepPills";
 import {
   businessInfoSchema, identitySchema, businessDetailsSchema, bankSchema, declarationsSchema,
-  indianStates, SERVICE_OPTIONS,
+  SERVICE_OPTIONS,
 } from "@/lib/validations/partner";
 
 type PartnerRow = Record<string, any>;
@@ -308,20 +308,18 @@ function BusinessInfoStep({ data, update, errors }: StepProps) {
       <Field label="Email Address" error={errors.email} required>
         <Input type="email" value={data.email || ""} onChange={e => update({ email: e.target.value })} />
       </Field>
-      <Field label="State" error={errors.state} required>
-        <Select value={data.state || ""} onValueChange={v => update({ state: v })}>
-          <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-          <SelectContent className="max-h-72">
-            {indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </Field>
-      <Field label="District" error={errors.district} required>
-        <Input value={data.district || ""} onChange={e => update({ district: e.target.value })} />
-      </Field>
-      <Field label="Pincode" error={errors.pincode} required>
-        <Input inputMode="numeric" maxLength={6} value={data.pincode || ""} onChange={e => update({ pincode: e.target.value.replace(/\D/g, "") })} />
-      </Field>
+      <IndiaLocationFields
+        className="contents"
+        showCity={false}
+        value={{
+          state: data.state || "",
+          district: data.district || "",
+          city: "",
+          pincode: data.pincode || "",
+        }}
+        onChange={(loc) => update({ state: loc.state, district: loc.district, pincode: loc.pincode })}
+        errors={{ state: errors.state, district: errors.district, pincode: errors.pincode }}
+      />
       <div className="sm:col-span-2">
         <Field label="Full Address" error={errors.address} required>
           <Textarea rows={3} value={data.address || ""} onChange={e => update({ address: e.target.value })} placeholder="Shop number, street, landmark, city" />

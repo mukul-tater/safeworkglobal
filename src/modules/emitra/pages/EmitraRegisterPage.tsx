@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMaxReachedStep } from '@/components/FormStepPills';
-import { indianStates } from '@/lib/validations/partner';
+import IndiaLocationFields from '@/components/IndiaLocationFields';
 import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
@@ -575,24 +574,30 @@ export default function EmitraRegisterPage() {
                 <Textarea rows={2} value={data.address || ''} onChange={e => update({ address: e.target.value })} />
               </Field>
             </div>
-            <Field label="Village / City" error={errors.village_city} required>
-              <Input value={data.village_city || ''} onChange={e => update({ village_city: e.target.value })} />
-            </Field>
-            <Field label="District" error={errors.district} required>
-              <Input value={data.district || ''} onChange={e => update({ district: e.target.value })} />
-            </Field>
-            <Field label="State" error={errors.state} required>
-              <Select value={data.state || ''} onValueChange={v => update({ state: v })}>
-                <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                <SelectContent className="max-h-72">
-                  {indianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="PIN Code" error={errors.pincode} required>
-              <Input inputMode="numeric" maxLength={6} value={data.pincode || ''}
-                onChange={e => update({ pincode: e.target.value.replace(/\D/g, '') })} />
-            </Field>
+            <IndiaLocationFields
+              className="contents"
+              cityLabel="Village / City"
+              value={{
+                state: data.state || '',
+                district: data.district || '',
+                city: data.village_city || '',
+                pincode: data.pincode || '',
+              }}
+              onChange={(loc) =>
+                update({
+                  state: loc.state,
+                  district: loc.district,
+                  village_city: loc.city,
+                  pincode: loc.pincode,
+                })
+              }
+              errors={{
+                state: errors.state,
+                district: errors.district,
+                city: errors.village_city,
+                pincode: errors.pincode,
+              }}
+            />
           </div>
         )}
 

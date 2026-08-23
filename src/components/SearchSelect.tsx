@@ -13,6 +13,10 @@ interface Props {
   searchPlaceholder?: string;
   disabled?: boolean;
   emptyText?: string;
+  allowCustom?: boolean;
+  isValidCustom?: (query: string) => boolean;
+  customHint?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
 }
 
 export default function SearchSelect({
@@ -23,11 +27,36 @@ export default function SearchSelect({
   searchPlaceholder = 'Search…',
   disabled,
   emptyText = 'No matches',
+  allowCustom = false,
+  isValidCustom,
+  customHint = 'Use this value',
+  inputMode,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const trimmed = query.trim();
+  const showCustom =
+    allowCustom &&
+    trimmed.length > 0 &&
+    !options.some((option) => option.toLowerCase() === trimmed.toLowerCase()) &&
+    (!isValidCustom || isValidCustom(trimmed));
+
+  const select = (next: string) => {
+    onChange(next);
+    setOpen(false);
+    setQuery('');
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setQuery('');
+      }}
+      modal
+    >
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -46,22 +75,28 @@ export default function SearchSelect({
         align="start"
         sideOffset={4}
         avoidCollisions={false}
-        className="z-[80] !w-[var(--radix-popover-trigger-width)] max-w-[var(--radix-popover-trigger-width)] p-0 shadow-md"
+        className="z-[80] !w-[var(--radix-popover-trigger-width)] max-w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-lg p-0 shadow-md"
       >
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput
+            placeholder={searchPlaceholder}
+            value={query}
+            onValueChange={setQuery}
+            inputMode={inputMode}
+          />
           <CommandList className="max-h-52">
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
+              {showCustom ? (
+                <CommandItem value={trimmed} onSelect={() => select(trimmed)}>
+                  <Check className="mr-2 h-4 w-4 opacity-0" />
+                  <span>
+                    {customHint}: <span className="font-medium">{trimmed}</span>
+                  </span>
+                </CommandItem>
+              ) : null}
               {options.map((option) => (
-                <CommandItem
-                  key={option}
-                  value={option}
-                  onSelect={() => {
-                    onChange(option);
-                    setOpen(false);
-                  }}
-                >
+                <CommandItem key={option} value={option} onSelect={() => select(option)}>
                   <Check className={cn('mr-2 h-4 w-4', value === option ? 'opacity-100' : 'opacity-0')} />
                   {option}
                 </CommandItem>

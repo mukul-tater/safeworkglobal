@@ -30,6 +30,7 @@ import { radius, spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Badge, Button, Card, Input, LoadingView, SectionTitle } from '../../components/ui';
+import IndiaLocationFields from '../../components/IndiaLocationFields';
 import {
   isValidPassportNumber,
   normalizePassportNumber,
@@ -50,6 +51,7 @@ export default function WorkerVerificationScreen() {
 
   const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
   const [stateName, setStateName] = useState('');
   const [education, setEducation] = useState<string>(EDUCATION_LEVELS[2]);
   const [skill, setSkill] = useState<string>(PRIMARY_SKILLS[0]);
@@ -273,8 +275,16 @@ export default function WorkerVerificationScreen() {
           <Card>
             <SectionTitle title="Essentials" />
             <Input label="Contact email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-            <Input label="City" value={city} onChangeText={setCity} />
-            <Input label="State" value={stateName} onChangeText={setStateName} />
+            <IndiaLocationFields
+              showPincode={false}
+              cityLabel="City"
+              value={{ state: stateName, district, city, pincode: '' }}
+              onChange={(loc) => {
+                setStateName(loc.state);
+                setDistrict(loc.district);
+                setCity(loc.city);
+              }}
+            />
             <Text style={styles.chipLabel}>Have you passed Class 10 (matric)?</Text>
             <View style={styles.chips}>
               {(

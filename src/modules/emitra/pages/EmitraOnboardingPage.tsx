@@ -39,8 +39,7 @@ import {
 import { getPartnerProfile, savePartnerApplication } from '../services/emitraService';
 import { getLspSession } from '@/modules/lsp/services/lspSession';
 import type { AuthContinueLocationState } from '@/lib/authContinue';
-import SearchSelect from '@/components/SearchSelect';
-import { getIndiaStates, getIndiaDistricts, getIndiaCities } from '@/lib/indiaLocations';
+import IndiaLocationFields from '@/components/IndiaLocationFields';
 
 const STEPS = [
   { id: 1, title: 'Centre & Owner Details', icon: MapPin },
@@ -152,12 +151,13 @@ export default function EmitraOnboardingPage() {
     });
   };
 
-  const setStateValue = (state: string) => {
-    update({ state, district: '', city_town: '' });
-  };
-
-  const setDistrictValue = (district: string) => {
-    update({ district, city_town: '' });
+  const setLocation = (loc: { state: string; district: string; city: string; pincode: string }) => {
+    update({
+      state: loc.state,
+      district: loc.district,
+      city_town: loc.city,
+      pincode: loc.pincode,
+    });
   };
 
   useEffect(() => {
@@ -714,45 +714,24 @@ export default function EmitraOnboardingPage() {
                       className="min-h-[80px]"
                     />
                   </Field>
-                  <Field label="State" error={errors.state} required>
-                    <SearchSelect
-                      value={data.state || ''}
-                      onChange={setStateValue}
-                      options={getIndiaStates()}
-                      placeholder="Select state"
-                      searchPlaceholder="Search state"
-                    />
-                  </Field>
-                  <Field label="District" error={errors.district} required>
-                    <SearchSelect
-                      value={data.district || ''}
-                      onChange={setDistrictValue}
-                      options={getIndiaDistricts(data.state || '')}
-                      placeholder={data.state ? 'Select district' : 'Select state first'}
-                      searchPlaceholder="Search district"
-                      disabled={!data.state}
-                      emptyText="Select a state first"
-                    />
-                  </Field>
-                  <Field label="Village / Town / City" error={errors.city_town} required>
-                    <SearchSelect
-                      value={data.city_town || ''}
-                      onChange={(v) => update({ city_town: v })}
-                      options={getIndiaCities(data.state || '', data.district || '')}
-                      placeholder={data.district ? 'Select city / town' : 'Select district first'}
-                      searchPlaceholder="Search city / town"
-                      disabled={!data.district}
-                      emptyText="Select a district first"
-                    />
-                  </Field>
-                  <Field label="PIN Code" error={errors.pincode} required>
-                    <Input
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={data.pincode || ''}
-                      onChange={(e) => update({ pincode: e.target.value.replace(/\D/g, '') })}
-                    />
-                  </Field>
+                  <IndiaLocationFields
+                    className="contents"
+                    value={{
+                      state: data.state || '',
+                      district: data.district || '',
+                      city: data.city_town || '',
+                      pincode: data.pincode || '',
+                    }}
+                    onChange={setLocation}
+                    errors={{
+                      state: errors.state,
+                      district: errors.district,
+                      city: errors.city_town,
+                      pincode: errors.pincode,
+                    }}
+                    cityLabel="Village / Town / City"
+                    cityAllowCustom
+                  />
                   <Field label="Google Maps Location" error={errors.google_maps_url} required className="sm:col-span-2">
                     <Input
                       value={data.google_maps_url || ''}

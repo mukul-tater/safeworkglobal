@@ -19,7 +19,7 @@ import {
   MapPin, Phone, ExternalLink, Search, Briefcase,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
-import { indianStates } from '@/lib/validations/partner';
+import IndiaLocationFields from '@/components/IndiaLocationFields';
 import { displayableEmail, isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import {
   ASSESSMENT_FEE_INR,
@@ -377,6 +377,7 @@ export default function WorkerVerificationPage({
 
   const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
+  const [district, setDistrict] = useState('');
   const [state, setState] = useState('');
   const [education, setEducation] = useState('');
   const [primarySkill, setPrimarySkill] = useState('');
@@ -1303,21 +1304,17 @@ export default function WorkerVerificationPage({
                     </p>
                   )}
                 </div>
-                <div className="space-y-1.5">
-                  <Label>City *</Label>
-                  <Input value={city} onChange={(e) => setCity(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>State *</Label>
-                  <Select value={state} onValueChange={setState}>
-                    <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {indianStates.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <IndiaLocationFields
+                  className="contents"
+                  showPincode={false}
+                  cityLabel="City"
+                  value={{ state, district, city, pincode: '' }}
+                  onChange={(loc) => {
+                    setState(loc.state);
+                    setDistrict(loc.district);
+                    setCity(loc.city);
+                  }}
+                />
                 <div className="space-y-1.5">
                   <Label>Education *</Label>
                   <Select
