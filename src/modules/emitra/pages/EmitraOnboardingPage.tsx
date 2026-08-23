@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
@@ -19,7 +18,6 @@ import {
   FileText, FileSignature, ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { indianStates } from '@/lib/validations/partner';
 import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from '@/lib/validations/password';
 import { getFirebaseAuth } from '@/lib/firebase';
 import {
@@ -40,6 +38,8 @@ import {
 } from '../validations/emitraOnboardingV2';
 import { getPartnerProfile, savePartnerApplication } from '../services/emitraService';
 import { getLspSession } from '@/modules/lsp/services/lspSession';
+import SearchSelect from '@/components/SearchSelect';
+import { getIndiaStates, getIndiaDistricts, getIndiaCities } from '@/lib/indiaLocations';
 
 const STEPS = [
   { id: 1, title: 'Centre & Owner Details', icon: MapPin },
@@ -63,7 +63,6 @@ const DEFAULTS: FormData = {
   mobile: '',
   mobile_verified: false,
   whatsapp: '',
-  whatsapp_same: true,
   email: '',
   date_of_birth: '',
   aadhaar_number: '',
@@ -100,12 +99,16 @@ export default function EmitraOnboardingPage() {
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState('');
   const [mobileVerified, setMobileVerified] = useState(false);
+  const [agreementOtpStep, setAgreementOtpStep] = useState(false);
+  const [agreementOtp, setAgreementOtp] = useState('');
+  const [agreementOtpBusy, setAgreementOtpBusy] = useState(false);
   const [accountPassword, setAccountPassword] = useState('');
   const [accountPasswordConfirm, setAccountPasswordConfirm] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [data, setData] = useState<FormData>({ ...DEFAULTS });
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [pendingShopPhoto, setPendingShopPhoto] = useState<File | null>(null);
+  const profileHydratedFor = useRef<string | null>(null);
 
   const update = (patch: Partial<FormData>) => setData((d) => ({ ...d, ...patch }));
 
@@ -122,26 +125,36 @@ export default function EmitraOnboardingPage() {
 
   const setMobile = (raw: string) => {
     const digits = raw.replace(/\D/g, '').slice(0, 10);
-    if (agreementAccepted || otpStep || mobileVerified) {
+    if (agreementAccepted || otpStep || agreementOtpStep || mobileVerified) {
       setAgreementAccepted(false);
       setMobileVerified(false);
       setOtpStep(false);
       setOtp('');
+      setAgreementOtpStep(false);
+      setAgreementOtp('');
       firebaseOtp.resetRecaptcha();
     }
     update({
       mobile: digits,
+      whatsapp: digits,
       mobile_verified: false,
-      ...(data.whatsapp_same ? { whatsapp: digits } : {}),
     });
   };
 
+  const setStateValue = (state: string) => {
+    update({ state, district: '', city_town: '' });
+  };
+
+  const setDistrictValue = (district: string) => {
+    update({ district, city_town: '' });
+  };
+
   useEffect(() => {
-    if (!otpStep) return;
+    if (!otpStep && !agreementOtpStep) return;
     firebaseOtp.clearVerifierOnly();
     firebaseOtp.dismissRecaptchaWidgets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when entering OTP step
-  }, [otpStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when entering an OTP step
+  }, [otpStep, agreementOtpStep]);
 
   useEffect(() => {
     if (!sourceLspCode || sourceLspId) return;
@@ -158,6 +171,8 @@ export default function EmitraOnboardingPage() {
       setLoading(false);
       return;
     }
+    if (profileHydratedFor.current === user.id) return;
+    profileHydratedFor.current = user.id;
     (async () => {
       const row = await getPartnerProfile(user.id);
       if (row) {
@@ -166,31 +181,34 @@ export default function EmitraOnboardingPage() {
           return;
         }
         const mobile = row.mobile || '';
-        const whatsapp = row.whatsapp || '';
         setData((d) => ({
           ...d,
-          ...row,
           owner_name: row.owner_name || d.owner_name || '',
           email: displayableEmail(row.email) || displayableEmail(user.email) || d.email || '',
           center_name: row.center_name || row.shop_name || d.center_name || '',
           emitra_id: row.emitra_id || row.csc_id || d.emitra_id || '',
           address_line1: (row as any).address_line1 || row.address || d.address_line1 || '',
           city_town: (row as any).city_town || row.village_city || (row as any).village || d.city_town || '',
+          district: row.district || d.district || '',
+          state: row.state || d.state || '',
+          pincode: row.pincode || d.pincode || '',
           date_of_birth: String((row as any).date_of_birth || '').slice(0, 10) || d.date_of_birth || '',
           google_maps_url: (row as any).google_maps_url || d.google_maps_url || '',
+          shop_photo_url: row.shop_photo_url || d.shop_photo_url || '',
           aadhaar_number: row.aadhaar_number || '',
           pan_number: row.pan_number || '',
           aadhaar_url: (row as any).aadhaar_url || d.aadhaar_url || '',
           address_proof_url: row.address_proof_url || '',
+          emitra_certificate_url: row.emitra_certificate_url || d.emitra_certificate_url || '',
           accepted_terms: row.accepted_terms ?? false,
           no_jobs_promise: row.no_jobs_promise ?? false,
           agree_no_misrepresentation: (row as any).agree_no_misrepresentation ?? false,
           no_unauthorized_fees: row.no_unauthorized_fees ?? false,
           agree_accurate_info: (row as any).agree_accurate_info ?? false,
           agree_not_sub_agent: (row as any).agree_not_sub_agent ?? false,
+          mobile,
+          whatsapp: mobile,
           mobile_verified: !!row.mobile_verified,
-          whatsapp,
-          whatsapp_same: !whatsapp || whatsapp === mobile,
         }));
         if (row.current_step) setStep(Math.min(Math.max(row.current_step, 1), STEPS.length));
         if (row.mobile_verified) setMobileVerified(true);
@@ -218,7 +236,8 @@ export default function EmitraOnboardingPage() {
         ? {
             ...data,
             shop_photo_url: data.shop_photo_url || (pendingShopPhoto ? 'pending' : ''),
-            whatsapp: data.whatsapp_same ? data.mobile : data.whatsapp,
+            mobile_verified: mobileVerified,
+            whatsapp: data.mobile,
           }
         : data;
     const result = schema.safeParse(payload);
@@ -248,17 +267,7 @@ export default function EmitraOnboardingPage() {
     return true;
   };
 
-  const requestOtp = async () => {
-    if (!data.agree_partner_agreement) {
-      setErrors((e) => ({ ...e, agree_partner_agreement: 'You must agree to the Partner Agreement' }));
-      toast.error('Please agree to the Partner Agreement first');
-      return;
-    }
-    if (!(data.owner_name || '').trim()) {
-      setErrors((e) => ({ ...e, owner_name: 'Partner name is required' }));
-      toast.error('Enter the partner name');
-      return;
-    }
+  const requestMobileOtp = async () => {
     const digits = (data.mobile || '').replace(/\D/g, '');
     if (!/^[6-9]\d{9}$/.test(digits)) {
       setErrors((e) => ({ ...e, mobile: 'Enter a valid 10-digit mobile' }));
@@ -283,7 +292,7 @@ export default function EmitraOnboardingPage() {
     }
   };
 
-  const confirmOtp = async () => {
+  const confirmMobileOtp = async () => {
     if (otp.length !== 6) {
       toast.error('Enter the 6-digit SMS code');
       return;
@@ -297,11 +306,10 @@ export default function EmitraOnboardingPage() {
         /* ignore */
       }
       setMobileVerified(true);
-      setAgreementAccepted(true);
-      update({ mobile_verified: true });
+      update({ mobile_verified: true, whatsapp: data.mobile });
       setOtpStep(false);
       setOtp('');
-      toast.success('Mobile verified. You can complete registration.');
+      toast.success('Mobile verified');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Invalid OTP');
     } finally {
@@ -309,8 +317,71 @@ export default function EmitraOnboardingPage() {
     }
   };
 
+  const requestOtp = async () => {
+    if (!data.agree_partner_agreement) {
+      setErrors((e) => ({ ...e, agree_partner_agreement: 'You must agree to the Partner Agreement' }));
+      toast.error('Please agree to the Partner Agreement first');
+      return;
+    }
+    if (!(data.owner_name || '').trim()) {
+      setErrors((e) => ({ ...e, owner_name: 'Partner name is required' }));
+      toast.error('Enter the partner name');
+      return;
+    }
+    const digits = (data.mobile || '').replace(/\D/g, '');
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      setErrors((e) => ({ ...e, mobile: 'Enter a valid 10-digit mobile' }));
+      toast.error('Enter a valid 10-digit mobile number');
+      return;
+    }
+    if (!firebaseOtp.isAvailable) {
+      toast.error('SMS verification is not available right now. Please contact support.');
+      return;
+    }
+    setAgreementOtpBusy(true);
+    try {
+      await firebaseOtp.sendOtp(digits);
+      setAgreementOtpStep(true);
+      setAgreementOtp('');
+      toast.success(`Agreement OTP sent to +91 ${digits}`);
+    } catch (err) {
+      firebaseOtp.resetRecaptcha();
+      toast.error(err instanceof Error ? err.message : 'Failed to send OTP');
+    } finally {
+      setAgreementOtpBusy(false);
+    }
+  };
+
+  const confirmOtp = async () => {
+    if (agreementOtp.length !== 6) {
+      toast.error('Enter the 6-digit SMS code');
+      return;
+    }
+    setAgreementOtpBusy(true);
+    try {
+      await firebaseOtp.verifyOtp(agreementOtp);
+      try {
+        await firebaseSignOut(getFirebaseAuth());
+      } catch {
+        /* ignore */
+      }
+      setAgreementAccepted(true);
+      setAgreementOtpStep(false);
+      setAgreementOtp('');
+      toast.success('Agreement accepted via OTP');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Invalid OTP');
+    } finally {
+      setAgreementOtpBusy(false);
+    }
+  };
+
   const ensureAccount = async (): Promise<string | null> => {
     if (user) return user.id;
+    if (!mobileVerified) {
+      toast.error('Verify your mobile number with SMS OTP first');
+      return null;
+    }
     const passwordIssue = passwordSignupIssue(accountPassword);
     if (passwordIssue) {
       toast.error(passwordIssue);
@@ -340,6 +411,7 @@ export default function EmitraOnboardingPage() {
     const {
       data: { user: newUser },
     } = await supabase.auth.getUser();
+    if (newUser?.id) profileHydratedFor.current = newUser.id;
     return newUser?.id || null;
   };
 
@@ -347,12 +419,11 @@ export default function EmitraOnboardingPage() {
     const address = data.address_line1 || null;
     const villageCity = data.city_town || null;
     const digits = (data.mobile || '').replace(/\D/g, '');
-    const whatsapp = (data.whatsapp_same ? digits : (data.whatsapp || '').replace(/\D/g, '')) || null;
 
     return {
       owner_name: data.owner_name,
       mobile: data.mobile,
-      whatsapp,
+      whatsapp: digits || null,
       email: displayableEmail(data.email),
       date_of_birth: data.date_of_birth || null,
       emitra_id: data.emitra_id,
@@ -556,28 +627,36 @@ export default function EmitraOnboardingPage() {
                       className="min-h-[80px]"
                     />
                   </Field>
-                  <Field label="Village / Town / City" error={errors.city_town} required>
-                    <Input
-                      value={data.city_town || ''}
-                      onChange={(e) => update({ city_town: e.target.value })}
+                  <Field label="State" error={errors.state} required>
+                    <SearchSelect
+                      value={data.state || ''}
+                      onChange={setStateValue}
+                      options={getIndiaStates()}
+                      placeholder="Select state"
+                      searchPlaceholder="Search state"
                     />
                   </Field>
                   <Field label="District" error={errors.district} required>
-                    <Input value={data.district || ''} onChange={(e) => update({ district: e.target.value })} />
+                    <SearchSelect
+                      value={data.district || ''}
+                      onChange={setDistrictValue}
+                      options={getIndiaDistricts(data.state || '')}
+                      placeholder={data.state ? 'Select district' : 'Select state first'}
+                      searchPlaceholder="Search district"
+                      disabled={!data.state}
+                      emptyText="Select a state first"
+                    />
                   </Field>
-                  <Field label="State" error={errors.state} required>
-                    <Select value={data.state || ''} onValueChange={(v) => update({ state: v })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select state" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-72">
-                        {indianStates.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <Field label="Village / Town / City" error={errors.city_town} required>
+                    <SearchSelect
+                      value={data.city_town || ''}
+                      onChange={(v) => update({ city_town: v })}
+                      options={getIndiaCities(data.state || '', data.district || '')}
+                      placeholder={data.district ? 'Select city / town' : 'Select district first'}
+                      searchPlaceholder="Search city / town"
+                      disabled={!data.district}
+                      emptyText="Select a district first"
+                    />
                   </Field>
                   <Field label="PIN Code" error={errors.pincode} required>
                     <Input
@@ -618,12 +697,6 @@ export default function EmitraOnboardingPage() {
               <section className="space-y-4">
                 <h3 className="text-sm font-semibold text-foreground">Owner Details</h3>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Full Name" error={errors.owner_name} required>
-                    <Input
-                      value={data.owner_name || ''}
-                      onChange={(e) => update({ owner_name: e.target.value })}
-                    />
-                  </Field>
                   <Field label="Date of Birth" error={errors.date_of_birth} required>
                     <Input
                       type="date"
@@ -631,57 +704,104 @@ export default function EmitraOnboardingPage() {
                       onChange={(e) => update({ date_of_birth: e.target.value })}
                     />
                   </Field>
-                  <Field label="Mobile Number" error={errors.mobile} required>
-                    <div className="flex">
-                      <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
-                        +91
-                      </span>
-                      <Input
-                        inputMode="numeric"
-                        maxLength={10}
-                        value={data.mobile || ''}
-                        onChange={(e) => setMobile(e.target.value)}
-                        className="rounded-l-none"
-                        placeholder="10-digit Indian mobile"
-                      />
-                    </div>
-                  </Field>
-                  <Field label="WhatsApp Number" error={errors.whatsapp} required>
-                    <div className="flex">
-                      <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
-                        +91
-                      </span>
-                      <Input
-                        inputMode="numeric"
-                        maxLength={10}
-                        value={data.whatsapp_same ? data.mobile || '' : data.whatsapp || ''}
-                        onChange={(e) => update({ whatsapp: e.target.value.replace(/\D/g, '').slice(0, 10), whatsapp_same: false })}
-                        disabled={!!data.whatsapp_same}
-                        className="rounded-l-none"
-                        placeholder="10-digit WhatsApp"
-                      />
-                    </div>
-                    <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                      <Checkbox
-                        checked={!!data.whatsapp_same}
-                        onCheckedChange={(v) => {
-                          const same = !!v;
-                          update({
-                            whatsapp_same: same,
-                            whatsapp: same ? data.mobile : data.whatsapp,
-                          });
-                        }}
-                      />
-                      Same as mobile
-                    </label>
-                  </Field>
-                  <Field label="Email" error={errors.email} required className="sm:col-span-2">
+                  <Field label="Email" error={errors.email} required>
                     <Input
                       type="email"
                       value={data.email || ''}
                       onChange={(e) => update({ email: e.target.value })}
                     />
                   </Field>
+                  <Field label="Mobile / WhatsApp Number" error={errors.mobile || errors.mobile_verified} required className="sm:col-span-2">
+                    <div className="flex gap-2">
+                      <div className="flex flex-1">
+                        <span className="inline-flex items-center rounded-l-md border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
+                          +91
+                        </span>
+                        <Input
+                          inputMode="numeric"
+                          maxLength={10}
+                          value={data.mobile || ''}
+                          onChange={(e) => setMobile(e.target.value)}
+                          disabled={mobileVerified}
+                          className="rounded-l-none"
+                          placeholder="10-digit Indian mobile"
+                        />
+                      </div>
+                      {mobileVerified ? (
+                        <BadgeVerified />
+                      ) : (
+                        <Button
+                          id={otpStep ? undefined : WORKER_OTP_RECAPTCHA_BTN_ID}
+                          type="button"
+                          variant="secondary"
+                          className="h-10 shrink-0 px-4"
+                          onClick={() => void requestMobileOtp()}
+                          disabled={otpBusy || otpStep}
+                        >
+                          {otpBusy && !otpStep ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send OTP'}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This number is used for WhatsApp and SMS OTP verification.
+                    </p>
+                    {!firebaseOtp.isAvailable && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        SMS verification is temporarily unavailable. Please try again later or contact support.
+                      </p>
+                    )}
+                  </Field>
+                  {otpStep && !mobileVerified && (
+                    <div className="sm:col-span-2 space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        Enter SMS OTP sent to +91 {data.mobile}
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                          <InputOTPGroup>
+                            {[0, 1, 2, 3, 4, 5].map((i) => (
+                              <InputOTPSlot key={i} index={i} />
+                            ))}
+                          </InputOTPGroup>
+                        </InputOTP>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-10"
+                          onClick={() => void confirmMobileOtp()}
+                          disabled={otpBusy || otp.length !== 6}
+                        >
+                          {otpBusy ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                          Verify OTP
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Didn&apos;t get the code?{' '}
+                        <button
+                          id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                          type="button"
+                          className="text-primary font-medium hover:underline disabled:opacity-50"
+                          onClick={() => void requestMobileOtp()}
+                          disabled={otpBusy}
+                        >
+                          Resend SMS
+                        </button>
+                        {' · '}
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                          onClick={() => {
+                            setOtpStep(false);
+                            setOtp('');
+                            firebaseOtp.resetRecaptcha();
+                          }}
+                        >
+                          Change number
+                        </button>
+                      </p>
+                    </div>
+                  )}
                   {!user && (
                     <>
                       <Field label="Account password" error={errors.password} required>
@@ -846,14 +966,14 @@ export default function EmitraOnboardingPage() {
                       <BadgeVerified />
                     ) : (
                       <Button
-                        id={otpStep ? undefined : WORKER_OTP_RECAPTCHA_BTN_ID}
+                        id={agreementOtpStep ? undefined : WORKER_OTP_RECAPTCHA_BTN_ID}
                         type="button"
                         variant="secondary"
                         className="h-10 shrink-0 px-4"
                         onClick={() => void requestOtp()}
-                        disabled={otpBusy || otpStep}
+                        disabled={agreementOtpBusy || agreementOtpStep}
                       >
-                        {otpBusy && !otpStep ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send OTP'}
+                        {agreementOtpBusy && !agreementOtpStep ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send OTP'}
                       </Button>
                     )}
                   </div>
@@ -866,14 +986,14 @@ export default function EmitraOnboardingPage() {
                       Agreement accepted via OTP on +91 {data.mobile}
                     </span>
                   </div>
-                ) : otpStep ? (
+                ) : agreementOtpStep ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm font-medium">
                       <ShieldCheck className="h-4 w-4 text-primary" />
                       Enter OTP
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                      <InputOTP maxLength={6} value={agreementOtp} onChange={setAgreementOtp}>
                         <InputOTPGroup>
                           {[0, 1, 2, 3, 4, 5].map((i) => (
                             <InputOTPSlot key={i} index={i} />
@@ -885,9 +1005,9 @@ export default function EmitraOnboardingPage() {
                         size="sm"
                         className="h-10"
                         onClick={() => void confirmOtp()}
-                        disabled={otpBusy || otp.length !== 6}
+                        disabled={agreementOtpBusy || agreementOtp.length !== 6}
                       >
-                        {otpBusy ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                        {agreementOtpBusy ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
                         Verify
                       </Button>
                     </div>
@@ -898,7 +1018,7 @@ export default function EmitraOnboardingPage() {
                         type="button"
                         className="text-primary font-medium hover:underline disabled:opacity-50"
                         onClick={() => void requestOtp()}
-                        disabled={otpBusy}
+                        disabled={agreementOtpBusy}
                       >
                         Resend SMS
                       </button>
@@ -907,8 +1027,8 @@ export default function EmitraOnboardingPage() {
                         type="button"
                         className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
                         onClick={() => {
-                          setOtpStep(false);
-                          setOtp('');
+                          setAgreementOtpStep(false);
+                          setAgreementOtp('');
                           firebaseOtp.resetRecaptcha();
                         }}
                       >

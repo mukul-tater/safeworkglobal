@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { indianStates } from '@/lib/validations/partner';
+import { getIndiaStates } from '@/lib/indiaLocations';
 
 const phoneRegex = /^[6-9]\d{9}$/;
 const pincodeRegex = /^[1-9]\d{5}$/;
@@ -38,12 +38,17 @@ export const emitraV2BasicSchema = z.object({
   address_line1: z.string().trim().min(5, 'Centre address is required').max(400),
   city_town: z.string().trim().min(2, 'Village / town / city is required').max(80),
   district: z.string().trim().min(2, 'District is required').max(80),
-  state: z.enum(indianStates as unknown as [string, ...string[]], { message: 'State is required' }),
+  state: z
+    .string()
+    .min(1, 'State is required')
+    .refine((value) => getIndiaStates().includes(value), 'Select a valid state'),
   pincode: z.string().regex(pincodeRegex, 'Enter a valid 6-digit PIN code'),
   google_maps_url: mapsLocationSchema,
   shop_photo_url: z.string().min(1, 'Upload a centre photograph'),
   mobile: z.string().regex(phoneRegex, 'Enter a valid 10-digit mobile'),
-  whatsapp: z.string().regex(phoneRegex, 'Enter a valid 10-digit WhatsApp number'),
+  mobile_verified: z.literal(true, {
+    errorMap: () => ({ message: 'Verify your mobile with the SMS OTP' }),
+  }),
   email: z.string().trim().email('Enter a valid email').max(255),
   date_of_birth: z
     .string()
