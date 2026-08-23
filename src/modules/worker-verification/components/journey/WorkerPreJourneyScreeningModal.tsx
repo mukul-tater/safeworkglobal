@@ -69,9 +69,11 @@ function EnHiLine({
   hiClassName?: string;
 }) {
   return (
-    <span className="block">
-      <span className={cn('block font-semibold text-foreground leading-snug', enClassName)}>{copy.en}</span>
-      <HindiText className={cn('mt-0.5 block text-xs text-muted-foreground leading-snug', hiClassName)}>
+    <span className="block min-w-0 max-w-full">
+      <span className={cn('block break-words font-semibold leading-snug text-foreground', enClassName)}>
+        {copy.en}
+      </span>
+      <HindiText className={cn('mt-0.5 block break-words text-xs leading-snug text-muted-foreground', hiClassName)}>
         {copy.hi}
       </HindiText>
     </span>
@@ -80,12 +82,20 @@ function EnHiLine({
 
 function ChoiceLabel({ copy }: { copy: EnHi }) {
   return (
-    <span className="flex flex-col items-center gap-0.5 text-center leading-tight">
-      <span>{copy.en}</span>
-      <HindiText className="text-[11px] font-medium opacity-80">{copy.hi}</HindiText>
+    <span className="flex min-w-0 max-w-full flex-col items-center gap-0.5 text-center leading-tight">
+      <span className="break-words">{copy.en}</span>
+      <HindiText className="break-words text-[11px] font-medium opacity-80">{copy.hi}</HindiText>
     </span>
   );
 }
+
+const QUESTION_CARD =
+  'min-w-0 space-y-3 overflow-hidden rounded-lg border border-border/60 bg-card p-3 sm:p-4';
+const TWO_CHOICE_GRID = 'grid min-w-0 grid-cols-2 gap-2 sm:gap-3';
+const THREE_CHOICE_GRID = 'grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3';
+const CHOICE_BTN =
+  'flex min-w-0 cursor-pointer items-center justify-center rounded-lg border px-2 py-2.5 text-center text-sm font-medium break-words sm:p-3';
+const SECTION_TITLE = 'flex min-w-0 items-start gap-2 break-words text-base font-semibold leading-snug text-foreground';
 
 export default function WorkerPreJourneyScreeningModal({
   userId,
@@ -175,13 +185,13 @@ export default function WorkerPreJourneyScreeningModal({
     <div
       className={
         variant === 'inline'
-          ? 'w-full'
+          ? 'w-full min-w-0'
           : 'fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-background/80 p-3 backdrop-blur-md sm:p-6'
       }
     >
-      <Card className="relative w-full max-w-3xl border-primary/20 bg-card shadow-2xl shadow-primary/10">
+      <Card className="relative w-full min-w-0 max-w-3xl overflow-hidden border-primary/20 bg-card shadow-2xl shadow-primary/10">
         {/* Header */}
-        <CardHeader className="border-b border-border/60 bg-muted/30 pb-4">
+        <CardHeader className="border-b border-border/60 bg-muted/30 px-3 pb-4 sm:px-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               {step === 0 ? (
@@ -194,7 +204,7 @@ export default function WorkerPreJourneyScreeningModal({
                       {ORIGINAL_DOCS_READY_NOTICE.badgeHi}
                     </span>
                   </div>
-                  <CardTitle className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                  <CardTitle className="mt-2 break-words text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl">
                     {ORIGINAL_DOCS_READY_NOTICE.titleEn}
                   </CardTitle>
                   <HindiText className="mt-1 text-base font-semibold text-muted-foreground">
@@ -203,7 +213,7 @@ export default function WorkerPreJourneyScreeningModal({
                 </>
               ) : (
                 <>
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-semibold">
                       {PRE_JOURNEY_COPY.headerBadge.en}
                     </Badge>
@@ -211,13 +221,13 @@ export default function WorkerPreJourneyScreeningModal({
                       Step {step} of 4 · चरण {step} / 4
                     </span>
                   </div>
-                  <CardTitle className="mt-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                  <CardTitle className="mt-2 break-words text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl">
                     {PRE_JOURNEY_COPY.headerTitle.en}
                   </CardTitle>
                   <HindiText className="mt-1 text-sm font-medium text-muted-foreground">
                     {PRE_JOURNEY_COPY.headerTitle.hi}
                   </HindiText>
-                  <CardDescription className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
+                  <CardDescription className="mt-1.5 break-words text-xs text-muted-foreground sm:text-sm">
                     <span className="block">{PRE_JOURNEY_COPY.headerDesc.en}</span>
                     <HindiText className="mt-0.5 text-xs">{PRE_JOURNEY_COPY.headerDesc.hi}</HindiText>
                   </CardDescription>
@@ -227,52 +237,68 @@ export default function WorkerPreJourneyScreeningModal({
           </div>
 
           {step > 0 && (
-          <div className="mt-4 grid grid-cols-4 gap-1.5 sm:gap-2">
-            {[
-              { num: 1, label: PRE_JOURNEY_COPY.nav[0], icon: Stethoscope },
-              { num: 2, label: PRE_JOURNEY_COPY.nav[1], icon: Globe2 },
-              { num: 3, label: PRE_JOURNEY_COPY.nav[2], icon: UserCheck },
-              { num: 4, label: PRE_JOURNEY_COPY.nav[3], icon: FileCheck2 },
-            ].map((s) => {
-              const Icon = s.icon;
-              const isActive = step === s.num;
-              const isPast = step > s.num;
-              return (
-                <button
-                  key={s.num}
-                  type="button"
-                  onClick={() => {
-                    if (isPast) setStep(s.num as Step);
-                  }}
-                  className={`flex flex-col items-center gap-1 rounded-lg p-1.5 text-center transition-all ${
-                    isActive
-                      ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
-                      : isPast
-                      ? 'bg-primary/15 text-primary hover:bg-primary/20 cursor-pointer'
-                      : 'bg-muted/50 text-muted-foreground opacity-60'
-                  }`}
-                >
-                  <div className="flex items-center gap-1 text-xs">
-                    {isPast ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
-                    <span className="hidden sm:inline">Step {s.num}</span>
-                  </div>
-                  <span className="truncate text-[10px] font-medium sm:text-xs">{s.label.en}</span>
-                  <HindiText
-                    className={`truncate text-[9px] font-medium sm:text-[10px] ${
-                      isActive ? 'text-primary-foreground/80' : ''
-                    }`}
-                  >
-                    {s.label.hi}
-                  </HindiText>
-                </button>
-              );
-            })}
-          </div>
+            <nav className="mt-4 min-w-0" aria-label="Declaration steps">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2">
+                {[
+                  { num: 1, label: PRE_JOURNEY_COPY.nav[0], icon: Stethoscope },
+                  { num: 2, label: PRE_JOURNEY_COPY.nav[1], icon: Globe2 },
+                  { num: 3, label: PRE_JOURNEY_COPY.nav[2], icon: UserCheck },
+                  { num: 4, label: PRE_JOURNEY_COPY.nav[3], icon: FileCheck2 },
+                ].map((s) => {
+                  const Icon = s.icon;
+                  const isActive = step === s.num;
+                  const isPast = step > s.num;
+                  return (
+                    <button
+                      key={s.num}
+                      type="button"
+                      onClick={() => {
+                        if (isPast) setStep(s.num as Step);
+                      }}
+                      className={cn(
+                        'flex min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-center transition-all sm:p-2',
+                        isActive
+                          ? 'bg-primary font-semibold text-primary-foreground shadow-sm'
+                          : isPast
+                            ? 'cursor-pointer bg-primary/15 text-primary hover:bg-primary/20'
+                            : 'bg-muted/50 text-muted-foreground opacity-70',
+                      )}
+                    >
+                      <div className="flex items-center justify-center gap-1 text-xs">
+                        {isPast ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        ) : (
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        <span className="tabular-nums">{s.num}</span>
+                      </div>
+                      <span className="w-full break-words text-[11px] font-medium leading-tight sm:text-xs">
+                        {s.label.en}
+                      </span>
+                      <HindiText
+                        className={cn(
+                          'w-full break-words text-[10px] font-medium leading-tight',
+                          isActive ? 'text-primary-foreground/80' : '',
+                        )}
+                      >
+                        {s.label.hi}
+                      </HindiText>
+                    </button>
+                  );
+                })}
+              </div>
+            </nav>
           )}
         </CardHeader>
 
         {/* Content Body */}
-        <CardContent className={variant === 'inline' ? 'p-4 sm:p-6 space-y-6' : 'max-h-[68vh] overflow-y-auto p-4 sm:p-6 space-y-6'}>
+        <CardContent
+          className={
+            variant === 'inline'
+              ? 'min-w-0 space-y-6 overflow-x-hidden p-3 sm:p-6'
+              : 'max-h-[68vh] min-w-0 space-y-6 overflow-y-auto overflow-x-hidden p-3 sm:p-6'
+          }
+        >
           {step === 0 && (
             <div className="space-y-5">
               <Alert className="border-primary/30 bg-primary/5">
@@ -315,8 +341,8 @@ export default function WorkerPreJourneyScreeningModal({
           {step === 1 && (
             <div className="space-y-6">
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
-                <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-                  <Stethoscope className="h-5 w-5 text-primary" />
+                <h3 className={SECTION_TITLE}>
+                  <Stethoscope className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   {PRE_JOURNEY_COPY.medical.title.en}
                 </h3>
                 <HindiText className="mt-0.5 text-sm text-muted-foreground">
@@ -329,11 +355,11 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 1 */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.medical.q1} enClassName="text-sm" />
                 </Label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className={THREE_CHOICE_GRID}>
                   {[
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
@@ -341,7 +367,7 @@ export default function WorkerPreJourneyScreeningModal({
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${}
                         medical.fitForDuties === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -365,18 +391,18 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 2 */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.medical.q2} enClassName="text-sm" />
                 </Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className={TWO_CHOICE_GRID}>
                   {[
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yesMedical },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${
                         medical.hasMedicalCondition === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -437,8 +463,8 @@ export default function WorkerPreJourneyScreeningModal({
           {step === 2 && (
             <div className="space-y-6">
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
-                <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-                  <Globe2 className="h-5 w-5 text-primary" />
+                <h3 className={SECTION_TITLE}>
+                  <Globe2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   {PRE_JOURNEY_COPY.overseas.title.en}
                 </h3>
                 <HindiText className="mt-0.5 text-sm text-muted-foreground">
@@ -451,18 +477,18 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 3 */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q3} enClassName="text-sm" />
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={TWO_CHOICE_GRID}>
                   {[
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${}
                         overseas.workedOutsideIndia === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -492,20 +518,20 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 4 — GCC return */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q4} enClassName="text-sm" />
                 </Label>
                 <p className="text-xs text-muted-foreground">{PRE_JOURNEY_COPY.overseas.q4Hint.en}</p>
                 <HindiText className="text-xs text-muted-foreground">{PRE_JOURNEY_COPY.overseas.q4Hint.hi}</HindiText>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={TWO_CHOICE_GRID}>
                   {[
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${}
                         overseas.gccReturn === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -598,7 +624,7 @@ export default function WorkerPreJourneyScreeningModal({
                         <Label className="text-xs">
                           <EnHiLine copy={PRE_JOURNEY_COPY.overseas.durationYear} enClassName="text-xs" />
                         </Label>
-                        <div className="grid grid-cols-2 gap-2 mt-1">
+                        <div className="mt-1 grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
                           <Input
                             placeholder="Duration (e.g. 2 yrs)"
                             value={overseas.overseasDetails?.duration || ''}
@@ -632,18 +658,18 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 5 */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q5} enClassName="text-sm" />
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={TWO_CHOICE_GRID}>
                   {[
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yesDetails },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${}
                         overseas.beenDeported === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -680,18 +706,18 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 6 */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q6} enClassName="text-sm" />
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={TWO_CHOICE_GRID}>
                   {[
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yesDetails },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${}
                         overseas.refusedVisaOrEntry === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -728,18 +754,18 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 7 */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.overseas.q7} enClassName="text-sm" />
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={TWO_CHOICE_GRID}>
                   {[
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yesDetails },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${}
                         overseas.overstayedVisa === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -781,8 +807,8 @@ export default function WorkerPreJourneyScreeningModal({
           {step === 3 && (
             <div className="space-y-6">
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
-                <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-                  <UserCheck className="h-5 w-5 text-primary" />
+                <h3 className={SECTION_TITLE}>
+                  <UserCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                   {PRE_JOURNEY_COPY.recruitment.title.en}
                 </h3>
                 <HindiText className="mt-0.5 text-sm text-muted-foreground">
@@ -795,18 +821,18 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 8 */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.recruitment.q8} enClassName="text-sm" />
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={TWO_CHOICE_GRID}>
                   {[
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yes },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${}
                         recruitment.registeredWithOtherAgency === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -844,18 +870,18 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 9 */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.recruitment.q9} enClassName="text-sm" />
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={TWO_CHOICE_GRID}>
                   {[
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yesAmount },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${}
                         recruitment.paidMoneyForJob === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -892,18 +918,18 @@ export default function WorkerPreJourneyScreeningModal({
               </div>
 
               {/* Question 10 */}
-              <div className="space-y-3 rounded-lg border border-border/60 bg-card p-4">
+              <div className={QUESTION_CARD}>
                 <Label className="text-sm font-semibold text-foreground leading-snug">
                   <EnHiLine copy={PRE_JOURNEY_COPY.recruitment.q10} enClassName="text-sm" />
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className={TWO_CHOICE_GRID}>
                   {[
                     { val: 'no', copy: PRE_JOURNEY_COPY.no },
                     { val: 'yes', copy: PRE_JOURNEY_COPY.yesDetails },
                   ].map((opt) => (
                     <label
                       key={opt.val}
-                      className={`flex cursor-pointer items-center justify-center rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                      className={`${CHOICE_BTN} transition-all ${}
                         recruitment.promisedGuaranteedJobForMoney === opt.val
                           ? 'border-primary bg-primary/10 text-primary font-bold shadow-sm'
                           : 'border-border bg-background hover:bg-muted/50 text-foreground'
@@ -948,8 +974,8 @@ export default function WorkerPreJourneyScreeningModal({
             <div className="space-y-6">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-lg border border-primary/20 bg-primary/5 p-3 sm:p-4">
                 <div>
-                  <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-                    <FileCheck2 className="h-5 w-5 text-primary" />
+                  <h3 className={SECTION_TITLE}>
+                    <FileCheck2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                     {PRE_JOURNEY_COPY.ack.title.en}
                   </h3>
                   <HindiText className="mt-0.5 text-sm text-muted-foreground">
@@ -1008,14 +1034,14 @@ export default function WorkerPreJourneyScreeningModal({
                         onCheckedChange={(checked) =>
                           setAck({ ...ack, [item.key]: Boolean(checked) })
                         }
-                        className="mt-0.5"
+                        className="mt-0.5 shrink-0"
                       />
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-bold text-muted-foreground mr-1">[{idx + 1}]</span>
-                        <span className="text-xs sm:text-sm font-medium leading-normal text-foreground">
+                      <div className="min-w-0 space-y-0.5">
+                        <span className="mr-1 text-xs font-bold text-muted-foreground">[{idx + 1}]</span>
+                        <span className="break-words text-xs font-medium leading-normal text-foreground sm:text-sm">
                           {item.text}
                         </span>
-                        <HindiText className="mt-0.5 text-xs text-muted-foreground leading-snug">
+                        <HindiText className="mt-0.5 break-words text-xs leading-snug text-muted-foreground">
                           {item.textHi}
                         </HindiText>
                       </div>
@@ -1028,15 +1054,15 @@ export default function WorkerPreJourneyScreeningModal({
         </CardContent>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 p-4">
-          <div>
+        <div className="flex flex-col-reverse gap-3 border-t border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+          <div className="min-w-0">
             {step > 0 && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={handlePrevStep}
                 disabled={saving}
-                className="h-auto gap-1 text-xs sm:text-sm py-2"
+                className="h-auto w-full gap-1 py-2 text-xs sm:w-auto sm:text-sm"
               >
                 <ChevronLeft className="h-4 w-4" />
                 <span className="flex flex-col items-start leading-tight">
@@ -1047,12 +1073,12 @@ export default function WorkerPreJourneyScreeningModal({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             {step === 0 ? (
               <Button
                 type="button"
                 onClick={handleNextStep}
-                className="h-auto flex-col gap-0.5 bg-primary px-4 py-2.5 text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm"
+                className="h-auto w-full flex-col gap-0.5 bg-primary px-4 py-2.5 text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm sm:w-auto"
               >
                 <span className="text-sm">{ORIGINAL_DOCS_READY_NOTICE.continueEn}</span>
                 <span className="text-xs font-medium opacity-90">{ORIGINAL_DOCS_READY_NOTICE.continueHi}</span>
@@ -1061,7 +1087,7 @@ export default function WorkerPreJourneyScreeningModal({
               <Button
                 type="button"
                 onClick={handleNextStep}
-                className="h-auto gap-1 bg-primary text-primary-foreground hover:bg-primary/90 text-xs sm:text-sm font-semibold shadow-sm py-2"
+                className="h-auto w-full min-w-0 gap-1 bg-primary py-2 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 sm:w-auto sm:text-sm"
               >
                 <span className="flex flex-col items-end leading-tight">
                   <span>{PRE_JOURNEY_COPY.next.en}</span>
@@ -1074,7 +1100,7 @@ export default function WorkerPreJourneyScreeningModal({
                 type="button"
                 onClick={handleSubmit}
                 disabled={saving}
-                className="h-auto gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20 py-2"
+                className="h-auto w-full min-w-0 gap-1.5 bg-emerald-600 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 sm:w-auto sm:text-sm"
               >
                 {saving ? (
                   <>

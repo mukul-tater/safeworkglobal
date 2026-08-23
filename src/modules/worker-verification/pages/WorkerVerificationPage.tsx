@@ -1110,7 +1110,7 @@ export default function WorkerVerificationPage({
   return (
     <JourneyShell embedded={embedded}>
       {showDeclarationModal && !emitraNoticeOpen ? (
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto w-full min-w-0 max-w-5xl">
           <WorkerPreJourneyScreeningModal
             userId={subjectId || ''}
             isOpen
@@ -1131,7 +1131,7 @@ export default function WorkerVerificationPage({
           onOpenChange={setEmitraNoticeOpen}
         />
       )}
-      <div className="mx-auto max-w-5xl space-y-5">
+      <div className="mx-auto w-full min-w-0 max-w-5xl space-y-5">
         <JourneyHero
           stage={stage}
           subheading={heroSubheading}
