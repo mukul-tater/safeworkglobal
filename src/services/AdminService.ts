@@ -23,7 +23,53 @@ export async function adminDeleteJob(jobId: string): Promise<{ error: string | n
   return { error: jobError ? formatError(jobError, "Failed to delete job") : null };
 }
 
+const USER_FILE_BUCKETS = [
+  "avatars",
+  "worker-documents",
+  "worker-videos",
+  "partner-documents",
+  "partner-worker-media",
+  "assessment-evidence",
+  "employer-documents",
+  "onboarding-documents",
+] as const;
+
+async function listStoragePrefix(bucket: string, prefix: string): Promise<string[]> {
+  const { data, error } = await supabase.storage.from(bucket).list(prefix, {
+    limit: 1000,
+    offset: 0,
+  });
+  if (error || !data?.length) return [];
+
+  const files: string[] = [];
+  for (const entry of data) {
+    const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (!entry.id) {
+      files.push(...(await listStoragePrefix(bucket, path)));
+    } else {
+      files.push(path);
+    }
+  }
+  return files;
+}
+
+async function removeUserStorageFiles(userId: string): Promise<void> {
+  const prefixes = [userId, `contracts/${userId}`];
+  for (const bucket of USER_FILE_BUCKETS) {
+    for (const prefix of prefixes) {
+      const files = await listStoragePrefix(bucket, prefix);
+      for (let i = 0; i < files.length; i += 100) {
+        const { error } = await supabase.storage.from(bucket).remove(files.slice(i, i + 100));
+        if (error) {
+          console.warn(`Failed to remove storage files from ${bucket}:`, error.message);
+        }
+      }
+    }
+  }
+}
+
 export async function adminDeleteUser(userId: string): Promise<{ error: string | null }> {
+  await removeUserStorageFiles(userId);
   const { error } = await supabase.rpc("admin_delete_user", { p_user_id: userId });
   return { error: error ? formatError(error, "Failed to delete user") : null };
 }

@@ -1,80 +1,12 @@
--- Full admin user deletion: unblock audit FKs, remove storage objects, then
--- delete auth.users so profile / role / journey rows cascade away.
+-- Storage rejects DELETE FROM storage.objects in SQL ("Use the Storage API instead").
+-- Remove that from admin_delete_user, let admins delete files via the Storage API,
+-- and detach leftover storage.owner refs so auth.users can still be removed.
 
--- Audit-style FKs default to NO ACTION and can block DELETE FROM auth.users.
--- Point them at ON DELETE SET NULL (and allow NULL on actioned_by).
-DO $$
-DECLARE
-  target record;
-  con record;
-BEGIN
-  FOR target IN
-    SELECT * FROM (VALUES
-      ('user_moderation', 'actioned_by'),
-      ('disputes', 'resolved_by'),
-      ('content_flags', 'reviewed_by'),
-      ('compliance_checks', 'reviewed_by'),
-      ('worker_onboarding', 'verified_by'),
-      ('onboarding_audit_logs', 'actor_id'),
-      ('worker_documents', 'verified_by'),
-      ('partner_worker_status_history', 'changed_by'),
-      ('background_verifications', 'verified_by')
-    ) AS t(table_name, column_name)
-  LOOP
-    IF to_regclass('public.' || target.table_name) IS NULL THEN
-      CONTINUE;
-    END IF;
-
-    IF NOT EXISTS (
-      SELECT 1
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name = target.table_name
-        AND column_name = target.column_name
-    ) THEN
-      CONTINUE;
-    END IF;
-
-    EXECUTE format(
-      'ALTER TABLE public.%I ALTER COLUMN %I DROP NOT NULL',
-      target.table_name,
-      target.column_name
-    );
-
-    FOR con IN
-      SELECT pg_constraint.conname
-      FROM pg_constraint
-      JOIN pg_class ON pg_class.oid = pg_constraint.conrelid
-      JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-      JOIN pg_attribute ON pg_attribute.attrelid = pg_class.oid
-        AND pg_attribute.attnum = ANY (pg_constraint.conkey)
-      WHERE pg_constraint.contype = 'f'
-        AND pg_namespace.nspname = 'public'
-        AND pg_class.relname = target.table_name
-        AND pg_attribute.attname = target.column_name
-        AND array_length(pg_constraint.conkey, 1) = 1
-    LOOP
-      EXECUTE format(
-        'ALTER TABLE public.%I DROP CONSTRAINT %I',
-        target.table_name,
-        con.conname
-      );
-    END LOOP;
-
-    BEGIN
-      EXECUTE format(
-        'ALTER TABLE public.%I ADD CONSTRAINT %I FOREIGN KEY (%I) REFERENCES auth.users(id) ON DELETE SET NULL',
-        target.table_name,
-        target.table_name || '_' || target.column_name || '_fkey',
-        target.column_name
-      );
-    EXCEPTION
-      WHEN duplicate_object THEN
-        NULL;
-    END;
-  END LOOP;
-END
-$$;
+DROP POLICY IF EXISTS "Admins manage user storage objects" ON storage.objects;
+CREATE POLICY "Admins manage user storage objects"
+  ON storage.objects FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::app_role))
+  WITH CHECK (public.has_role(auth.uid(), 'admin'::app_role));
 
 CREATE OR REPLACE FUNCTION public.admin_delete_user(p_user_id uuid)
 RETURNS void
@@ -109,7 +41,6 @@ BEGIN
     RAISE EXCEPTION 'User not found';
   END IF;
 
-  -- Rows that store user ids without an FK to auth.users (would otherwise be orphaned)
   IF to_regclass('public.employer_worker_assignments') IS NOT NULL THEN
     DELETE FROM public.employer_worker_assignments
     WHERE worker_user_id = p_user_id OR assigned_by = p_user_id;
@@ -137,7 +68,7 @@ BEGIN
     WHERE created_by = p_user_id;
   END IF;
 
-  -- Storage files must be removed via the Storage API, not DELETE FROM storage.objects.
+  -- Do not DELETE storage.objects here. Detach owner so auth.users delete is not blocked.
   BEGIN
     UPDATE storage.objects
     SET owner = NULL
@@ -149,7 +80,6 @@ BEGIN
       NULL;
   END;
 
-  -- Break leftover FKs to this user (NO ACTION / RESTRICT) so auth delete can proceed
   FOR rec IN
     SELECT
       n.nspname AS schema_name,
