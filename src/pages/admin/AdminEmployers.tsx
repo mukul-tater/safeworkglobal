@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Eye, Building2, Briefcase } from "lucide-react";
+import { Search, Eye, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
 
 interface EmployerRow {
   id: string;
@@ -145,9 +146,20 @@ export default function AdminEmployers() {
                     <span>Joined {e.joined}</span>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setViewEmployer(e)}>
-                  <Eye className="h-4 w-4 mr-1" /> View
-                </Button>
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={() => setViewEmployer(e)}>
+                    <Eye className="h-4 w-4 mr-1" /> View
+                  </Button>
+                  <AdminDeleteUserButton
+                    userId={e.id}
+                    userRole="employer"
+                    userLabel={e.company_name || e.full_name || e.email || "this employer"}
+                    onDeleted={() => {
+                      if (viewEmployer?.id === e.id) setViewEmployer(null);
+                      fetchEmployers();
+                    }}
+                  />
+                </div>
               </div>
             </Card>
           ))}
@@ -172,6 +184,19 @@ export default function AdminEmployers() {
                   {JSON.stringify(viewEmployer.profile, null, 2)}
                 </pre>
               )}
+              <div className="flex justify-end pt-2">
+                <AdminDeleteUserButton
+                  userId={viewEmployer.id}
+                  userRole="employer"
+                  userLabel={viewEmployer.company_name || viewEmployer.full_name || viewEmployer.email || "this employer"}
+                  variant="destructive"
+                  label="Delete User"
+                  onDeleted={() => {
+                    setViewEmployer(null);
+                    fetchEmployers();
+                  }}
+                />
+              </div>
             </div>
           )}
         </DialogContent>

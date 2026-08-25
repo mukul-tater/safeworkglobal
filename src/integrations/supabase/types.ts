@@ -3953,7 +3953,7 @@ export type Database = {
       user_moderation: {
         Row: {
           action: string
-          actioned_by: string
+          actioned_by: string | null
           created_at: string | null
           duration_days: number | null
           expires_at: string | null
@@ -3965,7 +3965,7 @@ export type Database = {
         }
         Insert: {
           action: string
-          actioned_by: string
+          actioned_by?: string | null
           created_at?: string | null
           duration_days?: number | null
           expires_at?: string | null
@@ -3977,7 +3977,7 @@ export type Database = {
         }
         Update: {
           action?: string
-          actioned_by?: string
+          actioned_by?: string | null
           created_at?: string | null
           duration_days?: number | null
           expires_at?: string | null

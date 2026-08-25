@@ -13,6 +13,7 @@ import DisputeManagementCard from "@/components/admin/DisputeManagementCard";
 import ContentModerationCard from "@/components/admin/ContentModerationCard";
 import UserManagementCard from "@/components/admin/UserManagementCard";
 import MessageMonitoringCard from "@/components/admin/MessageMonitoringCard";
+import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
 import { useSwipe } from "@/hooks/use-swipe";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Badge } from "@/components/ui/badge";
@@ -347,6 +348,13 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-2">
                     <Badge className={getRoleBadgeColor(u.role)}>{u.role}</Badge>
                     <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</span>
+                    <AdminDeleteUserButton
+                      userId={u.id}
+                      userRole={u.role}
+                      userLabel={u.full_name || u.email || "this user"}
+                      size="icon"
+                      onDeleted={fetchAdminData}
+                    />
                   </div>
                 </div>
               )) : <p className="text-muted-foreground text-center py-4">No users yet</p>}

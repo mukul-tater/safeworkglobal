@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Ban, CheckCircle, Search, Filter, UserX, UserCheck, Trash2 } from "lucide-react";
+import { Eye, Search, UserX, UserCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { displayableEmail } from "@/lib/workerAuthEmail";
@@ -14,11 +14,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { adminDeleteUser, adminSetUserRole } from "@/services/AdminService";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { adminSetUserRole } from "@/services/AdminService";
+import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
 
 const BANNED_ACTIONS = new Set(["banned", "blocked", "suspended"]);
 
@@ -40,8 +37,6 @@ export default function UserManagement() {
   const [actionType, setActionType] = useState<"ban" | "unban" | null>(null);
   const [reason, setReason] = useState("");
   const [showDialog, setShowDialog] = useState(false);
-  const [deleteUser, setDeleteUser] = useState<User | null>(null);
-  const [deleting, setDeleting] = useState(false);
   const [roleUpdating, setRoleUpdating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -122,24 +117,6 @@ export default function UserManagement() {
     }
   };
 
-  const handleDeleteUser = async () => {
-    if (!deleteUser) return;
-    setDeleting(true);
-    try {
-      const { error } = await adminDeleteUser(deleteUser.id);
-      if (error) throw new Error(error);
-      toast.success(`${deleteUser.full_name || deleteUser.email} has been deleted`);
-      setDeleteUser(null);
-      if (viewUser?.id === deleteUser.id) setViewUser(null);
-      fetchUsers();
-    } catch (error: any) {
-      console.error("Error deleting user:", error);
-      toast.error(error.message || "Failed to delete user");
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   const handleRoleChange = async (user: User, newRole: string) => {
     if (user.role === newRole) return;
     setRoleUpdating(true);
@@ -159,9 +136,6 @@ export default function UserManagement() {
       setRoleUpdating(false);
     }
   };
-
-  const canDeleteUser = (user: User) =>
-    user.id !== currentUser?.id && user.role !== "admin";
 
   const handleViewUser = async (user: User) => {
     setViewUser(user);
@@ -207,7 +181,8 @@ export default function UserManagement() {
     <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
       <h1 className="text-2xl md:text-3xl font-bold mb-2">User Management</h1>
       <p className="text-muted-foreground text-sm mb-6">
-        Manage all workers, employers, and agents — {users.length} total users
+        Manage all workers, employers, and agents — {users.length} total users.
+        Delete permanently removes the account and related data.
       </p>
 
       {/* Filters */}
@@ -290,11 +265,12 @@ export default function UserManagement() {
                     <UserX className="h-4 w-4 text-destructive" />
                   </Button>
                 )}
-                {canDeleteUser(user) && (
-                  <Button variant="outline" size="icon" onClick={() => setDeleteUser(user)} title="Delete user">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                )}
+                <AdminDeleteUserButton
+                  userId={user.id}
+                  userRole={user.role}
+                  userLabel={user.full_name || user.email || user.phone || "this user"}
+                  onDeleted={fetchUsers}
+                />
               </div>
             </div>
           </Card>
@@ -417,34 +393,23 @@ export default function UserManagement() {
                     <UserX className="h-4 w-4 mr-1" /> Disable User
                   </Button>
                 )}
-                {canDeleteUser(viewUser) && (
-                  <Button size="sm" variant="destructive" onClick={() => { setDeleteUser(viewUser); setViewUser(null); }}>
-                    <Trash2 className="h-4 w-4 mr-1" /> Delete User
-                  </Button>
-                )}
+                <AdminDeleteUserButton
+                  userId={viewUser.id}
+                  userRole={viewUser.role}
+                  userLabel={viewUser.full_name || viewUser.email || viewUser.phone || "this user"}
+                  variant="destructive"
+                  label="Delete User"
+                  onDeleted={() => {
+                    setViewUser(null);
+                    fetchUsers();
+                  }}
+                />
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteUser} onOpenChange={() => !deleting && setDeleteUser(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
-            <AlertDialogDescription>
-              Permanently delete {deleteUser?.full_name || deleteUser?.email}? This removes their
-              account and all associated data. This cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser} disabled={deleting}>
-              {deleting ? "Deleting..." : "Delete User"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </DashboardLayout>
   );
 }

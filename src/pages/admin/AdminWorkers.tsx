@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatSalaryINR } from "@/lib/utils";
 import { displayableEmail } from "@/lib/workerAuthEmail";
+import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
 
 interface WorkerRow {
   id: string;
@@ -180,9 +181,20 @@ export default function AdminWorkers() {
                     </div>
                   )}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setViewWorker(w)}>
-                  <Eye className="h-4 w-4 mr-1" /> View
-                </Button>
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={() => setViewWorker(w)}>
+                    <Eye className="h-4 w-4 mr-1" /> View
+                  </Button>
+                  <AdminDeleteUserButton
+                    userId={w.id}
+                    userRole="worker"
+                    userLabel={w.full_name || w.email || w.phone || "this worker"}
+                    onDeleted={() => {
+                      if (viewWorker?.id === w.id) setViewWorker(null);
+                      fetchWorkers();
+                    }}
+                  />
+                </div>
               </div>
             </Card>
           ))}
@@ -211,6 +223,19 @@ export default function AdminWorkers() {
                   {JSON.stringify(viewWorker.profile, null, 2)}
                 </pre>
               )}
+              <div className="flex justify-end pt-2">
+                <AdminDeleteUserButton
+                  userId={viewWorker.id}
+                  userRole="worker"
+                  userLabel={viewWorker.full_name || viewWorker.email || viewWorker.phone || "this worker"}
+                  variant="destructive"
+                  label="Delete User"
+                  onDeleted={() => {
+                    setViewWorker(null);
+                    fetchWorkers();
+                  }}
+                />
+              </div>
             </div>
           )}
         </DialogContent>
