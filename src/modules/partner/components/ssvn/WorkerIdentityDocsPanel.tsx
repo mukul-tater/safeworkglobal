@@ -3,8 +3,15 @@ import { Badge } from '@/components/ui/badge';
 import { formatAuditTs } from '@/modules/trade-test/constants';
 import type { WorkerIdentityPack } from '@/modules/trade-test/types';
 
-function statusLabel(onFile: boolean): string {
-  return onFile ? 'On file' : 'Not uploaded';
+function last4(value: string | null | undefined): string | null {
+  const trimmed = (value || '').replace(/\s/g, '');
+  if (trimmed.length < 4) return null;
+  return trimmed.slice(-4);
+}
+
+function maskedValue(value: string | null | undefined, emptyLabel: string): string {
+  const digits = last4(value);
+  return digits ? `XXXX ${digits}` : emptyLabel;
 }
 
 export default function WorkerIdentityDocsPanel({
@@ -35,21 +42,27 @@ export default function WorkerIdentityDocsPanel({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        SafeWork does not show Aadhaar, PAN or passport copies here. Check original Aadhaar in
-        person when the worker arrives. PAN and passport can be collected after the skill test.
+        Only the last 4 characters are shown. Check original Aadhaar in person when the worker
+        arrives. Do not store copies on this portal.
       </p>
       <div className="grid gap-2 sm:grid-cols-3 text-sm">
         <div className="rounded-md border p-3">
-          <div className="text-xs text-muted-foreground">Aadhaar</div>
-          <div className="font-medium">{statusLabel(aadhaarOnFile)}</div>
+          <div className="text-xs text-muted-foreground">Aadhaar (last 4)</div>
+          <div className="font-medium font-mono tracking-wide">
+            {maskedValue(pack?.aadhaar_last4, aadhaarOnFile ? 'On file' : 'Not uploaded')}
+          </div>
         </div>
         <div className="rounded-md border p-3">
-          <div className="text-xs text-muted-foreground">PAN</div>
-          <div className="font-medium">{statusLabel(panOnFile)}</div>
+          <div className="text-xs text-muted-foreground">PAN (last 4)</div>
+          <div className="font-medium font-mono tracking-wide">
+            {maskedValue(pack?.pan_number, panOnFile ? 'On file' : 'Not uploaded')}
+          </div>
         </div>
         <div className="rounded-md border p-3">
-          <div className="text-xs text-muted-foreground">Passport</div>
-          <div className="font-medium">{statusLabel(passportOnFile)}</div>
+          <div className="text-xs text-muted-foreground">Passport (last 4)</div>
+          <div className="font-medium font-mono tracking-wide">
+            {maskedValue(pack?.passport_number, passportOnFile ? 'On file' : 'Not uploaded')}
+          </div>
         </div>
       </div>
 
