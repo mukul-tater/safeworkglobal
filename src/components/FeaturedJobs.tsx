@@ -8,6 +8,7 @@ import { MapPin, Building2, Clock, ArrowRight, Bookmark, Share2, Zap, Sparkles, 
 import JobSalaryText from '@/components/JobSalaryText';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FeaturedJob {
   id: string;
@@ -57,6 +58,8 @@ function countryFlag(country: string): string {
 export default function FeaturedJobs() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
   const [jobs, setJobs] = useState<FeaturedJob[]>([]);
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -264,7 +267,7 @@ export default function FeaturedJobs() {
                     className="w-full rounded-xl group/btn sm:flex-1"
                     onClick={(e) => { e.stopPropagation(); handleQuickApply(job.slug || job.id); }}
                   >
-                    View & Apply
+                    View {isAdmin ? 'job' : '& Apply'}
                     <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
                   </Button>
                   <div className="flex gap-2">

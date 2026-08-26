@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { requiredFutureDateString, optionalFutureDateString } from "@/lib/validations/common";
+import { requiredFutureDateString, parseDateInput } from "@/lib/validations/common";
 
 const salaryRangeRefine = {
   refine: (data: { salary_min?: number; salary_max?: number }) => {
@@ -109,7 +109,12 @@ export const adminJobEditSchema = jobPostingBaseSchema
     requirements: z
       .union([z.string().trim().max(3000), z.literal("")])
       .optional(),
-    expires_at: optionalFutureDateString,
+    expires_at: z
+      .string()
+      .trim()
+      .optional()
+      .or(z.literal(""))
+      .refine((v) => !v || parseDateInput(v) !== null, "Enter a valid date"),
     status: z.enum([
       "DRAFT",
       "PENDING",

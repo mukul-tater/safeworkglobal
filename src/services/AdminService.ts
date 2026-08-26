@@ -87,8 +87,29 @@ export async function adminSetUserRole(
 
 export async function adminUpdateJob(
   jobId: string,
-  jobData: Record<string, unknown>
+  jobData: Record<string, unknown>,
+  skills?: string[]
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase.from("jobs").update(jobData as never).eq("id", jobId);
-  return { error: error ? formatError(error, "Failed to update job") : null };
+  const { error } = await supabase.rpc("admin_update_job", {
+    p_job_id: jobId,
+    p_patch: jobData as never,
+    p_skills: skills ?? null,
+  });
+  if (!error) return { error: null };
+
+  const { error: jobError } = await supabase.from("jobs").update(jobData as never).eq("id", jobId);
+  if (jobError) return { error: formatError(jobError, "Failed to update job") };
+
+  if (skills) {
+    const { error: deleteError } = await supabase.from("job_skills").delete().eq("job_id", jobId);
+    if (deleteError) return { error: formatError(deleteError, "Failed to update job skills") };
+    if (skills.length > 0) {
+      const { error: skillsError } = await supabase.from("job_skills").insert(
+        skills.map((skill_name) => ({ job_id: jobId, skill_name }))
+      );
+      if (skillsError) return { error: formatError(skillsError, "Failed to update job skills") };
+    }
+  }
+
+  return { error: null };
 }

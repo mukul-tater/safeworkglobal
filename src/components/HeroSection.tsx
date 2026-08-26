@@ -11,11 +11,16 @@ const HeroSection = () => {
   const { isAuthenticated, role, loading, profileLoading } = useAuth();
   const { t } = useI18n();
   const isEmployer = role === "employer";
+  const isAdmin = role === "admin";
   const authResolving = loading || (isAuthenticated && profileLoading);
 
   const handleFindJobs = () => {
     if (!isAuthenticated) {
       navigate("/worker/login");
+      return;
+    }
+    if (role === "admin") {
+      navigate("/admin/jobs");
       return;
     }
     if (role === "employer") {
@@ -85,7 +90,15 @@ const HeroSection = () => {
 
           {!authResolving && (
             <div className="flex flex-col sm:flex-row gap-3 mb-10">
-              {isEmployer ? (
+              {isAdmin ? (
+                <Button
+                  size="lg"
+                  className="h-12 px-7 gap-2 text-base font-semibold rounded-xl shadow-primary"
+                  onClick={() => navigate("/admin/dashboard")}
+                >
+                  Admin dashboard <ArrowRight className="h-5 w-5" />
+                </Button>
+              ) : isEmployer ? (
                 <Button
                   size="lg"
                   className="h-12 px-7 gap-2 text-base font-semibold rounded-xl shadow-primary"

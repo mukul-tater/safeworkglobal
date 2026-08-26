@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { 
   MapPin, Building2, 
   CheckCircle2, ArrowLeft, Users, Shield, Calendar,
-  Share2, Bookmark, Loader2
+  Share2, Bookmark, Loader2, Pencil
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -60,6 +60,8 @@ export default function JobDetail() {
   const { user, isAuthenticated, role } = useAuth();
   const isLoggedIn = isAuthenticated;
   const { canApplyToJobs, onboardingPath, isWorker } = useWorkerJobAccess();
+  const showApply = !isLoggedIn || role === 'worker';
+  const isAdmin = role === 'admin';
   const { toast } = useToast();
   
   const [job, setJob] = useState<JobData | null>(null);
@@ -159,8 +161,12 @@ export default function JobDetail() {
       navigate('/worker/login', { state: { returnTo: `/jobs/${slug}` } });
       return;
     }
-    if (role === 'employer') {
-      toast({ title: 'Not Allowed', description: 'Employers cannot apply for jobs.', variant: 'destructive' });
+    if (role && role !== 'worker') {
+      toast({
+        title: 'Not allowed',
+        description: 'Only workers can apply for jobs.',
+        variant: 'destructive',
+      });
       return;
     }
     if (isWorker && !canApplyToJobs) {
@@ -497,13 +503,29 @@ export default function JobDetail() {
               {/* Apply Card */}
               <Card className="sticky top-24">
                 <CardContent className="p-6 space-y-4">
-                  {role === 'employer' ? (
+                  {isAdmin ? (
+                    <>
+                      <Alert>
+                        <AlertDescription>
+                          Admins cannot apply for jobs. Use edit to change this listing.
+                        </AlertDescription>
+                      </Alert>
+                      <Button
+                        size="lg"
+                        className="w-full"
+                        onClick={() => navigate(`/admin/edit-job/${job.id}`)}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit job
+                      </Button>
+                    </>
+                  ) : role === 'employer' ? (
                     <Alert>
                       <AlertDescription>
                         As an employer, you cannot apply for jobs.
                       </AlertDescription>
                     </Alert>
-                  ) : (
+                  ) : showApply ? (
                     <>
                       <Button 
                         size="lg" 
@@ -535,9 +557,15 @@ export default function JobDetail() {
                         </p>
                       )}
                     </>
+                  ) : (
+                    <Alert>
+                      <AlertDescription>
+                        Only workers can apply for jobs.
+                      </AlertDescription>
+                    </Alert>
                   )}
                   
-                  {hasApplied && (
+                  {hasApplied && showApply && (
                     <Alert className="bg-success/10 border-success/20">
                       <CheckCircle2 className="h-4 w-4 text-success" />
                       <AlertDescription className="text-success">
@@ -629,7 +657,7 @@ export default function JobDetail() {
               </Card>
             </div>
           </div>
-          {role !== 'employer' && (
+          {showApply && (
             <div
               className={`lg:hidden fixed inset-x-0 z-40 border-t border-border bg-card/95 px-4 py-3 backdrop-blur-md ${
                 role === 'worker'
@@ -660,6 +688,18 @@ export default function JobDetail() {
                 ) : (
                   'Apply Now'
                 )}
+              </Button>
+            </div>
+          )}
+          {isAdmin && (
+            <div className="lg:hidden fixed inset-x-0 z-40 border-t border-border bg-card/95 px-4 py-3 backdrop-blur-md bottom-[calc(4rem+env(safe-area-inset-bottom,0px))]">
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={() => navigate(`/admin/edit-job/${job.id}`)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit job
               </Button>
             </div>
           )}

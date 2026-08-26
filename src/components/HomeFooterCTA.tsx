@@ -6,10 +6,15 @@ import { useI18n } from "@/i18n";
 
 export default function HomeFooterCTA() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, role } = useAuth();
   const { t } = useI18n();
+  const isAdmin = role === "admin";
 
   const handleSignUp = () => {
+    if (isAdmin) {
+      navigate("/admin/dashboard");
+      return;
+    }
     navigate(isAuthenticated ? "/jobs" : "/worker/login");
   };
 
@@ -30,13 +35,13 @@ export default function HomeFooterCTA() {
             className="h-12 px-8 rounded-xl gap-2 font-semibold bg-white text-primary hover:bg-white/90"
             onClick={handleSignUp}
           >
-            {isAuthenticated ? t("hero.browseJobs") : t("cta.signUp")}
+            {isAuthenticated ? (isAdmin ? "Open admin dashboard" : t("hero.browseJobs")) : t("cta.signUp")}
             <ArrowRight className="h-5 w-5" />
           </Button>
           <Button
             size="lg"
             className="h-12 px-8 rounded-xl font-semibold bg-transparent border-2 border-white text-white hover:bg-white/15"
-            onClick={() => navigate("/jobs")}
+            onClick={() => navigate(isAdmin ? "/admin/jobs" : "/jobs")}
           >
             {t("cta.viewAll")}
           </Button>

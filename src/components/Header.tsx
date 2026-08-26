@@ -57,7 +57,9 @@ const Header = () => {
   const isActiveLink = (path: string) => location.pathname === path;
 
   const navLinks = [
-    ...(role === 'employer'
+    ...(role === 'admin'
+      ? [{ to: "/admin/jobs", label: "Jobs", icon: Search }]
+      : role === 'employer'
       ? [{ to: "/employer/search-workers", label: t("nav.findWorkers"), icon: Search }]
       : [{ to: "/jobs", label: t("nav.findJobs"), icon: Search }]),
     { to: "/about", label: t("nav.about"), icon: Globe },
@@ -114,7 +116,7 @@ const Header = () => {
               <ThemeToggle />
               {isAuthenticated ? (
                 <>
-                  <Link to="/dashboard">
+                  <Link to={role === "admin" ? "/admin/dashboard" : "/dashboard"}>
                     <Button
                       variant="outline"
                       className={`flex items-center gap-2.5 pr-3 ${overlaysHomeHero ? "border-white/30 bg-white/10 hover:text-white" : ""}`}
@@ -229,7 +231,7 @@ const Header = () => {
               {isAuthenticated && (
                 <div className="pt-6 mt-6 border-t border-border space-y-3">
                   <Link
-                    to="/dashboard"
+                    to={role === "admin" ? "/admin/dashboard" : "/dashboard"}
                     onClick={closeMobileMenu}
                     className="flex items-center gap-3 px-4 py-4 rounded-xl bg-primary/5 text-primary"
                   >

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, CheckCircle, XCircle, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { adminDeleteJob } from "@/services/AdminService";
+import { adminDeleteJob, adminUpdateJob } from "@/services/AdminService";
 import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
@@ -78,12 +78,11 @@ export default function JobVerification() {
 
   const handleApprove = async (jobId: string) => {
     try {
-      const { error } = await supabase
-        .from("jobs")
-        .update({ status: "ACTIVE", posted_at: new Date().toISOString() })
-        .eq("id", jobId);
-
-      if (error) throw error;
+      const { error } = await adminUpdateJob(jobId, {
+        status: "ACTIVE",
+        posted_at: new Date().toISOString(),
+      });
+      if (error) throw new Error(error);
       toast.success("Job approved successfully");
       fetchJobs();
     } catch (error: any) {
@@ -94,12 +93,8 @@ export default function JobVerification() {
 
   const handleReject = async (jobId: string) => {
     try {
-      const { error } = await supabase
-        .from("jobs")
-        .update({ status: "REJECTED" })
-        .eq("id", jobId);
-
-      if (error) throw error;
+      const { error } = await adminUpdateJob(jobId, { status: "REJECTED" });
+      if (error) throw new Error(error);
       toast.success("Job rejected");
       fetchJobs();
     } catch (error: any) {

@@ -5361,6 +5361,10 @@ export type Database = {
         Returns: Json
       }
       admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
+      admin_update_job: {
+        Args: { p_job_id: string; p_patch: Json; p_skills?: string[] }
+        Returns: undefined
+      }
       admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
       admin_employer_org_workers: {
         Args: { p_org: string }

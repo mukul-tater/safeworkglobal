@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 
 export default function MobileBottomNav() {
   const location = useLocation();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, role } = useAuth();
   const { t } = useI18n();
   const [getStartedOpen, setGetStartedOpen] = useState(false);
 
@@ -42,32 +42,32 @@ export default function MobileBottomNav() {
           </Link>
 
           <Link
-            to="/jobs"
+            to={role === "admin" ? "/admin/jobs" : "/jobs"}
             className={cn(
               "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden transition-all duration-200",
-              location.pathname === "/jobs"
+              location.pathname === "/jobs" || location.pathname === "/admin/jobs"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground active:scale-95",
             )}
           >
-            <div className={cn("p-1.5 rounded-xl transition-colors", location.pathname === "/jobs" && "bg-primary/10")}>
-              <Search className={cn("h-5 w-5", location.pathname === "/jobs" && "stroke-[2.5]")} />
+            <div className={cn("p-1.5 rounded-xl transition-colors", (location.pathname === "/jobs" || location.pathname === "/admin/jobs") && "bg-primary/10")}>
+              <Search className={cn("h-5 w-5", (location.pathname === "/jobs" || location.pathname === "/admin/jobs") && "stroke-[2.5]")} />
             </div>
             <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight">{t("nav.jobs")}</span>
           </Link>
 
           {isAuthenticated ? (
             <Link
-              to="/dashboard"
+              to={role === "admin" ? "/admin/dashboard" : "/dashboard"}
               className={cn(
                 "flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-0.5 overflow-hidden transition-all duration-200",
-                location.pathname === "/dashboard"
+                location.pathname === "/dashboard" || location.pathname.startsWith("/admin/dashboard")
                   ? "text-primary"
                   : "text-muted-foreground hover:text-foreground active:scale-95",
               )}
             >
-              <div className={cn("p-1.5 rounded-xl transition-colors", location.pathname === "/dashboard" && "bg-primary/10")}>
-                <User className={cn("h-5 w-5", location.pathname === "/dashboard" && "stroke-[2.5]")} />
+              <div className={cn("p-1.5 rounded-xl transition-colors", (location.pathname === "/dashboard" || location.pathname.startsWith("/admin/dashboard")) && "bg-primary/10")}>
+                <User className={cn("h-5 w-5", (location.pathname === "/dashboard" || location.pathname.startsWith("/admin/dashboard")) && "stroke-[2.5]")} />
               </div>
               <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight">{t("nav.account")}</span>
             </Link>

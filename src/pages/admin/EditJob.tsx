@@ -18,6 +18,7 @@ import { adminJobEditSchema, type AdminJobEditFormData } from "@/lib/validations
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
+import { adminUpdateJob } from "@/services/AdminService";
 
 export default function EditJob() {
   const { jobId } = useParams();
@@ -142,42 +143,21 @@ export default function EditJob() {
         country: data.country,
         job_type: data.job_type,
         experience_level: data.experience_level,
-        salary_min: data.salary_min || null,
-        salary_max: data.salary_max || null,
+        salary_min: Number.isFinite(data.salary_min) ? data.salary_min : null,
+        salary_max: Number.isFinite(data.salary_max) ? data.salary_max : null,
         currency: data.currency,
-        openings: data.openings,
+        openings: Number.isFinite(data.openings) ? data.openings : 1,
         visa_sponsorship: data.visa_sponsorship,
         remote_allowed: data.remote_allowed,
         status: data.status,
         expires_at: data.expires_at || null,
-        updated_at: new Date().toISOString(),
       };
 
-      const { error: jobError } = await supabase
-        .from("jobs")
-        .update(jobData)
-        .eq("id", jobId);
-
-      if (jobError) throw jobError;
-
-      // Update skills - delete old and insert new
-      await supabase.from("job_skills").delete().eq("job_id", jobId);
-
-      if (skills.length > 0) {
-        const skillsData = skills.map(skill => ({
-          job_id: jobId,
-          skill_name: skill,
-        }));
-
-        const { error: skillsError } = await supabase
-          .from("job_skills")
-          .insert(skillsData);
-
-        if (skillsError) throw skillsError;
-      }
+      const { error: jobError } = await adminUpdateJob(jobId, jobData, skills);
+      if (jobError) throw new Error(jobError);
 
       toast.success("Job updated successfully");
-      navigate("/admin/job-verification");
+      navigate("/admin/jobs");
     } catch (error: any) {
       console.error("Error updating job:", error);
       toast.error(error.message || "Failed to update job");
@@ -199,7 +179,7 @@ export default function EditJob() {
   return (
     <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
         <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/job-verification")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/jobs")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -208,7 +188,7 @@ export default function EditJob() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit, () => toast.error("Please fix the highlighted fields"))}>
           <div className="space-y-6 max-w-4xl">
             <Card>
               <CardHeader>
@@ -425,7 +405,7 @@ export default function EditJob() {
             </Card>
 
             <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => navigate("/admin/job-verification")}>
+              <Button type="button" variant="outline" onClick={() => navigate("/admin/jobs")}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
