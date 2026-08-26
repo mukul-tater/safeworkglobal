@@ -255,8 +255,8 @@ export default function SsvnAssessmentWizard() {
             <CardContent className="p-5 space-y-3">
               <h2 className="font-semibold">Accept assignment</h2>
               <p className="text-sm text-muted-foreground">
-                SafeWork allocated this candidate to your centre. Review identity documents below,
-                then accept to proceed.
+                SafeWork allocated this candidate to your centre. Confirm you will check original
+                Aadhaar at arrival, then accept to proceed.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -311,7 +311,7 @@ export default function SsvnAssessmentWizard() {
         <Card>
           <CardContent className="p-5 space-y-3">
             <h2 className="font-semibold flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" /> Worker identity documents (shared with SSVN)
+              <ShieldCheck className="h-4 w-4" /> Identity check (in person)
             </h2>
             <WorkerIdentityDocsPanel
               pack={identity}

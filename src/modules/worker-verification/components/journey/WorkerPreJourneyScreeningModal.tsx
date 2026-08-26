@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import HindiText from '@/components/indian-workforce/HindiText';
+import PassportRequirementInfo from '@/components/worker/PassportRequirementInfo';
 import {
   CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
   ORIGINAL_DOCS_READY_NOTICE,
@@ -327,7 +328,10 @@ export default function WorkerPreJourneyScreeningModal({
                         <Icon className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{item.en}</p>
+                        <p className="text-sm font-semibold text-foreground inline-flex items-center gap-1">
+                          {item.en}
+                          {item.en.toLowerCase().includes('passport') ? <PassportRequirementInfo /> : null}
+                        </p>
                         <HindiText className="mt-0.5 text-sm text-muted-foreground">{item.hi}</HindiText>
                       </div>
                     </li>

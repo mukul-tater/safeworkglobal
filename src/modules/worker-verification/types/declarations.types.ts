@@ -130,9 +130,9 @@ export const ORIGINAL_DOCS_READY_NOTICE = {
   bodyHi:
     'अपना मूल आधार कार्ड अपने पास रखें। पैन कार्ड और पासपोर्ट अभी वैकल्पिक हैं — कौशल परीक्षा पूरी होने के बाद हम ये माँगेंगे।',
   items: [
-    { en: 'Original PAN card (Optional)', hi: 'मूल पैन कार्ड (वैकल्पिक)' },
+    { en: 'Original PAN card', hi: 'मूल पैन कार्ड' },
     { en: 'Original Aadhaar card (Must)', hi: 'मूल आधार कार्ड (अनिवार्य)' },
-    { en: 'Original passport (Optional)', hi: 'मूल पासपोर्ट (वैकल्पिक)' },
+    { en: 'Original passport', hi: 'मूल पासपोर्ट' },
   ],
   continueEn: 'I have my Aadhaar — Continue',
   continueHi: 'मेरा आधार मेरे पास है — आगे बढ़ें',

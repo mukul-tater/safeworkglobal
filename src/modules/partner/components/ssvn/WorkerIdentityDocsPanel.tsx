@@ -3,18 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { formatAuditTs } from '@/modules/trade-test/constants';
 import type { WorkerIdentityPack } from '@/modules/trade-test/types';
 
-function docLabel(type: string): string {
-  const map: Record<string, string> = {
-    pan: 'PAN',
-    aadhaar: 'Aadhaar',
-    aadhaar_front: 'Aadhaar front',
-    aadhaar_back: 'Aadhaar back',
-    passport: 'Passport',
-    passport_front: 'Passport first page',
-    passport_last: 'Passport last page',
-    id_proof: 'ID proof',
-  };
-  return map[type] || type;
+function statusLabel(onFile: boolean): string {
+  return onFile ? 'On file' : 'Not uploaded';
 }
 
 export default function WorkerIdentityDocsPanel({
@@ -31,78 +21,51 @@ export default function WorkerIdentityDocsPanel({
   saving?: boolean;
 }) {
   if (loading) {
-    return <p className="text-sm text-muted-foreground">Loading worker identity documents…</p>;
+    return <p className="text-sm text-muted-foreground">Loading worker identity status…</p>;
   }
+
+  const aadhaarOnFile = Boolean(pack?.aadhaar_last4) || Boolean(
+    pack?.documents.some((d) => d.document_type.startsWith('aadhaar') || d.document_type === 'id_proof'),
+  );
+  const panOnFile = Boolean(pack?.pan_number) || Boolean(pack?.documents.some((d) => d.document_type === 'pan'));
+  const passportOnFile = Boolean(pack?.has_passport || pack?.passport_number) || Boolean(
+    pack?.documents.some((d) => d.document_type.startsWith('passport')),
+  );
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Review the Aadhaar, PAN and passport photos the worker uploaded before they arrive. You will
-        physically check the originals again at the centre.
+        SafeWork does not show Aadhaar, PAN or passport copies here. Check original Aadhaar in
+        person when the worker arrives. PAN and passport can be collected after the skill test.
       </p>
       <div className="grid gap-2 sm:grid-cols-3 text-sm">
         <div className="rounded-md border p-3">
-          <div className="text-xs text-muted-foreground">PAN</div>
-          <div className="font-medium">{pack?.pan_number || 'Not on file'}</div>
+          <div className="text-xs text-muted-foreground">Aadhaar</div>
+          <div className="font-medium">{statusLabel(aadhaarOnFile)}</div>
         </div>
         <div className="rounded-md border p-3">
-          <div className="text-xs text-muted-foreground">Aadhaar (last 4)</div>
-          <div className="font-medium">{pack?.aadhaar_last4 ? `XXXX-XXXX-${pack.aadhaar_last4}` : 'Not on file'}</div>
+          <div className="text-xs text-muted-foreground">PAN</div>
+          <div className="font-medium">{statusLabel(panOnFile)}</div>
         </div>
         <div className="rounded-md border p-3">
           <div className="text-xs text-muted-foreground">Passport</div>
-          <div className="font-medium">
-            {pack?.passport_number || (pack?.has_passport ? 'On file' : 'Not uploaded')}
-          </div>
-          {pack?.passport_expiry ? (
-            <div className="mt-1 text-xs text-muted-foreground">
-              Expires {new Date(`${pack.passport_expiry}T00:00:00`).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-            </div>
-          ) : null}
+          <div className="font-medium">{statusLabel(passportOnFile)}</div>
         </div>
       </div>
 
-      {!pack?.documents.length ? (
-        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
-          No identity photos found. Ask the worker to upload Aadhaar, PAN and passport in their
-          journey before the trade test.
+      {!aadhaarOnFile ? (
+        <p className="text-sm text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-200 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+          Aadhaar is not on file. Ask the worker to upload Aadhaar in their journey. Do not collect
+          or store Aadhaar copies on this portal.
         </p>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {pack.documents.map((d) => (
-            <figure key={d.id} className="rounded-md border overflow-hidden bg-muted/30">
-              {d.preview_url ? (
-                <a href={d.preview_url} target="_blank" rel="noreferrer">
-                  <img
-                    src={d.preview_url}
-                    alt={d.document_name}
-                    className="h-48 w-full object-contain bg-white"
-                  />
-                </a>
-              ) : (
-                <div className="h-48 flex items-center justify-center text-xs text-muted-foreground">
-                  Preview unavailable
-                </div>
-              )}
-              <figcaption className="px-3 py-2 text-xs flex items-center justify-between gap-2">
-                <span className="font-medium">{docLabel(d.document_type)}</span>
-                <span className="text-muted-foreground">{formatAuditTs(d.uploaded_at)}</span>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      )}
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
         {preReviewedAt ? (
-          <Badge variant="outline">Pre-arrival review {formatAuditTs(preReviewedAt)}</Badge>
+          <Badge variant="outline">Arrival check noted {formatAuditTs(preReviewedAt)}</Badge>
         ) : onMarkReviewed ? (
           <Button type="button" variant="outline" size="sm" disabled={saving} onClick={onMarkReviewed}>
-            Mark documents reviewed for this centre
+            Confirm I will check original Aadhaar at arrival
           </Button>
         ) : null}
       </div>

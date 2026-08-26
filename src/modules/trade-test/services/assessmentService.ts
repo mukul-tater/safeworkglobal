@@ -92,7 +92,7 @@ async function enrichAssessments(rows: AssessmentRow[]): Promise<AssessmentRow[]
     const v = r.worker_verification_id ? vmap.get(r.worker_verification_id) : null;
     return normalizeAssessment({
       ...r,
-      worker_name: p?.full_name || null,
+      worker_name: String(p?.full_name || '').trim() || null,
       worker_phone: p?.phone || null,
       center_name: (c as any)?.name || r.location || null,
       center_city: (c as any)?.city || null,

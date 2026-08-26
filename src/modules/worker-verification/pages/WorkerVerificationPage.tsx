@@ -87,7 +87,7 @@ import WorkerDeclarationsSummary from '@/modules/worker-verification/components/
 import JourneyJobPicker from '@/modules/worker-verification/components/journey/JourneyJobPicker';
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
-import PassportRequirementInfo from '@/components/worker/PassportRequirementInfo';
+import PassportRequirementInfo, { PanUploadLaterInfo } from '@/components/worker/PassportRequirementInfo';
 import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
 import { todayDateInputValue } from '@/lib/validations/common';
 import {
@@ -757,7 +757,7 @@ export default function WorkerVerificationPage({
       !tenthMarksheetFile &&
       !hasKycDoc(kycDocs, ['tenth_marksheet', 'certificate'])
     ) {
-      toast.error('Upload the Class 10 marksheet photo');
+      toast.error('Upload a Class 10 or higher education certificate photo');
       return;
     }
     if (!kycConsent) {
@@ -824,7 +824,7 @@ export default function WorkerVerificationPage({
       if (passportFrontFile) await uploadDoc(passportFrontFile, 'passport_front', 'Passport First Page');
       if (passportLastFile) await uploadDoc(passportLastFile, 'passport_last', 'Passport Last Page');
       if (needsTenthMarksheet && tenthMarksheetFile) {
-        await uploadDoc(tenthMarksheetFile, 'tenth_marksheet', 'Class 10 Marksheet');
+        await uploadDoc(tenthMarksheetFile, 'tenth_marksheet', '10th or higher education certificate');
       }
 
       const next = await completeIdentityKyc(subjectId, {
@@ -1678,7 +1678,7 @@ export default function WorkerVerificationPage({
               {
                 label: 'Identity documents submitted',
                 detail: needsTenthMarksheet
-                  ? 'Aadhaar, optional PAN/passport, and Class 10 marksheet uploaded'
+                  ? 'Aadhaar and 10th or higher education certificate uploaded'
                   : 'Aadhaar uploaded. PAN and passport can be added later after your skill test.',
                 status: 'done',
               },
@@ -1714,11 +1714,11 @@ export default function WorkerVerificationPage({
             description={
               strictIdentityDocs
                 ? needsTenthMarksheet
-                  ? 'Your skill test is complete. Upload PAN, Aadhaar, a passport valid for at least 6 months, and your Class 10 marksheet to continue.'
+                  ? 'Your skill test is complete. Upload PAN, Aadhaar, a passport valid for at least 6 months, and your 10th or higher education certificate to continue.'
                   : 'Your skill test is complete. Upload PAN, Aadhaar, and a passport that is valid for at least 6 months to continue.'
                 : needsTenthMarksheet
-                  ? 'Aadhaar is required. PAN and passport are optional until your skill test is complete. Upload your Class 10 marksheet if you confirmed 10th pass.'
-                  : 'Aadhaar is required. PAN and passport are optional until your skill test is complete — add them now if you have them.'
+                  ? 'Aadhaar is required. PAN and passport can be added later. Upload your 10th or any higher education certificate if you confirmed 10th pass.'
+                  : 'Aadhaar is required. PAN and passport can be added later — add them now if you have them.'
             }
             timeEstimate="Takes 5–7 minutes"
             footer={
@@ -1769,7 +1769,10 @@ export default function WorkerVerificationPage({
 
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>PAN Number {strictIdentityDocs ? '*' : '(optional)'}</Label>
+                  <Label className="inline-flex items-center gap-1">
+                    PAN Number{strictIdentityDocs ? ' *' : ''}
+                    {!strictIdentityDocs ? <PanUploadLaterInfo /> : null}
+                  </Label>
                   <Input
                     value={panNumber}
                     onChange={(e) => setPanNumber(e.target.value.toUpperCase().slice(0, 10))}
@@ -1777,11 +1780,6 @@ export default function WorkerVerificationPage({
                     maxLength={10}
                     disabled={saving}
                   />
-                  {!strictIdentityDocs ? (
-                    <p className="text-[11px] text-muted-foreground">
-                      Optional now. We will ask for PAN after your skill test.
-                    </p>
-                  ) : null}
                 </div>
                 <KycPhotoField
                   label="PAN Card Front Photo"
@@ -1829,12 +1827,12 @@ export default function WorkerVerificationPage({
 
               <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
                 <p className="text-sm font-medium text-foreground inline-flex items-center gap-1.5">
-                  Passport {strictIdentityDocs ? '*' : '(optional)'}
+                  Passport{strictIdentityDocs ? ' *' : ''}
                   <PassportRequirementInfo />
                 </p>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>Passport Number {strictIdentityDocs ? '*' : '(optional)'}</Label>
+                    <Label>Passport Number{strictIdentityDocs ? ' *' : ''}</Label>
                     <Input
                       value={passportNumber}
                       onChange={(e) => setPassportNumber(normalizePassportNumber(e.target.value))}
@@ -1844,7 +1842,7 @@ export default function WorkerVerificationPage({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Passport expiry date {strictIdentityDocs ? '*' : '(optional)'}</Label>
+                    <Label>Passport expiry date{strictIdentityDocs ? ' *' : ''}</Label>
                     <Input
                       type="date"
                       className="h-12"
@@ -1880,21 +1878,21 @@ export default function WorkerVerificationPage({
                 <p className="text-xs text-muted-foreground">
                   {strictIdentityDocs
                     ? 'Upload a clear photo of the first page (photo + expiry) and the last page of your passport.'
-                    : 'Optional until your skill test is complete. If you have a passport, upload a clear photo of the first page (photo + expiry) and the last page.'}
+                    : 'If you have a passport, upload a clear photo of the first page (photo + expiry) and the last page. You can also add it later — tap the info icon.'}
                 </p>
               </div>
               {needsTenthMarksheet && (
                 <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
-                  <p className="text-sm font-medium text-foreground">Class 10 marksheet *</p>
+                  <p className="text-sm font-medium text-foreground">10th or any higher education *</p>
                   <KycPhotoField
-                    label="10th marksheet photo"
+                    label="10th or higher education certificate photo"
                     required
                     file={tenthMarksheetFile}
                     disabled={saving}
                     onChange={setTenthMarksheetFile}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Required because you confirmed Class 10 pass (ECNR). A clear photo of the original marksheet is enough.
+                    Upload a clear photo of your Class 10 marksheet, or any higher certificate (12th, ITI, diploma, degree). Required because you confirmed Class 10 pass (ECNR).
                   </p>
                 </div>
               )}
