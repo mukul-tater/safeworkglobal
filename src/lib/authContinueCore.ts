@@ -11,9 +11,9 @@ export type AuthContinueNextStep =
 export type AuthIdentifierMethod = 'mobile' | 'email';
 
 export type ParsedAuthIdentifier =
-  | { ok: true; method: 'email'; email: string; mobile: '' }
-  | { ok: true; method: 'mobile'; email: ''; mobile: string }
-  | { ok: false; error: string };
+  | { ok: true; method: 'email'; email: string; mobile: ''; error?: undefined }
+  | { ok: true; method: 'mobile'; email: ''; mobile: string; error?: undefined }
+  | { ok: false; method?: undefined; error: string };
 
 export type AuthContinueRequest = {
   role: AuthPortalRole;

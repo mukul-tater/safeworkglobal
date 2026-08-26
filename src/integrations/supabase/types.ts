@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -5354,6 +5354,10 @@ export type Database = {
         Args: { p_note?: string; p_org: string; p_worker_ids: string[] }
         Returns: number
       }
+      admin_create_job: {
+        Args: { p_employer_id: string; p_patch: Json; p_skills?: string[] }
+        Returns: string
+      }
       admin_create_lsp: {
         Args: {
           p_code: string
@@ -5366,15 +5370,7 @@ export type Database = {
         }
         Returns: Json
       }
-      admin_create_job: {
-        Args: { p_employer_id: string; p_patch: Json; p_skills?: string[] }
-        Returns: string
-      }
       admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
-      admin_update_job: {
-        Args: { p_job_id: string; p_patch: Json; p_skills?: string[] }
-        Returns: undefined
-      }
       admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
       admin_employer_org_workers: {
         Args: { p_org: string }
@@ -5493,6 +5489,10 @@ export type Database = {
           p_user_id: string
           p_visa?: string
         }
+        Returns: undefined
+      }
+      admin_update_job: {
+        Args: { p_job_id: string; p_patch: Json; p_skills?: string[] }
         Returns: undefined
       }
       admin_verify_worker_kyc: {
