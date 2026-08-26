@@ -381,6 +381,21 @@ export function navStepForStage(stage: VerificationStage): GccNavStepId {
   return found?.id ?? 'essentials';
 }
 
+/**
+ * PAN + passport stay optional through Identity KYC (after skill proof).
+ * They become compulsory once the skill/trade test is done (medical onward),
+ * including workers who skip the physical trade test.
+ */
+export function panAndPassportRequiredAfterSkillTest(stage: VerificationStage): boolean {
+  return (
+    stage === 'medical' ||
+    stage === 'bond' ||
+    stage === 'pdot' ||
+    stage === 'deployment' ||
+    stage === 'gcc_ready'
+  );
+}
+
 /** Convert YouTube watch/shorts links to embeddable URL. */
 export function youtubeEmbedUrl(url: string | null | undefined): string | null {
   if (!url) return null;

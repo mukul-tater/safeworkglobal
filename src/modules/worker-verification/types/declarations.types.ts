@@ -126,16 +126,16 @@ export const ORIGINAL_DOCS_READY_NOTICE = {
   titleEn: 'Keep your original documents with you',
   titleHi: 'अपने मूल दस्तावेज़ अपने पास रखें',
   bodyEn:
-    'Before you start the worker journey, keep your original PAN card, Aadhaar card, and passport with you.',
+    'Keep your original Aadhaar card with you. PAN card and passport are optional for now — we will ask for them after your skill test is complete.',
   bodyHi:
-    'वर्कर जर्नी शुरू करने से पहले अपना मूल पैन कार्ड, आधार कार्ड और पासपोर्ट अपने पास रखें।',
+    'अपना मूल आधार कार्ड अपने पास रखें। पैन कार्ड और पासपोर्ट अभी वैकल्पिक हैं — कौशल परीक्षा पूरी होने के बाद हम ये माँगेंगे।',
   items: [
-    { en: 'Original PAN card', hi: 'मूल पैन कार्ड' },
+    { en: 'Original PAN card (Optional)', hi: 'मूल पैन कार्ड (वैकल्पिक)' },
     { en: 'Original Aadhaar card (Must)', hi: 'मूल आधार कार्ड (अनिवार्य)' },
-    { en: 'Original passport (Must)', hi: 'मूल पासपोर्ट (अनिवार्य)' },
+    { en: 'Original passport (Optional)', hi: 'मूल पासपोर्ट (वैकल्पिक)' },
   ],
-  continueEn: 'I have them with me — Continue',
-  continueHi: 'ये दस्तावेज़ मेरे पास हैं — आगे बढ़ें',
+  continueEn: 'I have my Aadhaar — Continue',
+  continueHi: 'मेरा आधार मेरे पास है — आगे बढ़ें',
 } as const;
 
 /** English on top, Hindi below — used throughout the pre-journey declaration form. */

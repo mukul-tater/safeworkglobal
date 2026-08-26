@@ -33,6 +33,7 @@ import {
   isJourneyResetEnabled,
   navStepForStage,
   normalizeVerificationStage,
+  panAndPassportRequiredAfterSkillTest,
   QUIZ_PASS_SCORE,
   skillRequiresTradeTest,
   youtubeEmbedUrl,
@@ -92,10 +93,12 @@ import { todayDateInputValue } from '@/lib/validations/common';
 import {
   isValidPassportNumber,
   normalizePassportNumber,
+  parseOptionalPassportKyc,
   passportExpiryIssue,
   passportMinValidityHintEn,
   toDateInputValueFromIso,
 } from '@/lib/validations/passport';
+import { validatePAN } from '@/lib/security';
 
 const KYC_DOC_TYPES = [
   'pan',
@@ -412,6 +415,7 @@ export default function WorkerVerificationPage({
   const [passportLastFile, setPassportLastFile] = useState<File | null>(null);
   const [tenthMarksheetFile, setTenthMarksheetFile] = useState<File | null>(null);
   const [kycConsent, setKycConsent] = useState(false);
+  const [strictIdentityDocs, setStrictIdentityDocs] = useState(false);
   const [forceIdentity, setForceIdentity] = useState(false);
   const [kycDone, setKycDone] = useState(false);
   const [kycStatusValue, setKycStatusValue] = useState('not_started');
@@ -521,16 +525,20 @@ export default function WorkerVerificationPage({
         setEmitraNoticeOpen(true);
       }
       const kycStatus = String((wp as any)?.kyc_status || 'not_started');
+      const savedPan = String((wp as any)?.pan_number || '');
       const savedPassport = String((wp as any)?.passport_number || '');
       const savedExpiry = toDateInputValueFromIso((wp as any)?.passport_expiry);
       setPassportNumber(savedPassport);
       setPassportExpiry(savedExpiry);
+      const panOk = validatePAN(savedPan);
       const passportOk = isValidPassportNumber(savedPassport) && !passportExpiryIssue(savedExpiry);
-      // Submitted KYC without a 6-month-valid passport is not complete — show the identity form.
-      const kycOk =
-        kycStatus === 'verified' || (kycStatus === 'submitted' && passportOk);
+      const kycSubmitted = kycStatus === 'verified' || kycStatus === 'submitted';
+      const kycOk = kycSubmitted;
+      const normalizedStage = normalizeVerificationStage(v.stage, v.trade_test_required);
+      const strictDocs = panAndPassportRequiredAfterSkillTest(normalizedStage);
       setKycDone(kycOk);
       setKycStatusValue(kycStatus);
+      setStrictIdentityDocs(strictDocs);
 
       const savedCategory = String((wp as any)?.ecr_category || '');
       const savedStatus = String((wp as any)?.ecr_status || '');
@@ -590,14 +598,16 @@ export default function WorkerVerificationPage({
         }
       }
 
-      // Mandatory for apply: if KYC missing and worker already passed skill proof, show Identity.
+      // After skill proof: show Identity if Aadhaar KYC is not submitted.
+      // After skill test (medical onward): also pull back if PAN or passport is still missing.
       const pastMedia =
         v.stage !== 'essentials' &&
         v.stage !== 'find_jobs' &&
         v.stage !== 'apply_job' &&
         v.stage !== 'quiz' &&
         v.stage !== 'media';
-      setForceIdentity(!kycOk && pastMedia && v.stage !== 'identity');
+      const missingLaterDocs = strictDocs && (!panOk || !passportOk);
+      setForceIdentity((!kycOk && pastMedia && v.stage !== 'identity') || missingLaterDocs);
 
       if (v.primary_skill && (v.stage === 'quiz' || (!v.quiz_completed_at && v.stage !== 'find_jobs' && v.stage !== 'apply_job' && v.stage !== 'essentials'))) {
         const items = await loadQuizItems(v.primary_skill, v.state);
@@ -653,6 +663,10 @@ export default function WorkerVerificationPage({
   const stage: VerificationStage = forceIdentity ? 'identity' : effectiveRaw;
   const tradeNeeded = row?.trade_test_required ?? skillRequiresTradeTest(row?.primary_skill);
   const needsTenthMarksheet = tenthPass === true;
+  const identityNeedsMoreDocs =
+    strictIdentityDocs &&
+    (!validatePAN(panNumber.trim().toUpperCase()) ||
+      !(isValidPassportNumber(passportNumber) && !passportExpiryIssue(passportExpiry)));
   const navSteps = gccJourneyNavSteps({ includeAccountDetails: partnerKiosk });
   const currentNav: GccNavStepId = !declaration && showDeclarationModal
     ? 'pre_declaration'
@@ -683,7 +697,12 @@ export default function WorkerVerificationPage({
     if (!subjectId) return;
     const pan = panNumber.trim().toUpperCase();
     const passport = normalizePassportNumber(passportNumber);
-    if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
+    const requirePanAndPassport = strictIdentityDocs;
+    if (requirePanAndPassport && !validatePAN(pan)) {
+      toast.error('Enter a valid PAN (e.g. ABCDE1234F)');
+      return;
+    }
+    if (pan && !validatePAN(pan)) {
       toast.error('Enter a valid PAN (e.g. ABCDE1234F)');
       return;
     }
@@ -692,34 +711,46 @@ export default function WorkerVerificationPage({
       toast.error('Enter your full 12-digit Aadhaar number');
       return;
     }
-    if (!panFile && !hasKycDoc(kycDocs, ['pan', 'id_proof'])) {
-      toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
+    const hasPanPhoto = Boolean(panFile || hasKycDoc(kycDocs, ['pan', 'id_proof']));
+    if (requirePanAndPassport && !hasPanPhoto) {
+      toast.error('Upload your PAN card front photo');
+      return;
+    }
+    if (pan && !hasPanPhoto) {
+      toast.error('Upload your PAN card front photo');
       return;
     }
     if (!aadhaarFrontFile && !hasKycDoc(kycDocs, ['aadhaar_front', 'aadhaar', 'id_proof'])) {
-      toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
+      toast.error('Upload Aadhaar front and Aadhaar back photos');
       return;
     }
     if (!aadhaarBackFile && !hasKycDoc(kycDocs, ['aadhaar_back', 'aadhaar', 'id_proof'])) {
-      toast.error('Upload PAN front, Aadhaar front, and Aadhaar back photos');
+      toast.error('Upload Aadhaar front and Aadhaar back photos');
       return;
     }
-    if (!isValidPassportNumber(passport)) {
-      toast.error('Enter a valid passport number (e.g. A1234567)');
-      return;
-    }
-    const expiryIssue = passportExpiryIssue(passportExpiry);
-    if (expiryIssue) {
-      toast.error(expiryIssue);
-      return;
-    }
-    if (!passportFrontFile && !hasKycDoc(kycDocs, ['passport_front', 'passport', 'id_proof'])) {
-      toast.error('Upload passport first page and last page photos');
-      return;
-    }
-    if (!passportLastFile && !hasKycDoc(kycDocs, ['passport_last', 'passport', 'id_proof'])) {
-      toast.error('Upload passport first page and last page photos');
-      return;
+    const hasPassportPhoto =
+      Boolean(passportFrontFile || hasKycDoc(kycDocs, ['passport_front', 'passport', 'id_proof'])) &&
+      Boolean(passportLastFile || hasKycDoc(kycDocs, ['passport_last', 'passport', 'id_proof']));
+    const passportPartial = Boolean(passport || passportExpiry || passportFrontFile || passportLastFile);
+    if (requirePanAndPassport || passportPartial) {
+      try {
+        const parsed = parseOptionalPassportKyc({ number: passport, expiry: passportExpiry });
+        if (!parsed.hasPassport) {
+          toast.error(
+            requirePanAndPassport
+              ? 'Enter a valid passport number and expiry'
+              : 'Enter passport number and expiry, or leave all passport fields empty',
+          );
+          return;
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Enter a valid passport number and expiry');
+        return;
+      }
+      if (!hasPassportPhoto) {
+        toast.error('Upload passport first page and last page photos');
+        return;
+      }
     }
     if (
       needsTenthMarksheet &&
@@ -797,10 +828,11 @@ export default function WorkerVerificationPage({
       }
 
       const next = await completeIdentityKyc(subjectId, {
-        panNumber: pan,
+        panNumber: pan || null,
         aadhaarNumber: aadhaar,
-        passportNumber: passport,
-        passportExpiry,
+        passportNumber: passport || null,
+        passportExpiry: passportExpiry || null,
+        requirePanAndPassport,
       });
       setRow(next);
       setForceIdentity(false);
@@ -1635,23 +1667,19 @@ export default function WorkerVerificationPage({
           </StageActionShell>
         )}
 
-        {!viewingCompletedStep && stage === 'identity' && kycDone && (
+        {!viewingCompletedStep && stage === 'identity' && kycDone && !identityNeedsMoreDocs && (
           <StageWaitingShell
             icon={ShieldCheck}
             title="We're verifying your identity"
-            body={
-              needsTenthMarksheet
-                ? 'Your PAN, Aadhaar, passport and Class 10 marksheet are submitted. SafeWork reviews them before scheduling your video interview.'
-                : 'Your PAN, Aadhaar and passport are submitted. SafeWork reviews them before scheduling your video interview.'
-            }
+            body="Your identity documents are submitted. SafeWork reviews them before scheduling your video interview."
             expected="Usually within a few hours"
             notifyNote="You'll get an SMS and an app notification the moment verification is done — no need to keep this page open."
             timeline={[
               {
                 label: 'Identity documents submitted',
                 detail: needsTenthMarksheet
-                  ? 'PAN, Aadhaar, Passport & Class 10 marksheet uploaded'
-                  : 'PAN, Aadhaar & Passport uploaded',
+                  ? 'Aadhaar, optional PAN/passport, and Class 10 marksheet uploaded'
+                  : 'Aadhaar uploaded. PAN and passport can be added later after your skill test.',
                 status: 'done',
               },
               { label: 'SafeWork verifying your documents', status: 'current' },
@@ -1679,14 +1707,18 @@ export default function WorkerVerificationPage({
           </StageWaitingShell>
         )}
 
-        {!viewingCompletedStep && stage === 'identity' && !kycDone && (
+        {!viewingCompletedStep && stage === 'identity' && (!kycDone || identityNeedsMoreDocs) && (
           <StageActionShell
             icon={ShieldCheck}
-            title="Identity (KYC)"
+            title={strictIdentityDocs ? 'Complete required identity documents' : 'Identity (KYC)'}
             description={
-              needsTenthMarksheet
-                ? 'Required before applying to jobs. Upload PAN, Aadhaar, a passport valid for at least 6 months, and your Class 10 marksheet. SafeWork verifies these before your video interview is scheduled.'
-                : 'Required before applying to jobs. Upload PAN, Aadhaar, and a passport that is valid for at least 6 months. SafeWork verifies these before your video interview is scheduled.'
+              strictIdentityDocs
+                ? needsTenthMarksheet
+                  ? 'Your skill test is complete. Upload PAN, Aadhaar, a passport valid for at least 6 months, and your Class 10 marksheet to continue.'
+                  : 'Your skill test is complete. Upload PAN, Aadhaar, and a passport that is valid for at least 6 months to continue.'
+                : needsTenthMarksheet
+                  ? 'Aadhaar is required. PAN and passport are optional until your skill test is complete. Upload your Class 10 marksheet if you confirmed 10th pass.'
+                  : 'Aadhaar is required. PAN and passport are optional until your skill test is complete — add them now if you have them.'
             }
             timeEstimate="Takes 5–7 minutes"
             footer={
@@ -1737,7 +1769,7 @@ export default function WorkerVerificationPage({
 
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>PAN Number *</Label>
+                  <Label>PAN Number {strictIdentityDocs ? '*' : '(optional)'}</Label>
                   <Input
                     value={panNumber}
                     onChange={(e) => setPanNumber(e.target.value.toUpperCase().slice(0, 10))}
@@ -1745,10 +1777,15 @@ export default function WorkerVerificationPage({
                     maxLength={10}
                     disabled={saving}
                   />
+                  {!strictIdentityDocs ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      Optional now. We will ask for PAN after your skill test.
+                    </p>
+                  ) : null}
                 </div>
                 <KycPhotoField
                   label="PAN Card Front Photo"
-                  required
+                  required={strictIdentityDocs}
                   file={panFile}
                   disabled={saving}
                   onChange={setPanFile}
@@ -1792,12 +1829,12 @@ export default function WorkerVerificationPage({
 
               <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
                 <p className="text-sm font-medium text-foreground inline-flex items-center gap-1.5">
-                  Passport *
+                  Passport {strictIdentityDocs ? '*' : '(optional)'}
                   <PassportRequirementInfo />
                 </p>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>Passport Number *</Label>
+                    <Label>Passport Number {strictIdentityDocs ? '*' : '(optional)'}</Label>
                     <Input
                       value={passportNumber}
                       onChange={(e) => setPassportNumber(normalizePassportNumber(e.target.value))}
@@ -1807,7 +1844,7 @@ export default function WorkerVerificationPage({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Passport expiry date *</Label>
+                    <Label>Passport expiry date {strictIdentityDocs ? '*' : '(optional)'}</Label>
                     <Input
                       type="date"
                       className="h-12"
@@ -1827,21 +1864,23 @@ export default function WorkerVerificationPage({
                 <div className="grid sm:grid-cols-2 gap-3">
                   <KycPhotoField
                     label="Passport First Page Photo"
-                    required
+                    required={strictIdentityDocs}
                     file={passportFrontFile}
                     disabled={saving}
                     onChange={setPassportFrontFile}
                   />
                   <KycPhotoField
                     label="Passport Last Page Photo"
-                    required
+                    required={strictIdentityDocs}
                     file={passportLastFile}
                     disabled={saving}
                     onChange={setPassportLastFile}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Upload a clear photo of the first page (photo + expiry) and the last page of your passport.
+                  {strictIdentityDocs
+                    ? 'Upload a clear photo of the first page (photo + expiry) and the last page of your passport.'
+                    : 'Optional until your skill test is complete. If you have a passport, upload a clear photo of the first page (photo + expiry) and the last page.'}
                 </p>
               </div>
               {needsTenthMarksheet && (

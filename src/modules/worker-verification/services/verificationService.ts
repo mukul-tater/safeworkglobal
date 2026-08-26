@@ -1,6 +1,7 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
-import { assertValidPassportKyc } from '@/lib/validations/passport';
+import { assertValidPassportKyc, parseOptionalPassportKyc } from '@/lib/validations/passport';
+import { validatePAN } from '@/lib/security';
 import type {
   BondTemplate,
   InterviewerAssignment,
@@ -364,17 +365,19 @@ export async function completeMediaStep(userId: string): Promise<WorkerVerificat
 }
 
 /**
- * KYC — PAN + full Aadhaar + passport (number, expiry ≥ 6 months) + document photos.
+ * KYC — Aadhaar is always required. PAN + passport are optional until the skill
+ * test is complete (medical onward), when the worker is asked to fill them in.
  * Stays on the identity stage: an admin must verify KYC before the video
  * interview can be scheduled (admin_verify_worker_kyc advances the stage).
  */
 export async function completeIdentityKyc(
   userId: string,
   opts: {
-    panNumber: string;
+    panNumber?: string | null;
     aadhaarNumber: string;
-    passportNumber: string;
-    passportExpiry: string;
+    passportNumber?: string | null;
+    passportExpiry?: string | null;
+    requirePanAndPassport?: boolean;
     nextStageIfCurrentIdentity?: boolean;
   },
 ): Promise<WorkerVerification> {
@@ -384,32 +387,46 @@ export async function completeIdentityKyc(
     throw new Error('Enter your full 12-digit Aadhaar number');
   }
 
-  const { passportNumber, passportExpiry } = assertValidPassportKyc({
-    number: opts.passportNumber,
-    expiry: opts.passportExpiry,
-  });
+  const pan = (opts.panNumber || '').trim().toUpperCase();
+  if (opts.requirePanAndPassport && !pan) {
+    throw new Error('Enter a valid PAN (e.g. ABCDE1234F)');
+  }
+  if (pan && !validatePAN(pan)) {
+    throw new Error('Enter a valid PAN (e.g. ABCDE1234F)');
+  }
 
+  const passportInput = {
+    number: opts.passportNumber || '',
+    expiry: opts.passportExpiry || '',
+  };
+  if (opts.requirePanAndPassport) {
+    assertValidPassportKyc(passportInput);
+  }
+  const passport = parseOptionalPassportKyc(passportInput);
+
+  const { data: existingWp } = await supabase
+    .from('worker_profiles')
+    .select('user_id, kyc_status')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  const alreadyVerified = String(existingWp?.kyc_status || '') === 'verified';
   const now = new Date().toISOString();
   const kycPayload = {
     user_id: userId,
-    pan_number: opts.panNumber.trim().toUpperCase(),
+    pan_number: pan || null,
     aadhaar_number: aadhaar,
     aadhaar_last4: aadhaar.slice(-4),
-    passport_number: passportNumber,
-    passport_expiry: passportExpiry,
-    has_passport: true,
-    kyc_status: 'submitted',
+    passport_number: passport.passportNumber,
+    passport_expiry: passport.passportExpiry,
+    has_passport: passport.hasPassport,
+    kyc_status: alreadyVerified ? 'verified' : 'submitted',
     kyc_consent_at: now,
     kyc_submitted_at: now,
   };
 
   // Prefer update when a profile already exists (essentials creates it).
   // Partners cannot INSERT worker_profiles; the kiosk row must already exist.
-  const { data: existingWp } = await supabase
-    .from('worker_profiles')
-    .select('user_id')
-    .eq('user_id', userId)
-    .maybeSingle();
 
   if (existingWp) {
     const { error: wpErr } = await supabase
@@ -429,7 +446,7 @@ export async function completeIdentityKyc(
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
-      kyc_status: 'submitted',
+      kyc_status: alreadyVerified ? row.kyc_status : 'submitted',
       stage: row.stage === 'identity' ? 'identity' : row.stage,
       updated_at: now,
     })

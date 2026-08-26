@@ -85,3 +85,18 @@ export function assertValidPassportKyc(opts: { number: string; expiry: string })
   if (issue) throw new Error(issue);
   return { passportNumber, passportExpiry: opts.expiry.trim().slice(0, 10) };
 }
+
+/** Empty is allowed; if any field is filled, the passport must be complete and valid. */
+export function parseOptionalPassportKyc(opts: { number: string; expiry: string }): {
+  passportNumber: string | null;
+  passportExpiry: string | null;
+  hasPassport: boolean;
+} {
+  const number = normalizePassportNumber(opts.number);
+  const expiry = opts.expiry.trim();
+  if (!number && !expiry) {
+    return { passportNumber: null, passportExpiry: null, hasPassport: false };
+  }
+  const parsed = assertValidPassportKyc(opts);
+  return { ...parsed, hasPassport: true };
+}
