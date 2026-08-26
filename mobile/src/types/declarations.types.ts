@@ -131,8 +131,8 @@ export const ORIGINAL_DOCS_READY_NOTICE = {
     'वर्कर जर्नी शुरू करने और यह फॉर्म भरना जारी रखने से पहले, अपना मूल पैन कार्ड, आधार कार्ड और पासपोर्ट अपने पास तैयार रखें।',
   items: [
     { en: 'Original PAN card', hi: 'मूल पैन कार्ड' },
-    { en: 'Original Aadhaar card', hi: 'मूल आधार कार्ड' },
-    { en: 'Original passport', hi: 'मूल पासपोर्ट' },
+    { en: 'Original Aadhaar card (Must)', hi: 'मूल आधार कार्ड (अनिवार्य)' },
+    { en: 'Original passport (Must)', hi: 'मूल पासपोर्ट (अनिवार्य)' },
   ],
   continueEn: 'I have them with me — Continue',
   continueHi: 'ये दस्तावेज़ मेरे पास हैं — आगे बढ़ें',

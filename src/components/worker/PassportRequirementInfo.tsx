@@ -15,7 +15,7 @@ export default function PassportRequirementInfo() {
         <button
           type="button"
           className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full p-1.5 text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="Passport Requirement | पासपोर्ट संबंधी जानकारी"
+          aria-label="Passport and Aadhaar Requirement | पासपोर्ट और आधार संबंधी जानकारी"
           onClick={(e) => e.stopPropagation()}
         >
           <Info className="h-4 w-4" />
@@ -24,17 +24,18 @@ export default function PassportRequirementInfo() {
       <DialogContent className="max-w-md rounded-2xl sm:rounded-2xl">
         <DialogHeader>
           <DialogTitle className="font-heading text-left leading-snug">
-            Passport Requirement | पासपोर्ट संबंधी जानकारी
+            Passport & Aadhaar Requirement | पासपोर्ट और आधार संबंधी जानकारी
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Your passport should have at least 6 months’ validity. You can still register and
-            complete till trade tests without a passport. A valid passport is required for visa
-            processing, emigration clearance and international travel.
+            Aadhaar card is must. Your passport should have at least 6 months’ validity. You can
+            still register and complete till trade tests without a passport. A valid passport is
+            required for visa processing, emigration clearance and international travel.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 text-sm leading-relaxed text-foreground">
           <div className="space-y-2">
             
+            <p>Aadhaar card is must.</p>
             <p>Your passport should have at least 6 months’ validity.</p>
             <p>
               No passport yet? Still you can register and complete till trade tests, but a valid
@@ -45,6 +46,7 @@ export default function PassportRequirementInfo() {
           </div>
           <div className="space-y-2">
             
+            <p>आधार कार्ड अनिवार्य है।</p>
             <p>पासपोर्ट आवश्यक: आपके पासपोर्ट की वैधता कम से कम 6 महीने होनी चाहिए।</p>
             <p>
               अभी पासपोर्ट नहीं है? लेकिन फिर भी आप रजिस्ट्रेशन और ट्रेड टेस्ट पूरा कर सकते हैं, लेकिन
