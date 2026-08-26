@@ -418,7 +418,7 @@ export default function WorkerOnboarding() {
                   {stepErrors.mobile && <p className="text-sm text-destructive">{stepErrors.mobile}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Email (optional)</Label>
+                  <Label>Email</Label>
                   <Input value={email} disabled className="bg-muted" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -441,7 +441,7 @@ export default function WorkerOnboarding() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Preferred Work City (optional)</Label>
+                  <Label>Preferred Work City</Label>
                   <Input value={preferredWorkCity} onChange={e => setPreferredWorkCity(e.target.value)} placeholder="Same as current city if blank" />
                 </div>
               </>
@@ -538,7 +538,7 @@ export default function WorkerOnboarding() {
             {/* STEP 3 */}
             {step === 3 && (
               <>
-                <p className="text-sm text-muted-foreground mb-2">All fields are optional — you can update these later.</p>
+                <p className="text-sm text-muted-foreground mb-2">You can update these later.</p>
 
                 <div className="space-y-1.5">
                   <Label>Availability</Label>

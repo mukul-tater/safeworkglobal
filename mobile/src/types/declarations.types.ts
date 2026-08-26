@@ -235,7 +235,7 @@ export const PRE_JOURNEY_COPY = {
       en: '8. Have you previously registered with another overseas recruitment agency/agent for this job or another overseas job?',
       hi: '8. क्या आपने पहले किसी अन्य ओवरसीज़ रिक्रूटमेंट एजेंसी/एजेंट के साथ इस नौकरी या किसी अन्य विदेशी नौकरी के लिए पंजीकरण किया है?',
     },
-    agencyDetails: { en: 'Agency / Agent Details (Optional)', hi: 'एजेंसी / एजेंट का विवरण (वैकल्पिक)' },
+    agencyDetails: { en: 'Agency / Agent Details', hi: 'एजेंसी / एजेंट का विवरण' },
     q9: {
       en: '9. Have you already paid money to any person/agency for an overseas job related to this application?',
       hi: '9. क्या आपने इस आवेदन से जुड़ी विदेशी नौकरी के लिए किसी व्यक्ति/एजेंसी को पहले से पैसे दिए हैं?',

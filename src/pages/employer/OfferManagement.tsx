@@ -378,7 +378,7 @@ export default function OfferManagement() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Notes (optional)</Label>
+                    <Label>Notes</Label>
                     <Textarea
                       placeholder="Additional notes or terms"
                       value={formData.notes}

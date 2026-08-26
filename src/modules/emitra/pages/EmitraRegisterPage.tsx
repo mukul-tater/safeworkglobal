@@ -316,7 +316,7 @@ export default function EmitraRegisterPage() {
       await persistProgress({ current_step: STEPS.length });
       setSkippedOptional(true);
       setStep(STEPS.length);
-      toast.info('Optional steps skipped. Review declarations to submit your application.');
+      toast.info('These steps were skipped. Review declarations to submit your application.');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Could not save progress');
     } finally {
@@ -613,7 +613,7 @@ export default function EmitraRegisterPage() {
             <Field label="IFSC" error={errors.ifsc} required>
               <Input maxLength={11} value={data.ifsc || ''} onChange={e => update({ ifsc: e.target.value.toUpperCase() })} />
             </Field>
-            <Field label="UPI ID (optional)" error={errors.upi_id}>
+            <Field label="UPI ID" error={errors.upi_id}>
               <Input value={data.upi_id || ''} onChange={e => update({ upi_id: e.target.value })} />
             </Field>
           </div>
@@ -680,7 +680,7 @@ export default function EmitraRegisterPage() {
           <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
             {step >= 2 && step < STEPS.length && (
               <Button type="button" variant="ghost" className="h-11" onClick={handleSkip} disabled={saving}>
-                <SkipForward className="h-4 w-4 mr-1" /> Skip optional steps
+                <SkipForward className="h-4 w-4 mr-1" /> Skip these steps
               </Button>
             )}
             {step < STEPS.length ? (

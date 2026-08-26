@@ -132,7 +132,7 @@ export default function AdminEmitraWorkerReview() {
               <div><label className="text-sm font-medium">Rejection Reason *</label>
                 <Textarea rows={2} value={reason} onChange={e => setReason(e.target.value)} /></div>
             )}
-            <div><label className="text-sm font-medium">Review Notes (optional)</label>
+            <div><label className="text-sm font-medium">Review Notes</label>
               <Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} /></div>
           </div>
           <DialogFooter>

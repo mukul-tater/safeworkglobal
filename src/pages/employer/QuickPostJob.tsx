@@ -235,7 +235,7 @@ export default function QuickPostJob() {
             )}
 
             <div>
-              <Label>Job description {template ? '(auto-filled, editable)' : '(optional)'}</Label>
+              <Label>Job description {template ? '(auto-filled, editable)' : ''}</Label>
               <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description of the role..." />
             </div>
 

@@ -188,7 +188,7 @@ export default function ManpowerRequirementSection({
                   value={item.projectName || ""}
                   disabled={disabled}
                   onChange={(e) => update(item.id, { projectName: e.target.value })}
-                  placeholder="Optional"
+                  placeholder="Project name"
                 />
               </div>
               <div className="space-y-1.5">

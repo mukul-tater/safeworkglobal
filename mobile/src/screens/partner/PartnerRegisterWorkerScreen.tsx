@@ -90,7 +90,7 @@ export default function PartnerRegisterWorkerScreen() {
       <Card>
         <Input label="Full Name" value={fullName} onChangeText={setFullName} placeholder="Worker's full name" />
         <Input label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="10-digit mobile" />
-        <Input label="Email (optional)" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+        <Input label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
         <Input label="City" value={city} onChangeText={setCity} />
         <Text style={styles.label}>Primary skill</Text>
         <View style={styles.chips}>

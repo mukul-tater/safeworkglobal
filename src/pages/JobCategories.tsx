@@ -172,7 +172,7 @@ const categoryDetails: CategoryDetail[] = [
     requirements: [
       "Plumbing license or apprenticeship completion",
       "2-4 years experience",
-      "Gas fitting certification (optional)",
+      "Gas fitting certification",
       "Physical fitness"
     ],
     benefits: [

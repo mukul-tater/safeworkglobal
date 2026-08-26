@@ -455,7 +455,7 @@ export default function IDVerification() {
                   Are you sure you want to reject "{selectedDoc?.document_name}"?
                 </p>
                 <div>
-                  <label className="text-sm font-medium">Reason for rejection (optional)</label>
+                  <label className="text-sm font-medium">Reason for rejection</label>
                   <Textarea
                     value={verificationNotes}
                     onChange={(e) => setVerificationNotes(e.target.value)}

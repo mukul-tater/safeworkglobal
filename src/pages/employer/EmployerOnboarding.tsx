@@ -683,7 +683,7 @@ export default function EmployerOnboarding() {
             {/* STEP 5 — Payment & Safety */}
             {step === 5 && (
               <>
-                <p className="text-sm text-muted-foreground mb-2">All fields are optional — you can update these later.</p>
+                <p className="text-sm text-muted-foreground mb-2">You can update these later.</p>
 
                 <div className="space-y-1.5">
                   <Label>Payment Method Preference</Label>
@@ -703,7 +703,7 @@ export default function EmployerOnboarding() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label>GST Number (optional)</Label>
+                  <Label>GST Number</Label>
                   <Input value={gstNumber} onChange={e => setGstNumber(e.target.value)} placeholder="e.g. 22AAAAA0000A1Z5" />
                 </div>
 

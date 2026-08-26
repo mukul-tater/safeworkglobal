@@ -505,7 +505,7 @@ export default function InterviewScheduling() {
                   )}
 
                   <div className="space-y-2">
-                    <Label>Notes (optional)</Label>
+                    <Label>Notes</Label>
                     <Textarea
                       placeholder="Add any notes for the interview"
                       value={formData.notes}

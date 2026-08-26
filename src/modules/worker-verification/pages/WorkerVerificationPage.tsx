@@ -1679,7 +1679,7 @@ export default function WorkerVerificationPage({
                 label: 'Identity documents submitted',
                 detail: needsTenthMarksheet
                   ? 'Aadhaar and 10th or higher education certificate uploaded'
-                  : 'Aadhaar uploaded. PAN and passport can be added later after your skill test.',
+                  : 'Aadhaar uploaded. PAN and passport can be added after your skill test.',
                 status: 'done',
               },
               { label: 'SafeWork verifying your documents', status: 'current' },
@@ -1717,8 +1717,8 @@ export default function WorkerVerificationPage({
                   ? 'Your skill test is complete. Upload PAN, Aadhaar, a passport valid for at least 6 months, and your 10th or higher education certificate to continue.'
                   : 'Your skill test is complete. Upload PAN, Aadhaar, and a passport that is valid for at least 6 months to continue.'
                 : needsTenthMarksheet
-                  ? 'Aadhaar is required. PAN and passport can be added later. Upload your 10th or any higher education certificate if you confirmed 10th pass.'
-                  : 'Aadhaar is required. PAN and passport can be added later — add them now if you have them.'
+                  ? 'Aadhaar is required. PAN and passport can be added after your skill test. Upload your 10th or any higher education certificate if you confirmed 10th pass.'
+                  : 'Aadhaar is required. PAN and passport can be added after your skill test — add them now if you have them.'
             }
             timeEstimate="Takes 5–7 minutes"
             footer={
@@ -1878,7 +1878,7 @@ export default function WorkerVerificationPage({
                 <p className="text-xs text-muted-foreground">
                   {strictIdentityDocs
                     ? 'Upload a clear photo of the first page (photo + expiry) and the last page of your passport.'
-                    : 'If you have a passport, upload a clear photo of the first page (photo + expiry) and the last page. You can also add it later — tap the info icon.'}
+                    : 'If you have a passport, upload a clear photo of the first page (photo + expiry) and the last page. You can also add it after your skill test — tap the info icon.'}
                 </p>
               </div>
               {needsTenthMarksheet && (

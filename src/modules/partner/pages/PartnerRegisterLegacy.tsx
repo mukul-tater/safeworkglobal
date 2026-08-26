@@ -516,7 +516,7 @@ export default function PartnerRegisterLegacy() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label>GST (optional)</Label>
+            <Label>GST</Label>
             <Input
               className="h-11"
               value={form.gst}

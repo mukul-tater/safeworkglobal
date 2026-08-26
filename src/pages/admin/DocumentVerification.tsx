@@ -299,7 +299,7 @@ export default function DocumentVerification() {
                             </div>
 
                             <div>
-                              <Label htmlFor="notes">Verification Notes (Optional)</Label>
+                              <Label htmlFor="notes">Verification Notes</Label>
                               <Textarea
                                 id="notes"
                                 placeholder="Add any notes about this document..."

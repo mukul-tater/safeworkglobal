@@ -436,7 +436,7 @@ export default function ECRManagement() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Notes (optional)</Label>
+                  <Label>Notes</Label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}

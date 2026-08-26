@@ -598,7 +598,7 @@ export default function WorkerOffers() {
           
           <div className="py-4 space-y-4">
             <div>
-              <Label htmlFor="reason">Reason for declining (optional)</Label>
+              <Label htmlFor="reason">Reason for declining</Label>
               <Textarea
                 id="reason"
                 placeholder="Let the employer know why you're declining..."

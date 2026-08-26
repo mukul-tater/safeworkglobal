@@ -846,7 +846,7 @@ export default function SsvnAssessmentWizard() {
                 rows={2}
               />
               <div className="space-y-1.5">
-                <Label>Optional scanned scorecard (photo or PDF)</Label>
+                <Label>Scanned scorecard (photo or PDF)</Label>
                 <Input
                   type="file"
                   accept="image/*,application/pdf"

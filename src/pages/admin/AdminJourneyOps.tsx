@@ -438,7 +438,7 @@ export default function AdminJourneyOps() {
             </Button>
           </div>
           <Input
-            placeholder="Certificate proof URL (optional)"
+            placeholder="Certificate proof URL"
             value={field(r.user_id, 'proof')}
             onChange={(e) => setField(r.user_id, 'proof', e.target.value)}
           />
@@ -573,13 +573,13 @@ export default function AdminJourneyOps() {
           <div className="grid sm:grid-cols-2 gap-2">
             <Input
               type="number"
-              placeholder="Worker cheque amount (optional)"
+              placeholder="Worker cheque amount"
               value={tplForm.workerChequeAmount}
               onChange={(e) => setTplForm((f) => ({ ...f, workerChequeAmount: e.target.value }))}
             />
             <Input
               type="number"
-              placeholder="Guarantor cheque amount (optional)"
+              placeholder="Guarantor cheque amount"
               value={tplForm.guarantorChequeAmount}
               onChange={(e) => setTplForm((f) => ({ ...f, guarantorChequeAmount: e.target.value }))}
             />

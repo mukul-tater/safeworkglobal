@@ -551,7 +551,7 @@ export default function WorkerOnboardingPage() {
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="Education (optional)" className="sm:col-span-2" error={fieldErrors.educationLevel}>
+              <FormField label="Education" className="sm:col-span-2" error={fieldErrors.educationLevel}>
                 <Select value={educationLevel} onValueChange={setEducationLevel}>
                   <SelectTrigger><SelectValue placeholder="Select if applicable — not required" /></SelectTrigger>
                   <SelectContent>
@@ -561,7 +561,7 @@ export default function WorkerOnboardingPage() {
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="Email (optional)" className="sm:col-span-2" error={fieldErrors.email}>
+              <FormField label="Email" className="sm:col-span-2" error={fieldErrors.email}>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
               </FormField>
               <FormField label="Full Address" required className="sm:col-span-2" error={fieldErrors.address}>
@@ -651,7 +651,7 @@ export default function WorkerOnboardingPage() {
                 <Switch checked={openToRelocation} onCheckedChange={setOpenToRelocation} />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <FormField label="Expected Salary (optional)">
+                <FormField label="Expected Salary">
                   <Input type="number" value={expectedSalaryMin} onChange={(e) => setExpectedSalaryMin(e.target.value)} placeholder="e.g. 1500" />
                 </FormField>
                 <FormField label="Currency">
@@ -665,7 +665,7 @@ export default function WorkerOnboardingPage() {
                   </Select>
                 </FormField>
               </div>
-              <FormField label="Other Skills (optional, max 5)">
+              <FormField label="Other Skills (max 5)">
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto rounded-md border p-3">
                   {skills.filter((s) => String(s.id) !== primarySkillId).map((s) => (
                     <Badge
@@ -679,7 +679,7 @@ export default function WorkerOnboardingPage() {
                   ))}
                 </div>
               </FormField>
-              <FormField label="Previous Employer (optional)">
+              <FormField label="Previous Employer">
                 <Input value={previousEmployer} onChange={(e) => setPreviousEmployer(e.target.value)} placeholder="Last company or project" />
               </FormField>
               <FormField label="Languages Spoken" required>
@@ -715,7 +715,7 @@ export default function WorkerOnboardingPage() {
                     </SelectContent>
                   </Select>
                 </FormField>
-                <FormField label="Years (optional)" className="w-full sm:w-32">
+                <FormField label="Years" className="w-full sm:w-32">
                   <Input type="number" min={0} max={50} value={skillExperienceYears}
                     onChange={(e) => setSkillExperienceYears(e.target.value)} placeholder="Yrs" />
                 </FormField>

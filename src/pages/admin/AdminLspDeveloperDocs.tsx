@@ -377,7 +377,7 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
                 Audience = <strong className="text-foreground">e-Mitra operators only</strong> (v1)
               </li>
               <li>
-                Optional prefills on launch: operator <code>emitra_id</code> + <code>mobile</code> (not a
+                Prefills on launch: operator <code>emitra_id</code> + <code>mobile</code> (not a
                 bulk operator database)
               </li>
             </ul>
@@ -452,7 +452,7 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
           </ol>
           <p>
             Do not embed a pre-signed SafeWork URL in static HTML — signatures expire within 15 minutes.
-            Optional <code>emitra_id</code> / <code>mobile</code> on the launch URL are prefills only;
+            <code>emitra_id</code> / <code>mobile</code> on the launch URL are prefills only;
             the operator still authenticates on SafeWork.
           </p>
         </Section>
@@ -476,7 +476,7 @@ def build_safework_launch_url(emitra_id: str = "", mobile: str = "") -> str:
                 <code>nonce</code> — unique per click
               </li>
               <li>
-                <code>emitra_id</code> / <code>mobile</code> — optional; empty string in payload if unused;
+                <code>emitra_id</code> / <code>mobile</code> — empty string in payload if unused;
                 if set, also pass as query params
               </li>
               <li>

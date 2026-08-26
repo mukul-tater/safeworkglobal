@@ -97,7 +97,7 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-xl font-semibold font-heading text-foreground">9. Cookies</h2>
-            <p>We use essential cookies to operate the platform and optional analytics cookies to understand usage patterns. You can manage cookie preferences through your browser settings.</p>
+            <p>We use essential cookies to operate the platform and analytics cookies to understand usage patterns. You can manage cookie preferences through your browser settings.</p>
           </section>
 
           <section>

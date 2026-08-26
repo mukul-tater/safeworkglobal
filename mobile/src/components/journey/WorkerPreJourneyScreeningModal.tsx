@@ -625,7 +625,7 @@ export default function WorkerPreJourneyScreeningModal({
                 ) : null}
                 {recruitment.registeredWithOtherAgency === 'yes' ? (
                   <Input
-                    label="Agency / Agent Details (Optional)"
+                    label="Agency / Agent Details"
                     value={recruitment.agencyDetails || ''}
                     onChangeText={(val) => setRecruitment({ ...recruitment, agencyDetails: val })}
                     placeholder="Agency name, location, contact details..."

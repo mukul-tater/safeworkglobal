@@ -133,7 +133,7 @@ export default function InterviewerQueuePage() {
                   <div className="space-y-2 border-t border-border pt-3">
                     <div className="grid sm:grid-cols-[140px_1fr] gap-2">
                       <div className="space-y-1">
-                        <Label className="text-xs">Score (optional)</Label>
+                        <Label className="text-xs">Score</Label>
                         <Input
                           type="number"
                           min={0}

@@ -380,7 +380,7 @@ export default function WorkerSearchFilters({
                 />
               </div>
               <Input
-                placeholder="Filter cert. by name (optional)"
+                placeholder="Filter cert. by name"
                 value={filters.certificationKeyword}
                 onChange={(e) =>
                   onFiltersChange({ ...filters, certificationKeyword: e.target.value })

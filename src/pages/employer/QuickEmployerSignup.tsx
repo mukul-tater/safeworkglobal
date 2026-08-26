@@ -450,7 +450,7 @@ export default function QuickEmployerSignup() {
                       onChange={(path) => patchDraft({ tradeLicencePath: path || "" })}
                     />
                     <EmployerDocUpload
-                      label="Company Profile / Presentation (Optional)"
+                      label="Company Profile / Presentation"
                       field="company-profile"
                       accept="application/pdf"
                       value={draft.companyProfilePath}
@@ -629,7 +629,7 @@ export default function QuickEmployerSignup() {
                       value={draft.commercialNotes}
                       disabled={busy}
                       onChange={(e) => patchDraft({ commercialNotes: e.target.value })}
-                      placeholder="Optional"
+                      placeholder="Add notes if needed"
                     />
                   </div>
 

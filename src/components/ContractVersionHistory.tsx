@@ -299,7 +299,7 @@ export default function ContractVersionHistory({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="change-summary">Change Summary (Optional)</Label>
+              <Label htmlFor="change-summary">Change Summary</Label>
               <Textarea
                 id="change-summary"
                 placeholder="Describe what changed in this version..."

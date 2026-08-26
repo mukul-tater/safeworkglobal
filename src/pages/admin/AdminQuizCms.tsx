@@ -168,8 +168,8 @@ export default function AdminQuizCms() {
     >
       <h1 className="text-2xl md:text-3xl font-bold mb-2">Test 1 — Skill quiz CMS</h1>
       <p className="text-sm text-muted-foreground mb-4">
-        Manage the question bank per skill: English question with Hindi below it, optional image or
-        YouTube clip, optional state targeting, how many questions to show, and the pass score.
+        Manage the question bank per skill: English question with Hindi below it, image or
+        YouTube clip, state targeting, how many questions to show, and the pass score.
       </p>
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr] items-start">
@@ -189,7 +189,7 @@ export default function AdminQuizCms() {
           <div className="border-t border-border pt-3 space-y-3">
             <h2 className="font-semibold text-sm">Test settings</h2>
             <div className="space-y-1.5">
-              <Label>Region (optional)</Label>
+              <Label>Region</Label>
               <Select value={cfgRegion} onValueChange={setCfgRegion}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -283,7 +283,7 @@ export default function AdminQuizCms() {
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Image URL (optional)</Label>
+                <Label>Image URL</Label>
                 <Input
                   value={draft.image_url}
                   onChange={(e) => setDraft((d) => ({ ...d, image_url: e.target.value }))}
@@ -291,7 +291,7 @@ export default function AdminQuizCms() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>YouTube URL (optional)</Label>
+                <Label>YouTube URL</Label>
                 <Input
                   value={draft.youtube_url}
                   onChange={(e) => setDraft((d) => ({ ...d, youtube_url: e.target.value }))}
@@ -301,7 +301,7 @@ export default function AdminQuizCms() {
             </div>
             <div className="grid sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label>Region (optional)</Label>
+                <Label>Region</Label>
                 <Select
                   value={draft.region}
                   onValueChange={(v) => setDraft((d) => ({ ...d, region: v }))}

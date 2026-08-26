@@ -441,7 +441,7 @@ export default function AdminTradeTestAllocations() {
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Instructions for this worker (optional)</Label>
+                      <Label>Instructions for this worker</Label>
                       <Textarea
                         rows={2}
                         value={instrByWorker[w.user_id] || ''}
