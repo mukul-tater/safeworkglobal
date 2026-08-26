@@ -19,6 +19,7 @@ import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import { adminUpdateJob } from "@/services/AdminService";
+import PostedByBadge from "@/components/jobs/PostedByBadge";
 
 export default function EditJob() {
   const { jobId } = useParams();
@@ -28,6 +29,7 @@ export default function EditJob() {
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [companyName, setCompanyName] = useState<string>("");
+  const [postedByRole, setPostedByRole] = useState<string>("employer");
 
   const {
     register,
@@ -71,6 +73,7 @@ export default function EditJob() {
         .maybeSingle();
 
       setCompanyName(employer?.company_name || "Unknown Company");
+      setPostedByRole(job.posted_by_role || "employer");
 
       // Fetch job skills
       const { data: jobSkills } = await supabase
@@ -184,7 +187,10 @@ export default function EditJob() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Edit Job</h1>
-            <p className="text-muted-foreground">Posted by: {companyName}</p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <p className="text-muted-foreground">Company: {companyName}</p>
+              <PostedByBadge role={postedByRole} />
+            </div>
           </div>
         </div>
 

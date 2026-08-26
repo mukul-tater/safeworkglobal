@@ -21,6 +21,7 @@ import { AdminDashboardSkeleton } from "@/components/ui/page-skeleton";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import { adminNavGroups, adminProfileMenu } from "@/config/adminNav";
 import { displayableEmail } from "@/lib/workerAuthEmail";
+import PostedByBadge from "@/components/jobs/PostedByBadge";
 
 interface DashboardStats {
   totalUsers: number; totalWorkers: number; totalEmployers: number; totalAdmins: number;
@@ -37,7 +38,7 @@ interface RecentUser {
 }
 
 interface RecentJob {
-  id: string; title: string; location: string; status: string; created_at: string;
+  id: string; title: string; location: string; status: string; created_at: string; posted_by_role: string;
 }
 
 export default function AdminDashboard() {
@@ -116,7 +117,7 @@ export default function AdminDashboard() {
         supabase.from('payments').select('id', { count: 'exact', head: true }),
         supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('profiles').select('id, email, full_name, created_at').order('created_at', { ascending: false }).limit(5),
-        supabase.from('jobs').select('id, title, location, status, created_at').order('created_at', { ascending: false }).limit(5)
+        supabase.from('jobs').select('id, title, location, status, created_at, posted_by_role').order('created_at', { ascending: false }).limit(5)
       ]);
 
       setDisputes(disputesRes.data || []);
@@ -136,7 +137,10 @@ export default function AdminDashboard() {
         }
       }
       setRecentUsers(recentUsersWithRoles);
-      setRecentJobs(recentJobsRes.data || []);
+      setRecentJobs((recentJobsRes.data || []).map((job) => ({
+        ...job,
+        posted_by_role: job.posted_by_role || "employer",
+      })));
 
       setStats({
         totalUsers: profilesRes.count || 0, totalWorkers: workersRes.count || 0,
@@ -217,6 +221,7 @@ export default function AdminDashboard() {
             { label: "Partners", path: "/admin/partners" },
             { label: "Applications", path: "/admin/applications" },
             { label: "All Jobs", path: "/admin/jobs" },
+            { label: "Post a Job", path: "/admin/post-job" },
             { label: "E-Mitra Workers", path: "/admin/partner-workers" },
             { label: "All Users", path: "/admin/users" },
           ].map((link) => (
@@ -375,6 +380,7 @@ export default function AdminDashboard() {
                     <p className="text-sm text-muted-foreground">{job.location}</p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <PostedByBadge role={job.posted_by_role} />
                     <Badge className={getStatusBadgeColor(job.status)}>{job.status}</Badge>
                     <span className="text-xs text-muted-foreground">{new Date(job.created_at).toLocaleDateString()}</span>
                   </div>

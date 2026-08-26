@@ -2,7 +2,7 @@ import {
   LayoutDashboard, TrendingUp, Users, FileCheck, CreditCard, Plane, CheckCircle, Shield,
   BarChart3, AlertTriangle, Mail, Store, HardHat, Building2, FileText, Briefcase, UserCog,
   MessageSquare, ShieldAlert, IndianRupee,
-  ClipboardCheck, Wallet, BarChartBig, Network, BookOpen,
+  ClipboardCheck, Wallet, BarChartBig, Network, BookOpen, PlusCircle,
 } from "lucide-react";
 import type { NavGroup } from "@/components/layout/DashboardSidebar";
 
@@ -51,6 +51,7 @@ export const adminNavGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { path: "/admin/jobs", icon: Briefcase, label: "All Jobs" },
+      { path: "/admin/post-job", icon: PlusCircle, label: "Post a Job" },
       { path: "/admin/applications", icon: FileText, label: "Applications" },
       { path: "/admin/job-verification", icon: CheckCircle, label: "Job Verification" },
     ],

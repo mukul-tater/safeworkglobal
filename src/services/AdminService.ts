@@ -113,3 +113,38 @@ export async function adminUpdateJob(
 
   return { error: null };
 }
+
+export async function adminCreateJob(
+  employerId: string,
+  jobData: Record<string, unknown>,
+  skills?: string[]
+): Promise<{ data: string | null; error: string | null }> {
+  const { data, error } = await supabase.rpc("admin_create_job", {
+    p_employer_id: employerId,
+    p_patch: jobData as never,
+    p_skills: skills ?? null,
+  });
+  if (!error) return { data: data as string, error: null };
+
+  const { data: userData } = await supabase.auth.getUser();
+  const { data: job, error: jobError } = await supabase
+    .from("jobs")
+    .insert({
+      ...jobData,
+      employer_id: employerId,
+      posted_by_role: "admin",
+      created_by: userData.user?.id ?? null,
+    } as never)
+    .select("id")
+    .single();
+  if (jobError) return { data: null, error: formatError(jobError, "Failed to create job") };
+
+  if (skills && skills.length > 0) {
+    const { error: skillsError } = await supabase.from("job_skills").insert(
+      skills.map((skill_name) => ({ job_id: job.id, skill_name }))
+    );
+    if (skillsError) return { data: job.id, error: formatError(skillsError, "Job created but skills failed to save") };
+  }
+
+  return { data: job.id, error: null };
+}

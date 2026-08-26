@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { JobDetailSkeleton } from '@/components/ui/page-skeleton';
 import { withRetry } from '@/lib/retry';
+import PostedByBadge from '@/components/jobs/PostedByBadge';
 
 interface JobData {
   id: string;
@@ -44,6 +45,7 @@ interface JobData {
   visa_sponsorship: boolean;
   posted_at: string;
   slug: string;
+  posted_by_role?: string | null;
   job_skills: { skill_name: string }[];
 }
 
@@ -385,6 +387,7 @@ export default function JobDetail() {
                     <Badge variant={job.status === 'ACTIVE' ? 'default' : 'secondary'}>
                       {job.status}
                     </Badge>
+                    {isAdmin ? <PostedByBadge role={job.posted_by_role} /> : null}
                   </div>
 
                   <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{job.title}</h1>

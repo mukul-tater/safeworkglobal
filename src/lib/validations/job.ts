@@ -102,8 +102,7 @@ export const jobPostingSchema = jobPostingBaseSchema.refine(
 
 export type JobPostingFormData = z.infer<typeof jobPostingSchema>;
 
-/** Admin edit form — all job statuses, optional expiry, relaxed requirements */
-export const adminJobEditSchema = jobPostingBaseSchema
+const adminJobFieldsSchema = jobPostingBaseSchema
   .omit({ status: true, expires_at: true, requirements: true })
   .extend({
     requirements: z
@@ -124,10 +123,24 @@ export const adminJobEditSchema = jobPostingBaseSchema
       "EXPIRED",
       "REJECTED",
     ]),
+  });
+
+/** Admin edit form — all job statuses, optional expiry, relaxed requirements */
+export const adminJobEditSchema = adminJobFieldsSchema.refine(salaryRangeRefine.refine, {
+  message: salaryRangeRefine.message,
+  path: salaryRangeRefine.path,
+});
+
+export type AdminJobEditFormData = z.infer<typeof adminJobEditSchema>;
+
+/** Admin create form — same fields as edit, plus the employer the job belongs to */
+export const adminJobPostSchema = adminJobFieldsSchema
+  .extend({
+    employer_id: z.string().min(1, "Select an employer"),
   })
   .refine(salaryRangeRefine.refine, {
     message: salaryRangeRefine.message,
     path: salaryRangeRefine.path,
   });
 
-export type AdminJobEditFormData = z.infer<typeof adminJobEditSchema>;
+export type AdminJobPostFormData = z.infer<typeof adminJobPostSchema>;

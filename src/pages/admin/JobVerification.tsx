@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, CheckCircle, XCircle, Trash2, Pencil } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Trash2, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { adminDeleteJob, adminUpdateJob } from "@/services/AdminService";
 import { useNavigate } from "react-router-dom";
+import PostedByBadge from "@/components/jobs/PostedByBadge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,12 +30,14 @@ interface Job {
   posted_at: string;
   location: string;
   employer_id: string;
+  posted_by_role: string;
 }
 
 export default function JobVerification() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
+  const [postedByFilter, setPostedByFilter] = useState<"all" | "employer" | "admin">("all");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,10 +48,14 @@ export default function JobVerification() {
     try {
       const { data: jobsData, error: jobsError } = await supabase
         .from("jobs")
-        .select("id, slug, title, status, posted_at, location, employer_id")
+        .select("id, slug, title, status, posted_at, location, employer_id, posted_by_role")
         .order("posted_at", { ascending: false });
 
       if (jobsError) throw jobsError;
+      if (!jobsData?.length) {
+        setJobs([]);
+        return;
+      }
 
       // Fetch employer profiles to get company names
       const employerIds = [...new Set(jobsData.map((job) => job.employer_id))];
@@ -60,10 +67,11 @@ export default function JobVerification() {
       if (employersError) throw employersError;
 
       const jobsWithCompany: Job[] = jobsData.map((job) => {
-        const employer = employers.find((e) => e.user_id === job.employer_id);
+        const employer = employers?.find((e) => e.user_id === job.employer_id);
         return {
           ...job,
           company_name: employer?.company_name || "Unknown Company",
+          posted_by_role: job.posted_by_role || "employer",
         };
       });
 
@@ -133,6 +141,11 @@ export default function JobVerification() {
     }
   };
 
+  const visibleJobs = jobs.filter((job) => {
+    if (postedByFilter === "all") return true;
+    return (job.posted_by_role || "employer") === postedByFilter;
+  });
+
   if (loading) {
     return (
       <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
@@ -144,19 +157,47 @@ export default function JobVerification() {
 
   return (
     <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">All Jobs</h1>
-          <p className="text-muted-foreground text-sm mb-6 md:mb-8">
-            Complete job listings — review, approve, edit, and manage all employer postings
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold">All Jobs</h1>
+            <Button onClick={() => navigate("/admin/post-job")} className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Post a Job
+            </Button>
+          </div>
+          <p className="text-muted-foreground text-sm mb-4">
+            Complete job listings — review, approve, edit, and manage employer and admin postings
           </p>
+          <div className="flex flex-wrap gap-2 mb-6 md:mb-8">
+            {([
+              { id: "all", label: "All" },
+              { id: "employer", label: "Employer posted" },
+              { id: "admin", label: "Admin posted" },
+            ] as const).map((tab) => (
+              <Button
+                key={tab.id}
+                size="sm"
+                variant={postedByFilter === tab.id ? "default" : "outline"}
+                onClick={() => setPostedByFilter(tab.id)}
+              >
+                {tab.label}
+              </Button>
+            ))}
+          </div>
 
+          {visibleJobs.length === 0 ? (
+            <Card className="p-8 text-center text-muted-foreground">
+              {jobs.length === 0 ? "No jobs yet." : "No jobs match this filter."}
+            </Card>
+          ) : (
           <div className="space-y-4">
-            {jobs.map((job) => (
+            {visibleJobs.map((job) => (
               <Card key={job.id} className="p-4 md:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <h3 className="text-lg md:text-xl font-bold truncate">{job.title}</h3>
                       <Badge variant={getStatusColor(job.status)}>{job.status}</Badge>
+                      <PostedByBadge role={job.posted_by_role} />
                     </div>
                     <p className="text-muted-foreground mb-1 text-sm truncate">{job.company_name}</p>
                     <p className="text-xs md:text-sm text-muted-foreground mb-1">{job.location}</p>
@@ -214,6 +255,7 @@ export default function JobVerification() {
               </Card>
             ))}
           </div>
+          )}
 
       <AlertDialog open={!!deleteJobId} onOpenChange={() => setDeleteJobId(null)}>
         <AlertDialogContent>

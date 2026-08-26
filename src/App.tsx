@@ -69,6 +69,7 @@ import IDVerification from "./pages/admin/IDVerification";
 import ECRManagement from "./pages/admin/ECRManagement";
 import JobVerification from "./pages/admin/JobVerification";
 import EditJob from "./pages/admin/EditJob";
+import AdminPostJob from "./pages/admin/PostJob";
 import ComplianceCheck from "./pages/admin/ComplianceCheck";
 import Reports from "./pages/admin/Reports";
 import DisputeResolution from "./pages/admin/DisputeResolution";
@@ -415,6 +416,7 @@ function AppShell() {
           <Route path="/admin/id-verification" element={<AdminRoute><IDVerification /></AdminRoute>} />
           <Route path="/admin/ecr-management" element={<AdminRoute><ECRManagement /></AdminRoute>} />
           <Route path="/admin/job-verification" element={<AdminRoute><JobVerification /></AdminRoute>} />
+          <Route path="/admin/post-job" element={<AdminRoute><AdminPostJob /></AdminRoute>} />
           <Route path="/admin/edit-job/:jobId" element={<AdminRoute><EditJob /></AdminRoute>} />
           <Route path="/admin/compliance" element={<AdminRoute><ComplianceCheck /></AdminRoute>} />
           <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />

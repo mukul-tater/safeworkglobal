@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { Briefcase, Plus, Eye, Trash2, MapPin, Users, Calendar, FileText, Pencil } from "lucide-react";
 import { JobListSkeleton } from "@/components/ui/page-skeleton";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
+import PostedByBadge from "@/components/jobs/PostedByBadge";
 
 interface Job {
   id: string;
@@ -30,6 +31,7 @@ interface Job {
   salary_min: number | null;
   salary_max: number | null;
   currency: string;
+  posted_by_role?: string | null;
 }
 
 export default function ManageJobs() {
@@ -226,6 +228,9 @@ export default function ManageJobs() {
                         <Badge variant="outline" className="text-xs">
                           {job.job_type.replace("_", " ")}
                         </Badge>
+                        {job.posted_by_role === "admin" ? (
+                          <PostedByBadge role={job.posted_by_role} />
+                        ) : null}
                       </div>
                       <h3 className="text-lg md:text-xl font-bold truncate">{job.title}</h3>
                     </div>

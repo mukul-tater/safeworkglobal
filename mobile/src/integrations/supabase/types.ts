@@ -1128,6 +1128,7 @@ export type Database = {
           benefits: string | null
           country: string
           created_at: string | null
+          created_by: string | null
           currency: string
           description: string
           employer_id: string
@@ -1138,6 +1139,7 @@ export type Database = {
           location: string
           openings: number
           posted_at: string | null
+          posted_by_role: string
           remote_allowed: boolean | null
           requirements: string | null
           responsibilities: string | null
@@ -1154,6 +1156,7 @@ export type Database = {
           benefits?: string | null
           country: string
           created_at?: string | null
+          created_by?: string | null
           currency?: string
           description: string
           employer_id: string
@@ -1164,6 +1167,7 @@ export type Database = {
           location: string
           openings?: number
           posted_at?: string | null
+          posted_by_role?: string
           remote_allowed?: boolean | null
           requirements?: string | null
           responsibilities?: string | null
@@ -1180,6 +1184,7 @@ export type Database = {
           benefits?: string | null
           country?: string
           created_at?: string | null
+          created_by?: string | null
           currency?: string
           description?: string
           employer_id?: string
@@ -1190,6 +1195,7 @@ export type Database = {
           location?: string
           openings?: number
           posted_at?: string | null
+          posted_by_role?: string
           remote_allowed?: boolean | null
           requirements?: string | null
           responsibilities?: string | null

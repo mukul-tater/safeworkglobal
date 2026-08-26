@@ -1536,6 +1536,7 @@ export type Database = {
           benefits: string | null
           country: string
           created_at: string | null
+          created_by: string | null
           currency: string
           description: string
           employer_id: string
@@ -1546,6 +1547,7 @@ export type Database = {
           location: string
           openings: number
           posted_at: string | null
+          posted_by_role: string
           remote_allowed: boolean | null
           requirements: string | null
           responsibilities: string | null
@@ -1562,6 +1564,7 @@ export type Database = {
           benefits?: string | null
           country: string
           created_at?: string | null
+          created_by?: string | null
           currency?: string
           description: string
           employer_id: string
@@ -1572,6 +1575,7 @@ export type Database = {
           location: string
           openings?: number
           posted_at?: string | null
+          posted_by_role?: string
           remote_allowed?: boolean | null
           requirements?: string | null
           responsibilities?: string | null
@@ -1588,6 +1592,7 @@ export type Database = {
           benefits?: string | null
           country?: string
           created_at?: string | null
+          created_by?: string | null
           currency?: string
           description?: string
           employer_id?: string
@@ -1598,6 +1603,7 @@ export type Database = {
           location?: string
           openings?: number
           posted_at?: string | null
+          posted_by_role?: string
           remote_allowed?: boolean | null
           requirements?: string | null
           responsibilities?: string | null
@@ -5359,6 +5365,10 @@ export type Database = {
           p_status?: string
         }
         Returns: Json
+      }
+      admin_create_job: {
+        Args: { p_employer_id: string; p_patch: Json; p_skills?: string[] }
+        Returns: string
       }
       admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
       admin_update_job: {
