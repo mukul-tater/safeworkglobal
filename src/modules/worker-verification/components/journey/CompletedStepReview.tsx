@@ -319,15 +319,9 @@ export default function CompletedStepReview({
         )}
 
         {stepId === 'find_jobs' && (
-          <p className="text-sm text-muted-foreground">
-            Job search completed. Favourites stay in Favourite jobs.
-          </p>
-        )}
-
-        {stepId === 'apply_job' && (
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
             <Detail label="Applied job skill" value={row.primary_skill || '—'} />
-            <Detail label="Journey job" value={row.journey_job_id ? 'Linked' : '—'} />
+            <Detail label="Journey job" value={row.journey_job_id ? 'Linked' : 'Not applied yet'} />
           </dl>
         )}
 

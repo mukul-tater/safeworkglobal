@@ -350,11 +350,19 @@ export async function submitQuiz(
 
 export async function completeMediaStep(userId: string): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
+  const { data: profile } = await supabase
+    .from('worker_profiles')
+    .select('kyc_status')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const kyc = String((profile as { kyc_status?: string } | null)?.kyc_status || '');
+  const nextStage =
+    kyc === 'verified' || row.kyc_status === 'verified' ? 'awaiting_interview' : 'identity';
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
       media_submitted_at: new Date().toISOString(),
-      stage: 'identity',
+      stage: nextStage,
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id)
@@ -606,6 +614,12 @@ export async function recordInterviewScore(
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
   const tradeRequired = skillRequiresTradeTest(row.primary_skill);
+  const alreadyPaid = row.payment_status === 'paid' || Boolean(row.paid_at);
+  let nextStage: VerificationStage = 'awaiting_payment';
+  if (alreadyPaid) {
+    if (tradeRequired) nextStage = 'trade_test';
+    else nextStage = row.medical_status === 'passed' ? 'bond' : 'medical';
+  }
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
@@ -614,7 +628,7 @@ export async function recordInterviewScore(
       interview_rated_at: new Date().toISOString(),
       trade_test_required: tradeRequired,
       trade_test_status: tradeRequired ? 'pending' : 'not_required',
-      stage: 'awaiting_payment',
+      stage: nextStage,
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id)
@@ -982,11 +996,12 @@ export async function submitMedicalResult(
 /** Admin — pass trade test and move to medical. */
 export async function approveTradeTest(userId: string): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
+  const nextStage = row.medical_status === 'passed' ? 'bond' : 'medical';
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
       trade_test_status: 'passed',
-      stage: 'medical',
+      stage: nextStage,
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id)

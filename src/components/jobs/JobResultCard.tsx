@@ -54,7 +54,10 @@ interface JobResultCardProps {
   onToggleSave?: (job: JobListItem) => void;
   /** Override default navigation to the public job page. */
   onOpen?: (job: JobListItem) => void;
+  /** Primary button action (e.g. Apply). Falls back to opening the job. */
+  onAction?: (job: JobListItem) => void;
   actionLabel?: string;
+  actionDisabled?: boolean;
 }
 
 export default function JobResultCard({
@@ -63,7 +66,9 @@ export default function JobResultCard({
   savePending = false,
   onToggleSave,
   onOpen,
+  onAction,
   actionLabel = 'View job',
+  actionDisabled = false,
 }: JobResultCardProps) {
   const navigate = useNavigate();
   const [logoFailed, setLogoFailed] = useState(false);
@@ -171,9 +176,11 @@ export default function JobResultCard({
             <Button
               size="sm"
               className="w-full sm:w-auto"
+              disabled={actionDisabled}
               onClick={(e) => {
                 e.stopPropagation();
-                open();
+                if (onAction) onAction(job);
+                else open();
               }}
             >
               {actionLabel}

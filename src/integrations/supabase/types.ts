@@ -5503,6 +5503,10 @@ export type Database = {
         Args: { p_job_id: string; p_user_id?: string }
         Returns: string
       }
+      change_journey_job: {
+        Args: { p_job_id: string; p_user_id?: string }
+        Returns: string
+      }
       assign_employer_requirement_ref: {
         Args: { p_user_id: string }
         Returns: string

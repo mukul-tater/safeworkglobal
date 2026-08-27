@@ -28,6 +28,7 @@ import {
   type AuthIdentifierMethod,
 } from '@/lib/authContinue';
 import { GET_STARTED_PATHS } from '@/lib/getStarted';
+import { workerPathAfterAuth } from '@/modules/worker-verification/lib/pendingJourneyJob';
 
 type Step = 'identifier' | 'login' | 'signup' | 'conflict';
 
@@ -59,7 +60,10 @@ export default function WorkerLoginPage() {
   useEffect(() => {
     if (authLoading || profileLoading) return;
     if (isAuthenticated && role === 'worker') {
-      navigate(isMobileVerified ? '/worker/dashboard' : '/worker/bind-mobile', { replace: true });
+      navigate(
+        isMobileVerified ? workerPathAfterAuth(true) : '/worker/bind-mobile',
+        { replace: true },
+      );
     }
   }, [isAuthenticated, role, isMobileVerified, profileLoading, authLoading, navigate]);
 
@@ -166,13 +170,13 @@ export default function WorkerLoginPage() {
           /* journey row optional for redirect */
         }
         toast.success('Welcome back — continue your verification');
-        navigate('/worker/journey', { replace: true });
+        navigate(workerPathAfterAuth(false), { replace: true });
         setLoading(false);
         return;
       }
     }
     toast.success('Welcome back!');
-    navigate('/worker/dashboard', { replace: true });
+    navigate(workerPathAfterAuth(true), { replace: true });
     setLoading(false);
   };
 

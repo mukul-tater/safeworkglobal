@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import JobSalaryText from '@/components/JobSalaryText';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listJobBenefits } from '@/lib/jobBenefits';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
@@ -24,6 +24,17 @@ import { format } from 'date-fns';
 import { JobDetailSkeleton } from '@/components/ui/page-skeleton';
 import { withRetry } from '@/lib/retry';
 import PostedByBadge from '@/components/jobs/PostedByBadge';
+import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
+import {
+  setPendingJourneyJob,
+} from '@/modules/worker-verification/lib/pendingJourneyJob';
+import {
+  applyToJobForJourney,
+  canChangeJourneyJob,
+  changeJourneyJob,
+} from '@/modules/worker-verification/services/jobJourneyService';
+import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
+import type { WorkerVerification } from '@/modules/worker-verification/types';
 
 interface JobData {
   id: string;
@@ -59,6 +70,8 @@ interface EmployerProfile {
 export default function JobDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const fromJourney = searchParams.get('from') === 'journey';
   const { user, isAuthenticated, role } = useAuth();
   const isLoggedIn = isAuthenticated;
   const { canApplyToJobs, onboardingPath, isWorker } = useWorkerJobAccess();
@@ -73,6 +86,8 @@ export default function JobDetail() {
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [journeyRow, setJourneyRow] = useState<WorkerVerification | null>(null);
+  const [changeOpen, setChangeOpen] = useState(false);
   useEffect(() => {
     let cancelled = false;
     // Safety net: never let the page sit in "loading" forever.
@@ -141,6 +156,13 @@ export default function JobDetail() {
               .maybeSingle();
 
             setIsSaved(!!savedJob);
+
+            try {
+              const verification = await getOrCreateVerification(user.id);
+              if (!cancelled) setJourneyRow(verification);
+            } catch {
+              if (!cancelled) setJourneyRow(null);
+            }
         }
       } catch (error) {
         console.error('Error loading job:', error);
@@ -159,8 +181,10 @@ export default function JobDetail() {
   }, [slug, user?.id]);
 
   const handleApplyClick = () => {
+    if (!job) return;
     if (!isLoggedIn) {
-      navigate('/worker/login', { state: { returnTo: `/jobs/${slug}` } });
+      setPendingJourneyJob({ jobId: job.id, slug: job.slug || slug || job.id, title: job.title });
+      navigate('/worker/login');
       return;
     }
     if (role && role !== 'worker') {
@@ -172,46 +196,66 @@ export default function JobDetail() {
       return;
     }
     if (isWorker && !canApplyToJobs) {
+      setPendingJourneyJob({ jobId: job.id, slug: job.slug || slug || job.id, title: job.title });
       toast({
         title: 'Finish Essentials first',
-        description: 'Complete Essentials in your GCC journey, then apply so Test 1 matches the job.',
-        variant: 'destructive',
+        description: 'Complete Essentials in your GCC journey, then we will take you back to this job.',
       });
       navigate(onboardingPath);
       return;
     }
-    void handleApply();
+    const lockedId = journeyRow?.journey_job_id;
+    if (lockedId && lockedId !== job.id) {
+      if (journeyRow && !canChangeJourneyJob(journeyRow)) {
+        toast({
+          title: 'Job is locked',
+          description: 'This job cannot be changed after GCC ready.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setChangeOpen(true);
+      return;
+    }
+    void handleApply(false);
   };
 
-  const handleApply = async () => {
+  const handleApply = async (change: boolean) => {
     if (!job || applying) return;
     setApplying(true);
 
     try {
       if (!user) return;
 
-      const { applyToJobForJourney } = await import(
-        '@/modules/worker-verification/services/jobJourneyService'
-      );
-      const { applicationId } = await applyToJobForJourney({
+      const fn = change ? changeJourneyJob : applyToJobForJourney;
+      const { applicationId } = await fn({
         jobId: job.id,
         workerUserId: user.id,
         title: job.title,
         description: job.description || '',
+        skills: job.job_skills?.map((s) => s.skill_name) || [],
         fallbackSkill: null,
       });
 
       setHasApplied(true);
-      toast({ title: 'Application Submitted!', description: 'Your application has been sent to the employer' });
+      toast({
+        title: change ? 'Job changed' : 'Application submitted',
+        description: 'Continue your GCC journey — Test 1 matches this job.',
+      });
       if (applicationId) {
-        navigate(`/worker/application-success/${applicationId}`);
+        navigate('/worker/journey');
       }
     } catch (error: unknown) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to submit application',
-        variant: 'destructive',
-      });
+      const message = error instanceof Error ? error.message : 'Failed to submit application';
+      if (message === 'CHANGE_JOB_REQUIRED') {
+        setChangeOpen(true);
+      } else {
+        toast({
+          title: 'Error',
+          description: message,
+          variant: 'destructive',
+        });
+      }
     } finally {
       setApplying(false);
     }
@@ -321,6 +365,21 @@ export default function JobDetail() {
   }
 
   const companyName = employer?.company_name || 'SafeWork Global';
+  const lockedJobId = journeyRow?.journey_job_id || null;
+  const isCurrentJourneyJob = Boolean(lockedJobId && lockedJobId === job.id);
+  const applyLabel = applying
+    ? 'Applying...'
+    : isCurrentJourneyJob
+      ? 'Current job'
+      : !isLoggedIn
+        ? 'Apply'
+        : isWorker && !canApplyToJobs
+          ? 'Finish Essentials to apply'
+          : lockedJobId && lockedJobId !== job.id
+            ? 'Switch to this job'
+            : hasApplied
+              ? 'Already applied'
+              : 'Apply';
 
   // Structured data for job posting
   const jobStructuredData = {
@@ -362,10 +421,10 @@ export default function JobDetail() {
 
   return layout(
     <>
-      <Link to="/jobs">
+      <Link to={fromJourney ? '/worker/journey' : '/jobs'}>
         <Button variant="ghost" className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Jobs
+          {fromJourney ? 'Back to journey' : 'Back to Jobs'}
         </Button>
       </Link>
 
@@ -533,26 +592,12 @@ export default function JobDetail() {
                       <Button 
                         size="lg" 
                         onClick={handleApplyClick}
-                        disabled={hasApplied || applying || job.status !== 'ACTIVE'}
+                        disabled={applying || job.status !== 'ACTIVE' || isCurrentJourneyJob}
                         className="hidden w-full lg:inline-flex"
                       >
-                        {applying ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Applying...
-                          </>
-                        ) : hasApplied ? (
-                          <>
-                            <CheckCircle2 className="mr-2 h-5 w-5" />
-                            Already Applied
-                          </>
-                        ) : !isLoggedIn ? (
-                          'Sign Up to Apply'
-                        ) : isWorker && !canApplyToJobs ? (
-                          'Finish Essentials to apply'
-                        ) : (
-                          'Apply Now'
-                        )}
+                        {applying ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                        {isCurrentJourneyJob ? <CheckCircle2 className="mr-2 h-5 w-5" /> : null}
+                        {applyLabel}
                       </Button>
                       {isLoggedIn && isWorker && !canApplyToJobs && !hasApplied && (
                         <p className="text-xs text-muted-foreground text-center">
@@ -671,26 +716,12 @@ export default function JobDetail() {
               <Button
                 size="lg"
                 onClick={handleApplyClick}
-                disabled={hasApplied || applying || job.status !== 'ACTIVE'}
+                disabled={applying || job.status !== 'ACTIVE' || isCurrentJourneyJob}
                 className="w-full"
               >
-                {applying ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Applying...
-                  </>
-                ) : hasApplied ? (
-                  <>
-                    <CheckCircle2 className="mr-2 h-5 w-5" />
-                    Already Applied
-                  </>
-                ) : !isLoggedIn ? (
-                  'Sign Up to Apply'
-                ) : isWorker && !canApplyToJobs ? (
-                  'Finish Essentials to apply'
-                ) : (
-                  'Apply Now'
-                )}
+                {applying ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                {isCurrentJourneyJob ? <CheckCircle2 className="mr-2 h-5 w-5" /> : null}
+                {applyLabel}
               </Button>
             </div>
           )}
@@ -706,6 +737,13 @@ export default function JobDetail() {
               </Button>
             </div>
           )}
+          <ChangeJobDialog
+            open={changeOpen}
+            currentJobTitle={null}
+            nextJobTitle={job.title}
+            onOpenChange={setChangeOpen}
+            onConfirm={() => void handleApply(true)}
+          />
     </>,
     <SEOHead
       title={`${job.title} at ${companyName} | SafeWork Global`}

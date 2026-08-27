@@ -22,6 +22,8 @@ import JobSearchFilters, {
 import SavedSearchDialog from '@/components/search/SavedSearchDialog';
 import JobSearchHero from '@/components/jobs/JobSearchHero';
 import JobResultCard, { type JobListItem } from '@/components/jobs/JobResultCard';
+import JobCountryGrid from '@/components/jobs/JobCountryGrid';
+import JobCategoryScroller, { ALL_JOBS_CATEGORY } from '@/components/jobs/JobCategoryScroller';
 import JobsEmptyState, { type JobFacet } from '@/components/jobs/JobsEmptyState';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -154,8 +156,14 @@ export default function Jobs() {
   // Seed filters from homepage search links.
   useEffect(() => {
     const keyword = searchParams.get('keyword') || '';
-    const country = searchParams.get('location') || ANY_COUNTRY;
+    const location = searchParams.get('location') || '';
     const category = searchParams.get('category') || ANY_CATEGORY;
+    const country =
+      location && location !== ANY_COUNTRY
+        ? location
+        : keyword || (category !== ANY_CATEGORY)
+          ? 'UAE'
+          : ANY_COUNTRY;
 
     setKeywordInput(keyword);
     setFilters((prev) => ({ ...prev, keyword, country, jobCategory: category }));
@@ -258,7 +266,23 @@ export default function Jobs() {
     };
   }, [user]);
 
+  const countrySelected = filters.country !== ANY_COUNTRY;
+
   const jobs = useMemo(() => sortJobs(filterJobs(allJobs, filters), sortOption), [allJobs, filters, sortOption]);
+
+  const categoryChips = useMemo(() => {
+    const pool = countrySelected
+      ? allJobs.filter((job) => job.country.toLowerCase() === filters.country.toLowerCase())
+      : allJobs;
+    const set = new Set<string>();
+    pool.forEach((job) => {
+      if (job.category && job.category !== 'Other') set.add(job.category);
+    });
+    return [...set].sort();
+  }, [allJobs, countrySelected, filters.country]);
+
+  const selectedCategoryChip =
+    filters.jobCategory === ANY_CATEGORY ? ALL_JOBS_CATEGORY : filters.jobCategory;
 
   useEffect(() => {
     setCurrentPage(1);
@@ -432,8 +456,20 @@ export default function Jobs() {
         quickCategories={QUICK_CATEGORIES}
         onKeywordChange={setKeywordInput}
         onCountryChange={(country) => setFilters((f) => ({ ...f, country }))}
-        onSelectCategory={(category) => setFilters((f) => ({ ...f, jobCategory: category }))}
-        onSearch={() => setFilters((f) => ({ ...f, keyword: keywordInput }))}
+        onSelectCategory={(category) =>
+          setFilters((f) => ({
+            ...f,
+            jobCategory: category,
+            country: f.country === ANY_COUNTRY ? 'UAE' : f.country,
+          }))
+        }
+        onSearch={() =>
+          setFilters((f) => ({
+            ...f,
+            keyword: keywordInput,
+            country: f.country === ANY_COUNTRY && keywordInput.trim() ? 'UAE' : f.country,
+          }))
+        }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[288px_1fr] xl:grid-cols-[312px_1fr]">
@@ -451,6 +487,30 @@ export default function Jobs() {
         </aside>
 
         <div className="min-w-0">
+          {!countrySelected ? (
+            <div className="space-y-4">
+              <div className="flex lg:hidden">
+                <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      Filters
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-full overflow-y-auto p-0 sm:max-w-sm">
+                    <SheetHeader className="border-b border-border/60 px-5 py-4">
+                      <SheetTitle className="text-base">Filters</SheetTitle>
+                    </SheetHeader>
+                    <JobSearchFilters filters={filters} onFiltersChange={setFilters} className="rounded-none border-0" />
+                  </SheetContent>
+                </Sheet>
+              </div>
+              <JobCountryGrid
+                onSelect={(country) => setFilters((f) => ({ ...f, country, jobCategory: ANY_CATEGORY }))}
+              />
+            </div>
+          ) : (
+            <>
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <p className="text-sm font-medium">
               {loading ? 'Searching…' : `${jobs.length} ${jobs.length === 1 ? 'job' : 'jobs'} found`}
@@ -518,6 +578,19 @@ export default function Jobs() {
             </div>
           )}
 
+          <div className="mb-4">
+            <JobCategoryScroller
+              categories={categoryChips}
+              selected={selectedCategoryChip}
+              onSelect={(next) =>
+                setFilters((f) => ({
+                  ...f,
+                  jobCategory: next === ALL_JOBS_CATEGORY ? ANY_CATEGORY : next,
+                }))
+              }
+            />
+          </div>
+
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, index) => (
@@ -583,6 +656,8 @@ export default function Jobs() {
                   </Button>
                 </div>
               )}
+            </>
+          )}
             </>
           )}
         </div>

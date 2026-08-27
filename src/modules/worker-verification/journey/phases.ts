@@ -21,7 +21,7 @@ export interface JourneyPhase {
 }
 
 export const JOURNEY_PHASES: JourneyPhase[] = [
-  { id: 'profile', label: 'Profile', steps: ['pre_declaration', 'essentials', 'find_jobs', 'apply_job', 'test1', 'skill_proof'] },
+  { id: 'profile', label: 'Profile', steps: ['pre_declaration', 'essentials', 'find_jobs', 'test1', 'skill_proof'] },
   { id: 'verify', label: 'Verify', steps: ['identity', 'test2'] },
   { id: 'assess', label: 'Assess', steps: ['payment', 'test3', 'medical'] },
   { id: 'deploy', label: 'Deploy', steps: ['bond', 'pdot', 'gcc_ready', 'deployment'] },

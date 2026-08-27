@@ -1,19 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bookmark, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import JobResultCard, { type JobListItem } from '@/components/jobs/JobResultCard';
+import JobCountryGrid from '@/components/jobs/JobCountryGrid';
+import JobCategoryScroller, { ALL_JOBS_CATEGORY } from '@/components/jobs/JobCategoryScroller';
 import { supabase } from '@/integrations/supabase/client';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
+import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
+import {
+  clearPendingJourneyJob,
+  getPendingJourneyJob,
+} from '@/modules/worker-verification/lib/pendingJourneyJob';
 import {
   applyToJobForJourney,
-  completeFindJobsStep,
+  changeJourneyJob,
   listAppliedJobIds,
   listFavouriteJobIds,
-  skipJobStepsToQuiz,
   toggleFavouriteJob,
 } from '@/modules/worker-verification/services/jobJourneyService';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
@@ -100,30 +107,37 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
   });
 }
 
-type Mode = 'find' | 'apply';
-
 interface Props {
   workerUserId: string;
-  mode: Mode;
   primarySkill?: string | null;
+  journeyJobId?: string | null;
+  canChangeJob?: boolean;
   onAdvanced: (next: WorkerVerification) => void;
 }
 
 export default function JourneyJobPicker({
   workerUserId,
-  mode,
   primarySkill,
+  journeyJobId,
+  canChangeJob = true,
   onAdvanced,
 }: Props) {
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<JobListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
+  const [country, setCountry] = useState<string | null>(null);
+  const [category, setCategory] = useState(ALL_JOBS_CATEGORY);
   const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [pendingSaveId, setPendingSaveId] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
-  const [continuing, setContinuing] = useState(false);
+  const [currentTitle, setCurrentTitle] = useState<string | null>(null);
+  const [pickingReplacement, setPickingReplacement] = useState(false);
+  const [changeOpen, setChangeOpen] = useState(false);
+  const [pendingTarget, setPendingTarget] = useState<JobListItem | null>(null);
+  const autoApplyDone = useRef(false);
 
   const reloadMeta = useCallback(async () => {
     const [saved, applied] = await Promise.all([
@@ -156,10 +170,50 @@ export default function JourneyJobPicker({
     };
   }, [reloadMeta]);
 
+  useEffect(() => {
+    if (!journeyJobId) {
+      setCurrentTitle(null);
+      return;
+    }
+    const listed = jobs.find((job) => job.id === journeyJobId);
+    if (listed) {
+      setCurrentTitle(listed.title);
+      return;
+    }
+    let cancelled = false;
+    void supabase
+      .from('jobs')
+      .select('title')
+      .eq('id', journeyJobId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setCurrentTitle((data as { title?: string } | null)?.title ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [journeyJobId, jobs]);
+
+  const locked = Boolean(journeyJobId) && !pickingReplacement;
+
+  const countryJobs = useMemo(
+    () => (country ? jobs.filter((job) => job.country.toLowerCase() === country.toLowerCase()) : jobs),
+    [jobs, country],
+  );
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    countryJobs.forEach((job) => {
+      if (job.category && job.category !== 'Other') set.add(job.category);
+    });
+    return [...set].sort();
+  }, [countryJobs]);
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = jobs.filter((job) => {
+    return countryJobs.filter((job) => {
       if (favouritesOnly && !savedIds.has(job.id)) return false;
+      if (category !== ALL_JOBS_CATEGORY && job.category !== category) return false;
       if (!q) return true;
       return (
         job.title.toLowerCase().includes(q) ||
@@ -168,15 +222,42 @@ export default function JourneyJobPicker({
         job.skills.some((s) => s.toLowerCase().includes(q))
       );
     });
-    if (mode === 'apply' && !favouritesOnly) {
-      return [...filtered].sort((a, b) => Number(savedIds.has(b.id)) - Number(savedIds.has(a.id)));
-    }
-    return filtered;
-  }, [jobs, query, favouritesOnly, savedIds, mode]);
+  }, [countryJobs, query, favouritesOnly, savedIds, category]);
 
-  const alreadyApplied = appliedIds.size > 0;
-  const canSkipEmptyApply = mode === 'apply' && jobs.length === 0;
-  const canContinueAfterApply = mode === 'apply' && alreadyApplied;
+  const applyJob = async (job: JobListItem, change: boolean) => {
+    setApplyingId(job.id);
+    try {
+      const fn = change ? changeJourneyJob : applyToJobForJourney;
+      const { verification } = await fn({
+        jobId: job.id,
+        workerUserId,
+        title: job.title,
+        description: job.description,
+        skills: job.skills,
+        fallbackSkill: primarySkill,
+      });
+      setAppliedIds((prev) => new Set(prev).add(job.id));
+      clearPendingJourneyJob();
+      setPickingReplacement(false);
+      const skill = inferWorkerSkillFromJob(job.title, job.description, job.skills);
+      toast.success(
+        skill !== 'Other'
+          ? `Applied. Test 1 will check ${skill} work.`
+          : 'Application submitted. Continue to Test 1.',
+      );
+      if (verification) onAdvanced(verification);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Could not apply';
+      if (message === 'CHANGE_JOB_REQUIRED') {
+        setPendingTarget(job);
+        setChangeOpen(true);
+      } else {
+        toast.error(message);
+      }
+    } finally {
+      setApplyingId(null);
+    }
+  };
 
   const onToggleSave = async (job: JobListItem) => {
     setPendingSaveId(job.id);
@@ -196,58 +277,46 @@ export default function JourneyJobPicker({
     }
   };
 
-  const onApply = async (job: JobListItem) => {
-    setApplyingId(job.id);
-    try {
-      const { verification } = await applyToJobForJourney({
-        jobId: job.id,
-        workerUserId,
-        title: job.title,
-        description: job.description,
-        skills: job.skills,
-        fallbackSkill: primarySkill,
-      });
-      setAppliedIds((prev) => new Set(prev).add(job.id));
-      const skill = inferWorkerSkillFromJob(job.title, job.description, job.skills);
-      toast.success(
-        skill !== 'Other'
-          ? `Applied. Test 1 will check ${skill} work.`
-          : 'Application submitted. Continue to Test 1.',
-      );
-      if (verification) onAdvanced(verification);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not apply');
-    } finally {
-      setApplyingId(null);
+  const requestApply = (job: JobListItem) => {
+    if (journeyJobId && job.id === journeyJobId) {
+      toast.info('This is already your current job.');
+      return;
     }
+    if (journeyJobId && job.id !== journeyJobId && !pickingReplacement) {
+      setPendingTarget(job);
+      setChangeOpen(true);
+      return;
+    }
+    void applyJob(job, Boolean(journeyJobId && job.id !== journeyJobId));
   };
 
-  const onContinueFind = async () => {
-    setContinuing(true);
-    try {
-      const next =
-        jobs.length === 0
-          ? await skipJobStepsToQuiz(workerUserId)
-          : await completeFindJobsStep(workerUserId);
-      onAdvanced(next);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not continue');
-    } finally {
-      setContinuing(false);
+  useEffect(() => {
+    if (loading || journeyJobId || autoApplyDone.current) return;
+    const pending = getPendingJourneyJob();
+    if (!pending) return;
+    autoApplyDone.current = true;
+    const match = jobs.find((job) => job.id === pending.jobId || job.slug === pending.slug);
+    if (match) {
+      void applyJob(match, false);
+      return;
     }
-  };
-
-  const onContinueToTest1 = async () => {
-    setContinuing(true);
-    try {
-      const next = await skipJobStepsToQuiz(workerUserId);
-      onAdvanced(next);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not continue');
-    } finally {
-      setContinuing(false);
-    }
-  };
+    void (async () => {
+      try {
+        const { verification } = await applyToJobForJourney({
+          jobId: pending.jobId,
+          workerUserId,
+          title: pending.title,
+          fallbackSkill: primarySkill,
+        });
+        clearPendingJourneyJob();
+        toast.success('Application submitted. Continue to Test 1.');
+        if (verification) onAdvanced(verification);
+      } catch (err) {
+        autoApplyDone.current = false;
+        toast.error(err instanceof Error ? err.message : 'Could not apply to the job you selected');
+      }
+    })();
+  }, [loading, journeyJobId, jobs, workerUserId, primarySkill, onAdvanced]);
 
   if (loading) {
     return (
@@ -260,9 +329,7 @@ export default function JourneyJobPicker({
 
   const emptyMessage = (() => {
     if (jobs.length === 0) {
-      return mode === 'apply'
-        ? 'No live job postings yet. Continue to Test 1 — it will use your primary skill from Essentials.'
-        : 'No live job postings yet. You can continue; Test 1 will use your primary skill from Essentials.';
+      return 'No live job postings yet. New UAE openings will appear here.';
     }
     if (favouritesOnly) {
       return 'No favourite jobs yet. Turn off Favourites to see all live jobs, or tap the bookmark on a job to save it.';
@@ -275,6 +342,33 @@ export default function JourneyJobPicker({
 
   return (
     <div className="space-y-4">
+      {journeyJobId && (
+        <div className="flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium">Current job</p>
+            <p className="text-sm text-muted-foreground">{currentTitle || 'Applied job is linked to your journey.'}</p>
+          </div>
+          {canChangeJob && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPendingTarget(null);
+                setChangeOpen(true);
+              }}
+            >
+              Change job
+            </Button>
+          )}
+        </div>
+      )}
+
+      {pickingReplacement && (
+        <p className="text-sm text-muted-foreground">
+          Pick a new job and tap Apply. Test 1, skill proof, interview, and trade test will restart for that job.
+        </p>
+      )}
+
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -296,81 +390,80 @@ export default function JourneyJobPicker({
         </Button>
       </div>
 
-      {jobs.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {favouritesOnly
-            ? `${visible.length} favourite ${visible.length === 1 ? 'job' : 'jobs'}`
-            : `${visible.length} live ${visible.length === 1 ? 'job' : 'jobs'}`}
-          {query.trim() ? ' matching your search' : ''}
-        </p>
-      )}
-
-      {visible.length === 0 ? (
-        <div className="space-y-3 rounded-xl border border-dashed border-border px-4 py-10 text-center">
-          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-          {favouritesOnly && jobs.length > 0 && (
-            <Button type="button" variant="outline" onClick={() => setFavouritesOnly(false)}>
-              Show all jobs
-            </Button>
-          )}
-        </div>
+      {!country ? (
+        <JobCountryGrid
+          onSelect={(next) => {
+            setCountry(next);
+            setCategory(ALL_JOBS_CATEGORY);
+          }}
+        />
       ) : (
-        <div className="space-y-3">
-          {visible.map((job) => {
-            const applied = appliedIds.has(job.id);
-            return (
-              <div key={job.id} className="relative">
-                <JobResultCard
-                  job={job}
-                  saved={savedIds.has(job.id)}
-                  savePending={pendingSaveId === job.id}
-                  onToggleSave={onToggleSave}
-                  onOpen={mode === 'apply' ? onApply : undefined}
-                  actionLabel={
-                    mode === 'apply'
-                      ? applyingId === job.id
-                        ? 'Applying…'
-                        : applied
-                          ? 'Applied'
-                          : 'Apply'
-                      : 'View job'
-                  }
-                />
-                {mode === 'apply' && (
-                  <div className="mt-2 flex justify-end">
-                    <Button
-                      size="sm"
-                      disabled={applied || applyingId === job.id}
-                      onClick={() => void onApply(job)}
-                    >
-                      {applyingId === job.id && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
-                      {applied ? 'Applied' : 'Apply to this job'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        <>
+          <button
+            type="button"
+            className="text-sm text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setCountry(null);
+              setCategory(ALL_JOBS_CATEGORY);
+            }}
+          >
+            ← All countries
+          </button>
+          <JobCategoryScroller categories={categories} selected={category} onSelect={setCategory} />
+
+          {visible.length === 0 ? (
+            <div className="space-y-3 rounded-xl border border-dashed border-border px-4 py-10 text-center">
+              <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+              {favouritesOnly && jobs.length > 0 && (
+                <Button type="button" variant="outline" onClick={() => setFavouritesOnly(false)}>
+                  Show all jobs
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visible.map((job) => {
+                const isCurrent = job.id === journeyJobId;
+                const applying = applyingId === job.id;
+                return (
+                  <JobResultCard
+                    key={job.id}
+                    job={job}
+                    saved={savedIds.has(job.id)}
+                    savePending={pendingSaveId === job.id}
+                    onToggleSave={onToggleSave}
+                    onOpen={() => navigate(`/jobs/${job.slug}?from=journey`)}
+                    onAction={() => requestApply(job)}
+                    actionLabel={
+                      applying ? 'Applying…' : isCurrent ? 'Current job' : appliedIds.has(job.id) ? 'Switch to this job' : 'Apply'
+                    }
+                    actionDisabled={applying || isCurrent}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
-      {mode === 'find' && (
-        <div className="flex justify-end pt-2">
-          <Button onClick={() => void onContinueFind()} disabled={continuing}>
-            {continuing && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            {jobs.length === 0 ? 'Continue to Test 1' : 'Continue to apply'}
-          </Button>
-        </div>
-      )}
-
-      {(canSkipEmptyApply || canContinueAfterApply) && (
-        <div className="flex justify-end pt-2">
-          <Button onClick={() => void onContinueToTest1()} disabled={continuing}>
-            {continuing && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            Continue to Test 1
-          </Button>
-        </div>
-      )}
+      <ChangeJobDialog
+        open={changeOpen}
+        currentJobTitle={currentTitle}
+        nextJobTitle={pendingTarget?.title}
+        onOpenChange={setChangeOpen}
+        onConfirm={() => {
+          if (!canChangeJob) {
+            toast.error('This job cannot be changed after GCC ready');
+            return;
+          }
+          if (pendingTarget) {
+            void applyJob(pendingTarget, true);
+            setPendingTarget(null);
+            return;
+          }
+          setPickingReplacement(true);
+        }}
+      />
     </div>
   );
 }

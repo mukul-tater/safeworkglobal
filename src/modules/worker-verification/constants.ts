@@ -251,14 +251,7 @@ const GCC_JOURNEY_NAV_STEPS_CORE: GccNavStepMeta[] = [
     label: 'Find jobs',
     shortLabel: 'Find jobs',
     navLabel: 'Find jobs',
-    stages: ['find_jobs'],
-  },
-  {
-    id: 'apply_job',
-    label: 'Apply to job',
-    shortLabel: 'Apply',
-    navLabel: 'Apply to job',
-    stages: ['apply_job'],
+    stages: ['find_jobs', 'apply_job'],
   },
   {
     id: 'test1',

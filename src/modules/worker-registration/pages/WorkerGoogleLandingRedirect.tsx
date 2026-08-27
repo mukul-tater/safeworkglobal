@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
+import { workerPathAfterAuth } from '@/modules/worker-verification/lib/pendingJourneyJob';
 
 /** Legacy /worker/trust — send workers into GCC journey or dashboard. */
 export default function WorkerGoogleLandingRedirect() {
@@ -22,7 +23,7 @@ export default function WorkerGoogleLandingRedirect() {
           if (user?.id) {
             const v = await getOrCreateVerification(user.id);
             if (v.stage !== 'gcc_ready') {
-              navigate('/worker/journey', { replace: true });
+              navigate(workerPathAfterAuth(false), { replace: true });
               return;
             }
           }
@@ -30,7 +31,7 @@ export default function WorkerGoogleLandingRedirect() {
           navigate('/worker/journey', { replace: true });
           return;
         }
-        navigate('/worker/dashboard', { replace: true });
+        navigate(workerPathAfterAuth(true), { replace: true });
         return;
       }
 

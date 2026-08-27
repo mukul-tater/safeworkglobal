@@ -23,7 +23,7 @@ export default function GetStartedChoices({ onChosen }: Props) {
       </p>
       <button
         type="button"
-        onClick={() => go(GET_STARTED_PATHS.worker)}
+        onClick={() => go('/jobs')}
         className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors"
       >
         <div className="p-2 rounded-lg bg-success/10 text-success">

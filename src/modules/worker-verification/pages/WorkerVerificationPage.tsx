@@ -16,7 +16,7 @@ import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
   Calendar, CreditCard, Stethoscope, ShieldCheck, Wrench,
   GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList, Info,
-  MapPin, Phone, ExternalLink, Search, Briefcase,
+  MapPin, Phone, ExternalLink, Search,
 } from 'lucide-react';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import IndiaLocationFields from '@/components/IndiaLocationFields';
@@ -85,6 +85,7 @@ import EmitraWorkerOnboardingNoticeDialog from '@/modules/emitra/components/Emit
 import { hasAckedEmitraOnboardingNotice } from '@/modules/emitra/lib/emitraWorkerOnboarding';
 import WorkerDeclarationsSummary from '@/modules/worker-verification/components/journey/WorkerDeclarationsSummary';
 import JourneyJobPicker from '@/modules/worker-verification/components/journey/JourneyJobPicker';
+import { canChangeJourneyJob } from '@/modules/worker-verification/services/jobJourneyService';
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
 import PassportRequirementInfo, { PanUploadLaterInfo } from '@/components/worker/PassportRequirementInfo';
@@ -673,7 +674,8 @@ export default function WorkerVerificationPage({
     : navStepForStage(stage);
   const heroSubheading = HERO_SUBHEADINGS[phaseForStage(stage)];
 
-  const journeyParam = searchParams.get('journey') as GccNavStepId | null;
+  const journeyParamRaw = searchParams.get('journey');
+  const journeyParam = (journeyParamRaw === 'apply_job' ? 'find_jobs' : journeyParamRaw) as GccNavStepId | null;
   const validJourneyIds = navSteps.map((s) => s.id);
   const viewingJourney =
     journeyParam && validJourneyIds.includes(journeyParam) ? journeyParam : null;
@@ -1378,48 +1380,23 @@ export default function WorkerVerificationPage({
           </StageActionShell>
         )}
 
-        {!viewingCompletedStep && stage === 'find_jobs' && (
+        {!viewingCompletedStep && (stage === 'find_jobs' || stage === 'apply_job') && (
           <StageActionShell
             icon={Search}
             title="Find jobs"
-            description="Browse overseas openings, favourite the ones that fit, then continue to apply. Test 1 will match the job you apply to."
-            timeEstimate="Browse jobs — you can continue even if none are live yet"
+            description="Browse UAE openings and apply to one job. Test 1 will match the job you apply to."
+            timeEstimate="One job at a time. Use Change job if you need a different opening."
           >
             <JourneyJobPicker
               workerUserId={subjectId}
-              mode="find"
               primarySkill={row.primary_skill}
+              journeyJobId={row.journey_job_id}
+              canChangeJob={canChangeJourneyJob(row)}
               onAdvanced={async (next) => {
                 setRow(next);
                 notifyVerificationUpdated();
                 clearJourneyQuery();
                 if (next.stage === 'quiz' && next.primary_skill) {
-                  const items = await loadQuizItems(next.primary_skill, next.state);
-                  setQuizItems(items);
-                  setQuizIndex(0);
-                  setQuizAnswers({});
-                }
-              }}
-            />
-          </StageActionShell>
-        )}
-
-        {!viewingCompletedStep && stage === 'apply_job' && (
-          <StageActionShell
-            icon={Briefcase}
-            title="Apply to a job"
-            description="Apply to one live job to unlock Test 1. The work quiz uses that job’s trade. If no jobs are listed yet, you can continue with your primary skill."
-            timeEstimate="One application when jobs are live"
-          >
-            <JourneyJobPicker
-              workerUserId={subjectId}
-              mode="apply"
-              primarySkill={row.primary_skill}
-              onAdvanced={async (next) => {
-                setRow(next);
-                notifyVerificationUpdated();
-                clearJourneyQuery();
-                if (next.primary_skill) {
                   const items = await loadQuizItems(next.primary_skill, next.state);
                   setQuizItems(items);
                   setQuizIndex(0);

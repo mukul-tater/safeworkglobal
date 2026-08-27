@@ -132,7 +132,7 @@ export default function FeaturedJobs() {
     const shareData = {
       title: job.title,
       text: `Check out this job: ${job.title} at ${job.employer_profiles?.company_name || 'Company'}`,
-      url: `${globalThis.location.origin}/jobs/${job.id}`,
+      url: `${globalThis.location.origin}/jobs/${job.slug || job.id}`,
     };
 
     if (navigator.share) {

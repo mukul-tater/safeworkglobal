@@ -15,10 +15,6 @@ const HeroSection = () => {
   const authResolving = loading || (isAuthenticated && profileLoading);
 
   const handleFindJobs = () => {
-    if (!isAuthenticated) {
-      navigate("/worker/login");
-      return;
-    }
     if (role === "admin") {
       navigate("/admin/jobs");
       return;
