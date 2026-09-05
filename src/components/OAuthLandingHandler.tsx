@@ -1,12 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   consumePendingOAuthRedirect,
   peekPendingOAuthRole,
   resolvePostOAuthPath,
   clearPendingOAuthRole,
+  clearPendingOAuthRedirect,
 } from '@/lib/oauthRedirect';
+import {
+  clearOAuthErrorFromUrl,
+  describeOAuthError,
+  logOAuthError,
+  readOAuthErrorFromUrl,
+} from '@/lib/oauthError';
 
 /**
  * Google OAuth always returns to the bare app origin (the broker only allows the
@@ -19,6 +27,21 @@ export default function OAuthLandingHandler() {
   const navigate = useNavigate();
   const location = useLocation();
   const handled = useRef(false);
+  const errorShown = useRef(false);
+
+  // Provider error handed back on the callback URL — surface it verbatim
+  // instead of leaving the user on a silent, signed-out page.
+  useEffect(() => {
+    if (errorShown.current) return;
+    const details = readOAuthErrorFromUrl();
+    if (!details) return;
+    errorShown.current = true;
+    logOAuthError(details);
+    clearPendingOAuthRedirect();
+    clearPendingOAuthRole();
+    clearOAuthErrorFromUrl();
+    toast.error(describeOAuthError(details));
+  }, [location.search, location.hash]);
 
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -28,6 +51,7 @@ export default function OAuthLandingHandler() {
       navigate(`/reset-password${location.search}${location.hash}`, { replace: true });
     }
   }, [location.hash, location.pathname, location.search, navigate]);
+
 
   useEffect(() => {
     if (location.pathname === '/reset-password') return;
