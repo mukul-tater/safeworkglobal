@@ -5,12 +5,20 @@ import {
   clearPendingOAuthRole,
   setPendingOAuthRedirect,
 } from '@/lib/oauthRedirect';
+import { redirectToCanonicalAuthHost } from '@/lib/authDomain';
+import {
+  describeOAuthError,
+  logOAuthError,
+  toOAuthErrorDetails,
+  type OAuthErrorDetails,
+} from '@/lib/oauthError';
 
 type OAuthProvider = 'google' | 'apple' | 'microsoft';
 
 export interface GoogleAuthResult {
   error: Error | null;
   redirected?: boolean;
+  details?: OAuthErrorDetails;
 }
 
 /**
@@ -28,8 +36,17 @@ function shouldUseLovableOAuthBroker(): boolean {
   return true;
 }
 
+function fail(details: OAuthErrorDetails): GoogleAuthResult {
+  logOAuthError(details);
+  clearPendingOAuthRedirect();
+  clearPendingOAuthRole();
+  return { error: new Error(describeOAuthError(details)), details };
+}
+
 /** Full-page Google redirect through Supabase — works in every browser. */
-async function signInViaSupabaseRedirect(): Promise<GoogleAuthResult> {
+async function signInViaSupabaseRedirect(
+  previous?: OAuthErrorDetails,
+): Promise<GoogleAuthResult> {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -39,9 +56,8 @@ async function signInViaSupabaseRedirect(): Promise<GoogleAuthResult> {
   });
 
   if (error) {
-    clearPendingOAuthRedirect();
-    clearPendingOAuthRole();
-    return { error: new Error(error.message) };
+    if (previous) logOAuthError(previous);
+    return fail(toOAuthErrorDetails(error, { provider: 'google', flow: 'supabase-redirect' }));
   }
   return { error: null, redirected: true };
 }
@@ -53,6 +69,9 @@ async function signInViaSupabaseRedirect(): Promise<GoogleAuthResult> {
  * sending a path (e.g. `https://safeworkglobal.com/auth`) fails with
  * "redirect_uri is not allowed". So we always hand the broker the bare origin and
  * remember the intended path separately (see `@/lib/oauthRedirect`).
+ *
+ * Sign-in is only ever started from the canonical host (apex domain); `www`
+ * visitors are moved there first.
  */
 export async function signInWithGoogle(
   provider: OAuthProvider = 'google',
@@ -68,12 +87,19 @@ export async function signInWithGoogle(
   const intended = opts?.next ?? opts?.redirect_uri ?? '/dashboard';
   setPendingOAuthRedirect(intended);
 
+  // www → apex before OAuth so the redirect URI always matches the one
+  // registered with Google / Supabase.
+  if (redirectToCanonicalAuthHost()) {
+    return { error: null, redirected: true };
+  }
+
   if (shouldUseLovableOAuthBroker()) {
     // The broker opens a popup when the app runs inside an iframe (Lovable
     // preview) and some browsers / in-app webviews block or immediately close
-    // it — that is why Google sign-in "works on some devices only". Whenever
-    // the popup path fails to produce a session, fall back to the universal
-    // full-page Supabase redirect instead of surfacing a dead end.
+    // it. We still fall back to the universal full-page Supabase redirect, but
+    // the broker's real error is always logged and, if the fallback also fails,
+    // surfaced to the user verbatim.
+    let brokerError: OAuthErrorDetails | undefined;
     try {
       const result = await lovable.auth.signInWithOAuth('google', {
         redirect_uri: origin,
@@ -84,16 +110,40 @@ export async function signInWithGoogle(
       }
 
       if (result.error) {
-        return signInViaSupabaseRedirect();
+        brokerError = toOAuthErrorDetails(result.error, {
+          provider: 'google',
+          flow: 'lovable-broker',
+        });
+        // Provider-side refusals will not be fixed by retrying through
+        // Supabase — show them immediately instead of hiding them.
+        const code = (brokerError.error_code || brokerError.error || '').toLowerCase();
+        if (
+          ['access_denied', 'admin_policy_enforced', 'redirect_uri_mismatch', 'unauthorized_client'].includes(
+            code,
+          )
+        ) {
+          return fail(brokerError);
+        }
+        return signInViaSupabaseRedirect(brokerError);
       }
 
       // No error and no redirect: the wrapper already called setSession().
       const { data } = await supabase.auth.getSession();
       if (data.session) return { error: null };
 
-      return signInViaSupabaseRedirect();
-    } catch {
-      return signInViaSupabaseRedirect();
+      brokerError = {
+        provider: 'google',
+        flow: 'lovable-broker',
+        error: 'no_session',
+        error_description:
+          'The Google popup closed without returning a session (popup blocked or third-party cookies restricted).',
+        origin,
+        hostname: window.location.hostname,
+      };
+      return signInViaSupabaseRedirect(brokerError);
+    } catch (err) {
+      brokerError = toOAuthErrorDetails(err, { provider: 'google', flow: 'lovable-broker' });
+      return signInViaSupabaseRedirect(brokerError);
     }
   }
 
