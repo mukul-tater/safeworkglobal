@@ -6,6 +6,49 @@ import {
   setPendingOAuthRedirect,
 } from '@/lib/oauthRedirect';
 
+// #region agent log
+function debugGoogleAuth(
+  location: string,
+  message: string,
+  data: Record<string, unknown>,
+  hypothesisId: string,
+) {
+  fetch('http://127.0.0.1:7391/ingest/96bbca4f-9808-43b1-add7-e225ef15496d', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '56fe26' },
+    body: JSON.stringify({
+      sessionId: '56fe26',
+      location,
+      message,
+      data,
+      timestamp: Date.now(),
+      hypothesisId,
+    }),
+  }).catch(() => {});
+}
+
+function oauthClientSnapshot(): Record<string, unknown> {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  let inIframe = false;
+  try {
+    inIframe = window.self !== window.top;
+  } catch {
+    inIframe = true;
+  }
+  return {
+    host: window.location.hostname,
+    origin: window.location.origin,
+    path: window.location.pathname,
+    tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    lang: navigator.language,
+    inIframe,
+    isMobile: /iPhone|iPad|iPod|Android/i.test(ua),
+    inAppBrowser: /FBAN|FBAV|Instagram|Line\/|WhatsApp|Twitter|TikTok|Snapchat|MicroMessenger/i.test(ua),
+    ua: ua.slice(0, 180),
+  };
+}
+// #endregion
+
 type OAuthProvider = 'google' | 'apple' | 'microsoft';
 
 export interface GoogleAuthResult {
@@ -68,7 +111,17 @@ export async function signInWithGoogle(
   const intended = opts?.next ?? opts?.redirect_uri ?? '/dashboard';
   setPendingOAuthRedirect(intended);
 
-  if (shouldUseLovableOAuthBroker()) {
+  const useLovable = shouldUseLovableOAuthBroker();
+  // #region agent log
+  debugGoogleAuth(
+    'googleAuth.ts:signInWithGoogle',
+    'Google sign-in started',
+    { ...oauthClientSnapshot(), useLovable, intended, redirectUri: origin },
+    'H1',
+  );
+  // #endregion
+
+  if (useLovable) {
     // The broker opens a popup when the app runs inside an iframe (Lovable
     // preview) and some browsers / in-app webviews block or immediately close
     // it — that is why Google sign-in "works on some devices only". Whenever
@@ -79,23 +132,69 @@ export async function signInWithGoogle(
         redirect_uri: origin,
       });
 
+      // #region agent log
+      debugGoogleAuth(
+        'googleAuth.ts:lovableResult',
+        'Lovable OAuth returned',
+        {
+          redirected: !!result.redirected,
+          hasError: !!result.error,
+          errorMessage: result.error?.message ?? null,
+          ...oauthClientSnapshot(),
+        },
+        'H1',
+      );
+      // #endregion
+
       if (result.redirected) {
         return { error: null, redirected: true };
       }
 
       if (result.error) {
+        // #region agent log
+        debugGoogleAuth(
+          'googleAuth.ts:lovableFallback',
+          'Lovable error — falling back to Supabase OAuth',
+          { errorMessage: result.error.message },
+          'H1',
+        );
+        // #endregion
         return signInViaSupabaseRedirect();
       }
 
       // No error and no redirect: the wrapper already called setSession().
       const { data } = await supabase.auth.getSession();
+      // #region agent log
+      debugGoogleAuth(
+        'googleAuth.ts:lovableSession',
+        'Lovable popup setSession path',
+        { hasSession: !!data.session },
+        'H4',
+      );
+      // #endregion
       if (data.session) return { error: null };
 
       return signInViaSupabaseRedirect();
-    } catch {
+    } catch (err) {
+      // #region agent log
+      debugGoogleAuth(
+        'googleAuth.ts:lovableCatch',
+        'Lovable threw — falling back to Supabase OAuth',
+        { errorMessage: err instanceof Error ? err.message : String(err) },
+        'H1',
+      );
+      // #endregion
       return signInViaSupabaseRedirect();
     }
   }
 
+  // #region agent log
+  debugGoogleAuth(
+    'googleAuth.ts:supabaseDirect',
+    'Using Supabase OAuth (no Lovable broker)',
+    oauthClientSnapshot(),
+    'H1',
+  );
+  // #endregion
   return signInViaSupabaseRedirect();
 }

@@ -143,6 +143,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     oauthWaitTimerRef.current = setTimeout(() => {
       oauthWaitTimerRef.current = null;
       setLoading(false);
+      // #region agent log
+      fetch('http://127.0.0.1:7391/ingest/96bbca4f-9808-43b1-add7-e225ef15496d', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '56fe26' },
+        body: JSON.stringify({
+          sessionId: '56fe26',
+          location: 'AuthContext.tsx:oauthWaitTimeout',
+          message: 'OAuth callback wait timed out without session',
+          data: {
+            host: window.location.hostname,
+            path: window.location.pathname,
+            hrefHasCode: window.location.search.includes('code='),
+            hrefHasError: window.location.search.includes('error='),
+            hashHasToken: window.location.hash.includes('access_token'),
+            tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+          timestamp: Date.now(),
+          hypothesisId: 'H4',
+        }),
+      }).catch(() => {});
+      // #endregion
     }, 8000);
   };
 
@@ -327,6 +348,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(nextSession);
         setUser(nextSession.user);
         clearOAuthWaitTimer();
+        // #region agent log
+        if (hasOAuthCallbackInUrl()) {
+          fetch('http://127.0.0.1:7391/ingest/96bbca4f-9808-43b1-add7-e225ef15496d', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '56fe26' },
+            body: JSON.stringify({
+              sessionId: '56fe26',
+              location: 'AuthContext.tsx:oauthSession',
+              message: 'Session established after OAuth callback',
+              data: {
+                event,
+                host: window.location.hostname,
+                tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                hasProvider: nextSession.user.app_metadata?.provider ?? null,
+                identities: (nextSession.user.identities || []).map((i) => i.provider),
+              },
+              timestamp: Date.now(),
+              hypothesisId: 'H4',
+            }),
+          }).catch(() => {});
+        }
+        // #endregion
 
         // Re-hydrate OTP-verified flag after remount / new tab of same session.
         if (readMobileVerifiedSession(nextSession.user.id)) {

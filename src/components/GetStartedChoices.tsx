@@ -1,7 +1,7 @@
 import { Briefcase, HardHat, Handshake } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '@/i18n';
-import { GET_STARTED_PATHS } from '@/lib/getStarted';
+import { GET_STARTED_PATHS, PARTNER_EXISTING_ACCOUNT_PATH } from '@/lib/getStarted';
 
 type Props = {
   onChosen?: () => void;
@@ -23,7 +23,7 @@ export default function GetStartedChoices({ onChosen }: Props) {
       </p>
       <button
         type="button"
-        onClick={() => go('/jobs')}
+        onClick={() => go(GET_STARTED_PATHS.worker)}
         className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors"
       >
         <div className="p-2 rounded-lg bg-success/10 text-success">
@@ -59,6 +59,28 @@ export default function GetStartedChoices({ onChosen }: Props) {
           <div className="font-semibold text-sm">{t('header.partner')}</div>
           <div className="text-xs text-muted-foreground">{t('header.partnerSub')}</div>
         </div>
+      </button>
+      <div className="border-t border-border my-2" />
+      <button
+        type="button"
+        onClick={() => go(GET_STARTED_PATHS.worker)}
+        className="w-full text-xs text-center text-primary hover:underline py-2.5"
+      >
+        {t('header.workerSignIn')}
+      </button>
+      <button
+        type="button"
+        onClick={() => go(GET_STARTED_PATHS.employer)}
+        className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-2.5"
+      >
+        {t('header.employerSignIn')}
+      </button>
+      <button
+        type="button"
+        onClick={() => go(PARTNER_EXISTING_ACCOUNT_PATH)}
+        className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-2.5"
+      >
+        {t('header.partnerSignIn')}
       </button>
     </div>
   );

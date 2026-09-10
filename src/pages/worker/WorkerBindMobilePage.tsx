@@ -47,6 +47,29 @@ export default function WorkerBindMobilePage() {
   const [otp, setOtp] = useState('');
 
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7391/ingest/96bbca4f-9808-43b1-add7-e225ef15496d', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '56fe26' },
+      body: JSON.stringify({
+        sessionId: '56fe26',
+        location: 'WorkerBindMobilePage.tsx:mountGate',
+        message: 'Bind-mobile gate evaluated',
+        data: {
+          loading,
+          profileLoading,
+          isAuthenticated,
+          role,
+          isMobileVerified,
+          tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          lang: navigator.language,
+          host: window.location.hostname,
+        },
+        timestamp: Date.now(),
+        hypothesisId: 'H5',
+      }),
+    }).catch(() => {});
+    // #endregion
     if (loading || profileLoading) return;
     if (!isAuthenticated) {
       navigate(bindMobileLoginPath(role), { replace: true });

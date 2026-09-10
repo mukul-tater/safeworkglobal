@@ -19,6 +19,7 @@ export default function OAuthLandingHandler() {
   const navigate = useNavigate();
   const location = useLocation();
   const handled = useRef(false);
+  const debugReturnLogged = useRef(false);
 
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -27,7 +28,44 @@ export default function OAuthLandingHandler() {
     if (isRecovery && location.pathname !== '/reset-password') {
       navigate(`/reset-password${location.search}${location.hash}`, { replace: true });
     }
-  }, [location.hash, location.pathname, location.search, navigate]);
+
+    // #region agent log
+    const hasOAuthSignal =
+      search.has('code') ||
+      search.has('error') ||
+      hash.has('error') ||
+      hash.has('access_token') ||
+      hash.has('refresh_token');
+    if (hasOAuthSignal && !debugReturnLogged.current) {
+      debugReturnLogged.current = true;
+      fetch('http://127.0.0.1:7391/ingest/96bbca4f-9808-43b1-add7-e225ef15496d', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '56fe26' },
+        body: JSON.stringify({
+          sessionId: '56fe26',
+          location: 'OAuthLandingHandler.tsx:return',
+          message: 'OAuth return URL inspected',
+          data: {
+            host: window.location.hostname,
+            origin: window.location.origin,
+            path: location.pathname,
+            tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            lang: navigator.language,
+            hasCode: search.has('code'),
+            hasAccessToken: hash.has('access_token'),
+            hasRefreshToken: hash.has('refresh_token'),
+            error: search.get('error') || hash.get('error'),
+            errorDesc: search.get('error_description') || hash.get('error_description'),
+            isAuthenticated,
+            loading,
+          },
+          timestamp: Date.now(),
+          hypothesisId: 'H2',
+        }),
+      }).catch(() => {});
+    }
+    // #endregion
+  }, [location.hash, location.pathname, location.search, navigate, isAuthenticated, loading]);
 
   useEffect(() => {
     if (location.pathname === '/reset-password') return;
