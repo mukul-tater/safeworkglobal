@@ -13,7 +13,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { 
   MapPin, Building2, 
   CheckCircle2, ArrowLeft, Users, Shield, Calendar,
@@ -636,45 +635,6 @@ export default function JobDetail() {
                       <Bookmark className={`h-4 w-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
                       {saving ? 'Saving...' : isSaved ? 'Saved' : 'Save'}
                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Company Info Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">About the Company</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Building2 className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">{companyName}</h4>
-                      {employer?.industry && (
-                        <p className="text-sm text-muted-foreground">{employer.industry}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {employer?.bio && (
-                    <p className="text-sm text-muted-foreground">{employer.bio}</p>
-                  )}
-                  
-                  <Separator />
-                  
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    {employer?.company_size && (
-                      <div>
-                        <span className="text-muted-foreground block">Size</span>
-                        <p className="font-medium">{employer.company_size}</p>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-muted-foreground block">Visa Support</span>
-                      <p className="font-medium">{job.visa_sponsorship ? 'Available' : 'Not Available'}</p>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
