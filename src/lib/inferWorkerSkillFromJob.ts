@@ -3,12 +3,12 @@ import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 const SKILL_ALIASES: Array<{ skill: (typeof WORKER_SKILLS)[number]; needles: string[] }> = [
   { skill: 'HVAC Technician', needles: ['hvac', 'ac technician', 'air condition'] },
   { skill: 'Electrician', needles: ['electric'] },
-  { skill: 'Plumber', needles: ['plumb'] },
+  { skill: 'Plumber', needles: ['pipe fitter', 'pipefitter', 'plumb'] },
   { skill: 'Welder', needles: ['weld', 'fabricat'] },
   { skill: 'Driver', needles: ['driver', 'driving'] },
   { skill: 'Mason', needles: ['mason', 'bricklayer'] },
-  { skill: 'Carpenter', needles: ['carpent'] },
-  { skill: 'Helper', needles: ['helper', 'labour', 'labor'] },
+  { skill: 'Carpenter', needles: ['shuttering', 'formwork', 'carpent'] },
+  { skill: 'Helper', needles: ['civil helper', 'civil labour', 'civil labor', 'helper', 'labour', 'labor'] },
 ];
 
 /** Map a job title/description/skills onto the worker Test 1 skill list. */

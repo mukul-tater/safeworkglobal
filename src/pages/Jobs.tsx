@@ -23,19 +23,20 @@ import SavedSearchDialog from '@/components/search/SavedSearchDialog';
 import JobSearchHero from '@/components/jobs/JobSearchHero';
 import JobResultCard, { type JobListItem } from '@/components/jobs/JobResultCard';
 import JobCountryGrid from '@/components/jobs/JobCountryGrid';
-import JobCategoryScroller, { ALL_JOBS_CATEGORY } from '@/components/jobs/JobCategoryScroller';
+import JobTradeGrid from '@/components/jobs/JobTradeGrid';
 import JobsEmptyState, { type JobFacet } from '@/components/jobs/JobsEmptyState';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/use-debounce';
 import { JOB_CATEGORIES } from '@/lib/constants';
+import { inferUaeListedJob, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 
 const JOBS_PER_PAGE = 20;
-const QUICK_CATEGORIES = ['Welding', 'Construction', 'Electrical', 'Plumbing', 'HVAC'];
-const SUGGESTED_CATEGORIES = ['Construction', 'Welding', 'Electrical', 'Plumbing', 'HVAC', 'Manufacturing'];
+const QUICK_CATEGORIES = [...UAE_LISTED_JOBS];
+const SUGGESTED_CATEGORIES = [...UAE_LISTED_JOBS];
 const SUGGESTED_COUNTRIES = ['UAE'];
 
 const SORT_OPTIONS = [
@@ -49,10 +50,11 @@ type SortOption = (typeof SORT_OPTIONS)[number]['value'];
 
 const KNOWN_CATEGORIES = JOB_CATEGORIES.filter((c) => c !== ANY_CATEGORY);
 
-/** Best-effort category inference, since jobs have no category column. */
+/** Prefer the UAE listed trades; fall back to the broader industry list. */
 function inferCategory(title: string, description: string): string {
-  const haystack = `${title} ${description}`.toLowerCase();
-  return KNOWN_CATEGORIES.find((category) => haystack.includes(category.toLowerCase())) ?? 'Other';
+  return inferUaeListedJob(title, description)
+    ?? KNOWN_CATEGORIES.find((category) => `${title} ${description}`.toLowerCase().includes(category.toLowerCase()))
+    ?? 'Other';
 }
 
 function experienceLabel(value: string): string {
@@ -267,22 +269,9 @@ export default function Jobs() {
   }, [user]);
 
   const countrySelected = filters.country !== ANY_COUNTRY;
+  const jobSelected = filters.jobCategory !== ANY_CATEGORY;
 
   const jobs = useMemo(() => sortJobs(filterJobs(allJobs, filters), sortOption), [allJobs, filters, sortOption]);
-
-  const categoryChips = useMemo(() => {
-    const pool = countrySelected
-      ? allJobs.filter((job) => job.country.toLowerCase() === filters.country.toLowerCase())
-      : allJobs;
-    const set = new Set<string>();
-    pool.forEach((job) => {
-      if (job.category && job.category !== 'Other') set.add(job.category);
-    });
-    return [...set].sort();
-  }, [allJobs, countrySelected, filters.country]);
-
-  const selectedCategoryChip =
-    filters.jobCategory === ANY_CATEGORY ? ALL_JOBS_CATEGORY : filters.jobCategory;
 
   useEffect(() => {
     setCurrentPage(1);
@@ -509,8 +498,44 @@ export default function Jobs() {
                 onSelect={(country) => setFilters((f) => ({ ...f, country, jobCategory: ANY_CATEGORY }))}
               />
             </div>
+          ) : !jobSelected ? (
+            <div className="space-y-4">
+              <div className="flex lg:hidden">
+                <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      Filters
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-full overflow-y-auto p-0 sm:max-w-sm">
+                    <SheetHeader className="border-b border-border/60 px-5 py-4">
+                      <SheetTitle className="text-base">Filters</SheetTitle>
+                    </SheetHeader>
+                    <JobSearchFilters filters={filters} onFiltersChange={setFilters} className="rounded-none border-0" />
+                  </SheetContent>
+                </Sheet>
+              </div>
+              <button
+                type="button"
+                className="text-sm text-muted-foreground hover:text-foreground"
+                onClick={() => setFilters((f) => ({ ...f, country: ANY_COUNTRY, jobCategory: ANY_CATEGORY }))}
+              >
+                ← All countries
+              </button>
+              <JobTradeGrid
+                onSelect={(job) => setFilters((f) => ({ ...f, country: 'UAE', jobCategory: job }))}
+              />
+            </div>
           ) : (
             <>
+          <button
+            type="button"
+            className="mb-4 text-sm text-muted-foreground hover:text-foreground"
+            onClick={() => setFilters((f) => ({ ...f, jobCategory: ANY_CATEGORY }))}
+          >
+            ← All jobs in {filters.country}
+          </button>
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <p className="text-sm font-medium">
               {loading ? 'Searching…' : `${jobs.length} ${jobs.length === 1 ? 'job' : 'jobs'} found`}
@@ -578,19 +603,6 @@ export default function Jobs() {
             </div>
           )}
 
-          <div className="mb-4">
-            <JobCategoryScroller
-              categories={categoryChips}
-              selected={selectedCategoryChip}
-              onSelect={(next) =>
-                setFilters((f) => ({
-                  ...f,
-                  jobCategory: next === ALL_JOBS_CATEGORY ? ANY_CATEGORY : next,
-                }))
-              }
-            />
-          </div>
-
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, index) => (
@@ -614,7 +626,7 @@ export default function Jobs() {
               countries={countryFacets}
               onClearFilters={resetFilters}
               onCreateAlert={() => setShowSaveDialog(true)}
-              onSelectCategory={(category) => setFilters({ ...EMPTY_JOB_FILTERS, jobCategory: category })}
+              onSelectCategory={(category) => setFilters({ ...EMPTY_JOB_FILTERS, jobCategory: category, country: 'UAE' })}
               onSelectCountry={(country) => setFilters({ ...EMPTY_JOB_FILTERS, country })}
             />
           ) : (

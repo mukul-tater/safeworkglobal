@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import JobResultCard, { type JobListItem } from '@/components/jobs/JobResultCard';
 import JobCountryGrid from '@/components/jobs/JobCountryGrid';
-import JobCategoryScroller, { ALL_JOBS_CATEGORY } from '@/components/jobs/JobCategoryScroller';
+import JobTradeGrid from '@/components/jobs/JobTradeGrid';
 import { supabase } from '@/integrations/supabase/client';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
+import { inferUaeListedJob } from '@/lib/uaeListedJobs';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import {
   clearPendingJourneyJob,
@@ -28,8 +29,9 @@ import type { WorkerVerification } from '@/modules/worker-verification/types';
 const KNOWN_CATEGORIES = JOB_CATEGORIES.filter((c) => c !== 'All Categories');
 
 function inferCategory(title: string, description: string): string {
-  const haystack = `${title} ${description}`.toLowerCase();
-  return KNOWN_CATEGORIES.find((category) => haystack.includes(category.toLowerCase())) ?? 'Other';
+  return inferUaeListedJob(title, description)
+    ?? KNOWN_CATEGORIES.find((category) => `${title} ${description}`.toLowerCase().includes(category.toLowerCase()))
+    ?? 'Other';
 }
 
 async function fetchActiveJobs(): Promise<JobListItem[]> {
@@ -127,7 +129,7 @@ export default function JourneyJobPicker({
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [country, setCountry] = useState<string | null>(null);
-  const [category, setCategory] = useState(ALL_JOBS_CATEGORY);
+  const [category, setCategory] = useState<string | null>(null);
   const [favouritesOnly, setFavouritesOnly] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
@@ -201,19 +203,11 @@ export default function JourneyJobPicker({
     [jobs, country],
   );
 
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    countryJobs.forEach((job) => {
-      if (job.category && job.category !== 'Other') set.add(job.category);
-    });
-    return [...set].sort();
-  }, [countryJobs]);
-
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return countryJobs.filter((job) => {
       if (favouritesOnly && !savedIds.has(job.id)) return false;
-      if (category !== ALL_JOBS_CATEGORY && job.category !== category) return false;
+      if (category && job.category !== category) return false;
       if (!q) return true;
       return (
         job.title.toLowerCase().includes(q) ||
@@ -394,22 +388,37 @@ export default function JourneyJobPicker({
         <JobCountryGrid
           onSelect={(next) => {
             setCountry(next);
-            setCategory(ALL_JOBS_CATEGORY);
+            setCategory(null);
           }}
         />
-      ) : (
+      ) : !category ? (
         <>
           <button
             type="button"
             className="text-sm text-muted-foreground hover:text-foreground"
             onClick={() => {
               setCountry(null);
-              setCategory(ALL_JOBS_CATEGORY);
+              setCategory(null);
             }}
           >
             ← All countries
           </button>
-          <JobCategoryScroller categories={categories} selected={category} onSelect={setCategory} />
+          <JobTradeGrid
+            onSelect={(job) => {
+              setCountry(country);
+              setCategory(job);
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="text-sm text-muted-foreground hover:text-foreground"
+            onClick={() => setCategory(null)}
+          >
+            ← All jobs in {country}
+          </button>
 
           {visible.length === 0 ? (
             <div className="space-y-3 rounded-xl border border-dashed border-border px-4 py-10 text-center">

@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, MapPin, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DESTINATION_COUNTRIES, JOB_CATEGORIES } from "@/lib/constants";
+import { DESTINATION_COUNTRIES } from "@/lib/constants";
+import { UAE_LISTED_JOBS } from "@/lib/uaeListedJobs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 
@@ -75,7 +76,7 @@ const HomeSearchBar = () => {
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent className="max-h-64">
-                  {JOB_CATEGORIES.filter((c) => c !== "All Categories").map((category) => (
+                  {UAE_LISTED_JOBS.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
