@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { ApplicationListSkeleton } from "@/components/ui/page-skeleton";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
+import JobServiceFee from "@/components/jobs/JobServiceFee";
 
 interface JobData {
   title: string;
@@ -152,6 +153,7 @@ export default function WorkerApplications() {
                               />
                               </span>
                             )}
+                            <JobServiceFee />
                           </>
                         )}
                       </div>

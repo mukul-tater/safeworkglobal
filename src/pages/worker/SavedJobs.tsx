@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Bookmark, MapPin, Briefcase, Trash2, Loader2, ExternalLink } from "lucide-react";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
+import JobServiceFee from "@/components/jobs/JobServiceFee";
 
 interface SavedJob {
   id: string;
@@ -137,6 +138,7 @@ export default function SavedJobs() {
                         title={job.title}
                       />
                       </span>
+                      <JobServiceFee />
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">

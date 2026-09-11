@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import JobSalaryText from '@/components/JobSalaryText';
+import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
 import { getPublicJobSalary, listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
@@ -439,6 +440,10 @@ export default function JobDetail() {
 
                   <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{job.title}</h1>
 
+                  <div className="mb-4">
+                    <JobServiceFee className="text-sm" />
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="h-4 w-4 shrink-0" />
@@ -565,6 +570,9 @@ export default function JobDetail() {
                     </Alert>
                   ) : showApply ? (
                     <>
+                      <div className="rounded-lg border border-amber-400/70 bg-amber-400/20 p-3">
+                        <JobServiceFee className="text-sm" />
+                      </div>
                       <Button 
                         size="lg" 
                         onClick={handleApplyClick}
@@ -633,6 +641,9 @@ export default function JobDetail() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium">{job.country}</span>
+                  </div>
+                  <div className="rounded-lg border border-amber-400/70 bg-amber-400/20 p-2.5">
+                    <JobServiceFee />
                   </div>
                 </CardContent>
               </Card>

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Bookmark, BriefcaseBusiness, Clock, Loader2, MapPin, ShieldCheck, Wallet } from 'lucide-react';
 import JobSalaryText from '@/components/JobSalaryText';
+import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { cn } from '@/lib/utils';
 
 export interface JobListItem {
@@ -133,6 +134,10 @@ export default function JobResultCard({
               {relativeTime(job.postedAt)}
             </dd>
           </dl>
+
+          <div className="mt-3">
+            <JobServiceFee />
+          </div>
 
           <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{job.description}</p>
 

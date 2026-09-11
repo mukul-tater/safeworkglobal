@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
+import JobServiceFee from "@/components/jobs/JobServiceFee";
 import { listPublicJobBenefits } from "@/lib/jobBenefits";
 import { listPublicJobResponsibilities } from "@/lib/uaeListedJobs";
 
@@ -222,6 +223,9 @@ export default function WorkerApplicationDetail() {
                         emptyLabel="Not specified"
                       />
                     </span>
+                  </div>
+                  <div className="col-span-2">
+                    <JobServiceFee />
                   </div>
                 </div>
                 
