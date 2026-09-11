@@ -20,6 +20,15 @@ export const UAE_LISTED_JOBS = [
   'Ductman',
   'Mechanical Helper',
   'General Helper',
+  'Carpenter',
+  'HVAC Technician',
+  'AC Technician',
+  'Fire Fighting Technician',
+  'Painter',
+  'Scaffolder',
+  'POP / Gypsum Carpenter',
+  'Waterproofing Mason',
+  'Marble / Granite Mason',
 ] as const;
 
 export type UaeListedJob = (typeof UAE_LISTED_JOBS)[number];
@@ -29,12 +38,21 @@ const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'MIG Welder', needles: ['mig welder'] },
   { job: 'TIG Welder', needles: ['tig welder'] },
   { job: 'Aluminium Fabricator', needles: ['aluminium fabricator', 'aluminum fabricator'] },
+  { job: 'POP / Gypsum Carpenter', needles: ['pop / gypsum', 'pop/gypsum', 'gypsum carpenter', 'pop carpenter', 'false ceiling'] },
   { job: 'Finishing Carpenter', needles: ['finishing carpenter', 'finish carpenter'] },
   { job: 'Tile Mason', needles: ['tile mason', 'tile fixer'] },
   { job: 'All Round Mason', needles: ['all round mason', 'all-round mason', 'allround mason'] },
   { job: 'Block & Plaster Mason', needles: ['block & plaster mason', 'block and plaster mason', 'block plaster mason'] },
+  { job: 'Waterproofing Mason', needles: ['waterproofing mason', 'waterproofing'] },
+  { job: 'Marble / Granite Mason', needles: ['marble / granite', 'marble/granite', 'marble mason', 'granite mason'] },
   { job: 'Steel Fixer', needles: ['steel fixer', 'rebar fixer'] },
   { job: 'Shuttering Carpenter', needles: ['shuttering carpenter', 'shuttering', 'formwork carpenter'] },
+  { job: 'Carpenter', needles: ['carpenter'] },
+  { job: 'HVAC Technician', needles: ['hvac technician'] },
+  { job: 'AC Technician', needles: ['ac technician', 'air conditioning technician', 'air conditioner technician'] },
+  { job: 'Fire Fighting Technician', needles: ['fire fighting technician', 'firefighting technician', 'fire fighting'] },
+  { job: 'Painter', needles: ['painter', 'painting'] },
+  { job: 'Scaffolder', needles: ['scaffolder', 'scaffolding'] },
   { job: 'Mechanical Helper', needles: ['mechanical helper'] },
   { job: 'General Helper', needles: ['general helper'] },
   { job: 'Ductman', needles: ['ductman', 'duct man', 'duct installer'] },
@@ -114,6 +132,15 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ReturnType<typeof inr
   'Civil Helper': MECHANICAL_HELPER_BAND,
   'General Helper': GENERAL_HELPER_BAND,
   'Civil Labour': GENERAL_HELPER_BAND,
+  Carpenter: FINISHING_CARPENTER_BAND,
+  'HVAC Technician': INDUSTRIAL_ELECTRICIAN_BAND,
+  'AC Technician': DUCTMAN_BAND,
+  'Fire Fighting Technician': INDUSTRIAL_ELECTRICIAN_BAND,
+  Painter: MASON_BAND,
+  Scaffolder: SHUTTERING_BAND,
+  'POP / Gypsum Carpenter': FINISHING_CARPENTER_BAND,
+  'Waterproofing Mason': MASON_BAND,
+  'Marble / Granite Mason': MASON_BAND,
 };
 
 export function getPublicJobSalary(title: string, description = '') {
@@ -283,6 +310,78 @@ export const UAE_LISTED_JOB_RESPONSIBILITIES: Record<UaeListedJob, string[]> = {
     'Follow site safety rules and permit-to-work instructions',
     'Wear PPE at all times on site',
   ],
+  Carpenter: [
+    'Cut, fit and fix timber for frames, doors, joinery and site carpentry',
+    'Read drawings and mark out work to line, level and plumb',
+    'Install wooden fixtures, supports and finishing items as directed',
+    'Use hand and power tools safely; keep a tidy work area',
+    'Coordinate with civil, finishing and MEP teams',
+    'Follow site HSE and working-at-height rules',
+  ],
+  'HVAC Technician': [
+    'Install, test and maintain HVAC plant, AHUs, FCUs and package units',
+    'Read HVAC drawings, duct and pipe layouts',
+    'Charge, vacuum and leak-test refrigerant circuits as directed',
+    'Balance airflow, check controls and close punch-list items',
+    'Coordinate with ductmen, electricians and false-ceiling teams',
+    'Follow LOTO, permit-to-work and UAE HSE procedures',
+  ],
+  'AC Technician': [
+    'Install, service and repair split, window and package AC units',
+    'Run copper piping, drain lines and indoor/outdoor connections',
+    'Vacuum, charge and leak-test refrigerant circuits',
+    'Diagnose cooling faults and replace filters, capacitors and fans',
+    'Keep plant rooms and work areas clean',
+    'Follow electrical isolation and site HSE rules',
+  ],
+  'Fire Fighting Technician': [
+    'Install fire hydrants, hose reels, sprinklers and fire-alarm first-fix',
+    'Read fire-fighting drawings and coordinate with MEP and civil teams',
+    'Fit pipes, valves, pumps and detection devices as specified',
+    'Assist pressure tests, flushing and commissioning',
+    'Follow NFPA / UAE civil-defence and permit-to-work rules',
+    'Maintain tools and report daily progress',
+  ],
+  Painter: [
+    'Prepare surfaces: filling, sanding, priming and masking',
+    'Apply emulsion, enamel and texture paint to walls, ceilings and steel',
+    'Spray or roll to an even finish as per the specification',
+    'Protect adjacent finishes and clean up after each area',
+    'Touch up snags before handover',
+    'Follow site HSE including working-at-height and solvent controls',
+  ],
+  Scaffolder: [
+    'Erect, alter and dismantle tube-and-coupler or system scaffold',
+    'Set base plates, standards, ledgers, braces, platforms and ties',
+    'Install guardrails, toe boards, ladders and working platforms',
+    'Inspect components and tag incomplete or unsafe scaffold',
+    'Follow working-at-height, lifting and site HSE rules',
+    'Coordinate with civil and finishing trades for access',
+  ],
+  'POP / Gypsum Carpenter': [
+    'Set out and install gypsum / POP false ceilings, partitions and bulkheads',
+    'Fix channels, studs, boards and access panels to drawings',
+    'Cut, measure and finish joints, beads and openings for lights and AC',
+    'Coordinate with MEP first-fix before closing ceilings',
+    'Protect finished boards and close punch-list items',
+    'Follow working-at-height and site HSE rules',
+  ],
+  'Waterproofing Mason': [
+    'Prepare surfaces and apply cementitious or membrane waterproofing',
+    'Treat wet areas, tanks, roofs, retaining walls and expansion joints',
+    'Install fillets, corners, drains and protection layers',
+    'Flood-test / pond-test and repair leaks as directed',
+    'Follow manufacturer method statements and site HSE',
+    'Keep the work area clean and protect completed work',
+  ],
+  'Marble / Granite Mason': [
+    'Set out and fix marble, granite and stone flooring and cladding',
+    'Cut, drill, bed and grout stone to line, level and consistent joints',
+    'Install skirting, treads, counters and wall cladding as specified',
+    'Polish, protect and clean finished stonework',
+    'Coordinate with wet-area and finishing trades',
+    'Follow site HSE and material-handling rules',
+  ],
 };
 
 export function listPublicJobResponsibilities(
@@ -380,6 +479,42 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, { youtubeId: string; ca
   'General Helper': {
     youtubeId: 'e8RgNqmSh2c',
     caption: 'How general helper work is done — materials, housekeeping and trade support.',
+  },
+  Carpenter: {
+    youtubeId: 'WJI_EBc3Cyo',
+    caption: 'How carpenter work is done — cutting, fitting and fixing timber on site.',
+  },
+  'HVAC Technician': {
+    youtubeId: 'sRy3zy84hwg',
+    caption: 'How HVAC technician work is done — plant, duct and first-fix on a live build.',
+  },
+  'AC Technician': {
+    youtubeId: 'sRy3zy84hwg',
+    caption: 'How AC technician work is done — installing and servicing air-conditioning units.',
+  },
+  'Fire Fighting Technician': {
+    youtubeId: 'R-e2OCC8i6c',
+    caption: 'How fire-fighting technician work is done — site MEP first-fix for life-safety systems.',
+  },
+  Painter: {
+    youtubeId: 'WJI_EBc3Cyo',
+    caption: 'How painter work is done — surface preparation and finishing on interiors.',
+  },
+  Scaffolder: {
+    youtubeId: 'veF4uSUtrEY',
+    caption: 'How scaffolder work is done — erecting platforms, ties and guardrails.',
+  },
+  'POP / Gypsum Carpenter': {
+    youtubeId: 'WJI_EBc3Cyo',
+    caption: 'How POP / gypsum carpenter work is done — false ceilings and board partitions.',
+  },
+  'Waterproofing Mason': {
+    youtubeId: 'rWofXXWOhck',
+    caption: 'How waterproofing mason work is done — wet-area and membrane treatment on site.',
+  },
+  'Marble / Granite Mason': {
+    youtubeId: 'UawZD4KHS3k',
+    caption: 'How marble / granite mason work is done — setting stone floors and cladding.',
   },
 };
 

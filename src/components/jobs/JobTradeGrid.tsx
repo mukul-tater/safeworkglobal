@@ -25,6 +25,15 @@ const TRADE_CARDS: Record<UaeListedJob, { image: string; city: string }> = {
   Ductman: { image: '/country-insights/uae/worksite-business-bay-2.png', city: 'Sharjah' },
   'Mechanical Helper': { image: '/country-insights/uae/worksite-crane.png', city: 'Dubai' },
   'General Helper': { image: '/country-insights/uae/worksite-skyline.png', city: 'Abu Dhabi' },
+  Carpenter: { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Dubai' },
+  'HVAC Technician': { image: '/country-insights/uae/worksite-business-bay-2.png', city: 'Abu Dhabi' },
+  'AC Technician': { image: electricalImg, city: 'Sharjah' },
+  'Fire Fighting Technician': { image: electricalImg, city: 'Dubai' },
+  Painter: { image: constructionImg, city: 'Abu Dhabi' },
+  Scaffolder: { image: '/country-insights/uae/worksite-crane.png', city: 'Sharjah' },
+  'POP / Gypsum Carpenter': { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Dubai' },
+  'Waterproofing Mason': { image: constructionImg, city: 'Sharjah' },
+  'Marble / Granite Mason': { image: constructionImg, city: 'Dubai' },
 };
 
 interface Props {
