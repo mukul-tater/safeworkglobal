@@ -13,6 +13,18 @@ const TRADE_CARDS: Record<UaeListedJob, { image: string; city: string }> = {
   'Civil Helper': { image: '/country-insights/uae/worksite-skyline.png', city: 'Dubai' },
   'Civil Labour': { image: '/country-insights/uae/worksite-crane.png', city: 'Sharjah' },
   'Pipe Fitter': { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Dubai' },
+  'MIG Welder': { image: welderImg, city: 'Dubai' },
+  'TIG Welder': { image: welderImg, city: 'Abu Dhabi' },
+  'Aluminium Fabricator': { image: welderImg, city: 'Sharjah' },
+  'Industrial Electrician': { image: electricalImg, city: 'Dubai' },
+  'Finishing Carpenter': { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Abu Dhabi' },
+  'Tile Mason': { image: constructionImg, city: 'Dubai' },
+  'All Round Mason': { image: constructionImg, city: 'Sharjah' },
+  'Block & Plaster Mason': { image: constructionImg, city: 'Abu Dhabi' },
+  'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png', city: 'Dubai' },
+  Ductman: { image: '/country-insights/uae/worksite-business-bay-2.png', city: 'Sharjah' },
+  'Mechanical Helper': { image: '/country-insights/uae/worksite-crane.png', city: 'Dubai' },
+  'General Helper': { image: '/country-insights/uae/worksite-skyline.png', city: 'Abu Dhabi' },
 };
 
 interface Props {
@@ -28,7 +40,7 @@ export default function JobTradeGrid({ onSelect }: Props) {
           Browse verified openings by trade. More jobs will be added soon.
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {UAE_LISTED_JOBS.map((job) => {
           const card = TRADE_CARDS[job];
           return (

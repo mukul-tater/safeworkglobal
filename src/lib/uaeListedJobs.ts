@@ -8,12 +8,36 @@ export const UAE_LISTED_JOBS = [
   'Civil Helper',
   'Civil Labour',
   'Pipe Fitter',
+  'MIG Welder',
+  'TIG Welder',
+  'Aluminium Fabricator',
+  'Industrial Electrician',
+  'Finishing Carpenter',
+  'Tile Mason',
+  'All Round Mason',
+  'Block & Plaster Mason',
+  'Steel Fixer',
+  'Ductman',
+  'Mechanical Helper',
+  'General Helper',
 ] as const;
 
 export type UaeListedJob = (typeof UAE_LISTED_JOBS)[number];
 
 const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
+  { job: 'Industrial Electrician', needles: ['industrial electrician'] },
+  { job: 'MIG Welder', needles: ['mig welder'] },
+  { job: 'TIG Welder', needles: ['tig welder'] },
+  { job: 'Aluminium Fabricator', needles: ['aluminium fabricator', 'aluminum fabricator'] },
+  { job: 'Finishing Carpenter', needles: ['finishing carpenter', 'finish carpenter'] },
+  { job: 'Tile Mason', needles: ['tile mason', 'tile fixer'] },
+  { job: 'All Round Mason', needles: ['all round mason', 'all-round mason', 'allround mason'] },
+  { job: 'Block & Plaster Mason', needles: ['block & plaster mason', 'block and plaster mason', 'block plaster mason'] },
+  { job: 'Steel Fixer', needles: ['steel fixer', 'rebar fixer'] },
   { job: 'Shuttering Carpenter', needles: ['shuttering carpenter', 'shuttering', 'formwork carpenter'] },
+  { job: 'Mechanical Helper', needles: ['mechanical helper'] },
+  { job: 'General Helper', needles: ['general helper'] },
+  { job: 'Ductman', needles: ['ductman', 'duct man', 'duct installer'] },
   { job: 'Civil Helper', needles: ['civil helper'] },
   { job: 'Civil Labour', needles: ['civil labour', 'civil labor', 'civil labourer'] },
   { job: 'Pipe Fitter', needles: ['pipe fitter', 'pipefitter'] },
@@ -23,8 +47,17 @@ const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'Mason', needles: ['mason'] },
 ];
 
-/** Map a job title/description onto the UAE listed trades. Longest/most specific first. */
+/** Map a job title/description onto the UAE listed trades. Exact title, then specific needles. */
 export function inferUaeListedJob(title: string, description = ''): UaeListedJob | null {
+  const titleLower = title.toLowerCase().trim();
+  const exact = UAE_LISTED_JOBS.find((job) => job.toLowerCase() === titleLower);
+  if (exact) return exact;
+
+  const titleMatch = MATCHERS.find(({ needles }) =>
+    needles.some((needle) => titleLower.includes(needle)),
+  );
+  if (titleMatch) return titleMatch.job;
+
   const haystack = `${title} ${description}`.toLowerCase();
   const match = MATCHERS.find(({ needles }) => needles.some((needle) => haystack.includes(needle)));
   return match?.job ?? null;
@@ -96,6 +129,102 @@ export const UAE_LISTED_JOB_RESPONSIBILITIES: Record<UaeListedJob, string[]> = {
     'Coordinate with welders and riggers for spool installation',
     'Follow HSE, hot-work and quality procedures',
   ],
+  'MIG Welder': [
+    'Set up MIG / MAG plant, wire, gas and parameters as per WPS',
+    'MIG-weld structural steel, plates, ducts and fabrication spools',
+    'Fit, tack and weld joints to drawings; grind and clean between passes',
+    'Carry out visual checks for undercut, porosity and incomplete fusion',
+    'Use screens, fire watch and PPE for hot work',
+    'Report defects and complete rework as directed',
+  ],
+  'TIG Welder': [
+    'Set up TIG plant, tungsten, filler and argon as per WPS',
+    'TIG-weld stainless, aluminium or carbon-steel pipe and sheet',
+    'Run root and fill passes on pipe, tanks and precision joints',
+    'Keep the purge and gas shield; inspect for oxidation and undercut',
+    'Read isometric and fabrication drawings',
+    'Follow hot-work, PPE and UAE HSE procedures',
+  ],
+  'Aluminium Fabricator': [
+    'Read fabrication drawings and mark cutting lists for aluminium sections',
+    'Cut, mill, drill and assemble aluminium frames, cladding and joinery',
+    'Fit, tack and weld or mechanically join aluminium components',
+    'Install windows, doors, curtain-wall and shop-front frames as directed',
+    'File, grind and prepare surfaces for powder coat or anodising',
+    'Follow workshop and site HSE, including hot-work controls',
+  ],
+  'Industrial Electrician': [
+    'Install, terminate and test industrial LV/MV power, motors and control circuits',
+    'Read SLDs, control schematics and equipment GA drawings',
+    'Wire MCCs, VFDs, field instruments and plant lighting',
+    'Carry out fault finding on motors, starters and process equipment',
+    'Follow LOTO, permit-to-work and plant HSE procedures',
+    'Coordinate shutdowns, megger tests and punch-list close-out',
+  ],
+  'Finishing Carpenter': [
+    'Install doors, frames, architraves, skirting and wooden joinery',
+    'Set cabinets, wardrobes, panelling and false-ceiling timber as per drawings',
+    'Cut, fit and finish timber to line, level and consistent gaps',
+    'Hang ironmongery, locks and door closers; adjust for smooth operation',
+    'Protect finished surfaces and close snag lists before handover',
+    'Follow site HSE and working-at-height rules',
+  ],
+  'Tile Mason': [
+    'Set out floor and wall tiles from drawings, levels and datum lines',
+    'Prepare substrate, mix adhesive and bed tiles to line and level',
+    'Cut tiles around openings, edges and sanitary fittings',
+    'Grout joints, clean tiles and complete movement joints as specified',
+    'Fix skirting, dado and wet-area tiles to the required fall',
+    'Keep the work area clean and follow HSE',
+  ],
+  'All Round Mason': [
+    'Carry out block work, plastering, tiling and finishing as directed',
+    'Lay blocks and bricks to line, level and plumb',
+    'Apply internal and external plaster to the specified thickness',
+    'Support tiling, chasing, lintels and small concrete repairs',
+    'Mix mortar to the specified ratio and maintain workmanship quality',
+    'Follow supervisor instructions and site HSE',
+  ],
+  'Block & Plaster Mason': [
+    'Lay AAC / concrete blocks to line, level and plumb',
+    'Build walls, columns, partitions and openings as marked out',
+    'Apply scratch and finish plaster coats to walls and soffits',
+    'Mix mortar and plaster to the specified ratio',
+    'Install lintels, mesh and corner beads as required',
+    'Keep joints, corners and surfaces within tolerance and follow HSE',
+  ],
+  'Steel Fixer': [
+    'Read bar-bending schedules and rebar drawings',
+    'Cut, bend, place and tie reinforcement for slabs, beams, columns and walls',
+    'Maintain cover, laps, chairs and spacers as specified',
+    'Fix starter bars, couplers and extra steel at openings',
+    'Coordinate pour sequence with shuttering and civil teams',
+    'Follow working-at-height, lifting and site HSE rules',
+  ],
+  Ductman: [
+    'Fabricate, hang and connect GI / PI / flexible ducts as per drawings',
+    'Install hangers, supports, fire dampers and volume control dampers',
+    'Seal joints, insulate ducts and close openings after first-fix',
+    'Assist balancing, leak tests and punch-list close-out',
+    'Read HVAC layouts and coordinate with electrical and false-ceiling teams',
+    'Follow working-at-height and site HSE rules',
+  ],
+  'Mechanical Helper': [
+    'Assist pipe fitters, welders, HVAC and mechanical crews',
+    'Shift pipes, ducts, fittings, tools and gas cylinders as directed',
+    'Help with grinding, tacking, insulation and housekeeping',
+    'Support hydrotest, hot-work and equipment positioning',
+    'Follow supervisor instructions and permit-to-work rules',
+    'Wear PPE at all times on site',
+  ],
+  'General Helper': [
+    'Support skilled trades with materials, tools and housekeeping',
+    'Load, unload and shift materials around the site',
+    'Mix mortar or concrete and keep access routes clear',
+    'Help with simple site tasks as directed by the supervisor',
+    'Follow site safety rules and permit-to-work instructions',
+    'Wear PPE at all times on site',
+  ],
 };
 
 export function listPublicJobResponsibilities(
@@ -145,6 +274,54 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, { youtubeId: string; ca
   'Pipe Fitter': {
     youtubeId: 'KIZurpeGMoM',
     caption: 'How pipe fitter work is done — fitting, aligning and tacking pipes on site.',
+  },
+  'MIG Welder': {
+    youtubeId: 'gc9fBVq9NlE',
+    caption: 'How MIG welder work is done — wire-feed welding used in fabrication shops and sites.',
+  },
+  'TIG Welder': {
+    youtubeId: 'tNYmo2_DI6c',
+    caption: 'How TIG welder work is done — precision TIG welding on pipe and sheet.',
+  },
+  'Aluminium Fabricator': {
+    youtubeId: 'ovEDLzbAWpg',
+    caption: 'How aluminium fabricator work is done — cutting, fitting and joining metal sections.',
+  },
+  'Industrial Electrician': {
+    youtubeId: 'R-e2OCC8i6c',
+    caption: 'How industrial electrician work is done — power, trays and equipment wiring on site.',
+  },
+  'Finishing Carpenter': {
+    youtubeId: 'WJI_EBc3Cyo',
+    caption: 'How finishing carpenter work is done — doors, frames and joinery fitting.',
+  },
+  'Tile Mason': {
+    youtubeId: 'UawZD4KHS3k',
+    caption: 'How tile mason work is done — wall and floor tiling to line and level.',
+  },
+  'All Round Mason': {
+    youtubeId: 'rWofXXWOhck',
+    caption: 'How all-round mason work is done — block work plus plaster and finishing support.',
+  },
+  'Block & Plaster Mason': {
+    youtubeId: 'rWofXXWOhck',
+    caption: 'How block and plaster mason work is done — block laying and plastering.',
+  },
+  'Steel Fixer': {
+    youtubeId: 'NT2IeAdO7eg',
+    caption: 'How steel fixer work is done — cutting, placing and tying reinforcement.',
+  },
+  Ductman: {
+    youtubeId: 'sRy3zy84hwg',
+    caption: 'How ductman work is done — HVAC duct hanging and first-fix on a live build.',
+  },
+  'Mechanical Helper': {
+    youtubeId: 'o2kiA5ItiJw',
+    caption: 'How mechanical helper work is done — supporting fitters and welders on site.',
+  },
+  'General Helper': {
+    youtubeId: 'e8RgNqmSh2c',
+    caption: 'How general helper work is done — materials, housekeeping and trade support.',
   },
 };
 

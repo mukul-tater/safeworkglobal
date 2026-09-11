@@ -1,7 +1,7 @@
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 
 const SKILL_ALIASES: Array<{ skill: (typeof WORKER_SKILLS)[number]; needles: string[] }> = [
-  { skill: 'HVAC Technician', needles: ['hvac', 'ac technician', 'air condition'] },
+  { skill: 'HVAC Technician', needles: ['hvac', 'ac technician', 'air condition', 'ductman', 'duct man', 'ducting'] },
   { skill: 'Electrician', needles: ['electric'] },
   { skill: 'Plumber', needles: ['pipe fitter', 'pipefitter', 'plumb'] },
   { skill: 'Welder', needles: ['weld', 'fabricat'] },
