@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { JobDetailSkeleton } from '@/components/ui/page-skeleton';
 import { withRetry } from '@/lib/retry';
 import PostedByBadge from '@/components/jobs/PostedByBadge';
+import JobRoleVideo from '@/components/jobs/JobRoleVideo';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import {
   setPendingJourneyJob,
@@ -465,6 +466,8 @@ export default function JobDetail() {
                   <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{job.description}</p>
                 </CardContent>
               </Card>
+
+              <JobRoleVideo title={job.title} description={job.description} />
 
               {/* Responsibilities */}
               {responsibilities.length > 0 && (

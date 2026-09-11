@@ -111,3 +111,44 @@ export function listPublicJobResponsibilities(
     .map((line) => line.trim())
     .filter(Boolean);
 }
+
+/** YouTube clips showing how each listed trade works on a construction site. */
+export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, { youtubeId: string; caption: string }> = {
+  Electrician: {
+    youtubeId: 'R-e2OCC8i6c',
+    caption: 'How electrician work is done — cable tray and site electrical installation.',
+  },
+  Plumber: {
+    youtubeId: '49x3n08ZcvI',
+    caption: 'How plumber work is done — PVC / CPVC pipe fitting like on UAE sites.',
+  },
+  Welder: {
+    youtubeId: 'N4Vn1QbS1Nk',
+    caption: 'How welder work is done — stick (ARC) welding used on construction and fabrication.',
+  },
+  'Shuttering Carpenter': {
+    youtubeId: 'JAhCaIqtflM',
+    caption: 'How shuttering carpenter work is done — formwork erection and striking.',
+  },
+  Mason: {
+    youtubeId: 'rWofXXWOhck',
+    caption: 'How mason work is done — block laying to line and level.',
+  },
+  'Civil Helper': {
+    youtubeId: 'o2kiA5ItiJw',
+    caption: 'How civil helper work is done — supporting skilled trades on a live site.',
+  },
+  'Civil Labour': {
+    youtubeId: 'e8RgNqmSh2c',
+    caption: 'How civil labour work is done — concreting and general site labour.',
+  },
+  'Pipe Fitter': {
+    youtubeId: 'KIZurpeGMoM',
+    caption: 'How pipe fitter work is done — fitting, aligning and tacking pipes on site.',
+  },
+};
+
+export function getPublicJobVideo(title: string, description = '') {
+  const listed = inferUaeListedJob(title, description);
+  return listed ? UAE_LISTED_JOB_VIDEOS[listed] : null;
+}
