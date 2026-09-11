@@ -2,6 +2,8 @@ import { useState, useEffect, type ReactNode } from 'react';
 import JobSalaryText from '@/components/JobSalaryText';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
+import { listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
+import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -344,6 +346,11 @@ export default function JobDetail() {
   }
 
   const lockedJobId = journeyRow?.journey_job_id || null;
+  const responsibilities = listPublicJobResponsibilities(
+    job.title,
+    job.responsibilities,
+    job.description,
+  );
   const isCurrentJourneyJob = Boolean(lockedJobId && lockedJobId === job.id);
   const applyLabel = applying
     ? 'Applying...'
@@ -382,17 +389,16 @@ export default function JobDetail() {
     },
     "baseSalary": {
       "@type": "MonetaryAmount",
-      "currency": job.currency,
+      "currency": "INR",
       "value": {
         "@type": "QuantitativeValue",
-        "minValue": job.salary_min,
-        "maxValue": job.salary_max,
+        "minValue": convertSalaryToINR(job.salary_min, job.currency),
+        "maxValue": convertSalaryToINR(job.salary_max, job.currency),
         "unitText": "MONTH"
       }
     },
     "experienceRequirements": job.experience_level,
-    "qualifications": job.requirements || undefined,
-    "responsibilities": job.responsibilities || undefined,
+    "responsibilities": responsibilities.join('. ') || undefined,
     "skills": job.job_skills?.map(s => s.skill_name).join(', ') || undefined
   };
 
@@ -461,25 +467,20 @@ export default function JobDetail() {
               </Card>
 
               {/* Responsibilities */}
-              {job.responsibilities && (
+              {responsibilities.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Key Responsibilities</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{job.responsibilities}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Requirements */}
-              {job.requirements && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Requirements</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{job.requirements}</p>
+                    <ul className="space-y-2">
+                      {responsibilities.map((item) => (
+                        <li key={item} className="flex items-start gap-2 text-muted-foreground">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </CardContent>
                 </Card>
               )}

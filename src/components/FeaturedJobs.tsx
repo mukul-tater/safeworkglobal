@@ -208,16 +208,12 @@ export default function FeaturedJobs() {
 
                 {hasSalary(job) && (
                   <div className="rounded-lg bg-primary/5 border border-primary/10 px-3 py-2 mb-3">
-                    {job.salary_display ? (
-                      <p className="text-lg font-bold text-primary">{job.salary_display}</p>
-                    ) : (
-                      <JobSalaryText
-                        min={job.salary_min}
-                        max={job.salary_max}
-                        currency={job.currency}
-                        primaryClassName="text-lg font-bold text-primary"
-                      />
-                    )}
+                    <JobSalaryText
+                      min={job.salary_min}
+                      max={job.salary_max}
+                      currency={job.currency}
+                      primaryClassName="text-lg font-bold text-primary"
+                    />
                     <p className="text-xs text-muted-foreground">per month (approx.)</p>
                   </div>
                 )}

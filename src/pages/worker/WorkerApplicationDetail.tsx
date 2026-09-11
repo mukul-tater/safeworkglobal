@@ -21,7 +21,9 @@ import {
   FileText
 } from "lucide-react";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
+import JobSalaryText from "@/components/JobSalaryText";
 import { listPublicJobBenefits } from "@/lib/jobBenefits";
+import { listPublicJobResponsibilities } from "@/lib/uaeListedJobs";
 
 interface ApplicationData {
   id: string;
@@ -140,13 +142,6 @@ export default function WorkerApplicationDetail() {
     }
   };
 
-  const formatSalary = (min: number | null, max: number | null, currency: string) => {
-    if (!min && !max) return "Not specified";
-    if (min && max) return `${currency} ${min.toLocaleString()} - ${max.toLocaleString()}`;
-    if (min) return `${currency} ${min.toLocaleString()}+`;
-    return `Up to ${currency} ${max?.toLocaleString()}`;
-  };
-
   if (loading) {
     return (
       <WorkerPortalLayout>
@@ -217,7 +212,14 @@ export default function WorkerApplicationDetail() {
                   </div>
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{formatSalary(job.salary_min, job.salary_max, job.currency)}</span>
+                    <span className="text-sm">
+                      <JobSalaryText
+                        min={job.salary_min}
+                        max={job.salary_max}
+                        currency={job.currency}
+                        emptyLabel="Not specified"
+                      />
+                    </span>
                   </div>
                 </div>
                 
@@ -229,17 +231,16 @@ export default function WorkerApplicationDetail() {
                     <p className="text-sm text-muted-foreground whitespace-pre-line">{job.description}</p>
                   </div>
                   
-                  {job.requirements && (
-                    <div>
-                      <h3 className="font-medium mb-2">Requirements</h3>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{job.requirements}</p>
-                    </div>
-                  )}
-                  
-                  {job.responsibilities && (
+                  {listPublicJobResponsibilities(job.title, job.responsibilities, job.description).length > 0 && (
                     <div>
                       <h3 className="font-medium mb-2">Responsibilities</h3>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{job.responsibilities}</p>
+                      <ul className="space-y-1">
+                        {listPublicJobResponsibilities(job.title, job.responsibilities, job.description).map((item) => (
+                          <li key={item} className="text-sm text-muted-foreground">
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                   

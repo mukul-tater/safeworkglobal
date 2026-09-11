@@ -10,18 +10,22 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
 };
 
 /**
- * Approximate filter-only rates. NEVER shown to users.
- * Real FX rates live in the `fx_rates` table (admin-managed). Until that is
- * populated, foreign-currency jobs fall back to a coarse rate of 1 in the INR
- * filter, which intentionally keeps them visible across the slider.
+ * Approximate INR rates for worker-facing salary display and filters.
+ * 1 AED ≈ ₹23 (typical 2026 GCC band). Exact live FX is not wired yet.
  */
-const APPROX_FILTER_RATES: Record<string, number> = {
+const INR_RATES: Record<string, number> = {
   INR: 1,
+  AED: 23,
+  SAR: 23,
+  QAR: 23.5,
+  USD: 84,
+  EUR: 98,
+  GBP: 112,
 };
 
-/** Filter-only conversion. Returns the native amount when no rate is known. */
+/** Converts a native salary amount to INR for display and filters. */
 export function convertSalaryToINR(amount: number, currency: string): number {
-  const rate = APPROX_FILTER_RATES[currency] ?? 1;
+  const rate = INR_RATES[currency] ?? 1;
   return Math.round(amount * rate);
 }
 
@@ -62,32 +66,22 @@ function formatInrPrimaryLine(
   return `Up to ${formatInrAmountLabel(max!)}`;
 }
 
-/**
- * INR-equivalent display intentionally disabled until a real FX feed lands.
- * We show actual native amounts only (AED 3,000, SAR 2,500, …) — never a
- * fake INR conversion.
- */
-function formatInrEquivalentLine(
-  _min: number | null | undefined,
-  _max: number | null | undefined,
-  _currency: string,
-): string | null {
-  return null;
-}
-
 /** Primary salary line — always displayed in ₹ (INR). */
 export function getJobSalaryDisplay(
   min: number | null | undefined,
   max: number | null | undefined,
-  _currency: string = 'INR',
+  currency: string = 'INR',
   emptyLabel = 'Salary on application',
 ): JobSalaryDisplay {
   if (min == null && max == null) {
     return { primary: emptyLabel, inrLine: null };
   }
 
+  const inrMin = min == null ? null : convertSalaryToINR(min, currency);
+  const inrMax = max == null ? null : convertSalaryToINR(max, currency);
+
   return {
-    primary: formatInrPrimaryLine(min, max, emptyLabel),
+    primary: formatInrPrimaryLine(inrMin, inrMax, emptyLabel),
     inrLine: null,
   };
 }

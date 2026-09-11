@@ -168,28 +168,19 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                       </span>
                     </div>
                     {hasSalary(job) && (
-                      job.salary_display ? (
-                        <p className="text-lg font-bold text-primary">
-                          {job.salary_display}
-                          <span className="text-xs font-normal text-muted-foreground ml-1.5">
-                            {t("jobs.perMonth")}
-                          </span>
-                        </p>
-                      ) : (
-                        <div>
-                          <JobSalaryText
-                            min={job.salary_min}
-                            max={job.salary_max}
-                            currency={job.currency}
-                            primaryClassName="text-lg font-bold text-primary"
-                            inrClassName="text-xs font-normal"
-                            className="gap-0.5"
-                          />
-                          <span className="text-xs font-normal text-muted-foreground">
-                            {t("jobs.perMonth")}
-                          </span>
-                        </div>
-                      )
+                      <div>
+                        <JobSalaryText
+                          min={job.salary_min}
+                          max={job.salary_max}
+                          currency={job.currency}
+                          primaryClassName="text-lg font-bold text-primary"
+                          inrClassName="text-xs font-normal"
+                          className="gap-0.5"
+                        />
+                        <span className="text-xs font-normal text-muted-foreground">
+                          {t("jobs.perMonth")}
+                        </span>
+                      </div>
                     )}
                   </div>
                   {hasSalary(job) && (
