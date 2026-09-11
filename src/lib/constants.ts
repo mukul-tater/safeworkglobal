@@ -56,13 +56,10 @@ export const JOB_CATEGORIES = [
 
 // Popular job titles/roles for autocomplete suggestions
 export const POPULAR_JOB_TITLES = [
-  'Electrician', 'Industrial Electrician', 'Welder', 'TIG Welder', 'MIG Welder', 'Arc Welder',
-  'Aluminium Fabricator', 'Plumber', 'Pipe Fitter', 'Carpenter', 'Finishing Carpenter',
-  'Shuttering Carpenter', 'POP / Gypsum Carpenter', 'Mason', 'Tile Mason', 'All Round Mason',
-  'Block & Plaster Mason', 'Waterproofing Mason', 'Marble / Granite Mason',
-  'Painter', 'Steel Fixer', 'Ductman', 'Scaffolder', 'Mechanical Helper', 'General Helper',
-  'Construction Worker', 'Construction Helper', 'Site Supervisor', 'Civil Foreman',
-  'HVAC Technician', 'AC Technician', 'Fire Fighting Technician', 'Refrigeration Technician',
+  'Electrician', 'Welder', 'Plumber', 'Shuttering Carpenter', 'Mason (tiles/marble)',
+  'Construction Labour/Helper', 'Pipe Fitter', 'Carpenter', 'Steel Fixer', 'AC Technician',
+  'General Labour - Warehouse/Supermarket', 'Scaffolder', 'Painter', 'Aluminium Fixer/Fabricator',
+  'Construction Worker', 'Site Supervisor', 'Civil Foreman',
   'Heavy Equipment Operator', 'Crane Operator', 'Forklift Operator', 'Excavator Operator',
   'Driver', 'Heavy Truck Driver', 'Light Vehicle Driver', 'Delivery Driver',
   'Warehouse Worker', 'Warehouse Supervisor', 'Logistics Coordinator',

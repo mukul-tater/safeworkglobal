@@ -6,34 +6,19 @@ import { UAE_LISTED_JOBS, type UaeListedJob } from '@/lib/uaeListedJobs';
 
 const TRADE_CARDS: Record<UaeListedJob, { image: string; city: string }> = {
   Electrician: { image: electricalImg, city: 'Dubai' },
-  Plumber: { image: '/country-insights/uae/worksite-business-bay-2.png', city: 'Abu Dhabi' },
   Welder: { image: welderImg, city: 'Sharjah' },
+  Plumber: { image: '/country-insights/uae/worksite-business-bay-2.png', city: 'Abu Dhabi' },
   'Shuttering Carpenter': { image: '/country-insights/uae/worksite-rebar.png', city: 'Dubai' },
-  Mason: { image: constructionImg, city: 'Abu Dhabi' },
-  'Civil Helper': { image: '/country-insights/uae/worksite-skyline.png', city: 'Dubai' },
-  'Civil Labour': { image: '/country-insights/uae/worksite-crane.png', city: 'Sharjah' },
+  'Mason (tiles/marble)': { image: constructionImg, city: 'Abu Dhabi' },
+  'Construction Labour/Helper': { image: '/country-insights/uae/worksite-skyline.png', city: 'Dubai' },
   'Pipe Fitter': { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Dubai' },
-  'MIG Welder': { image: welderImg, city: 'Dubai' },
-  'TIG Welder': { image: welderImg, city: 'Abu Dhabi' },
-  'Aluminium Fabricator': { image: welderImg, city: 'Sharjah' },
-  'Industrial Electrician': { image: electricalImg, city: 'Dubai' },
-  'Finishing Carpenter': { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Abu Dhabi' },
-  'Tile Mason': { image: constructionImg, city: 'Dubai' },
-  'All Round Mason': { image: constructionImg, city: 'Sharjah' },
-  'Block & Plaster Mason': { image: constructionImg, city: 'Abu Dhabi' },
-  'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png', city: 'Dubai' },
-  Ductman: { image: '/country-insights/uae/worksite-business-bay-2.png', city: 'Sharjah' },
-  'Mechanical Helper': { image: '/country-insights/uae/worksite-crane.png', city: 'Dubai' },
-  'General Helper': { image: '/country-insights/uae/worksite-skyline.png', city: 'Abu Dhabi' },
-  Carpenter: { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Dubai' },
-  'HVAC Technician': { image: '/country-insights/uae/worksite-business-bay-2.png', city: 'Abu Dhabi' },
+  Carpenter: { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Abu Dhabi' },
+  'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png', city: 'Sharjah' },
   'AC Technician': { image: electricalImg, city: 'Sharjah' },
-  'Fire Fighting Technician': { image: electricalImg, city: 'Dubai' },
-  Painter: { image: constructionImg, city: 'Abu Dhabi' },
+  'General Labour - Warehouse/Supermarket': { image: '/country-insights/uae/worksite-crane.png', city: 'Dubai' },
   Scaffolder: { image: '/country-insights/uae/worksite-crane.png', city: 'Sharjah' },
-  'POP / Gypsum Carpenter': { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Dubai' },
-  'Waterproofing Mason': { image: constructionImg, city: 'Sharjah' },
-  'Marble / Granite Mason': { image: constructionImg, city: 'Dubai' },
+  Painter: { image: constructionImg, city: 'Dubai' },
+  'Aluminium Fixer/Fabricator': { image: welderImg, city: 'Sharjah' },
 };
 
 interface Props {
@@ -71,7 +56,7 @@ export default function JobTradeGrid({ onSelect }: Props) {
                     <HardHat className="h-3.5 w-3.5" />
                     Job
                   </p>
-                  <p className="mt-1 font-heading text-xl font-semibold">{job}</p>
+                  <p className="mt-1 font-heading text-xl font-semibold leading-snug">{job}</p>
                   <p className="text-sm text-white/85">{card.city}, UAE</p>
                 </div>
               </div>
