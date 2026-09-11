@@ -45,27 +45,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
 
   const rows = data || [];
   const jobIds = rows.map((job: { id: string }) => job.id);
-  const employerIds = [
-    ...new Set(rows.map((job: { employer_id: string }) => job.employer_id).filter(Boolean)),
-  ];
-
-  const companyMap = new Map<string, { name: string; logoUrl: string | null }>();
   const skillsByJob = new Map<string, string[]>();
-
-  if (employerIds.length > 0) {
-    const { data: companies } = await supabase
-      .from('employer_company_info' as never)
-      .select('user_id, company_name, company_logo_url')
-      .in('user_id', employerIds);
-    (companies || []).forEach(
-      (company: { user_id: string; company_name: string; company_logo_url: string | null }) => {
-        companyMap.set(company.user_id, {
-          name: company.company_name,
-          logoUrl: company.company_logo_url ?? null,
-        });
-      },
-    );
-  }
 
   if (jobIds.length > 0) {
     const { data: skillRows } = await supabase
@@ -80,7 +60,6 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
   }
 
   return rows.map((job: Record<string, unknown>) => {
-    const company = companyMap.get(String(job.employer_id));
     const description = String(job.description ?? '');
     const skills = skillsByJob.get(String(job.id)) ?? [];
     const postedRaw = job.posted_at ?? job.created_at;
@@ -88,8 +67,8 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       id: String(job.id),
       slug: String(job.slug || job.id),
       title: String(job.title),
-      company: company?.name || 'Verified employer',
-      companyLogoUrl: company?.logoUrl ?? null,
+      company: '',
+      companyLogoUrl: null,
       location: `${job.location}, ${job.country}`,
       country: String(job.country),
       salaryDisplay: (job.salary_display as string | null) ?? null,
@@ -211,7 +190,6 @@ export default function JourneyJobPicker({
       if (!q) return true;
       return (
         job.title.toLowerCase().includes(q) ||
-        job.company.toLowerCase().includes(q) ||
         job.location.toLowerCase().includes(q) ||
         job.skills.some((s) => s.toLowerCase().includes(q))
       );

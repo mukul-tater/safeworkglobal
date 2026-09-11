@@ -13,26 +13,17 @@ export default function ApplicationSuccess() {
   const { applicationId } = useParams<{ applicationId: string }>();
   const navigate = useNavigate();
   const [jobTitle, setJobTitle] = useState<string>('the position');
-  const [companyName, setCompanyName] = useState<string>('the employer');
 
   useEffect(() => {
     const load = async () => {
       if (!applicationId) return;
       const { data } = await supabase
         .from('job_applications')
-        .select('jobs:job_id(title, employer_id)')
+        .select('jobs:job_id(title)')
         .eq('id', applicationId)
         .maybeSingle();
       const j: any = (data as any)?.jobs;
       if (j?.title) setJobTitle(j.title);
-      if (j?.employer_id) {
-        const { data: emp } = await supabase
-          .from('employer_profiles')
-          .select('company_name')
-          .eq('user_id', j.employer_id)
-          .maybeSingle();
-        if ((emp as any)?.company_name) setCompanyName((emp as any).company_name);
-      }
     };
     load();
   }, [applicationId]);
@@ -49,7 +40,6 @@ export default function ApplicationSuccess() {
           </h1>
           <p className="text-muted-foreground">
             You applied for <span className="font-semibold text-foreground">{jobTitle}</span>
-            {companyName !== 'the employer' && <> at <span className="font-semibold text-foreground">{companyName}</span></>}
           </p>
         </div>
 

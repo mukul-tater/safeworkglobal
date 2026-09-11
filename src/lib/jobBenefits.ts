@@ -82,6 +82,12 @@ export function serializeJobBenefits(parsed: ParsedJobBenefits): string {
   return lines.join('\n');
 }
 
+export function listPublicJobBenefits(): string[] {
+  return [...STANDARD_JOB_BENEFITS];
+}
+
+export const PUBLIC_JOB_BENEFITS_TEXT = STANDARD_JOB_BENEFITS.join('\n');
+
 export function listJobBenefits(raw: string | null | undefined): string[] {
   if (!raw?.trim()) return [];
   const items: string[] = [];

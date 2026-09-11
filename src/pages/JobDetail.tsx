@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import JobSalaryText from '@/components/JobSalaryText';
 import { formatSalaryINR } from '@/lib/utils';
-import { jobBenefitInfo, listJobBenefits } from '@/lib/jobBenefits';
+import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,8 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  MapPin, Building2, 
-  CheckCircle2, ArrowLeft, Users, Shield, Calendar,
+  MapPin, 
+  CheckCircle2, ArrowLeft, Shield, Calendar,
   Share2, Bookmark, Loader2, Pencil
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -51,19 +51,11 @@ interface JobData {
   benefits: string | null;
   requirements: string | null;
   responsibilities: string | null;
-  openings: number;
   visa_sponsorship: boolean;
   posted_at: string;
   slug: string;
   posted_by_role?: string | null;
   job_skills: { skill_name: string }[];
-}
-
-interface EmployerProfile {
-  company_name: string | null;
-  industry: string | null;
-  company_size: string | null;
-  bio: string | null;
 }
 
 export default function JobDetail() {
@@ -79,7 +71,6 @@ export default function JobDetail() {
   const { toast } = useToast();
   
   const [job, setJob] = useState<JobData | null>(null);
-  const [employer, setEmployer] = useState<EmployerProfile | null>(null);
   const [hasApplied, setHasApplied] = useState(false);
   const [applying, setApplying] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -124,17 +115,6 @@ export default function JobDetail() {
 
         if (cancelled) return;
         setJob(jobData as any);
-
-        // Fetch employer profile
-        const { data: employerData } = await supabase
-          .from('employer_company_info' as any)
-          .select('company_name, industry, company_size, bio')
-          .eq('user_id', jobData.employer_id)
-          .maybeSingle();
-
-        if (employerData && !cancelled) {
-          setEmployer(employerData as any);
-        }
 
         // Check if user has already applied and if job is saved
         if (!cancelled && user) {
@@ -363,7 +343,6 @@ export default function JobDetail() {
     );
   }
 
-  const companyName = employer?.company_name || 'SafeWork Global';
   const lockedJobId = journeyRow?.journey_job_id || null;
   const isCurrentJourneyJob = Boolean(lockedJobId && lockedJobId === job.id);
   const applyLabel = applying
@@ -391,8 +370,7 @@ export default function JobDetail() {
     "employmentType": job.job_type.replace('_', ' '),
     "hiringOrganization": {
       "@type": "Organization",
-      "name": companyName,
-      "description": employer?.bio || undefined
+      "name": "Verified employer"
     },
     "jobLocation": {
       "@type": "Place",
@@ -449,13 +427,8 @@ export default function JobDetail() {
                   </div>
 
                   <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{job.title}</h1>
-                  
-                  <div className="flex items-center gap-2 text-lg text-muted-foreground mb-4">
-                    <Building2 className="h-5 w-5" />
-                    <span className="font-medium">{companyName}</span>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="h-4 w-4 shrink-0" />
                       <span>{job.location}, {job.country}</span>
@@ -468,10 +441,6 @@ export default function JobDetail() {
                         emptyLabel="Salary not specified"
                         primaryClassName="font-semibold text-foreground"
                       />
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Users className="h-4 w-4 shrink-0" />
-                      <span>{job.openings} openings</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="h-4 w-4 shrink-0" />
@@ -516,29 +485,27 @@ export default function JobDetail() {
               )}
 
               {/* Benefits */}
-              {job.benefits && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Benefits & Perks</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {listJobBenefits(job.benefits).map((benefit) => {
-                        const info = jobBenefitInfo(benefit);
-                        return (
-                          <li key={benefit} className="flex items-start gap-2 text-muted-foreground">
-                            <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                            <span>
-                              {benefit}
-                              {info ? ` — ${info}` : ''}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Benefits & Perks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {listPublicJobBenefits().map((benefit) => {
+                      const info = jobBenefitInfo(benefit);
+                      return (
+                        <li key={benefit} className="flex items-start gap-2 text-muted-foreground">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <span>
+                            {benefit}
+                            {info ? ` — ${info}` : ''}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </CardContent>
+              </Card>
 
               {/* Required Skills */}
               {job.job_skills && job.job_skills.length > 0 && (
@@ -657,10 +624,6 @@ export default function JobDetail() {
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium">{job.country}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Openings</span>
-                    <span className="font-medium">{job.openings} positions</span>
-                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -706,9 +669,9 @@ export default function JobDetail() {
           />
     </>,
     <SEOHead
-      title={`${job.title} at ${companyName} | SafeWork Global`}
+      title={`${job.title} | SafeWork Global`}
       description={`Apply for ${job.title} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(job.salary_min, job.salary_max, job.currency)}/month.`}
-      keywords={`${job.title}, ${job.location} jobs, ${job.country} jobs, ${companyName} careers, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
+      keywords={`${job.title}, ${job.location} jobs, ${job.country} jobs, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
       canonicalUrl={`${job.slug ? `https://www.safeworkglobal.com/jobs/${job.slug}` : "https://www.safeworkglobal.com/jobs"}`}
       ogType="article"
       structuredData={jobStructuredData}

@@ -24,6 +24,7 @@ import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import AutoSaveStatus from "@/components/profile/AutoSaveStatus";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { saveJobDraftPartial, loadJobDraftById, loadLatestJobDraft, hasJobContent, type JobPostAutoSaveData } from "@/lib/autoSaveJobs";
+import { PUBLIC_JOB_BENEFITS_TEXT } from "@/lib/jobBenefits";
 import { todayDateInputValue } from "@/lib/validations/common";
 import {
   readPostJobDraftCache,
@@ -35,7 +36,7 @@ const EMPTY_JOB_DRAFT: JobPostAutoSaveData = {
   title: "",
   description: "",
   requirements: "",
-  benefits: "",
+  benefits: PUBLIC_JOB_BENEFITS_TEXT,
   responsibilities: "",
   location: "",
   country: "",

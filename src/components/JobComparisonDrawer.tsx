@@ -6,7 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { X, MapPin, Building2, DollarSign, Briefcase, Check, Zap, Clock, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, MapPin, DollarSign, Briefcase, Check, Zap, Clock, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatSalaryLakh } from '@/lib/utils';
@@ -24,9 +24,6 @@ interface CompareJob {
   job_type: string;
   visa_sponsorship: boolean;
   posted_at: string;
-  employer_profiles?: {
-    company_name: string;
-  } | null;
   job_skills: {
     skill_name: string;
   }[];
@@ -107,7 +104,6 @@ export default function JobComparisonDrawer({
   };
 
   const comparisonFields = [
-    { label: 'Company', key: 'company' },
     { label: 'Location', key: 'location' },
     { label: 'Salary', key: 'salary' },
     { label: 'Job Type', key: 'job_type' },
@@ -118,8 +114,6 @@ export default function JobComparisonDrawer({
 
   const getFieldValue = (job: CompareJob, key: string) => {
     switch (key) {
-      case 'company':
-        return job.employer_profiles?.company_name || 'N/A';
       case 'location':
         return `${job.location}, ${job.country}`;
       case 'salary':
@@ -310,7 +304,6 @@ export default function JobComparisonDrawer({
                     >
                       <td className="py-3 px-4 font-medium text-muted-foreground sticky left-0 bg-inherit">
                         <div className="flex items-center gap-2">
-                          {field.key === 'company' && <Building2 className="h-4 w-4" />}
                           {field.key === 'location' && <MapPin className="h-4 w-4" />}
                           {field.key === 'salary' && <DollarSign className="h-4 w-4" />}
                           {field.key === 'job_type' && <Briefcase className="h-4 w-4" />}

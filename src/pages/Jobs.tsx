@@ -69,7 +69,6 @@ function filterJobs(jobs: JobListItem[], filters: JobFilters): JobListItem[] {
     if (keyword) {
       const matches =
         job.title.toLowerCase().includes(keyword) ||
-        job.company.toLowerCase().includes(keyword) ||
         job.description.toLowerCase().includes(keyword) ||
         job.skills.some((skill) => skill.toLowerCase().includes(keyword));
       if (!matches) return false;
@@ -185,33 +184,15 @@ export default function Jobs() {
 
         if (error) throw error;
 
-        const employerIds = [...new Set((data || []).map((job: any) => job.employer_id).filter(Boolean))];
-        const companyMap = new Map<string, { name: string; logoUrl: string | null }>();
-
-        if (employerIds.length > 0) {
-          const { data: companies } = await supabase
-            .from('employer_company_info' as any)
-            .select('user_id, company_name, company_logo_url')
-            .in('user_id', employerIds);
-
-          (companies || []).forEach((company: any) => {
-            companyMap.set(company.user_id, {
-              name: company.company_name,
-              logoUrl: company.company_logo_url ?? null,
-            });
-          });
-        }
-
         const formatted: JobListItem[] = (data || []).map((job: any) => {
-          const company = companyMap.get(job.employer_id);
           const description: string = job.description ?? '';
 
           return {
             id: job.id,
             slug: job.slug || job.id,
             title: job.title,
-            company: company?.name || 'Verified employer',
-            companyLogoUrl: company?.logoUrl ?? null,
+            company: '',
+            companyLogoUrl: null,
             location: `${job.location}, ${job.country}`,
             country: job.country,
             salaryDisplay: job.salary_display ?? null,
@@ -692,7 +673,7 @@ export default function Jobs() {
         '@type': 'JobPosting',
         title: job.title,
         description: job.description,
-        hiringOrganization: { '@type': 'Organization', name: job.company },
+        hiringOrganization: { '@type': 'Organization', name: 'Verified employer' },
         jobLocation: { '@type': 'Place', address: job.location },
         employmentType: job.type,
       },

@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { adminJobPostSchema, type AdminJobPostFormData } from "@/lib/validations/job";
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
+import { PUBLIC_JOB_BENEFITS_TEXT } from "@/lib/jobBenefits";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobTitleAutocomplete from "@/components/employer/JobTitleAutocomplete";
 import { adminCreateJob } from "@/services/AdminService";
@@ -51,6 +52,7 @@ export default function AdminPostJob() {
       status: "ACTIVE",
       skills: [],
       employer_id: "",
+      benefits: PUBLIC_JOB_BENEFITS_TEXT,
     },
   });
 

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -38,15 +37,6 @@ function relativeTime(date: Date): string {
   return months === 1 ? '1 month ago' : `${months} months ago`;
 }
 
-function companyInitials(company: string): string {
-  return company
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? '')
-    .join('');
-}
-
 interface JobResultCardProps {
   job: JobListItem;
   saved?: boolean;
@@ -71,9 +61,7 @@ export default function JobResultCard({
   actionDisabled = false,
 }: JobResultCardProps) {
   const navigate = useNavigate();
-  const [logoFailed, setLogoFailed] = useState(false);
   const jobUrl = `/jobs/${job.slug}`;
-  const showLogo = Boolean(job.companyLogoUrl) && !logoFailed;
 
   const open = () => {
     if (onOpen) onOpen(job);
@@ -85,29 +73,13 @@ export default function JobResultCard({
       onClick={open}
       className="group cursor-pointer rounded-xl border border-border/60 bg-card p-4 transition-colors hover:border-primary/40 sm:p-5"
     >
-      <div className="flex gap-3 sm:gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/60 bg-muted/60 sm:h-12 sm:w-12">
-          {showLogo ? (
-            <img
-              src={job.companyLogoUrl!}
-              alt=""
-              loading="lazy"
-              onError={() => setLogoFailed(true)}
-              className="h-full w-full object-contain p-1"
-            />
-          ) : (
-            <span className="text-sm font-semibold text-muted-foreground">{companyInitials(job.company) || '—'}</span>
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="truncate text-base font-semibold leading-snug transition-colors group-hover:text-primary sm:text-lg">
-                {job.title}
-              </h3>
-              <p className="mt-0.5 truncate text-sm text-muted-foreground">{job.company}</p>
-            </div>
+      <div className="min-w-0">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-semibold leading-snug transition-colors group-hover:text-primary sm:text-lg">
+              {job.title}
+            </h3>
+          </div>
 
             {onToggleSave && (
               <Button
@@ -186,7 +158,6 @@ export default function JobResultCard({
               {actionLabel}
             </Button>
           </div>
-        </div>
       </div>
     </article>
   );

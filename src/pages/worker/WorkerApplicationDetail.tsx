@@ -18,10 +18,10 @@ import {
   CheckCircle2, 
   Clock, 
   XCircle,
-  FileText,
-  Building2
+  FileText
 } from "lucide-react";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
+import { listPublicJobBenefits } from "@/lib/jobBenefits";
 
 interface ApplicationData {
   id: string;
@@ -50,10 +50,6 @@ interface JobData {
   employer_id: string;
 }
 
-interface EmployerProfile {
-  company_name: string | null;
-}
-
 interface StatusHistory {
   id: string;
   status: string;
@@ -67,7 +63,6 @@ export default function WorkerApplicationDetail() {
   const { toast } = useToast();
   const [application, setApplication] = useState<ApplicationData | null>(null);
   const [job, setJob] = useState<JobData | null>(null);
-  const [employer, setEmployer] = useState<EmployerProfile | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -99,15 +94,6 @@ export default function WorkerApplicationDetail() {
 
       if (jobError) throw jobError;
       setJob(jobData);
-
-      // Fetch employer profile
-      const { data: empData } = await supabase
-        .from("employer_profiles")
-        .select("company_name")
-        .eq("user_id", jobData.employer_id)
-        .single();
-
-      setEmployer(empData);
 
       // Fetch status history
       const { data: historyData, error: historyError } = await supabase
@@ -202,9 +188,6 @@ export default function WorkerApplicationDetail() {
               <div>
                 <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
                 <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                  <Building2 className="h-4 w-4" />
-                  <span>{employer?.company_name || "Company"}</span>
-                  <span>•</span>
                   <MapPin className="h-4 w-4" />
                   <span>{job.location}, {job.country}</span>
                 </div>
@@ -260,12 +243,16 @@ export default function WorkerApplicationDetail() {
                     </div>
                   )}
                   
-                  {job.benefits && (
-                    <div>
-                      <h3 className="font-medium mb-2">Benefits</h3>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">{job.benefits}</p>
-                    </div>
-                  )}
+                  <div>
+                    <h3 className="font-medium mb-2">Benefits</h3>
+                    <ul className="space-y-1">
+                      {listPublicJobBenefits().map((benefit) => (
+                        <li key={benefit} className="text-sm text-muted-foreground">
+                          {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </Card>
 

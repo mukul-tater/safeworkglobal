@@ -1,7 +1,7 @@
 import { Briefcase, HardHat, Handshake } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '@/i18n';
-import { GET_STARTED_PATHS, PARTNER_EXISTING_ACCOUNT_PATH } from '@/lib/getStarted';
+import { GET_STARTED_PATHS } from '@/lib/getStarted';
 
 type Props = {
   onChosen?: () => void;
@@ -63,24 +63,10 @@ export default function GetStartedChoices({ onChosen }: Props) {
       <div className="border-t border-border my-2" />
       <button
         type="button"
-        onClick={() => go(GET_STARTED_PATHS.worker)}
-        className="w-full text-xs text-center text-primary hover:underline py-2.5"
+        onClick={() => go('/auth')}
+        className="w-full text-sm text-center text-primary hover:underline py-2.5"
       >
-        {t('header.workerSignIn')}
-      </button>
-      <button
-        type="button"
-        onClick={() => go(GET_STARTED_PATHS.employer)}
-        className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-2.5"
-      >
-        {t('header.employerSignIn')}
-      </button>
-      <button
-        type="button"
-        onClick={() => go(PARTNER_EXISTING_ACCOUNT_PATH)}
-        className="w-full text-xs text-center text-muted-foreground hover:text-primary hover:underline py-2.5"
-      >
-        {t('header.partnerSignIn')}
+        {t('nav.login')}
       </button>
     </div>
   );

@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Building2, Clock, ArrowRight, Bookmark, Share2, Zap, Sparkles, BadgeCheck } from 'lucide-react';
+import { MapPin, Clock, ArrowRight, Bookmark, Share2, Zap, Sparkles, BadgeCheck } from 'lucide-react';
 import JobSalaryText from '@/components/JobSalaryText';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
@@ -24,9 +24,6 @@ interface FeaturedJob {
   job_type: string;
   visa_sponsorship: boolean;
   posted_at: string;
-  employer_profiles?: {
-    company_name: string;
-  } | null;
   job_skills: {
     skill_name: string;
   }[];
@@ -78,19 +75,7 @@ export default function FeaturedJobs() {
           .limit(6);
 
         if (error) throw error;
-        const employerIds = Array.from(new Set((data || []).map((j: { employer_id?: string }) => j.employer_id).filter(Boolean)));
-        let companyMap: Record<string, string> = {};
-        if (employerIds.length > 0) {
-          const { data: companies } = await supabase.rpc('get_employer_company_names' as any, {
-            p_employer_ids: employerIds,
-          });
-          companyMap = Object.fromEntries(((companies as any[]) || []).map((c: { user_id: string; company_name: string }) => [c.user_id, c.company_name]));
-        }
-        const enriched = (data || []).map((j: { employer_id?: string }) => ({
-          ...j,
-          employer_profiles: { company_name: companyMap[j.employer_id as string] || 'Verified Employer' },
-        }));
-        setJobs(enriched as FeaturedJob[]);
+        setJobs((data || []) as FeaturedJob[]);
       } catch (error) {
         console.error('Error loading jobs:', error);
       } finally {
@@ -131,7 +116,7 @@ export default function FeaturedJobs() {
   const handleShareJob = async (job: FeaturedJob) => {
     const shareData = {
       title: job.title,
-      text: `Check out this job: ${job.title} at ${job.employer_profiles?.company_name || 'Company'}`,
+      text: `Check out this job: ${job.title}`,
       url: `${globalThis.location.origin}/jobs/${job.slug || job.id}`,
     };
 
@@ -214,10 +199,6 @@ export default function FeaturedJobs() {
                 <h3 className="text-lg font-semibold font-heading text-foreground line-clamp-2 group-hover:text-primary transition-colors mb-1">
                   {job.title}
                 </h3>
-                <p className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
-                  <Building2 className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{job.employer_profiles?.company_name}</span>
-                </p>
 
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
                   <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />

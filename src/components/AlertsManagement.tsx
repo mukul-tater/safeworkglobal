@@ -129,8 +129,8 @@ const AlertsManagement = () => {
   };
 
   const filteredAlerts = alerts.filter(alert => {
-    const matchesSearch = alert.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         alert.company.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =                          alert.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         alert.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCountry = filterCountry === "all" || alert.country === filterCountry;
     const matchesPriority = filterPriority === "all" || alert.priority === filterPriority;
     
@@ -156,8 +156,6 @@ const AlertsManagement = () => {
                 <Badge variant="secondary" className="text-xs">New</Badge>
               )}
             </div>
-            
-            <p className="text-sm text-muted-foreground mb-2">{alert.company}</p>
             
             <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
               <span className="flex items-center gap-1">
