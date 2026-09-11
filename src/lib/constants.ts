@@ -60,6 +60,7 @@ export const POPULAR_JOB_TITLES = [
   'Construction Labour/Helper', 'Pipe Fitter',
   'Furniture Carpenter - Finishing, All Rounder', 'Steel Fixer', 'AC Technician',
   'General Labour - Warehouse/Supermarket', 'Scaffolder', 'Painter', 'Aluminium Fixer/Fabricator',
+  'Cleaner',
   'Construction Worker', 'Site Supervisor', 'Civil Foreman',
   'Heavy Equipment Operator', 'Crane Operator', 'Forklift Operator', 'Excavator Operator',
   'Driver', 'Heavy Truck Driver', 'Light Vehicle Driver', 'Delivery Driver',
@@ -67,7 +68,7 @@ export const POPULAR_JOB_TITLES = [
   'CNC Machinist', 'Fabricator', 'Assembly Line Worker', 'Production Operator', 'Quality Inspector',
   'Oil & Gas Technician', 'Rigger', 'Roustabout', 'Drilling Operator',
   'Chef', 'Cook', 'Kitchen Helper', 'Waiter', 'Housekeeper', 'Hotel Cleaner',
-  'Security Guard', 'Cleaner', 'Janitor', 'Gardener',
+  'Security Guard', 'Janitor', 'Gardener',
   'Nurse', 'Caregiver', 'Healthcare Assistant',
   'Farm Worker', 'Agricultural Helper',
   'IT Support', 'Software Engineer', 'Mechanical Engineer', 'Electrical Engineer', 'Civil Engineer'

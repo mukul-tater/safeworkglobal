@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, ArrowRight, Bookmark, Share2, Zap, Sparkles, BadgeCheck } from 'lucide-react';
 import JobSalaryText from '@/components/JobSalaryText';
+import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
@@ -220,7 +221,15 @@ export default function FeaturedJobs() {
                       primaryClassName="text-lg font-bold text-primary"
                     />
                     <p className="text-xs text-muted-foreground">per month (approx.)</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      <JobServiceFee hideIcon className="text-xs" />
+                    </p>
                   </div>
+                )}
+                {!hasSalary(job) && (
+                  <p className="mb-3 text-xs text-muted-foreground">
+                    <JobServiceFee hideIcon className="text-xs" />
+                  </p>
                 )}
 
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">

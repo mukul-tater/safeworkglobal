@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import JobSalaryText from '@/components/JobSalaryText';
+import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { isHiddenPublicJob } from '@/lib/uaeListedJobs';
 import { MapPin, Briefcase, ArrowRight, Sparkles, ShieldCheck, ChevronRight } from 'lucide-react';
 
@@ -189,6 +190,9 @@ export default function WorkerDiscover() {
                             />
                           </p>
                         )}
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          <JobServiceFee hideIcon className="text-xs" />
+                        </p>
                       </div>
                       <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
                     </div>

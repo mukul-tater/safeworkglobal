@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Bookmark, MapPin, Briefcase, Trash2, Loader2, ExternalLink } from "lucide-react";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
+import JobServiceFee from "@/components/jobs/JobServiceFee";
 
 interface SavedJob {
   id: string;
@@ -136,6 +137,9 @@ export default function SavedJobs() {
                         currency={job.currency}
                         title={job.title}
                       />
+                      </span>
+                      <span>
+                        <JobServiceFee />
                       </span>
                     </div>
                   </div>
