@@ -3,7 +3,6 @@ import electricalImg from '@/assets/trade-electrical.jpg';
 import welderImg from '@/assets/trade-welder.jpg';
 import constructionImg from '@/assets/trade-construction.jpg';
 import { UAE_LISTED_JOBS, isHiddenPublicJob, type UaeListedJob } from '@/lib/uaeListedJobs';
-import JobServiceFee from '@/components/jobs/JobServiceFee';
 
 const TRADE_CARDS: Record<UaeListedJob, { image: string }> = {
   Electrician: { image: electricalImg },
@@ -61,9 +60,6 @@ export default function JobTradeGrid({ onSelect }: Props) {
                   </p>
                   <p className="mt-1 font-heading text-xl font-semibold leading-snug">{job}</p>
                 </div>
-              </div>
-              <div className="px-4 py-2.5">
-                <JobServiceFee />
               </div>
             </button>
           );

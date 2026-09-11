@@ -432,6 +432,7 @@ export default function JobDetail() {
                         Visa Sponsorship
                       </Badge>
                     )}
+                    <JobServiceFee />
                     <Badge variant={job.status === 'ACTIVE' ? 'default' : 'secondary'}>
                       {job.status}
                     </Badge>
@@ -439,10 +440,6 @@ export default function JobDetail() {
                   </div>
 
                   <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{job.title}</h1>
-
-                  <div className="mb-4">
-                    <JobServiceFee className="text-sm" />
-                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -570,9 +567,7 @@ export default function JobDetail() {
                     </Alert>
                   ) : showApply ? (
                     <>
-                      <div className="rounded-lg border border-amber-400/70 bg-amber-400/20 p-3">
-                        <JobServiceFee className="text-sm" />
-                      </div>
+                      <JobServiceFee />
                       <Button 
                         size="lg" 
                         onClick={handleApplyClick}
@@ -642,9 +637,7 @@ export default function JobDetail() {
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium">{job.country}</span>
                   </div>
-                  <div className="rounded-lg border border-amber-400/70 bg-amber-400/20 p-2.5">
-                    <JobServiceFee />
-                  </div>
+                  <JobServiceFee />
                 </CardContent>
               </Card>
             </div>

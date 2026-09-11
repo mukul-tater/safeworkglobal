@@ -103,12 +103,15 @@ export default function JobResultCard({
             )}
           </div>
 
-          {job.visaSponsorship && (
-            <Badge variant="outline" className="mt-2 gap-1 border-success/30 bg-success/10 font-normal text-success">
-              <ShieldCheck className="h-3 w-3" />
-              Visa sponsored
-            </Badge>
-          )}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {job.visaSponsorship && (
+              <Badge variant="outline" className="gap-1 border-success/30 bg-success/10 font-normal text-success">
+                <ShieldCheck className="h-3 w-3" />
+                Visa sponsored
+              </Badge>
+            )}
+            <JobServiceFee />
+          </div>
 
           <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
             <dd className="flex items-center gap-1.5">
@@ -134,10 +137,6 @@ export default function JobResultCard({
               {relativeTime(job.postedAt)}
             </dd>
           </dl>
-
-          <div className="mt-3">
-            <JobServiceFee />
-          </div>
 
           <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{job.description}</p>
 
