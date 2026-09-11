@@ -13,6 +13,10 @@ const TRADE_CARDS: Record<UaeListedJob, { image: string; city: string }> = {
   'Construction Labour/Helper': { image: '/country-insights/uae/worksite-skyline.png', city: 'Dubai' },
   'Pipe Fitter': { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Dubai' },
   Carpenter: { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Abu Dhabi' },
+  'Furniture Carpenter - Finishing, All Rounder': {
+    image: '/country-insights/uae/worksite-business-bay-1.png',
+    city: 'Dubai',
+  },
   'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png', city: 'Sharjah' },
   'AC Technician': { image: electricalImg, city: 'Sharjah' },
   'General Labour - Warehouse/Supermarket': { image: '/country-insights/uae/worksite-crane.png', city: 'Dubai' },

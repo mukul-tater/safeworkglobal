@@ -8,6 +8,7 @@ export const UAE_LISTED_JOBS = [
   'Construction Labour/Helper',
   'Pipe Fitter',
   'Carpenter',
+  'Furniture Carpenter - Finishing, All Rounder',
   'Steel Fixer',
   'AC Technician',
   'General Labour - Warehouse/Supermarket',
@@ -29,7 +30,8 @@ const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'AC Technician', needles: ['ac technician', 'air conditioning technician', 'air conditioner technician', 'hvac technician'] },
   { job: 'Scaffolder', needles: ['scaffolder', 'scaffolding'] },
   { job: 'Painter', needles: ['painter', 'painting'] },
-  { job: 'Carpenter', needles: ['finishing carpenter', 'pop / gypsum', 'pop/gypsum', 'gypsum carpenter', 'pop carpenter', 'carpenter'] },
+  { job: 'Furniture Carpenter - Finishing, All Rounder', needles: ['furniture carpenter', 'finishing, all rounder', 'finishing all rounder', 'finishing carpenter'] },
+  { job: 'Carpenter', needles: ['pop / gypsum', 'pop/gypsum', 'gypsum carpenter', 'pop carpenter', 'carpenter'] },
   { job: 'Electrician', needles: ['electrician', 'electrical'] },
   { job: 'Plumber', needles: ['plumber', 'plumbing'] },
   { job: 'Welder', needles: ['welder', 'welding'] },
@@ -88,6 +90,7 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ReturnType<typeof inr
   Electrician: INDUSTRIAL_ELECTRICIAN_BAND,
   'Shuttering Carpenter': SHUTTERING_BAND,
   Carpenter: FINISHING_CARPENTER_BAND,
+  'Furniture Carpenter - Finishing, All Rounder': FINISHING_CARPENTER_BAND,
   'Mason (tiles/marble)': MASON_BAND,
   'Steel Fixer': MASON_BAND,
   Plumber: PLUMBER_BAND,
@@ -170,6 +173,14 @@ export const UAE_LISTED_JOB_RESPONSIBILITIES: Record<UaeListedJob, string[]> = {
     'Coordinate with civil, finishing and MEP teams',
     'Follow site HSE and working-at-height rules',
   ],
+  'Furniture Carpenter - Finishing, All Rounder': [
+    'Build and finish furniture, cabinets, wardrobes and wooden joinery',
+    'Cut, assemble, sand and fix timber to drawings and site measures',
+    'Install doors, frames, panelling, skirting and furniture fittings',
+    'Handle finishing, polish and snag-list close-out before handover',
+    'Work as an all-rounder across furniture and finishing carpentry as directed',
+    'Follow site HSE and protect completed interiors',
+  ],
   'Steel Fixer': [
     'Read bar-bending schedules and rebar drawings',
     'Cut, bend, place and tie reinforcement for slabs, beams, columns and walls',
@@ -234,67 +245,91 @@ export function listPublicJobResponsibilities(
     .filter(Boolean);
 }
 
-/** YouTube clips showing how each listed trade works on a construction site. */
-export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, { youtubeId: string; caption: string }> = {
-  Electrician: {
-    youtubeId: 'R-e2OCC8i6c',
-    caption: 'How electrician work is done — cable tray and site electrical installation.',
-  },
-  Welder: {
-    youtubeId: 'N4Vn1QbS1Nk',
-    caption: 'How welder work is done — stick (ARC) welding used on construction and fabrication.',
-  },
-  Plumber: {
-    youtubeId: '49x3n08ZcvI',
-    caption: 'How plumber work is done — PVC / CPVC pipe fitting like on UAE sites.',
-  },
-  'Shuttering Carpenter': {
-    youtubeId: 'JAhCaIqtflM',
-    caption: 'How shuttering carpenter work is done — formwork erection and striking.',
-  },
-  'Mason (tiles/marble)': {
-    youtubeId: 'UawZD4KHS3k',
-    caption: 'How mason (tiles/marble) work is done — wall and floor tiling and stone setting.',
-  },
-  'Construction Labour/Helper': {
-    youtubeId: 'o2kiA5ItiJw',
-    caption: 'How construction labour / helper work is done — supporting skilled trades on a live site.',
-  },
-  'Pipe Fitter': {
-    youtubeId: 'KIZurpeGMoM',
-    caption: 'How pipe fitter work is done — fitting, aligning and tacking pipes on site.',
-  },
-  Carpenter: {
-    youtubeId: 'WJI_EBc3Cyo',
-    caption: 'How carpenter work is done — cutting, fitting and fixing timber on site.',
-  },
-  'Steel Fixer': {
-    youtubeId: 'NT2IeAdO7eg',
-    caption: 'How steel fixer work is done — cutting, placing and tying reinforcement.',
-  },
-  'AC Technician': {
-    youtubeId: 'sRy3zy84hwg',
-    caption: 'How AC technician work is done — installing and servicing air-conditioning units.',
-  },
-  'General Labour - Warehouse/Supermarket': {
-    youtubeId: 'e8RgNqmSh2c',
-    caption: 'How general labour work is done — materials handling, stacking and warehouse support.',
-  },
-  Scaffolder: {
-    youtubeId: 'veF4uSUtrEY',
-    caption: 'How scaffolder work is done — erecting platforms, ties and guardrails.',
-  },
-  Painter: {
-    youtubeId: 'WJI_EBc3Cyo',
-    caption: 'How painter work is done — surface preparation and finishing on interiors.',
-  },
-  'Aluminium Fixer/Fabricator': {
-    youtubeId: 'ovEDLzbAWpg',
-    caption: 'How aluminium fixer / fabricator work is done — cutting, fitting and joining metal sections.',
-  },
+export type ListedJobVideo = { youtubeId: string; startSeconds?: number };
+
+/** YouTube clips Mukul sent for each trade. Each ID is shown as its own embed. */
+export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
+  Electrician: [
+    { youtubeId: 'y4mS3RU2fdk', startSeconds: 17 },
+    { youtubeId: 'YqLV_kT8KFs' },
+    { youtubeId: '5cNVMHiDZ7I' },
+    { youtubeId: 'mc4XG2D05uI' },
+    { youtubeId: 'dXck9UX9eVc' },
+    { youtubeId: 'KSFF77dhFQQ' },
+    { youtubeId: 'hIg3ulllRPQ' },
+    { youtubeId: 'zL5yjxgPoCA' },
+  ],
+  Welder: [
+    { youtubeId: 'd2YeclasnjI' },
+    { youtubeId: 'PzrHWzNsJyE' },
+    { youtubeId: 'mbpPz2vdjLM' },
+    { youtubeId: 'av-5yUbu6WU' },
+    { youtubeId: 'bFNDpgbB9P4' },
+    { youtubeId: 'IsZuZdE99T4' },
+    { youtubeId: 'uE0yq1BUeYk' },
+  ],
+  Plumber: [
+    { youtubeId: 'gWUtDhS3-SY' },
+    { youtubeId: '28BXeowy8Ik' },
+    { youtubeId: '6QzM_HhKO-M' },
+    { youtubeId: 'sQxCfztlRvM' },
+    { youtubeId: 'Di4eJO39KB8' },
+    { youtubeId: 'f72wv4A9oYA' },
+    { youtubeId: 'oywhmEenRhs' },
+  ],
+  'Shuttering Carpenter': [
+    { youtubeId: '7tHqE8uD1WY' },
+    { youtubeId: 'jfoIdlaiUsQ' },
+    { youtubeId: 'BEFRlLUkjgs' },
+    { youtubeId: 'ROdYO2yzDeU' },
+    { youtubeId: '-v5AlV_td1w' },
+    { youtubeId: 'ndurB3hkWOY' },
+  ],
+  'Mason (tiles/marble)': [
+    { youtubeId: 'zc6oD3xhleE' },
+    { youtubeId: 'kv4RoL-5sjE' },
+    { youtubeId: '94n8_jm6-lE' },
+    { youtubeId: 'H4iBocERDRs' },
+    { youtubeId: '0wJ68LNU_EI' },
+  ],
+  'Construction Labour/Helper': [
+    { youtubeId: '5-WAwzGtJbQ' },
+    { youtubeId: 'EN0RKQBIUSM' },
+    { youtubeId: 'dgxM2qpuRh0' },
+    { youtubeId: 'XI1o-C-1MK4' },
+  ],
+  'Pipe Fitter': [
+    { youtubeId: '1-ngwzGeq8Q' },
+    { youtubeId: 'FdCbRTSWH7g' },
+    { youtubeId: 'xAsKpckUj6g' },
+    { youtubeId: 'aUtzmTsSOUg' },
+    { youtubeId: 'N5_h1kTq7Yk' },
+    { youtubeId: '_nKpUYXYjKI' },
+    { youtubeId: '0ljxKfplUgo' },
+    { youtubeId: '_JNm3nBHVwo' },
+  ],
+  Carpenter: [{ youtubeId: 'WJI_EBc3Cyo' }],
+  'Furniture Carpenter - Finishing, All Rounder': [
+    { youtubeId: 'piL7_XJG0k4' },
+    { youtubeId: 'YXkruBOAMD8' },
+    { youtubeId: 'fcuod3D9v_s' },
+  ],
+  'Steel Fixer': [{ youtubeId: 'NT2IeAdO7eg' }],
+  'AC Technician': [{ youtubeId: 'sRy3zy84hwg' }],
+  'General Labour - Warehouse/Supermarket': [{ youtubeId: 'e8RgNqmSh2c' }],
+  Scaffolder: [
+    { youtubeId: '87oUrUvPaNg' },
+    { youtubeId: 'vxUSsnpUM18' },
+    { youtubeId: 'Q77bEb6dAls' },
+    { youtubeId: 'HRduiZsbdv0' },
+    { youtubeId: 'mCijicwSucA' },
+    { youtubeId: 'jm7MfSSUOj0' },
+  ],
+  Painter: [{ youtubeId: 'WJI_EBc3Cyo' }],
+  'Aluminium Fixer/Fabricator': [{ youtubeId: 'ovEDLzbAWpg' }],
 };
 
-export function getPublicJobVideo(title: string, description = '') {
+export function getPublicJobVideos(title: string, description = ''): ListedJobVideo[] {
   const listed = inferUaeListedJob(title, description);
-  return listed ? UAE_LISTED_JOB_VIDEOS[listed] : null;
+  return listed ? UAE_LISTED_JOB_VIDEOS[listed] : [];
 }
