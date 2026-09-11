@@ -3,17 +3,21 @@ export const STANDARD_JOB_BENEFITS = [
   'Accommodation',
   'Food - Minimum 200 and kitchen facilities',
   'Local transport',
+  'MOL',
   'Work visa and Emirates ID',
   'Legal contract and job security',
   'Airport pickup',
   '8-10 hours of duty + overtime (extra pay)',
   'Medical facility + Insurance in Dubai',
+  '11+1',
+  'Return airfare after 2 years',
   'PBBY Insurance in India',
 ] as const;
 
 export type StandardJobBenefit = (typeof STANDARD_JOB_BENEFITS)[number];
 
 export const JOB_BENEFIT_INFO: Partial<Record<StandardJobBenefit, string>> = {
+  '11+1': '11 month work and 1 month paid salary extra.',
   'PBBY Insurance in India': 'Pravasi Bharatiya Bima Yojana (PBBY) cover in India.',
 };
 
@@ -34,6 +38,7 @@ const BENEFIT_ALIASES: Record<string, StandardJobBenefit> = {
   visa: 'Work visa and Emirates ID',
   'food or food allowance (min. aed 200) + kitchen facilities':
     'Food - Minimum 200 and kitchen facilities',
+  'return air fare after 2 years': 'Return airfare after 2 years',
   'pbby insurance': 'PBBY Insurance in India',
 };
 
