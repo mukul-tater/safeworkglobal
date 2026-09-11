@@ -325,7 +325,12 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
     { youtubeId: 'mCijicwSucA' },
     { youtubeId: 'jm7MfSSUOj0' },
   ],
-  Painter: [{ youtubeId: 'WJI_EBc3Cyo' }],
+  Painter: [
+    { youtubeId: '1J55ifnYB5k' },
+    { youtubeId: 'FPzHpVRiNE8' },
+    { youtubeId: 'vgaRcs22Q1A' },
+    { youtubeId: 'mmsn1S2Ojks' },
+  ],
   'Aluminium Fixer/Fabricator': [{ youtubeId: 'ovEDLzbAWpg' }],
 };
 
