@@ -1,10 +1,21 @@
 import { MapPin } from 'lucide-react';
 
-const COUNTRIES: { code: string; name: string; image: string }[] = [
+const UAE_EMIRATES = [
+  'Abu Dhabi',
+  'Dubai',
+  'Sharjah',
+  'Ajman',
+  'Umm Al Quwain',
+  'Ras Al Khaimah',
+  'Fujairah',
+] as const;
+
+const COUNTRIES: { code: string; name: string; image: string; subtitle: string }[] = [
   {
     code: 'UAE',
     name: 'United Arab Emirates',
     image: '/country-insights/uae/worksite-skyline.png',
+    subtitle: UAE_EMIRATES.join(' · '),
   },
 ];
 
@@ -42,7 +53,7 @@ export default function JobCountryGrid({ onSelect }: Props) {
                   Destination
                 </p>
                 <p className="mt-1 font-heading text-xl font-semibold">{country.name}</p>
-                <p className="text-sm text-white/85">{country.code}</p>
+                <p className="mt-0.5 text-sm leading-snug text-white/85">{country.subtitle}</p>
               </div>
             </div>
           </button>

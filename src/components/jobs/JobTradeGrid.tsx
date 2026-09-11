@@ -2,27 +2,25 @@ import { HardHat } from 'lucide-react';
 import electricalImg from '@/assets/trade-electrical.jpg';
 import welderImg from '@/assets/trade-welder.jpg';
 import constructionImg from '@/assets/trade-construction.jpg';
-import { UAE_LISTED_JOBS, type UaeListedJob } from '@/lib/uaeListedJobs';
+import { UAE_LISTED_JOBS, isHiddenPublicJob, type UaeListedJob } from '@/lib/uaeListedJobs';
 
-const TRADE_CARDS: Record<UaeListedJob, { image: string; city: string }> = {
-  Electrician: { image: electricalImg, city: 'Dubai' },
-  Welder: { image: welderImg, city: 'Sharjah' },
-  Plumber: { image: '/country-insights/uae/worksite-business-bay-2.png', city: 'Abu Dhabi' },
-  'Shuttering Carpenter': { image: '/country-insights/uae/worksite-rebar.png', city: 'Dubai' },
-  'Mason (tiles/marble)': { image: constructionImg, city: 'Abu Dhabi' },
-  'Construction Labour/Helper': { image: '/country-insights/uae/worksite-skyline.png', city: 'Dubai' },
-  'Pipe Fitter': { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Dubai' },
-  Carpenter: { image: '/country-insights/uae/worksite-business-bay-1.png', city: 'Abu Dhabi' },
+const TRADE_CARDS: Record<UaeListedJob, { image: string }> = {
+  Electrician: { image: electricalImg },
+  Welder: { image: welderImg },
+  Plumber: { image: '/country-insights/uae/worksite-business-bay-2.png' },
+  'Shuttering Carpenter': { image: '/country-insights/uae/worksite-rebar.png' },
+  'Mason (tiles/marble)': { image: constructionImg },
+  'Construction Labour/Helper': { image: '/country-insights/uae/worksite-skyline.png' },
+  'Pipe Fitter': { image: '/country-insights/uae/worksite-business-bay-1.png' },
   'Furniture Carpenter - Finishing, All Rounder': {
     image: '/country-insights/uae/worksite-business-bay-1.png',
-    city: 'Dubai',
   },
-  'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png', city: 'Sharjah' },
-  'AC Technician': { image: electricalImg, city: 'Sharjah' },
-  'General Labour - Warehouse/Supermarket': { image: '/country-insights/uae/worksite-crane.png', city: 'Dubai' },
-  Scaffolder: { image: '/country-insights/uae/worksite-crane.png', city: 'Sharjah' },
-  Painter: { image: constructionImg, city: 'Dubai' },
-  'Aluminium Fixer/Fabricator': { image: welderImg, city: 'Sharjah' },
+  'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png' },
+  'AC Technician': { image: electricalImg },
+  'General Labour - Warehouse/Supermarket': { image: '/country-insights/uae/worksite-crane.png' },
+  Scaffolder: { image: '/country-insights/uae/worksite-crane.png' },
+  Painter: { image: constructionImg },
+  'Aluminium Fixer/Fabricator': { image: welderImg },
 };
 
 interface Props {
@@ -39,7 +37,7 @@ export default function JobTradeGrid({ onSelect }: Props) {
         </p>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {UAE_LISTED_JOBS.map((job) => {
+        {UAE_LISTED_JOBS.filter((job) => !isHiddenPublicJob(job)).map((job) => {
           const card = TRADE_CARDS[job];
           return (
             <button
@@ -61,7 +59,6 @@ export default function JobTradeGrid({ onSelect }: Props) {
                     Job
                   </p>
                   <p className="mt-1 font-heading text-xl font-semibold leading-snug">{job}</p>
-                  <p className="text-sm text-white/85">{card.city}, UAE</p>
                 </div>
               </div>
             </button>

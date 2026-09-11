@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import JobSalaryText from '@/components/JobSalaryText';
+import { isHiddenPublicJob } from '@/lib/uaeListedJobs';
 import { MapPin, Briefcase, ArrowRight, Sparkles, ShieldCheck, ChevronRight } from 'lucide-react';
 
 interface Job {
@@ -67,7 +68,7 @@ export default function WorkerDiscover() {
           .order('posted_at', { ascending: false })
           .limit(6);
 
-        setJobs((data as any) || []);
+        setJobs(((data as Job[]) || []).filter((job) => !isHiddenPublicJob(job.title, job.slug)));
       } catch (err) {
         console.error('Failed to load discover jobs', err);
       } finally {

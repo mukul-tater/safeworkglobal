@@ -57,7 +57,7 @@ export const JOB_CATEGORIES = [
 // Popular job titles/roles for autocomplete suggestions
 export const POPULAR_JOB_TITLES = [
   'Electrician', 'Welder', 'Plumber', 'Shuttering Carpenter', 'Mason (tiles/marble)',
-  'Construction Labour/Helper', 'Pipe Fitter', 'Carpenter',
+  'Construction Labour/Helper', 'Pipe Fitter',
   'Furniture Carpenter - Finishing, All Rounder', 'Steel Fixer', 'AC Technician',
   'General Labour - Warehouse/Supermarket', 'Scaffolder', 'Painter', 'Aluminium Fixer/Fabricator',
   'Construction Worker', 'Site Supervisor', 'Civil Foreman',

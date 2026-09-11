@@ -13,7 +13,6 @@ export const STANDARD_JOB_BENEFITS = [
   'Return airfare after 2 years',
   'PBBY Insurance in India',
   'Uniform provided by company',
-  'Attendance bonus (26 working days)',
   '6-day work week',
   '2-year contract',
 ] as const;
@@ -23,7 +22,6 @@ export type StandardJobBenefit = (typeof STANDARD_JOB_BENEFITS)[number];
 export const JOB_BENEFIT_INFO: Partial<Record<StandardJobBenefit, string>> = {
   '11+1': '11 month work and 1 month paid salary extra.',
   'PBBY Insurance in India': 'Pravasi Bharatiya Bima Yojana (PBBY) cover in India.',
-  'Attendance bonus (26 working days)': 'Monthly bonus if the worker completes 26 days in a month.',
   '6-day work week': '8–10 hours per day, 6 days a week.',
   '2-year contract': 'Standard employment period of 2 years.',
   'Uniform provided by company': 'Company-issued work uniform.',
@@ -49,13 +47,17 @@ const BENEFIT_ALIASES: Record<string, StandardJobBenefit> = {
   'return air fare after 2 years': 'Return airfare after 2 years',
   'pbby insurance': 'PBBY Insurance in India',
   uniform: 'Uniform provided by company',
-  'attendance bonus': 'Attendance bonus (26 working days)',
   '6 days per week': '6-day work week',
   '2 year contract': '2-year contract',
   '2 years contract': '2-year contract',
 };
 
+function isDroppedBenefit(value: string): boolean {
+  return /attendance\s+bonus/i.test(value);
+}
+
 function resolveStandardBenefit(value: string): StandardJobBenefit | undefined {
+  if (isDroppedBenefit(value)) return undefined;
   const key = value.toLowerCase();
   return standardLookup.get(key) ?? BENEFIT_ALIASES[key];
 }
@@ -74,7 +76,7 @@ export function parseJobBenefits(raw: string | null | undefined): ParsedJobBenef
 
   for (const part of raw.split(/\n+/)) {
     const trimmed = part.trim();
-    if (!trimmed) continue;
+    if (!trimmed || isDroppedBenefit(trimmed)) continue;
     const match = resolveStandardBenefit(trimmed);
     if (match) {
       if (!selected.includes(match)) selected.push(match);
@@ -111,7 +113,7 @@ export function listJobBenefits(raw: string | null | undefined): string[] {
   const items: string[] = [];
   for (const line of raw.split(/\n+/)) {
     const trimmed = line.trim();
-    if (!trimmed) continue;
+    if (!trimmed || isDroppedBenefit(trimmed)) continue;
     const match = resolveStandardBenefit(trimmed);
     if (match) {
       items.push(match);

@@ -7,7 +7,6 @@ export const UAE_LISTED_JOBS = [
   'Mason (tiles/marble)',
   'Construction Labour/Helper',
   'Pipe Fitter',
-  'Carpenter',
   'Furniture Carpenter - Finishing, All Rounder',
   'Steel Fixer',
   'AC Technician',
@@ -30,8 +29,7 @@ const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'AC Technician', needles: ['ac technician', 'air conditioning technician', 'air conditioner technician', 'hvac technician'] },
   { job: 'Scaffolder', needles: ['scaffolder', 'scaffolding'] },
   { job: 'Painter', needles: ['painter', 'painting'] },
-  { job: 'Furniture Carpenter - Finishing, All Rounder', needles: ['furniture carpenter', 'finishing, all rounder', 'finishing all rounder', 'finishing carpenter'] },
-  { job: 'Carpenter', needles: ['pop / gypsum', 'pop/gypsum', 'gypsum carpenter', 'pop carpenter', 'carpenter'] },
+  { job: 'Furniture Carpenter - Finishing, All Rounder', needles: ['furniture carpenter', 'finishing, all rounder', 'finishing all rounder', 'finishing carpenter', 'pop / gypsum', 'pop/gypsum', 'gypsum carpenter', 'pop carpenter'] },
   { job: 'Electrician', needles: ['electrician', 'electrical'] },
   { job: 'Plumber', needles: ['plumber', 'plumbing'] },
   { job: 'Welder', needles: ['welder', 'welding'] },
@@ -53,6 +51,12 @@ export function inferUaeListedJob(title: string, description = ''): UaeListedJob
   const haystack = `${title} ${description}`.toLowerCase();
   const match = MATCHERS.find(({ needles }) => needles.some((needle) => haystack.includes(needle)));
   return match?.job ?? null;
+}
+
+/** Generic Carpenter listing — removed from Find jobs; shuttering / furniture stay. */
+export function isHiddenPublicJob(title: string, slug?: string | null): boolean {
+  if (slug === 'uae-listed-carpenter') return true;
+  return title.trim().toLowerCase() === 'carpenter';
 }
 
 /** 1 AED ≈ ₹23 — same band as jobSalaryUtils. Flyer grades are Grade C (min) to Grade A (max). */
@@ -89,7 +93,6 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ReturnType<typeof inr
   'Aluminium Fixer/Fabricator': WELDER_BAND,
   Electrician: INDUSTRIAL_ELECTRICIAN_BAND,
   'Shuttering Carpenter': SHUTTERING_BAND,
-  Carpenter: FINISHING_CARPENTER_BAND,
   'Furniture Carpenter - Finishing, All Rounder': FINISHING_CARPENTER_BAND,
   'Mason (tiles/marble)': MASON_BAND,
   'Steel Fixer': MASON_BAND,
@@ -164,14 +167,6 @@ export const UAE_LISTED_JOB_RESPONSIBILITIES: Record<UaeListedJob, string[]> = {
     'Assist hydrotest / leak test and punch-list close-out',
     'Coordinate with welders and riggers for spool installation',
     'Follow HSE, hot-work and quality procedures',
-  ],
-  Carpenter: [
-    'Cut, fit and fix timber for frames, doors, joinery and site carpentry',
-    'Read drawings and mark out work to line, level and plumb',
-    'Install wooden fixtures, supports and finishing items as directed',
-    'Use hand and power tools safely; keep a tidy work area',
-    'Coordinate with civil, finishing and MEP teams',
-    'Follow site HSE and working-at-height rules',
   ],
   'Furniture Carpenter - Finishing, All Rounder': [
     'Build and finish furniture, cabinets, wardrobes and wooden joinery',
@@ -308,7 +303,6 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
     { youtubeId: '0ljxKfplUgo' },
     { youtubeId: '_JNm3nBHVwo' },
   ],
-  Carpenter: [{ youtubeId: 'WJI_EBc3Cyo' }],
   'Furniture Carpenter - Finishing, All Rounder': [
     { youtubeId: 'piL7_XJG0k4' },
     { youtubeId: 'YXkruBOAMD8' },

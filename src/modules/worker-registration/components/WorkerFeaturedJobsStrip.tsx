@@ -8,6 +8,7 @@ import { ArrowRight, Briefcase, Lock, MapPin } from "lucide-react";
 import JobSalaryText from "@/components/JobSalaryText";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
+import { isHiddenPublicJob } from "@/lib/uaeListedJobs";
 
 interface JobPreview {
   id: string;
@@ -70,7 +71,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
           results = (fallback || []) as JobPreview[];
         }
 
-        setJobs(results);
+        setJobs(results.filter((job) => !isHiddenPublicJob(job.title, job.slug)));
       } catch (error) {
         console.error("Error loading featured jobs:", error);
       } finally {

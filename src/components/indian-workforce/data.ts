@@ -65,16 +65,6 @@ export const tradeCategories: TradeCategory[] = [
     objectPosition: "center center",
   },
   {
-    id: "carpenter",
-    name: "Carpenter",
-    hindiName: "बढ़ई",
-    image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=900&q=80",
-    imageAlt: "Representative image of carpentry tools and woodwork",
-    skills: ["Joinery", "Formwork", "Finishing"],
-    verification: "Skill Screening",
-    objectPosition: "center center",
-  },
-  {
     id: "driver",
     name: "Driver & Logistics",
     hindiName: "ड्राइवर एवं लॉजिस्टिक्स",

@@ -9,6 +9,7 @@ import JobSalaryText from '@/components/JobSalaryText';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
+import { isHiddenPublicJob } from '@/lib/uaeListedJobs';
 
 interface FeaturedJob {
   id: string;
@@ -75,7 +76,9 @@ export default function FeaturedJobs() {
           .limit(6);
 
         if (error) throw error;
-        setJobs((data || []) as FeaturedJob[]);
+        setJobs(
+          ((data || []) as FeaturedJob[]).filter((job) => !isHiddenPublicJob(job.title, job.slug)),
+        );
       } catch (error) {
         console.error('Error loading jobs:', error);
       } finally {
