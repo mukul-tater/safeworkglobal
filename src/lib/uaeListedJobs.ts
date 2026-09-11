@@ -63,6 +63,64 @@ export function inferUaeListedJob(title: string, description = ''): UaeListedJob
   return match?.job ?? null;
 }
 
+/** 1 AED ≈ ₹23 — same band as jobSalaryUtils. Flyer grades are Grade C (min) to Grade A (max). */
+const AED_TO_INR = 23;
+
+function inrFromAedGrade(minAed: number, maxAed: number): {
+  salary_min: number;
+  salary_max: number;
+  salary_display: string;
+} {
+  const roundThousand = (aed: number) => Math.round((aed * AED_TO_INR) / 1000) * 1000;
+  const salary_min = roundThousand(minAed);
+  const salary_max = roundThousand(maxAed);
+  const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+  return {
+    salary_min,
+    salary_max,
+    salary_display: salary_min === salary_max ? fmt(salary_min) : `${fmt(salary_min)} – ${fmt(salary_max)}`,
+  };
+}
+
+const WELDER_BAND = inrFromAedGrade(1512, 1712);
+const INDUSTRIAL_ELECTRICIAN_BAND = inrFromAedGrade(1360, 1610);
+const FINISHING_CARPENTER_BAND = inrFromAedGrade(1412, 1662);
+const MASON_BAND = inrFromAedGrade(1360, 1560);
+const SHUTTERING_BAND = inrFromAedGrade(1412, 1612);
+const PLUMBER_BAND = inrFromAedGrade(1360, 1560);
+const DUCTMAN_BAND = inrFromAedGrade(1360, 1460);
+const MECHANICAL_HELPER_BAND = inrFromAedGrade(1158, 1208);
+const GENERAL_HELPER_BAND = inrFromAedGrade(1158, 1158);
+
+/** Monthly INR from the Dubai interview-drive Grade C–A AED table. */
+export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ReturnType<typeof inrFromAedGrade>> = {
+  'MIG Welder': WELDER_BAND,
+  'TIG Welder': WELDER_BAND,
+  Welder: WELDER_BAND,
+  'Aluminium Fabricator': WELDER_BAND,
+  'Industrial Electrician': INDUSTRIAL_ELECTRICIAN_BAND,
+  Electrician: INDUSTRIAL_ELECTRICIAN_BAND,
+  'Finishing Carpenter': FINISHING_CARPENTER_BAND,
+  'Shuttering Carpenter': SHUTTERING_BAND,
+  'Tile Mason': MASON_BAND,
+  'All Round Mason': MASON_BAND,
+  'Block & Plaster Mason': MASON_BAND,
+  'Steel Fixer': MASON_BAND,
+  Mason: MASON_BAND,
+  Plumber: PLUMBER_BAND,
+  'Pipe Fitter': PLUMBER_BAND,
+  Ductman: DUCTMAN_BAND,
+  'Mechanical Helper': MECHANICAL_HELPER_BAND,
+  'Civil Helper': MECHANICAL_HELPER_BAND,
+  'General Helper': GENERAL_HELPER_BAND,
+  'Civil Labour': GENERAL_HELPER_BAND,
+};
+
+export function getPublicJobSalary(title: string, description = '') {
+  const listed = inferUaeListedJob(title, description);
+  return listed ? UAE_LISTED_JOB_SALARIES[listed] : null;
+}
+
 /** Role-specific duties shown on public job pages. */
 export const UAE_LISTED_JOB_RESPONSIBILITIES: Record<UaeListedJob, string[]> = {
   Electrician: [

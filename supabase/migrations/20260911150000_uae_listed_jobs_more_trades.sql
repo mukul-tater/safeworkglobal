@@ -91,7 +91,7 @@ BEGIN
         'uae-listed-mig-welder',
         'Dubai',
         'INTERMEDIATE',
-        41000, 64000, '₹41,000 – ₹64,000', 10,
+        35000, 39000, '₹35,000 – ₹39,000', 10,
         'UAE fabrication and construction employer hiring MIG welders for Dubai workshop and site work. Wire-feed welding on structural steel, plates and ducts preferred.',
         '2+ years MIG / MAG welding experience' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Trade certificate preferred' || chr(10) || 'Willing to work in UAE',
         'Set up MIG / MAG plant, wire, gas and parameters as per WPS' || chr(10) || 'MIG-weld structural steel, plates, ducts and fabrication spools' || chr(10) || 'Fit, tack and weld joints to drawings; grind and clean between passes' || chr(10) || 'Carry out visual checks for undercut, porosity and incomplete fusion' || chr(10) || 'Use screens, fire watch and PPE for hot work' || chr(10) || 'Report defects and complete rework as directed'
@@ -102,7 +102,7 @@ BEGIN
         'uae-listed-tig-welder',
         'Abu Dhabi',
         'INTERMEDIATE',
-        46000, 69000, '₹46,000 – ₹69,000', 8,
+        35000, 39000, '₹35,000 – ₹39,000', 8,
         'UAE contractor hiring TIG welders for pipe, tank and precision fabrication in Abu Dhabi. Stainless / aluminium TIG experience preferred.',
         '2+ years TIG welding experience' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Trade certificate preferred' || chr(10) || 'Willing to work in UAE',
         'Set up TIG plant, tungsten, filler and argon as per WPS' || chr(10) || 'TIG-weld stainless, aluminium or carbon-steel pipe and sheet' || chr(10) || 'Run root and fill passes on pipe, tanks and precision joints' || chr(10) || 'Keep the purge and gas shield; inspect for oxidation and undercut' || chr(10) || 'Read isometric and fabrication drawings' || chr(10) || 'Follow hot-work, PPE and UAE HSE procedures'
@@ -113,7 +113,7 @@ BEGIN
         'uae-listed-aluminium-fabricator',
         'Sharjah',
         'INTERMEDIATE',
-        37000, 58000, '₹37,000 – ₹58,000', 8,
+        35000, 39000, '₹35,000 – ₹39,000', 8,
         'Aluminium fabrication openings in Sharjah, UAE. Cutting, assembling and installing aluminium windows, doors, cladding and shop-front frames.',
         '2+ years aluminium fabrication experience' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Trade certificate preferred' || chr(10) || 'Willing to work in UAE',
         'Read fabrication drawings and mark cutting lists for aluminium sections' || chr(10) || 'Cut, mill, drill and assemble aluminium frames, cladding and joinery' || chr(10) || 'Fit, tack and weld or mechanically join aluminium components' || chr(10) || 'Install windows, doors, curtain-wall and shop-front frames as directed' || chr(10) || 'File, grind and prepare surfaces for powder coat or anodising' || chr(10) || 'Follow workshop and site HSE, including hot-work controls'
@@ -124,7 +124,7 @@ BEGIN
         'uae-listed-industrial-electrician',
         'Dubai',
         'INTERMEDIATE',
-        46000, 64000, '₹46,000 – ₹64,000', 10,
+        31000, 37000, '₹31,000 – ₹37,000', 10,
         'Industrial electrician openings for UAE plant, MEP and construction packages in Dubai. MCC, motor and control-circuit experience preferred.',
         '2+ years industrial electrical experience' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Trade certificate preferred' || chr(10) || 'Willing to work in UAE',
         'Install, terminate and test industrial LV/MV power, motors and control circuits' || chr(10) || 'Read SLDs, control schematics and equipment GA drawings' || chr(10) || 'Wire MCCs, VFDs, field instruments and plant lighting' || chr(10) || 'Carry out fault finding on motors, starters and process equipment' || chr(10) || 'Follow LOTO, permit-to-work and plant HSE procedures' || chr(10) || 'Coordinate shutdowns, megger tests and punch-list close-out'
@@ -135,7 +135,7 @@ BEGIN
         'uae-listed-finishing-carpenter',
         'Abu Dhabi',
         'INTERMEDIATE',
-        37000, 53000, '₹37,000 – ₹53,000', 12,
+        32000, 38000, '₹32,000 – ₹38,000', 12,
         'Finishing carpenter openings for UAE interiors in Abu Dhabi. Doors, frames, skirting, cabinets and joinery experience preferred.',
         '2+ years finishing / joinery carpenter experience' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Willing to work in UAE',
         'Install doors, frames, architraves, skirting and wooden joinery' || chr(10) || 'Set cabinets, wardrobes, panelling and false-ceiling timber as per drawings' || chr(10) || 'Cut, fit and finish timber to line, level and consistent gaps' || chr(10) || 'Hang ironmongery, locks and door closers; adjust for smooth operation' || chr(10) || 'Protect finished surfaces and close snag lists before handover' || chr(10) || 'Follow site HSE and working-at-height rules'
@@ -146,7 +146,7 @@ BEGIN
         'uae-listed-tile-mason',
         'Dubai',
         'INTERMEDIATE',
-        37000, 55000, '₹37,000 – ₹55,000', 12,
+        31000, 36000, '₹31,000 – ₹36,000', 12,
         'Tile mason openings for UAE residential and commercial finishing in Dubai. Floor and wall tiling, wet-area falls and grouting experience preferred.',
         '2+ years tiling experience' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Willing to work in UAE',
         'Set out floor and wall tiles from drawings, levels and datum lines' || chr(10) || 'Prepare substrate, mix adhesive and bed tiles to line and level' || chr(10) || 'Cut tiles around openings, edges and sanitary fittings' || chr(10) || 'Grout joints, clean tiles and complete movement joints as specified' || chr(10) || 'Fix skirting, dado and wet-area tiles to the required fall' || chr(10) || 'Keep the work area clean and follow HSE'
@@ -157,7 +157,7 @@ BEGIN
         'uae-listed-all-round-mason',
         'Sharjah',
         'INTERMEDIATE',
-        37000, 58000, '₹37,000 – ₹58,000', 10,
+        31000, 36000, '₹31,000 – ₹36,000', 10,
         'All-round mason openings for UAE construction in Sharjah. Block work, plastering, tiling support and finishing as directed.',
         '2+ years masonry experience across block, plaster and finishing' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Willing to work in UAE',
         'Carry out block work, plastering, tiling and finishing as directed' || chr(10) || 'Lay blocks and bricks to line, level and plumb' || chr(10) || 'Apply internal and external plaster to the specified thickness' || chr(10) || 'Support tiling, chasing, lintels and small concrete repairs' || chr(10) || 'Mix mortar to the specified ratio and maintain workmanship quality' || chr(10) || 'Follow supervisor instructions and site HSE'
@@ -168,7 +168,7 @@ BEGIN
         'uae-listed-block-plaster-mason',
         'Abu Dhabi',
         'INTERMEDIATE',
-        35000, 51000, '₹35,000 – ₹51,000', 14,
+        31000, 36000, '₹31,000 – ₹36,000', 14,
         'Block and plaster mason openings for UAE building works in Abu Dhabi. AAC/concrete block laying and internal/external plastering.',
         '2+ years block work and plastering experience' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Willing to work in UAE',
         'Lay AAC / concrete blocks to line, level and plumb' || chr(10) || 'Build walls, columns, partitions and openings as marked out' || chr(10) || 'Apply scratch and finish plaster coats to walls and soffits' || chr(10) || 'Mix mortar and plaster to the specified ratio' || chr(10) || 'Install lintels, mesh and corner beads as required' || chr(10) || 'Keep joints, corners and surfaces within tolerance and follow HSE'
@@ -179,7 +179,7 @@ BEGIN
         'uae-listed-steel-fixer',
         'Dubai',
         'INTERMEDIATE',
-        35000, 53000, '₹35,000 – ₹53,000', 15,
+        31000, 36000, '₹31,000 – ₹36,000', 15,
         'Steel fixer openings for UAE high-rise and infrastructure projects in Dubai. Bar bending, placing and tying to BBS experience preferred.',
         '2+ years steel fixing / rebar experience' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Willing to work in UAE',
         'Read bar-bending schedules and rebar drawings' || chr(10) || 'Cut, bend, place and tie reinforcement for slabs, beams, columns and walls' || chr(10) || 'Maintain cover, laps, chairs and spacers as specified' || chr(10) || 'Fix starter bars, couplers and extra steel at openings' || chr(10) || 'Coordinate pour sequence with shuttering and civil teams' || chr(10) || 'Follow working-at-height, lifting and site HSE rules'
@@ -190,7 +190,7 @@ BEGIN
         'uae-listed-ductman',
         'Sharjah',
         'INTERMEDIATE',
-        35000, 53000, '₹35,000 – ₹53,000', 10,
+        31000, 34000, '₹31,000 – ₹34,000', 10,
         'Ductman openings for UAE HVAC packages in Sharjah. GI/PI duct fabrication, hanging, insulation and damper installation.',
         '2+ years HVAC ducting experience' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Willing to work in UAE',
         'Fabricate, hang and connect GI / PI / flexible ducts as per drawings' || chr(10) || 'Install hangers, supports, fire dampers and volume control dampers' || chr(10) || 'Seal joints, insulate ducts and close openings after first-fix' || chr(10) || 'Assist balancing, leak tests and punch-list close-out' || chr(10) || 'Read HVAC layouts and coordinate with electrical and false-ceiling teams' || chr(10) || 'Follow working-at-height and site HSE rules'
@@ -201,7 +201,7 @@ BEGIN
         'uae-listed-mechanical-helper',
         'Dubai',
         'ENTRY',
-        28000, 39000, '₹28,000 – ₹39,000', 20,
+        27000, 28000, '₹27,000 – ₹28,000', 20,
         'Mechanical helper openings supporting pipe fitters, welders and HVAC crews on Dubai projects.',
         'Site experience preferred' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Willing to work in UAE',
         'Assist pipe fitters, welders, HVAC and mechanical crews' || chr(10) || 'Shift pipes, ducts, fittings, tools and gas cylinders as directed' || chr(10) || 'Help with grinding, tacking, insulation and housekeeping' || chr(10) || 'Support hydrotest, hot-work and equipment positioning' || chr(10) || 'Follow supervisor instructions and permit-to-work rules' || chr(10) || 'Wear PPE at all times on site'
@@ -212,7 +212,7 @@ BEGIN
         'uae-listed-general-helper',
         'Abu Dhabi',
         'ENTRY',
-        25000, 37000, '₹25,000 – ₹37,000', 25,
+        27000, 27000, '₹27,000', 25,
         'General helper openings for UAE construction sites in Abu Dhabi. Material handling, housekeeping and support to skilled trades.',
         'Physically fit for site work' || chr(10) || 'Valid passport (min 2 years)' || chr(10) || 'Willing to work in UAE',
         'Support skilled trades with materials, tools and housekeeping' || chr(10) || 'Load, unload and shift materials around the site' || chr(10) || 'Mix mortar or concrete and keep access routes clear' || chr(10) || 'Help with simple site tasks as directed by the supervisor' || chr(10) || 'Follow site safety rules and permit-to-work instructions' || chr(10) || 'Wear PPE at all times on site'

@@ -212,6 +212,8 @@ export default function FeaturedJobs() {
                       min={job.salary_min}
                       max={job.salary_max}
                       currency={job.currency}
+                      title={job.title}
+                      description={job.description}
                       primaryClassName="text-lg font-bold text-primary"
                     />
                     <p className="text-xs text-muted-foreground">per month (approx.)</p>

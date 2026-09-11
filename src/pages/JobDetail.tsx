@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import JobSalaryText from '@/components/JobSalaryText';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
-import { listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
+import { getPublicJobSalary, listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -352,6 +352,10 @@ export default function JobDetail() {
     job.responsibilities,
     job.description,
   );
+  const listedSalary = getPublicJobSalary(job.title, job.description);
+  const salaryMin = listedSalary?.salary_min ?? job.salary_min;
+  const salaryMax = listedSalary?.salary_max ?? job.salary_max;
+  const salaryCurrency = listedSalary ? 'INR' : job.currency;
   const isCurrentJourneyJob = Boolean(lockedJobId && lockedJobId === job.id);
   const applyLabel = applying
     ? 'Applying...'
@@ -393,8 +397,8 @@ export default function JobDetail() {
       "currency": "INR",
       "value": {
         "@type": "QuantitativeValue",
-        "minValue": convertSalaryToINR(job.salary_min, job.currency),
-        "maxValue": convertSalaryToINR(job.salary_max, job.currency),
+        "minValue": convertSalaryToINR(salaryMin, salaryCurrency),
+        "maxValue": convertSalaryToINR(salaryMax, salaryCurrency),
         "unitText": "MONTH"
       }
     },
@@ -442,9 +446,11 @@ export default function JobDetail() {
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <JobSalaryText
-                        min={job.salary_min}
-                        max={job.salary_max}
-                        currency={job.currency}
+                        min={salaryMin}
+                        max={salaryMax}
+                        currency={salaryCurrency}
+                        title={job.title}
+                        description={job.description}
                         emptyLabel="Salary not specified"
                         primaryClassName="font-semibold text-foreground"
                       />
@@ -674,7 +680,7 @@ export default function JobDetail() {
     </>,
     <SEOHead
       title={`${job.title} | SafeWork Global`}
-      description={`Apply for ${job.title} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(job.salary_min, job.salary_max, job.currency)}/month.`}
+      description={`Apply for ${job.title} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(salaryMin, salaryMax, salaryCurrency)}/month.`}
       keywords={`${job.title}, ${job.location} jobs, ${job.country} jobs, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
       canonicalUrl={`${job.slug ? `https://www.safeworkglobal.com/jobs/${job.slug}` : "https://www.safeworkglobal.com/jobs"}`}
       ogType="article"

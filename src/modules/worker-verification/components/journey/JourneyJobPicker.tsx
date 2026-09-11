@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { inferUaeListedJob } from '@/lib/uaeListedJobs';
+import { getPublicJobSalary, inferUaeListedJob } from '@/lib/uaeListedJobs';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import {
   clearPendingJourneyJob,
@@ -63,6 +63,10 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
     const description = String(job.description ?? '');
     const skills = skillsByJob.get(String(job.id)) ?? [];
     const postedRaw = job.posted_at ?? job.created_at;
+    const listedSalary = getPublicJobSalary(String(job.title), description);
+    const rawSalaryMin = listedSalary?.salary_min ?? (job.salary_min as number | null) ?? null;
+    const rawSalaryMax = listedSalary?.salary_max ?? (job.salary_max as number | null) ?? null;
+    const currency = listedSalary ? 'INR' : String(job.currency || 'INR');
     return {
       id: String(job.id),
       slug: String(job.slug || job.id),
@@ -71,12 +75,12 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       companyLogoUrl: null,
       location: `${job.location}, ${job.country}`,
       country: String(job.country),
-      salaryDisplay: (job.salary_display as string | null) ?? null,
-      rawSalaryMin: (job.salary_min as number | null) ?? null,
-      rawSalaryMax: (job.salary_max as number | null) ?? null,
-      currency: String(job.currency || 'INR'),
-      salaryMin: job.salary_min == null ? null : convertSalaryToINR(Number(job.salary_min), String(job.currency)),
-      salaryMax: job.salary_max == null ? null : convertSalaryToINR(Number(job.salary_max), String(job.currency)),
+      salaryDisplay: listedSalary?.salary_display ?? (job.salary_display as string | null) ?? null,
+      rawSalaryMin,
+      rawSalaryMax,
+      currency,
+      salaryMin: rawSalaryMin == null ? null : convertSalaryToINR(rawSalaryMin, currency),
+      salaryMax: rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
       type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
       category: inferCategory(String(job.title), description),
       experienceLevel: String(job.experience_level ?? ''),

@@ -148,6 +148,7 @@ export default function WorkerApplications() {
                                 min={app.job.salary_min}
                                 max={app.job.salary_max}
                                 currency={app.job.currency}
+                                title={app.job.title}
                               />
                               </span>
                             )}

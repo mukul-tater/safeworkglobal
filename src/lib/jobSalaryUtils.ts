@@ -60,6 +60,7 @@ function formatInrPrimaryLine(
 ): string {
   if (min == null && max == null) return emptyLabel;
   if (min != null && max != null) {
+    if (min === max) return formatInrAmountLabel(min);
     return `${formatInrAmountLabel(min)} – ${formatInrAmountLabel(max)}`;
   }
   if (min != null) return `From ${formatInrAmountLabel(min)}`;

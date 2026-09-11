@@ -217,6 +217,8 @@ export default function WorkerApplicationDetail() {
                         min={job.salary_min}
                         max={job.salary_max}
                         currency={job.currency}
+                        title={job.title}
+                        description={job.description}
                         emptyLabel="Not specified"
                       />
                     </span>

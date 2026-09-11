@@ -173,6 +173,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                           min={job.salary_min}
                           max={job.salary_max}
                           currency={job.currency}
+                          title={job.title}
                           primaryClassName="text-lg font-bold text-primary"
                           inrClassName="text-xs font-normal"
                           className="gap-0.5"

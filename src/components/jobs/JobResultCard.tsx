@@ -116,7 +116,13 @@ export default function JobResultCard({
             </dd>
             <dd className="flex items-center gap-1.5 font-medium text-foreground">
               <Wallet className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <JobSalaryText min={job.rawSalaryMin} max={job.rawSalaryMax} currency={job.currency} />
+              <JobSalaryText
+                min={job.rawSalaryMin}
+                max={job.rawSalaryMax}
+                currency={job.currency}
+                title={job.title}
+                description={job.description}
+              />
             </dd>
             <dd className="flex items-center gap-1.5">
               <BriefcaseBusiness className="h-3.5 w-3.5 shrink-0" />

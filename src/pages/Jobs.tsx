@@ -30,7 +30,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/use-debounce';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { inferUaeListedJob, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { getPublicJobSalary, inferUaeListedJob, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 
@@ -186,6 +186,10 @@ export default function Jobs() {
 
         const formatted: JobListItem[] = (data || []).map((job: any) => {
           const description: string = job.description ?? '';
+          const listedSalary = getPublicJobSalary(job.title, description);
+          const rawSalaryMin = listedSalary?.salary_min ?? job.salary_min ?? null;
+          const rawSalaryMax = listedSalary?.salary_max ?? job.salary_max ?? null;
+          const currency = listedSalary ? 'INR' : (job.currency || 'INR');
 
           return {
             id: job.id,
@@ -195,12 +199,12 @@ export default function Jobs() {
             companyLogoUrl: null,
             location: `${job.location}, ${job.country}`,
             country: job.country,
-            salaryDisplay: job.salary_display ?? null,
-            rawSalaryMin: job.salary_min ?? null,
-            rawSalaryMax: job.salary_max ?? null,
-            currency: job.currency || 'INR',
-            salaryMin: job.salary_min == null ? null : convertSalaryToINR(job.salary_min, job.currency),
-            salaryMax: job.salary_max == null ? null : convertSalaryToINR(job.salary_max, job.currency),
+            salaryDisplay: listedSalary?.salary_display ?? job.salary_display ?? null,
+            rawSalaryMin,
+            rawSalaryMax,
+            currency,
+            salaryMin: rawSalaryMin == null ? null : convertSalaryToINR(rawSalaryMin, currency),
+            salaryMax: rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
             type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
             category: inferCategory(job.title, description),
             experienceLevel: job.experience_level ?? '',

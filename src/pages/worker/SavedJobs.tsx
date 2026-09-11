@@ -134,6 +134,7 @@ export default function SavedJobs() {
                         min={job.salary_min}
                         max={job.salary_max}
                         currency={job.currency}
+                        title={job.title}
                       />
                       </span>
                     </div>

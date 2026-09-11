@@ -184,6 +184,7 @@ export default function WorkerDiscover() {
                               min={job.salary_min}
                               max={job.salary_max}
                               currency={job.currency}
+                              title={job.title}
                             />
                           </p>
                         )}
