@@ -29,6 +29,7 @@ import {
 import { TRADE_TEST_CENTERS } from "@/data/tradeTestCenters";
 import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo";
 import InsuranceCoverageInfo from "@/components/worker/InsuranceCoverageInfo";
+import { ASSESSMENT_FEE_INCLUSIONS } from "@/modules/worker-verification/constants";
 import { cn } from "@/lib/utils";
 
 type JourneyStep = {
@@ -93,22 +94,14 @@ const STEPS: JourneyStep[] = [
   {
     id: "payment",
     number: 5,
-    title: "Service Fee",
-    shortTitle: "Service Fee",
+    title: "Payment — starts from ₹20,000 + GST",
+    shortTitle: "Payment",
     descriptionHi:
-      "हर जॉब अलग होती है, इसलिए सर्विस फीस भी अलग हो सकती है। आगे बढ़ने से पहले आपको लागू फीस, उसमें शामिल सेवाओं और जॉब की पूरी जानकारी स्पष्ट रूप से दिखाई जाएगी। कोई छुपी हुई फीस नहीं।",
+      "फी हर जॉब के हिसाब से अलग होती है। अधिक जानकारी के लिए Find Jobs पर देखें।",
     description:
-      "Every job is different, so the service fee may vary. We’ll clearly show you the applicable fee, what it covers, and the job details before you decide to proceed. No surprises.",
+      "The fee varies by job. For more details, see Find Jobs.",
     icon: CreditCard,
-    bullets: [
-      "Visa & visa processing",
-      "Documentation assistance",
-      "Emigration-related processing",
-      "Trade/skill testing",
-      "Pre-departure assistance",
-      "Insurance, where applicable",
-      "Other job-specific processing services",
-    ],
+    bullets: [...ASSESSMENT_FEE_INCLUSIONS],
   },
   {
     id: "trade-test",
@@ -295,14 +288,14 @@ function StepDetail({
         {isPayment && (
           <div className="mb-4 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-              Job-specific service fee
+              Starts from
             </p>
-            <p className="mt-1 text-base font-semibold font-heading text-foreground">
-              Fee varies by job
+            <p className="mt-0.5 text-2xl font-bold font-heading tabular-nums text-foreground">
+              ₹20,000{" "}
+              <span className="text-base font-semibold text-muted-foreground">+ GST</span>
             </p>
-            <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-              The applicable service fee depends on the job and the services involved.
-              You’ll see the complete fee and inclusions before you proceed.
+            <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+              वीज़ा, फ्लाइट, डॉक्स और इंश्योरेंस शामिल। Visa, flights, docs &amp; insurance included.
             </p>
             <Link
               to="/jobs"
@@ -316,7 +309,7 @@ function StepDetail({
 
         {isPayment && (
           <p className="text-xs font-semibold uppercase tracking-wide text-foreground mb-2">
-            What may be included in your service
+            What you get in this payment
           </p>
         )}
         <ul
@@ -331,7 +324,7 @@ function StepDetail({
               <span className="inline-flex items-center gap-1.5">
                 {bullet}
                 {bullet.startsWith("Passport") && <PassportRequirementInfo />}
-                {bullet === "Insurance, where applicable" && <InsuranceCoverageInfo />}
+                {bullet === "Insurance" && <InsuranceCoverageInfo />}
               </span>
             </li>
           ))}
@@ -464,7 +457,7 @@ export default function WorkerJourneyDemo() {
                         )}
                         {step.id === "payment" && (
                           <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                            Fee varies by job
+                            Starts from ₹20,000 + GST
                           </span>
                         )}
                         {step.id === "agreement" && (
@@ -553,7 +546,7 @@ export default function WorkerJourneyDemo() {
                       )}
                       {step.id === "payment" && (
                         <span className="block text-xs text-muted-foreground mt-0.5">
-                          Fee varies by job
+                          Starts from ₹20,000 + GST
                         </span>
                       )}
                       {step.id === "agreement" && (

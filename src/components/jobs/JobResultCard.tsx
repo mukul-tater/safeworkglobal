@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Bookmark, BriefcaseBusiness, Clock, Loader2, MapPin, ShieldCheck, Wallet } from 'lucide-react';
 import JobSalaryText from '@/components/JobSalaryText';
-import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { cn } from '@/lib/utils';
 
 export interface JobListItem {
@@ -124,9 +123,6 @@ export default function JobResultCard({
                 title={job.title}
                 description={job.description}
               />
-            </dd>
-            <dd className="flex items-center gap-1.5">
-              <JobServiceFee />
             </dd>
             <dd className="flex items-center gap-1.5">
               <BriefcaseBusiness className="h-3.5 w-3.5 shrink-0" />

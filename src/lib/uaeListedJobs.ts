@@ -14,7 +14,6 @@ export const UAE_LISTED_JOBS = [
   'Scaffolder',
   'Painter',
   'Aluminium Fixer/Fabricator',
-  'Cleaner',
 ] as const;
 
 export type UaeListedJob = (typeof UAE_LISTED_JOBS)[number];
@@ -30,7 +29,6 @@ const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'AC Technician', needles: ['ac technician', 'air conditioning technician', 'air conditioner technician', 'hvac technician'] },
   { job: 'Scaffolder', needles: ['scaffolder', 'scaffolding'] },
   { job: 'Painter', needles: ['painter', 'painting'] },
-  { job: 'Cleaner', needles: ['cleaner', 'housekeeping', 'housekeeper', 'janitor'] },
   { job: 'Furniture Carpenter - Finishing, All Rounder', needles: ['furniture carpenter', 'finishing, all rounder', 'finishing all rounder', 'finishing carpenter', 'pop / gypsum', 'pop/gypsum', 'gypsum carpenter', 'pop carpenter'] },
   { job: 'Electrician', needles: ['electrician', 'electrical'] },
   { job: 'Plumber', needles: ['plumber', 'plumbing'] },
@@ -105,7 +103,6 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ReturnType<typeof inr
   Scaffolder: SHUTTERING_BAND,
   'Construction Labour/Helper': HELPER_BAND,
   'General Labour - Warehouse/Supermarket': HELPER_BAND,
-  Cleaner: HELPER_BAND,
 };
 
 export function getPublicJobSalary(title: string, description = '') {
@@ -227,14 +224,6 @@ export const UAE_LISTED_JOB_RESPONSIBILITIES: Record<UaeListedJob, string[]> = {
     'File, grind and prepare surfaces for powder coat or anodising',
     'Follow workshop and site HSE, including hot-work controls',
   ],
-  Cleaner: [
-    'Clean rooms, toilets, corridors, offices and common areas as assigned',
-    'Sweep, mop, vacuum, dust and empty bins to the required standard',
-    'Restock consumables and report damaged fittings or shortages',
-    'Follow colour-coding, chemical dilution and PPE for cleaning products',
-    'Keep stores, trolleys and equipment clean and ready for the next shift',
-    'Follow supervisor instructions and site / hotel HSE rules',
-  ],
 };
 
 export function listPublicJobResponsibilities(
@@ -337,11 +326,6 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
     { youtubeId: 'mmsn1S2Ojks' },
   ],
   'Aluminium Fixer/Fabricator': [{ youtubeId: 'ovEDLzbAWpg' }],
-  Cleaner: [
-    { youtubeId: 'ggZ8QxMN8Uw' },
-    { youtubeId: 'Xrubv7ck95U' },
-    { youtubeId: '1OE3ebrAZrI' },
-  ],
 };
 
 export function getPublicJobVideos(title: string, description = ''): ListedJobVideo[] {

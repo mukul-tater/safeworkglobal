@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Briefcase, Lock, MapPin } from "lucide-react";
 import JobSalaryText from "@/components/JobSalaryText";
-import JobServiceFee from "@/components/jobs/JobServiceFee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
 import { isHiddenPublicJob } from "@/lib/uaeListedJobs";
@@ -185,9 +184,6 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                         </span>
                       </div>
                     )}
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      <JobServiceFee hideIcon className="text-xs" />
-                    </p>
                   </div>
                   {hasSalary(job) && (
                     <Badge className="shrink-0 bg-success/10 text-success border-success/20 hover:bg-success/10">

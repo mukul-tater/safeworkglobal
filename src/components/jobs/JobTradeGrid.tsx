@@ -21,7 +21,6 @@ const TRADE_CARDS: Record<UaeListedJob, { image: string }> = {
   Scaffolder: { image: '/country-insights/uae/worksite-crane.png' },
   Painter: { image: constructionImg },
   'Aluminium Fixer/Fabricator': { image: welderImg },
-  Cleaner: { image: '/country-insights/uae/accommodation-courtyard.png' },
 };
 
 interface Props {

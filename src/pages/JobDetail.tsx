@@ -1,6 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import JobSalaryText from '@/components/JobSalaryText';
-import JobServiceFee, { formatJobServiceFee } from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
 import { getPublicJobSalary, listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
@@ -460,9 +459,6 @@ export default function JobDetail() {
                       <Calendar className="h-4 w-4 shrink-0" />
                       <span>Posted {format(new Date(job.posted_at), 'MMM d, yyyy')}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <JobServiceFee />
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -569,9 +565,6 @@ export default function JobDetail() {
                     </Alert>
                   ) : showApply ? (
                     <>
-                      <p className="text-sm text-muted-foreground">
-                        <JobServiceFee className="text-sm" amountClassName="text-base" />
-                      </p>
                       <Button 
                         size="lg" 
                         onClick={handleApplyClick}
@@ -640,10 +633,6 @@ export default function JobDetail() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium">{job.country}</span>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <span className="text-muted-foreground">Service fee</span>
-                    <span className="font-medium tabular-nums">{formatJobServiceFee()}</span>
                   </div>
                 </CardContent>
               </Card>
