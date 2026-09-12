@@ -24,7 +24,7 @@ import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
 import { listPublicJobBenefits } from "@/lib/jobBenefits";
-import { listPublicJobResponsibilities } from "@/lib/uaeListedJobs";
+import { getPublicJobAbout, listPublicJobResponsibilities } from "@/lib/uaeListedJobs";
 
 interface ApplicationData {
   id: string;
@@ -225,7 +225,7 @@ export default function WorkerApplicationDetail() {
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <JobServiceFee />
+                    <JobServiceFee showWhenCharged />
                   </div>
                 </div>
                 
@@ -234,7 +234,9 @@ export default function WorkerApplicationDetail() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-medium mb-2">Description</h3>
-                    <p className="text-sm text-muted-foreground whitespace-pre-line">{job.description}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">
+                      {getPublicJobAbout(job.title, job.description)}
+                    </p>
                   </div>
                   
                   {listPublicJobResponsibilities(job.title, job.responsibilities, job.description).length > 0 && (

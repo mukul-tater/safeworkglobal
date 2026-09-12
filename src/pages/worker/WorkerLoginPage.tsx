@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { workerAuthEmailFromIdentifier } from '@/lib/workerAuthEmail';
+import { resolveWorkerAuthEmail } from '@/lib/resolveWorkerAuthEmail';
 import { getEmitraReviewBlockMessage, isWorkerGccReady } from '@/lib/workerPortalAccess';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
 import TermsAgreeRow from '@/components/TermsAgreeRow';
@@ -33,9 +33,7 @@ import { workerPathAfterAuth } from '@/modules/worker-verification/lib/pendingJo
 type Step = 'identifier' | 'login' | 'signup' | 'conflict';
 
 async function resolveAuthEmail(identifier: string): Promise<string | null> {
-  const trimmed = identifier.trim();
-  if (!trimmed) return null;
-  return workerAuthEmailFromIdentifier(trimmed);
+  return resolveWorkerAuthEmail(identifier);
 }
 
 /**
@@ -265,9 +263,11 @@ export default function WorkerLoginPage() {
                       <Label htmlFor="worker-password">Password</Label>
                       <ForgotPasswordControl
                         loginPath="/worker/login"
-                        initialIdentifier={method === 'email' ? email : ''}
+                        initialIdentifier={method === 'email' ? email : mobile}
                         title="Reset worker password"
                         description="Enter the email you used to create your worker account. We'll send a secure link to set a new password. Mobile-only accounts should contact SafeWork support."
+                        identifierType="text"
+                        resolveAuthEmail={resolveWorkerAuthEmail}
                         triggerClassName="text-xs"
                       />
                     </div>

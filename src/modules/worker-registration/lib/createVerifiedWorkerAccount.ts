@@ -76,16 +76,22 @@ export async function createVerifiedWorkerAccount(
   const digits = input.mobile.replace(/\D/g, '').slice(-10);
   const contactEmail = (input.email || '').trim().toLowerCase();
   const source = input.source ?? { type: 'organic' as const };
+  const partnerSourced = source.type === 'emitra' || source.type === 'partner';
 
-  // Organic signup uses real email for Auth. Emitra kiosk may still use synthetic.
-  let authEmail = contactEmail;
-  if (!authEmail) {
-    if (source.type === 'organic') {
-      throw new Error('Email is required to create a worker account.');
-    }
-    authEmail = workerAuthEmailFromMobile(digits);
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authEmail)) {
+  if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
     throw new Error('Enter a valid email address.');
+  }
+
+  // Organic signup uses the contact email for Auth. Kiosk workers sign in with
+  // the OTP-verified mobile, so Auth is the synthetic mobile address even when
+  // a contact email is collected (stored on profiles, not used as the login key).
+  let authEmail: string;
+  if (partnerSourced) {
+    authEmail = workerAuthEmailFromMobile(digits);
+  } else if (!contactEmail) {
+    throw new Error('Email is required to create a worker account.');
+  } else {
+    authEmail = contactEmail;
   }
 
   const country = input.country || 'India';
@@ -175,29 +181,36 @@ export async function createVerifiedWorkerAccount(
         throw new Error(signupErr.message);
       }
 
-      // Email confirmation is enabled in production. In that configuration the
-      // account is created successfully but signUp intentionally returns no
-      // session. Do not immediately call signInWithPassword (it can only return
-      // "Email not confirmed") or continue with authenticated profile writes.
+      // Email confirmation is enabled in production, so signUp may return no
+      // session. Phone OTP already succeeded — the confirm_mobile_verified
+      // trigger should have confirmed the user. Try sign-in so the worker is
+      // login-ready instead of leaving them stuck on "email not confirmed".
       if (!signupData.session) {
         const userId = signupData.user?.id;
         if (!userId) {
           throw new Error('Account was created, but confirmation status could not be read.');
         }
-        if (input.preserveCallerSession) {
-          await attachWorkerToCallingPartner({
-            workerUserId: userId,
-            fullName: input.fullName.trim(),
+        await new Promise((r) => setTimeout(r, 400));
+        const retry = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: input.password,
+        });
+        if (!retry.data.session) {
+          if (input.preserveCallerSession) {
+            await attachWorkerToCallingPartner({
+              workerUserId: userId,
+              fullName: input.fullName.trim(),
+              mobile: digits,
+              email: contactEmail || authEmail,
+            });
+          }
+          return {
+            userId,
+            authEmail,
             mobile: digits,
-            email: authEmail,
-          });
+            requiresEmailConfirmation: true,
+          };
         }
-        return {
-          userId,
-          authEmail,
-          mobile: digits,
-          requiresEmailConfirmation: true,
-        };
       }
 
       switchedAwayFromCaller = true;
@@ -223,7 +236,6 @@ export async function createVerifiedWorkerAccount(
       .filter(Boolean)
       .join(', ');
 
-    const partnerSourced = source.type === 'emitra' || source.type === 'partner';
     // Do not write source/review here. handle_new_user already inserted an
     // organic worker_profiles row; workers cannot change attribution (trigger).
     // Partner session is restored below, then partner_attach_registered_worker
@@ -266,7 +278,7 @@ export async function createVerifiedWorkerAccount(
       full_name: input.fullName.trim(),
       phone: digits,
       mobile_verified: true,
-      email: authEmail,
+      email: contactEmail || authEmail,
     };
 
     let profileReady = false;
@@ -366,7 +378,7 @@ export async function createVerifiedWorkerAccount(
         workerUserId: user.id,
         fullName: input.fullName.trim(),
         mobile: digits,
-        email: authEmail,
+        email: contactEmail || authEmail,
       });
       switchedAwayFromCaller = false;
     }

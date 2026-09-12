@@ -5,7 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { assertEnvConfigured } from '../config/env';
 import { supabase } from '../integrations/supabase/client';
 import { completeGoogleAuthFromUrl, signInWithGoogleMobile } from '../services/googleAuthService';
-import { displayableEmail, workerAuthEmailFromIdentifier } from '../lib/workerAuthEmail';
+import { displayableEmail } from '../lib/workerAuthEmail';
+import { resolveWorkerAuthEmail } from '../lib/resolveWorkerAuthEmail';
 import { passwordSignupIssue } from '../lib/password';
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner';
@@ -247,7 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (identifier: string, password: string) => {
     try {
-      const email = workerAuthEmailFromIdentifier(identifier);
+      const email = await resolveWorkerAuthEmail(identifier);
       if (!email) {
         return { success: false, error: 'Enter a valid email or 10-digit mobile number.' };
       }

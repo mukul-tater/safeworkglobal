@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobSalary, inferUaeListedJob, isHiddenPublicJob } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, inferUaeListedJob, isHiddenPublicJob } from '@/lib/uaeListedJobs';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import {
   clearPendingJourneyJob,
@@ -62,7 +62,8 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
   }
 
   return rows.map((job: Record<string, unknown>) => {
-    const description = String(job.description ?? '');
+    const storedDescription = String(job.description ?? '');
+    const description = getPublicJobAbout(String(job.title), storedDescription) || storedDescription;
     const skills = skillsByJob.get(String(job.id)) ?? [];
     const postedRaw = job.posted_at ?? job.created_at;
     const listedSalary = getPublicJobSalary(String(job.title), description);

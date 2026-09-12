@@ -1,8 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
+import { emitraReviewBlockMessage } from '@/lib/emitraReviewBlock';
 
 /**
- * eMitra-sourced workers onboarded via partner OTP are approved at create time.
- * Only rejected (or legacy pending) rows are blocked from the portal.
+ * eMitra-sourced workers onboarded via partner OTP are login-ready.
+ * Only rejected rows are blocked from the portal.
  * Organic workers use review_status = not_required.
  */
 export async function getEmitraReviewBlockMessage(userId: string): Promise<string | null> {
@@ -13,15 +14,7 @@ export async function getEmitraReviewBlockMessage(userId: string): Promise<strin
     .maybeSingle();
 
   if (error || !data) return null;
-  if (data.source_type !== 'emitra') return null;
-
-  if (data.review_status === 'pending') {
-    return 'Your eMitra registration is pending SafeWork approval. You will be able to sign in once approved.';
-  }
-  if (data.review_status === 'rejected') {
-    return 'Your eMitra registration was not approved. Contact support or your partner centre.';
-  }
-  return null;
+  return emitraReviewBlockMessage(data.source_type, data.review_status);
 }
 
 /** Apply is allowed after Essentials (Find jobs / Apply journey steps). */

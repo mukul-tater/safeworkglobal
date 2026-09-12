@@ -5043,6 +5043,7 @@ export type Database = {
         }[]
       }
       resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
+      resolve_worker_auth_email: { Args: { p_identifier: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
       verify_lsp_launch: {

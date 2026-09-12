@@ -1,4 +1,5 @@
 import { supabase } from '../integrations/supabase/client';
+import { emitraReviewBlockMessage } from './emitraReviewBlock';
 
 export async function getEmitraReviewBlockMessage(userId: string): Promise<string | null> {
   const { data, error } = await supabase
@@ -8,15 +9,7 @@ export async function getEmitraReviewBlockMessage(userId: string): Promise<strin
     .maybeSingle();
 
   if (error || !data) return null;
-  if (data.source_type !== 'emitra') return null;
-
-  if (data.review_status === 'pending') {
-    return 'Your eMitra registration is pending SafeWork approval. You will be able to use the app once approved.';
-  }
-  if (data.review_status === 'rejected') {
-    return 'Your eMitra registration was not approved. Contact support or your partner centre.';
-  }
-  return null;
+  return emitraReviewBlockMessage(data.source_type, data.review_status);
 }
 
 export async function isWorkerGccReady(userId: string): Promise<boolean> {

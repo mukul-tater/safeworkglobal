@@ -10,7 +10,7 @@ import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
-import { isHiddenPublicJob } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, isHiddenPublicJob } from '@/lib/uaeListedJobs';
 
 interface FeaturedJob {
   id: string;
@@ -233,7 +233,7 @@ export default function FeaturedJobs() {
                 )}
 
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
-                  {job.description}
+                  {getPublicJobAbout(job.title, job.description)}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2 mb-3">

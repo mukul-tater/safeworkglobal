@@ -12,7 +12,8 @@ import { BrandLogo } from '../../components/layout/AppHeader';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Button, Card, Input } from '../../components/ui';
 import { useI18n } from '../../i18n';
-import { isSyntheticAuthEmail, workerAuthEmailFromIdentifier } from '../../lib/workerAuthEmail';
+import { isSyntheticAuthEmail } from '../../lib/workerAuthEmail';
+import { resolveWorkerAuthEmail } from '../../lib/resolveWorkerAuthEmail';
 import { SAFEWORK_CONTACT } from '../../config/workerSupport';
 import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from '../../lib/password';
 import { continueAuth, parseAuthIdentifier, type AuthPortalRole } from '../../lib/authContinue';
@@ -108,7 +109,8 @@ export default function AuthScreen({ route }: Props) {
 
   const handleForgotPassword = async () => {
     setError('');
-    const resolved = workerAuthEmailFromIdentifier(email);
+    const raw = email.includes('@') ? email : phone || email;
+    const resolved = await resolveWorkerAuthEmail(raw);
     if (!resolved || !resolved.includes('@')) {
       setError('Enter the email you use to sign in. Password reset is sent by email.');
       return;
@@ -150,7 +152,7 @@ export default function AuthScreen({ route }: Props) {
 
     setLoading(true);
     if (phase === 'login') {
-      const identifier = email.includes('@') ? email.trim() : workerAuthEmailFromIdentifier(phone || email) || email.trim();
+      const identifier = email.includes('@') ? email.trim() : (phone || email).trim();
       const result = await login(identifier, password);
       if (!result.success) setError(result.error ?? 'Login failed');
     } else {

@@ -30,7 +30,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/use-debounce';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobSalary, inferUaeListedJob, isHiddenPublicJob, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, inferUaeListedJob, isHiddenPublicJob, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 
@@ -187,8 +187,8 @@ export default function Jobs() {
         const formatted: JobListItem[] = (data || [])
           .filter((job: any) => !isHiddenPublicJob(job.title, job.slug))
           .map((job: any) => {
-          const description: string = job.description ?? '';
-          const listedSalary = getPublicJobSalary(job.title, description);
+          const description: string = getPublicJobAbout(job.title, job.description) || job.description || '';
+          const listedSalary = getPublicJobSalary(job.title, job.description ?? '');
           const rawSalaryMin = listedSalary?.salary_min ?? job.salary_min ?? null;
           const rawSalaryMax = listedSalary?.salary_max ?? job.salary_max ?? null;
           const currency = listedSalary ? 'INR' : (job.currency || 'INR');

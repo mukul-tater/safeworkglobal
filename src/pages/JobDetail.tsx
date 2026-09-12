@@ -3,7 +3,7 @@ import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
-import { getPublicJobSalary, listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -167,7 +167,7 @@ export default function JobDetail() {
     if (!job) return;
     if (!isLoggedIn) {
       setPendingJourneyJob({ jobId: job.id, slug: job.slug || slug || job.id, title: job.title });
-      navigate('/worker/login');
+      navigate('/worker/journey');
       return;
     }
     if (role && role !== 'worker') {
@@ -348,6 +348,7 @@ export default function JobDetail() {
   }
 
   const lockedJobId = journeyRow?.journey_job_id || null;
+  const aboutTheRole = getPublicJobAbout(job.title, job.description);
   const responsibilities = listPublicJobResponsibilities(
     job.title,
     job.responsibilities,
@@ -363,21 +364,21 @@ export default function JobDetail() {
     : isCurrentJourneyJob
       ? 'Current job'
       : !isLoggedIn
-        ? 'Apply'
+        ? 'Apply now'
         : isWorker && !canApplyToJobs
           ? 'Finish Essentials to apply'
           : lockedJobId && lockedJobId !== job.id
             ? 'Switch to this job'
             : hasApplied
               ? 'Already applied'
-              : 'Apply';
+              : 'Apply now';
 
   // Structured data for job posting
   const jobStructuredData = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
     "title": job.title,
-    "description": job.description,
+    "description": aboutTheRole || job.description,
     "datePosted": job.posted_at,
     "validThrough": new Date(new Date(job.posted_at).setMonth(new Date(job.posted_at).getMonth() + 3)).toISOString(),
     "employmentType": job.job_type.replace('_', ' '),
@@ -471,7 +472,9 @@ export default function JobDetail() {
                   <CardTitle>About the Role</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{job.description}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {aboutTheRole || job.description}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -539,7 +542,7 @@ export default function JobDetail() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6 pb-28 lg:pb-0">
+            <div className="space-y-6 pb-36 lg:pb-0">
               {/* Apply Card */}
               <Card className="sticky top-24">
                 <CardContent className="p-6 space-y-4">
@@ -567,7 +570,7 @@ export default function JobDetail() {
                     </Alert>
                   ) : showApply ? (
                     <>
-                      <JobServiceFee />
+                      <JobServiceFee showWhenCharged />
                       <Button 
                         size="lg" 
                         onClick={handleApplyClick}
@@ -637,7 +640,10 @@ export default function JobDetail() {
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium">{job.country}</span>
                   </div>
-                  <JobServiceFee />
+                  <div className="space-y-1 pt-1">
+                    <span className="text-muted-foreground">Service fee</span>
+                    <JobServiceFee showWhenCharged />
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -650,6 +656,9 @@ export default function JobDetail() {
                   : 'bottom-[calc(4rem+env(safe-area-inset-bottom,0px))]'
               }`}
             >
+              <p className="mb-2 text-center text-xs text-muted-foreground">
+                Service fee payable after the video interview. Not before that.
+              </p>
               <Button
                 size="lg"
                 onClick={handleApplyClick}
