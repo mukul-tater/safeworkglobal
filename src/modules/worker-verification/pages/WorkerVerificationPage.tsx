@@ -41,12 +41,14 @@ import {
   type VerificationStage,
 } from '@/modules/worker-verification/constants';
 import type { BondTemplate, SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
+import { isMcqQuizItem } from '@/modules/worker-verification/types';
+import { describeQuizResult } from '@/modules/worker-verification/quiz-data/quizResult';
 import {
   completeMediaStep,
   completeIdentityKyc,
   getOrCreateVerification,
   loadActiveBondTemplate,
-  loadQuizItems,
+  loadQuizItemsForWorker,
   saveEssentials,
   medicalTestDocumentsComplete,
   submitMedicalResult,
@@ -389,7 +391,7 @@ export default function WorkerVerificationPage({
   const [ecrCategory, setEcrCategory] = useState<string | null>(null);
 
   const [quizItems, setQuizItems] = useState<SkillQuizItem[]>([]);
-  const [quizAnswers, setQuizAnswers] = useState<Record<string, boolean | undefined>>({});
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, boolean | string | undefined>>({});
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizFailScore, setQuizFailScore] = useState<number | null>(null);
 
@@ -611,7 +613,7 @@ export default function WorkerVerificationPage({
       setForceIdentity((!kycOk && pastMedia && v.stage !== 'identity') || missingLaterDocs);
 
       if (v.primary_skill && (v.stage === 'quiz' || (!v.quiz_completed_at && v.stage !== 'find_jobs' && v.stage !== 'apply_job' && v.stage !== 'essentials'))) {
-        const items = await loadQuizItems(v.primary_skill, v.state);
+        const items = await loadQuizItemsForWorker(v);
         setQuizItems(items);
       }
 
@@ -891,7 +893,7 @@ export default function WorkerVerificationPage({
     }
   };
 
-  const onAnswerQuiz = (answer: boolean) => {
+  const onAnswerQuiz = (answer: boolean | string) => {
     if (!currentQuiz) return;
     setQuizAnswers((a) => ({ ...a, [currentQuiz.id]: answer }));
   };
@@ -899,7 +901,7 @@ export default function WorkerVerificationPage({
   const onQuizContinue = async () => {
     if (!subjectId || !currentQuiz) return;
     if (quizAnswers[currentQuiz.id] === undefined) {
-      toast.error('Select Yes or No');
+      toast.error(isMcqQuizItem(currentQuiz) ? 'Select an answer / एक उत्तर चुनें' : 'Select Yes or No / हाँ या नहीं चुनें');
       return;
     }
     if (quizIndex < quizItems.length - 1) {
@@ -910,18 +912,24 @@ export default function WorkerVerificationPage({
     try {
       const answers = quizItems.map((item) => ({
         quiz_item_id: item.id,
-        answer: Boolean(quizAnswers[item.id]),
+        answer: quizAnswers[item.id] as boolean | string,
       }));
       const next = await submitQuiz(subjectId, answers);
-      const passed = (Number(next.quiz_score) || 0) >= QUIZ_PASS_SCORE;
-      if (!passed) {
+      const score = Number(next.quiz_score) || 0;
+      const result = describeQuizResult(score);
+      if (!result.passed) {
         setRow(next);
         setQuizIndex(0);
         setQuizAnswers({});
-        setQuizFailScore(Number(next.quiz_score) || 0);
+        setQuizFailScore(score);
+        try {
+          setQuizItems(await loadQuizItemsForWorker(next));
+        } catch {
+          /* keep current items */
+        }
         notifyVerificationUpdated();
         toast.error(
-          `Score ${next.quiz_score}%. You need ${QUIZ_PASS_SCORE}% to continue — try Test 1 again.`,
+          `${result.screeningEn} — ${score}%. ${result.bandEn}. You need ${QUIZ_PASS_SCORE}% to continue.`,
         );
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
@@ -938,7 +946,7 @@ export default function WorkerVerificationPage({
       setQuizFailScore(null);
       notifyVerificationUpdated();
       toast.success(
-        `Test 1 complete — score ${next.quiz_score}%. Next: upload your skill proof.`,
+        `${result.screeningEn} — ${score}%. ${result.bandEn}. ${result.screeningHi}`,
       );
       // Soft reload — avoid full-page loading flash that can feel like a stuck quiz.
       try {
@@ -1396,8 +1404,8 @@ export default function WorkerVerificationPage({
                 setRow(next);
                 notifyVerificationUpdated();
                 clearJourneyQuery();
-                if (next.stage === 'quiz' && next.primary_skill) {
-                  const items = await loadQuizItems(next.primary_skill, next.state);
+                if (next.stage === 'quiz') {
+                  const items = await loadQuizItemsForWorker(next);
                   setQuizItems(items);
                   setQuizIndex(0);
                   setQuizAnswers({});
@@ -1410,7 +1418,7 @@ export default function WorkerVerificationPage({
         {!viewingCompletedStep && stage === 'quiz' && !currentQuiz && (
           <StageActionShell
             icon={ClipboardList}
-            title="Test 1 — Do you know this work?"
+            title="Test 1 — Basic trade knowledge"
             description="Loading quiz questions for the job you applied to…"
           >
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -1423,30 +1431,38 @@ export default function WorkerVerificationPage({
         {!viewingCompletedStep && stage === 'quiz' && currentQuiz && (
           <StageActionShell
             icon={ClipboardList}
-            title="Test 1 — Do you know this work?"
+            title="Test 1 — Basic trade knowledge"
             description={
               <>
-                Watch the example for{' '}
-                <span className="font-medium text-foreground">{row.primary_skill || 'your skill'}</span>
-                {row.journey_job_id ? ' (from the job you applied to)' : ''}, then
-                answer Yes or No. You upload your own photos and videos in the next step. Question {quizIndex + 1} of{' '}
-                {quizItems.length}.
+                Answer 10 bilingual questions for{' '}
+                <span className="font-medium text-foreground">{row.primary_skill || 'your trade'}</span>
+                {row.journey_job_id ? ' (from the job you applied to)' : ''}. This is a screening test, not a
+                trade certificate. Question {quizIndex + 1} of {quizItems.length}.
+                <span className="mt-2 block" lang="hi">
+                  यह स्क्रीनिंग टेस्ट है, ट्रेड सर्टिफिकेट नहीं। प्रश्न {quizIndex + 1} / {quizItems.length}.
+                </span>
               </>
             }
             footer={
               <Button onClick={() => void onQuizContinue()} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-                {quizIndex < quizItems.length - 1 ? 'Next example' : 'Finish Test 1'}
+                {quizIndex < quizItems.length - 1 ? 'Next question / अगला प्रश्न' : 'Finish Test 1 / टेस्ट पूरा करें'}
               </Button>
             }
           >
               {quizFailScore !== null && (
                 <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                  <p className="text-sm text-foreground">
-                    Last score <span className="font-semibold">{quizFailScore}%</span>. Pass mark is{' '}
-                    {QUIZ_PASS_SCORE}%. Answer all {quizItems.length} questions again to continue.
-                  </p>
+                  <div className="text-sm text-foreground">
+                    <p>
+                      {describeQuizResult(quizFailScore).screeningEn} — score{' '}
+                      <span className="font-semibold">{quizFailScore}%</span>. Pass mark is {QUIZ_PASS_SCORE}%
+                      ({describeQuizResult(quizFailScore).bandEn}).
+                    </p>
+                    <p className="mt-1 text-muted-foreground" lang="hi">
+                      {describeQuizResult(quizFailScore).screeningHi}. पास मार्क्स {QUIZ_PASS_SCORE}% है।
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -1488,13 +1504,6 @@ export default function WorkerVerificationPage({
                 />
               )}
 
-              {!currentQuiz.youtube_url && !currentQuiz.image_url && (
-                <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-6 text-center text-sm text-muted-foreground">
-                  No example media for this question — answer from your experience as{' '}
-                  <span className="font-medium text-foreground">{row.primary_skill}</span>.
-                </div>
-              )}
-
               <h2 className="text-lg font-semibold font-heading leading-snug">{currentQuiz.question}</h2>
               {currentQuiz.question_hi ? (
                 <p className="text-base text-muted-foreground leading-snug -mt-1" lang="hi">
@@ -1502,24 +1511,55 @@ export default function WorkerVerificationPage({
                 </p>
               ) : null}
 
-              <RadioGroup
-                value={
-                  quizAnswers[currentQuiz.id] === undefined
-                    ? ''
-                    : quizAnswers[currentQuiz.id]
-                      ? 'yes'
-                      : 'no'
-                }
-                onValueChange={(v) => onAnswerQuiz(v === 'yes')}
-                className="flex gap-6"
-              >
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <RadioGroupItem value="yes" /> Yes
-                </label>
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <RadioGroupItem value="no" /> No
-                </label>
-              </RadioGroup>
+              {isMcqQuizItem(currentQuiz) ? (
+                <RadioGroup
+                  value={typeof quizAnswers[currentQuiz.id] === 'string' ? String(quizAnswers[currentQuiz.id]) : ''}
+                  onValueChange={(v) => onAnswerQuiz(v)}
+                  className="grid gap-2"
+                >
+                  {currentQuiz.options!.map((opt, i) => {
+                    const letter = ['A', 'B', 'C', 'D'][i] || String(i + 1);
+                    return (
+                      <label
+                        key={opt.id}
+                        className={cn(
+                          'flex items-start gap-3 rounded-xl border border-border bg-background px-3 py-2.5 text-sm cursor-pointer',
+                          quizAnswers[currentQuiz.id] === opt.id && 'border-primary bg-primary/5',
+                        )}
+                      >
+                        <RadioGroupItem value={opt.id} className="mt-1" />
+                        <span>
+                          <span className="font-medium">{letter}. {opt.en}</span>
+                          {opt.hi ? (
+                            <span className="mt-0.5 block text-muted-foreground" lang="hi">
+                              {opt.hi}
+                            </span>
+                          ) : null}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </RadioGroup>
+              ) : (
+                <RadioGroup
+                  value={
+                    quizAnswers[currentQuiz.id] === undefined
+                      ? ''
+                      : quizAnswers[currentQuiz.id]
+                        ? 'yes'
+                        : 'no'
+                  }
+                  onValueChange={(v) => onAnswerQuiz(v === 'yes')}
+                  className="flex gap-6"
+                >
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <RadioGroupItem value="yes" /> Yes / हाँ
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium">
+                    <RadioGroupItem value="no" /> No / नहीं
+                  </label>
+                </RadioGroup>
+              )}
           </StageActionShell>
         )}
 

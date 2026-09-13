@@ -13,10 +13,11 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Plus, Save, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
-import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
+import { QUIZ_SKILL_CODES } from '@/modules/worker-verification/quiz-data/quizSkill';
 import { indianStates } from '@/lib/validations/partner';
-import { youtubeEmbedUrl } from '@/modules/worker-verification/constants';
-import type { SkillQuizConfig, SkillQuizItem } from '@/modules/worker-verification/types';
+import { QUIZ_PASS_SCORE, QUIZ_QUESTIONS_TO_SHOW, youtubeEmbedUrl } from '@/modules/worker-verification/constants';
+import type { QuizOption, SkillQuizConfig, SkillQuizItem } from '@/modules/worker-verification/types';
+import { isMcqQuizItem } from '@/modules/worker-verification/types';
 import {
   deleteQuizItem,
   listQuizConfigs,
@@ -28,6 +29,8 @@ import { loadQuizItems } from '@/modules/worker-verification/services/verificati
 
 const ALL_REGIONS = '__all__';
 
+const OPTION_IDS = ['A', 'B', 'C', 'D'] as const;
+
 type Draft = {
   id?: string;
   question: string;
@@ -35,10 +38,15 @@ type Draft = {
   image_url: string;
   youtube_url: string;
   expected_answer: boolean;
+  options: QuizOption[];
+  correct_option: string;
   region: string;
   sort_order: number;
   active: boolean;
 };
+
+const emptyOptions = (): QuizOption[] =>
+  OPTION_IDS.map((id) => ({ id, en: '', hi: '' }));
 
 const emptyDraft = (sort: number): Draft => ({
   question: '',
@@ -46,13 +54,15 @@ const emptyDraft = (sort: number): Draft => ({
   image_url: '',
   youtube_url: '',
   expected_answer: true,
+  options: emptyOptions(),
+  correct_option: 'A',
   region: ALL_REGIONS,
   sort_order: sort,
   active: true,
 });
 
 export default function AdminQuizCms() {
-  const skills = useMemo<string[]>(() => [...WORKER_SKILLS], []);
+  const skills = useMemo<string[]>(() => [...QUIZ_SKILL_CODES], []);
   const [skill, setSkill] = useState<string>(skills[0]);
   const [items, setItems] = useState<SkillQuizItem[]>([]);
   const [configs, setConfigs] = useState<SkillQuizConfig[]>([]);
@@ -64,8 +74,8 @@ export default function AdminQuizCms() {
 
   // Config form (per skill, optional region)
   const [cfgRegion, setCfgRegion] = useState<string>(ALL_REGIONS);
-  const [cfgCount, setCfgCount] = useState('5');
-  const [cfgPass, setCfgPass] = useState('60');
+  const [cfgCount, setCfgCount] = useState(String(QUIZ_QUESTIONS_TO_SHOW));
+  const [cfgPass, setCfgPass] = useState(String(QUIZ_PASS_SCORE));
   const [cfgMode, setCfgMode] = useState<'random_active' | 'explicit_ids'>('random_active');
   const [cfgSelected, setCfgSelected] = useState<string[]>([]);
 
@@ -91,8 +101,8 @@ export default function AdminQuizCms() {
   useEffect(() => {
     const cfg =
       configs.find((c) => (cfgRegion === ALL_REGIONS ? !c.region : c.region === cfgRegion)) || null;
-    setCfgCount(String(cfg?.questions_to_show ?? 5));
-    setCfgPass(String(cfg?.pass_score ?? 60));
+    setCfgCount(String(cfg?.questions_to_show ?? QUIZ_QUESTIONS_TO_SHOW));
+    setCfgPass(String(cfg?.pass_score ?? QUIZ_PASS_SCORE));
     setCfgMode(cfg?.selection_mode ?? 'random_active');
     setCfgSelected(cfg?.selected_ids ?? []);
   }, [configs, cfgRegion]);
@@ -100,6 +110,13 @@ export default function AdminQuizCms() {
   const onSaveItem = async () => {
     if (draft.question.trim().length < 5) {
       toast.error('English question is required');
+      return;
+    }
+    const options = draft.options
+      .map((o) => ({ id: o.id, en: o.en.trim(), hi: o.hi.trim() }))
+      .filter((o) => o.en);
+    if (options.length > 0 && options.length < 2) {
+      toast.error('Add at least two options, or leave all option fields empty for Yes/No');
       return;
     }
     setSaving(true);
@@ -112,6 +129,8 @@ export default function AdminQuizCms() {
         image_url: draft.image_url || null,
         youtube_url: draft.youtube_url || null,
         expected_answer: draft.expected_answer,
+        options: options.length >= 2 ? options : null,
+        correct_option: options.length >= 2 ? draft.correct_option : null,
         region: draft.region === ALL_REGIONS ? null : draft.region,
         sort_order: draft.sort_order,
         active: draft.active,
@@ -135,10 +154,10 @@ export default function AdminQuizCms() {
         id: existing?.id,
         skill_code: skill,
         region: cfgRegion === ALL_REGIONS ? null : cfgRegion,
-        questions_to_show: Math.max(1, Number(cfgCount) || 5),
+        questions_to_show: Math.max(1, Number(cfgCount) || QUIZ_QUESTIONS_TO_SHOW),
         selection_mode: cfgMode,
         selected_ids: cfgMode === 'explicit_ids' ? cfgSelected : [],
-        pass_score: Math.min(100, Math.max(0, Number(cfgPass) || 60)),
+        pass_score: Math.min(100, Math.max(0, Number(cfgPass) || QUIZ_PASS_SCORE)),
         active: true,
       });
       toast.success('Test settings saved');
@@ -168,8 +187,8 @@ export default function AdminQuizCms() {
     >
       <h1 className="text-2xl md:text-3xl font-bold mb-2">Test 1 — Skill quiz CMS</h1>
       <p className="text-sm text-muted-foreground mb-4">
-        Manage the question bank per skill: English question with Hindi below it, image or
-        YouTube clip, state targeting, how many questions to show, and the pass score.
+        Manage the bilingual MCQ bank per UAE trade: English + Hindi question and four options.
+        Workers see shuffled option order. Result is a screening pass, not a trade certificate.
       </p>
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr] items-start">
@@ -281,6 +300,37 @@ export default function AdminQuizCms() {
                 onChange={(e) => setDraft((d) => ({ ...d, question_hi: e.target.value }))}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Options (English + Hindi)</Label>
+              {draft.options.map((opt, i) => (
+                <div key={opt.id} className="grid sm:grid-cols-2 gap-2 rounded-lg border border-border p-2">
+                  <Input
+                    value={opt.en}
+                    placeholder={`${opt.id} English`}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        options: d.options.map((row, idx) =>
+                          idx === i ? { ...row, en: e.target.value } : row,
+                        ),
+                      }))
+                    }
+                  />
+                  <Input
+                    value={opt.hi}
+                    placeholder={`${opt.id} Hindi`}
+                    onChange={(e) =>
+                      setDraft((d) => ({
+                        ...d,
+                        options: d.options.map((row, idx) =>
+                          idx === i ? { ...row, hi: e.target.value } : row,
+                        ),
+                      }))
+                    }
+                  />
+                </div>
+              ))}
+            </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Image URL</Label>
@@ -299,7 +349,7 @@ export default function AdminQuizCms() {
                 />
               </div>
             </div>
-            <div className="grid sm:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="space-y-1.5">
                 <Label>Region</Label>
                 <Select
@@ -324,7 +374,21 @@ export default function AdminQuizCms() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Correct answer</Label>
+                <Label>Correct option</Label>
+                <Select
+                  value={draft.correct_option}
+                  onValueChange={(v) => setDraft((d) => ({ ...d, correct_option: v }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {OPTION_IDS.map((id) => (
+                      <SelectItem key={id} value={id}>{id}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Yes/No fallback</Label>
                 <Select
                   value={draft.expected_answer ? 'true' : 'false'}
                   onValueChange={(v) => setDraft((d) => ({ ...d, expected_answer: v === 'true' }))}
@@ -389,7 +453,13 @@ export default function AdminQuizCms() {
                             <p className="text-sm text-muted-foreground">{q.question_hi}</p>
                           )}
                           <div className="flex flex-wrap gap-1.5 mt-1.5">
-                            <Badge variant="outline">{q.expected_answer ? 'Answer: True' : 'Answer: False'}</Badge>
+                            <Badge variant="outline">
+                              {isMcqQuizItem(q)
+                                ? `Answer: ${q.correct_option || '?'}`
+                                : q.expected_answer
+                                  ? 'Answer: True'
+                                  : 'Answer: False'}
+                            </Badge>
                             <Badge variant="outline">{q.region || 'All India'}</Badge>
                             {q.image_url && <Badge variant="outline">Image</Badge>}
                             {q.youtube_url && <Badge variant="outline">Video</Badge>}
@@ -421,6 +491,14 @@ export default function AdminQuizCms() {
                                 image_url: q.image_url || '',
                                 youtube_url: q.youtube_url || '',
                                 expected_answer: q.expected_answer,
+                                options:
+                                  q.options?.length
+                                    ? OPTION_IDS.map(
+                                        (id) =>
+                                          q.options?.find((o) => o.id === id) || { id, en: '', hi: '' },
+                                      )
+                                    : emptyOptions(),
+                                correct_option: q.correct_option || 'A',
                                 region: q.region || ALL_REGIONS,
                                 sort_order: q.sort_order,
                                 active: q.active !== false,

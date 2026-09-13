@@ -11,6 +11,8 @@ export type QuizItemInput = {
   image_url: string | null;
   youtube_url: string | null;
   expected_answer: boolean;
+  options?: { id: string; en: string; hi: string }[] | null;
+  correct_option?: string | null;
   region: string | null;
   sort_order: number;
   active: boolean;
@@ -34,6 +36,8 @@ export async function saveQuizItem(input: QuizItemInput): Promise<void> {
     image_url: input.image_url?.trim() || null,
     youtube_url: input.youtube_url?.trim() || null,
     expected_answer: input.expected_answer,
+    options: input.options?.length ? input.options : null,
+    correct_option: input.correct_option || null,
     region: input.region || null,
     sort_order: input.sort_order,
     active: input.active,

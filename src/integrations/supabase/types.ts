@@ -4808,6 +4808,7 @@ export type Database = {
           active: boolean
           created_at: string
           expected_answer: boolean
+          correct_option: string | null
           id: string
           image_url: string | null
           options: Json | null
@@ -4823,6 +4824,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           expected_answer?: boolean
+          correct_option?: string | null
           id?: string
           image_url?: string | null
           options?: Json | null
@@ -4838,6 +4840,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           expected_answer?: boolean
+          correct_option?: string | null
           id?: string
           image_url?: string | null
           options?: Json | null
@@ -4858,6 +4861,7 @@ export type Database = {
           id: string
           is_correct: boolean
           quiz_item_id: string
+          selected_option: string | null
           user_id: string
         }
         Insert: {
@@ -4866,6 +4870,7 @@ export type Database = {
           id?: string
           is_correct: boolean
           quiz_item_id: string
+          selected_option?: string | null
           user_id: string
         }
         Update: {
@@ -4874,6 +4879,7 @@ export type Database = {
           id?: string
           is_correct?: boolean
           quiz_item_id?: string
+          selected_option?: string | null
           user_id?: string
         }
         Relationships: [

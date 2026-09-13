@@ -1,13 +1,9 @@
 import type { SkillQuizItem } from '../types';
-import carpenter from './carpenter.questions.json';
+import { BASIC_TRADE_KNOWLEDGE_BANK } from './basic-trade-knowledge';
 import driver from './driver.questions.json';
-import electrician from './electrician.questions.json';
-import helper from './helper.questions.json';
-import hvac from './hvac-technician.questions.json';
-import mason from './mason.questions.json';
 import other from './other.questions.json';
-import plumber from './plumber.questions.json';
-import welder from './welder.questions.json';
+import { isUaeListedQuizSkill } from './quizSkill';
+import { shuffleCopy } from './shuffle';
 
 export interface SkillQuizJsonFile {
   skill: string;
@@ -22,19 +18,12 @@ export interface SkillQuizJsonFile {
   }>;
 }
 
-const QUIZ_BY_SKILL: Record<string, SkillQuizJsonFile> = {
-  Electrician: electrician as SkillQuizJsonFile,
-  Plumber: plumber as SkillQuizJsonFile,
-  Welder: welder as SkillQuizJsonFile,
+const YES_NO_BY_SKILL: Record<string, SkillQuizJsonFile> = {
   Driver: driver as SkillQuizJsonFile,
-  Mason: mason as SkillQuizJsonFile,
-  Carpenter: carpenter as SkillQuizJsonFile,
-  Helper: helper as SkillQuizJsonFile,
-  'HVAC Technician': hvac as SkillQuizJsonFile,
   Other: other as SkillQuizJsonFile,
 };
 
-function toItems(file: SkillQuizJsonFile): SkillQuizItem[] {
+function toYesNoItems(file: SkillQuizJsonFile): SkillQuizItem[] {
   return [...file.questions]
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((q) => ({
@@ -46,11 +35,32 @@ function toItems(file: SkillQuizJsonFile): SkillQuizItem[] {
       image_url: q.image_url,
       expected_answer: q.expected_answer,
       sort_order: q.sort_order,
+      options: null,
     }));
 }
 
-/** Load Test 1 questions from per-skill JSON (e.g. welder.questions.json). */
+function slugSkill(skill: string): string {
+  return skill.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+/** Load Test 1 questions from the bundled bank when the CMS has nothing for the skill. */
 export function loadQuizItemsFromJson(skill: string): SkillQuizItem[] {
-  const file = QUIZ_BY_SKILL[skill] || QUIZ_BY_SKILL.Other;
-  return toItems(file);
+  if (isUaeListedQuizSkill(skill)) {
+    const prefix = slugSkill(skill);
+    return shuffleCopy(
+      BASIC_TRADE_KNOWLEDGE_BANK[skill].map((q, index) => ({
+        id: `${prefix}-${index + 1}`,
+        skill_code: skill,
+        question: q.question,
+        question_hi: q.question_hi,
+        youtube_url: null,
+        image_url: null,
+        expected_answer: false,
+        sort_order: index + 1,
+        options: shuffleCopy(q.options),
+      })),
+    );
+  }
+  const file = YES_NO_BY_SKILL[skill] || YES_NO_BY_SKILL.Other;
+  return toYesNoItems(file);
 }

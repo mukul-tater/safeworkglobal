@@ -92,6 +92,12 @@ export interface WorkerVerification {
   updated_at: string;
 }
 
+export interface QuizOption {
+  id: string;
+  en: string;
+  hi: string;
+}
+
 export interface SkillQuizItem {
   id: string;
   skill_code: string;
@@ -103,6 +109,13 @@ export interface SkillQuizItem {
   sort_order: number;
   region?: string | null;
   active?: boolean | null;
+  options?: QuizOption[] | null;
+  /** Admin CMS only — never returned to workers by get_worker_quiz_items. */
+  correct_option?: string | null;
+}
+
+export function isMcqQuizItem(item: Pick<SkillQuizItem, 'options'>): boolean {
+  return Array.isArray(item.options) && item.options.length >= 2;
 }
 
 export interface BondTemplate {

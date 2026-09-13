@@ -59,17 +59,11 @@ export function isHiddenPublicJob(title: string, slug?: string | null): boolean 
   return title.trim().toLowerCase() === 'carpenter';
 }
 
-/** 1 AED ≈ ₹23 — same band as jobSalaryUtils. Flyer grades are Grade C (min) to Grade A (max). */
-const AED_TO_INR = 23;
-
-function inrFromAedGrade(minAed: number, maxAed: number): {
+function inrBand(salary_min: number, salary_max: number): {
   salary_min: number;
   salary_max: number;
   salary_display: string;
 } {
-  const roundThousand = (aed: number) => Math.round((aed * AED_TO_INR) / 1000) * 1000;
-  const salary_min = roundThousand(minAed);
-  const salary_max = roundThousand(maxAed);
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
   return {
     salary_min,
@@ -78,31 +72,22 @@ function inrFromAedGrade(minAed: number, maxAed: number): {
   };
 }
 
-const WELDER_BAND = inrFromAedGrade(1512, 1712);
-const INDUSTRIAL_ELECTRICIAN_BAND = inrFromAedGrade(1360, 1610);
-const FINISHING_CARPENTER_BAND = inrFromAedGrade(1412, 1662);
-const MASON_BAND = inrFromAedGrade(1360, 1560);
-const SHUTTERING_BAND = inrFromAedGrade(1412, 1612);
-const PLUMBER_BAND = inrFromAedGrade(1360, 1560);
-const AC_BAND = inrFromAedGrade(1360, 1460);
-const HELPER_BAND = inrFromAedGrade(1158, 1208);
-
-/** Monthly INR from the Dubai interview-drive Grade C–A AED table. */
-export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ReturnType<typeof inrFromAedGrade>> = {
-  Welder: WELDER_BAND,
-  'Aluminium Fixer/Fabricator': WELDER_BAND,
-  Electrician: INDUSTRIAL_ELECTRICIAN_BAND,
-  'Shuttering Carpenter': SHUTTERING_BAND,
-  'Furniture Carpenter - Finishing, All Rounder': FINISHING_CARPENTER_BAND,
-  'Mason (tiles/marble)': MASON_BAND,
-  'Steel Fixer': MASON_BAND,
-  Plumber: PLUMBER_BAND,
-  'Pipe Fitter': PLUMBER_BAND,
-  'AC Technician': AC_BAND,
-  Painter: MASON_BAND,
-  Scaffolder: SHUTTERING_BAND,
-  'Construction Labour/Helper': HELPER_BAND,
-  'General Labour - Warehouse/Supermarket': HELPER_BAND,
+/** Monthly INR salary ranges for the public UAE listings. */
+export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ReturnType<typeof inrBand>> = {
+  Electrician: inrBand(35000, 42000),
+  Welder: inrBand(39000, 42000),
+  Plumber: inrBand(35000, 41000),
+  'Shuttering Carpenter': inrBand(36000, 42000),
+  'Mason (tiles/marble)': inrBand(35000, 41000),
+  'Construction Labour/Helper': inrBand(30000, 32000),
+  'Pipe Fitter': inrBand(35000, 41000),
+  'Furniture Carpenter - Finishing, All Rounder': inrBand(37000, 41000),
+  'Steel Fixer': inrBand(35000, 41000),
+  'AC Technician': inrBand(39000, 50000),
+  'General Labour - Warehouse/Supermarket': inrBand(30000, 32000),
+  Scaffolder: inrBand(36000, 42000),
+  Painter: inrBand(36000, 42000),
+  'Aluminium Fixer/Fabricator': inrBand(39000, 42000),
 };
 
 export function getPublicJobSalary(title: string, description = '') {

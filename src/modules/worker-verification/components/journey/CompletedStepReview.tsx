@@ -25,6 +25,7 @@ import {
   QUIZ_PASS_SCORE,
   type GccNavStepId,
 } from '@/modules/worker-verification/constants';
+import { describeQuizResult } from '@/modules/worker-verification/quiz-data/quizResult';
 import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
 
 export interface KycDocument {
@@ -355,15 +356,29 @@ export default function CompletedStepReview({
                   <span className="text-lg text-muted-foreground">%</span>
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Pass mark {QUIZ_PASS_SCORE}%
+                  Pass mark {QUIZ_PASS_SCORE}% · screening only, not a trade certificate
                 </p>
               </div>
               <StatusPill
                 tone={(row.quiz_score ?? 0) >= QUIZ_PASS_SCORE ? 'success' : 'pending'}
-                label={(row.quiz_score ?? 0) >= QUIZ_PASS_SCORE ? 'Passed' : 'Recorded'}
+                label={(row.quiz_score ?? 0) >= QUIZ_PASS_SCORE ? 'Screening passed' : 'Screening not passed'}
               />
             </div>
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              <Detail
+                label="Result"
+                value={
+                  row.quiz_score == null
+                    ? '—'
+                    : describeQuizResult(row.quiz_score).screeningEn
+                }
+              />
+              <Detail
+                label="Knowledge band"
+                value={
+                  row.quiz_score == null ? '—' : describeQuizResult(row.quiz_score).bandEn
+                }
+              />
               <Detail label="Skill tested" value={row.primary_skill || '—'} />
               <Detail label="Completed on" value={formatDate(row.quiz_completed_at)} />
             </dl>

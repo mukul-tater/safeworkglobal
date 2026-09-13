@@ -176,7 +176,7 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   essentials: 'Essentials',
   find_jobs: 'Find jobs',
   apply_job: 'Apply to job',
-  quiz: 'Test 1 — Know this work?',
+  quiz: 'Test 1 — Basic trade knowledge',
   media: 'Skill proof upload',
   identity: 'Identity (KYC)',
   awaiting_interview: 'Test 2 — Video interview',
@@ -255,9 +255,9 @@ const GCC_JOURNEY_NAV_STEPS_CORE: GccNavStepMeta[] = [
   },
   {
     id: 'test1',
-    label: 'Test 1 — Know this work?',
+    label: 'Test 1 — Basic trade knowledge',
     shortLabel: 'Test 1',
-    navLabel: 'Test 1 — Work quiz',
+    navLabel: 'Test 1 — Trade quiz',
     stages: ['quiz'],
   },
   {
@@ -341,8 +341,11 @@ export function gccJourneyNavSteps(opts?: { includeAccountDetails?: boolean }): 
   ];
 }
 
-/** Minimum Test 1 score to pass. Failing allows unlimited retries for now. */
-export const QUIZ_PASS_SCORE = 60;
+/** Minimum Test 1 score to pass (7/10). Failing allows unlimited retries for now. */
+export const QUIZ_PASS_SCORE = 70;
+
+/** Default Test 1 length when a skill has no CMS config row. */
+export const QUIZ_QUESTIONS_TO_SHOW = 10;
 
 /** Deployment checklist items shown to admin + worker (read-only for worker). */
 export const DEPLOYMENT_CHECKLIST = [

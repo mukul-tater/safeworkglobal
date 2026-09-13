@@ -13,12 +13,16 @@ import type {
 import {
   ASSESSMENT_FEE_INR,
   QUIZ_PASS_SCORE,
+  QUIZ_QUESTIONS_TO_SHOW,
   WORKER_TERMS_VERSION,
   ecrFromTenthPass,
   normalizeVerificationStage,
   skillRequiresTradeTest,
 } from '../constants';
 import { loadQuizItemsFromJson } from '../quiz-data';
+import { resolveQuizSkillCode } from '../quiz-data/quizSkill';
+import { shuffleCopy } from '../quiz-data/shuffle';
+import type { QuizOption } from '../types';
 
 const supabase: any = supabaseTyped;
 
@@ -185,10 +189,14 @@ export async function loadQuizItems(
       null;
 
     // Answer keys never reach the client — grading happens server-side.
-    const all = ((itemRows || []) as Omit<SkillQuizItem, 'expected_answer'>[]).map((q) => ({
-      ...q,
-      expected_answer: false,
-    })) as SkillQuizItem[];
+    const all = ((itemRows || []) as Omit<SkillQuizItem, 'expected_answer' | 'correct_option'>[]).map(
+      (q) => ({
+        ...q,
+        expected_answer: false,
+        correct_option: null,
+        options: parseQuizOptions(q.options),
+      }),
+    ) as SkillQuizItem[];
     if (!all.length) return loadQuizItemsFromJson(skill);
 
     const regional = region ? all.filter((q) => q.region === region) : [];
@@ -200,14 +208,55 @@ export async function loadQuizItems(
       const explicit = all.filter((q) => wanted.has(q.id));
       if (explicit.length) pool = explicit;
     } else {
-      pool = [...pool].sort(() => Math.random() - 0.5);
+      pool = shuffleCopy(pool);
     }
 
-    const count = Math.max(1, config?.questions_to_show ?? 5);
-    return pool.slice(0, count);
+    const count = Math.max(1, config?.questions_to_show ?? QUIZ_QUESTIONS_TO_SHOW);
+    return pool.slice(0, count).map((item) =>
+      item.options?.length ? { ...item, options: shuffleCopy(item.options) } : item,
+    );
   } catch {
     return loadQuizItemsFromJson(skill);
   }
+}
+
+function parseQuizOptions(raw: SkillQuizItem['options'] | unknown): QuizOption[] | null {
+  if (!Array.isArray(raw) || raw.length < 2) return null;
+  const options = raw
+    .map((row) => {
+      if (!row || typeof row !== 'object') return null;
+      const o = row as Record<string, unknown>;
+      const id = String(o.id || '').trim();
+      const en = String(o.en || '').trim();
+      const hi = String(o.hi || '').trim();
+      if (!id || !en) return null;
+      return { id, en, hi };
+    })
+    .filter((row): row is QuizOption => !!row);
+  return options.length >= 2 ? options : null;
+}
+
+/** Resolve the UAE-trade bank from the applied job, then load Test 1 questions. */
+export async function loadQuizItemsForWorker(
+  row: Pick<WorkerVerification, 'primary_skill' | 'state' | 'journey_job_id'>,
+): Promise<SkillQuizItem[]> {
+  let jobTitle: string | null = null;
+  let jobDescription: string | null = null;
+  if (row.journey_job_id) {
+    const { data } = await supabase
+      .from('jobs')
+      .select('title, description')
+      .eq('id', row.journey_job_id)
+      .maybeSingle();
+    jobTitle = data?.title ?? null;
+    jobDescription = data?.description ?? null;
+  }
+  const skill = resolveQuizSkillCode({
+    primarySkill: row.primary_skill,
+    jobTitle,
+    jobDescription,
+  });
+  return loadQuizItems(skill, row.state);
 }
 
 export async function loadActiveBondTemplate(): Promise<BondTemplate | null> {
@@ -296,7 +345,7 @@ export async function setActiveBondTemplate(id: string): Promise<void> {
 
 export async function submitQuiz(
   userId: string,
-  answers: { quiz_item_id: string; answer: boolean }[],
+  answers: { quiz_item_id: string; answer: boolean | string }[],
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
   // Grading and scoring are done server-side against the hidden answer key.
