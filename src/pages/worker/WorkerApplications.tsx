@@ -22,6 +22,7 @@ interface JobData {
   salary_min: number | null;
   salary_max: number | null;
   currency: string;
+  service_charge?: number | null;
 }
 
 interface Application {
@@ -60,7 +61,7 @@ export default function WorkerApplications() {
       const jobIds = appsData?.map(app => app.job_id) || [];
       const { data: jobsData, error: jobsError } = await supabase
         .from("jobs")
-        .select("id, title, location, country, job_type, salary_min, salary_max, currency")
+        .select("id, title, location, country, job_type, salary_min, salary_max, currency, service_charge")
         .in("id", jobIds);
 
       if (jobsError) throw jobsError;
@@ -153,7 +154,7 @@ export default function WorkerApplications() {
                               />
                               </span>
                             )}
-                            <JobServiceFee />
+                            <JobServiceFee amount={app.job.service_charge} />
                           </>
                         )}
                       </div>

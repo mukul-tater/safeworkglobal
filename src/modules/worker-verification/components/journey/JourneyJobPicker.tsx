@@ -91,6 +91,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       postedAt: postedRaw ? new Date(String(postedRaw)) : new Date(),
       description: description.length > 180 ? `${description.slice(0, 180).trimEnd()}…` : description,
       skills,
+      serviceCharge: (job.service_charge as number | null) ?? null,
     };
   });
 }

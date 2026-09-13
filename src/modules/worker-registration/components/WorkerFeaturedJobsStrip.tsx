@@ -21,6 +21,7 @@ interface JobPreview {
   salary_max: number | null;
   currency: string;
   salary_display?: string | null;
+  service_charge?: number | null;
 }
 
 interface Props {
@@ -48,7 +49,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
       try {
         let query = supabase
           .from("jobs")
-          .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display")
+          .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display, service_charge")
           .eq("status", "ACTIVE")
           .order("posted_at", { ascending: false })
           .limit(3);
@@ -65,7 +66,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
         if (results.length === 0 && preferredCountry) {
           const { data: fallback } = await supabase
             .from("jobs")
-            .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display")
+            .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display, service_charge")
             .eq("status", "ACTIVE")
             .order("posted_at", { ascending: false })
             .limit(3);
@@ -186,7 +187,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                       </div>
                     )}
                     <div className="mt-2">
-                      <JobServiceFee />
+                      <JobServiceFee amount={job.service_charge} />
                     </div>
                   </div>
                   {hasSalary(job) && (

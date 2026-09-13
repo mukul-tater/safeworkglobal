@@ -4,12 +4,28 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, CheckCircle, XCircle, Trash2, Pencil, Plus } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Trash2, Pencil, Plus, IndianRupee, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { adminDeleteJob, adminUpdateJob } from "@/services/AdminService";
 import { useNavigate } from "react-router-dom";
 import PostedByBadge from "@/components/jobs/PostedByBadge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  formatServiceChargeInr,
+  resolveServiceChargeInr,
+  SERVICE_CHARGE_MAX_INR,
+  SERVICE_CHARGE_MIN_INR,
+} from "@/lib/jobServiceCharge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +47,7 @@ interface Job {
   location: string;
   employer_id: string;
   posted_by_role: string;
+  service_charge: number;
 }
 
 export default function JobVerification() {
@@ -38,6 +55,9 @@ export default function JobVerification() {
   const [loading, setLoading] = useState(true);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [postedByFilter, setPostedByFilter] = useState<"all" | "employer" | "admin">("all");
+  const [feeJob, setFeeJob] = useState<Job | null>(null);
+  const [feeValue, setFeeValue] = useState("");
+  const [savingFee, setSavingFee] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,7 +68,7 @@ export default function JobVerification() {
     try {
       const { data: jobsData, error: jobsError } = await supabase
         .from("jobs")
-        .select("id, slug, title, status, posted_at, location, employer_id, posted_by_role")
+        .select("id, slug, title, status, posted_at, location, employer_id, posted_by_role, service_charge")
         .order("posted_at", { ascending: false });
 
       if (jobsError) throw jobsError;
@@ -72,6 +92,7 @@ export default function JobVerification() {
           ...job,
           company_name: employer?.company_name || "Unknown Company",
           posted_by_role: job.posted_by_role || "employer",
+          service_charge: resolveServiceChargeInr(job.service_charge),
         };
       });
 
@@ -108,6 +129,34 @@ export default function JobVerification() {
     } catch (error: any) {
       console.error("Error rejecting job:", error);
       toast.error(error.message || "Failed to reject job");
+    }
+  };
+
+  const openFeeDialog = (job: Job) => {
+    setFeeJob(job);
+    setFeeValue(String(resolveServiceChargeInr(job.service_charge)));
+  };
+
+  const handleSaveServiceCharge = async () => {
+    if (!feeJob) return;
+    const amount = Number(feeValue);
+    if (!Number.isInteger(amount) || amount < SERVICE_CHARGE_MIN_INR || amount > SERVICE_CHARGE_MAX_INR) {
+      toast.error(`Enter a whole rupee amount between ₹${SERVICE_CHARGE_MIN_INR} and ₹${SERVICE_CHARGE_MAX_INR.toLocaleString("en-IN")}`);
+      return;
+    }
+
+    setSavingFee(true);
+    try {
+      const { error } = await adminUpdateJob(feeJob.id, { service_charge: amount });
+      if (error) throw new Error(error);
+      toast.success(`Service charge updated to ${formatServiceChargeInr(amount)}`);
+      setFeeJob(null);
+      fetchJobs();
+    } catch (error: any) {
+      console.error("Error updating service charge:", error);
+      toast.error(error.message || "Failed to update service charge");
+    } finally {
+      setSavingFee(false);
     }
   };
 
@@ -165,7 +214,7 @@ export default function JobVerification() {
             </Button>
           </div>
           <p className="text-muted-foreground text-sm mb-4">
-            Complete job listings — review, approve, edit, and manage employer and admin postings
+            Complete job listings — review, approve, edit, change service charge, and manage employer and admin postings
           </p>
           <div className="flex flex-wrap gap-2 mb-6 md:mb-8">
             {([
@@ -204,6 +253,9 @@ export default function JobVerification() {
                     <p className="text-xs md:text-sm text-muted-foreground">
                       Posted {job.posted_at ? new Date(job.posted_at).toLocaleDateString() : "Draft"}
                     </p>
+                    <p className="text-xs md:text-sm text-foreground mt-1">
+                      Service charge {formatServiceChargeInr(job.service_charge)}
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
                   <Button
@@ -213,6 +265,14 @@ export default function JobVerification() {
                     title="View details"
                   >
                     <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => openFeeDialog(job)}
+                    title="Change service charge"
+                  >
+                    <IndianRupee className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
@@ -256,6 +316,41 @@ export default function JobVerification() {
             ))}
           </div>
           )}
+
+      <Dialog open={!!feeJob} onOpenChange={(open) => { if (!open) setFeeJob(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change service charge</DialogTitle>
+            <DialogDescription>
+              {feeJob ? `Set the SafeWork Global service fee for ${feeJob.title}.` : "Set the SafeWork Global service fee for this job."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="job-service-charge">Amount (₹)</Label>
+            <Input
+              id="job-service-charge"
+              type="number"
+              min={SERVICE_CHARGE_MIN_INR}
+              max={SERVICE_CHARGE_MAX_INR}
+              step={1}
+              value={feeValue}
+              onChange={(e) => setFeeValue(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Workers see this on the job listing and pay it after the video interview.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setFeeJob(null)} disabled={savingFee}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={() => void handleSaveServiceCharge()} disabled={savingFee}>
+              {savingFee ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteJobId} onOpenChange={() => setDeleteJobId(null)}>
         <AlertDialogContent>

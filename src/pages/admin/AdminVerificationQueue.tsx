@@ -16,6 +16,7 @@ import { ASSESSMENT_FEE_INR } from '@/modules/worker-verification/constants';
 import {
   approveMedical,
   approveTradeTest,
+  getServiceChargesForJobs,
   markPaymentPaid,
   medicalTestDocumentsComplete,
   recordInterviewScore,
@@ -49,6 +50,8 @@ type Row = {
   medical_xray_photo_url: string | null;
   bond_status: string | null;
   payment_status: string | null;
+  journey_job_id?: string | null;
+  service_charge?: number;
   full_name?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -93,6 +96,15 @@ export default function AdminVerificationQueue() {
           r.phone = p?.phone;
           r.email = displayableEmail(p?.email) || null;
         });
+        const jobIds = list.map((r) => r.journey_job_id).filter((id): id is string => Boolean(id));
+        if (jobIds.length) {
+          const fees = await getServiceChargesForJobs(jobIds);
+          list.forEach((r) => {
+            r.service_charge = r.journey_job_id
+              ? fees.get(r.journey_job_id) ?? ASSESSMENT_FEE_INR
+              : ASSESSMENT_FEE_INR;
+          });
+        }
       }
       setRows(list);
     } catch (e) {
@@ -213,7 +225,7 @@ export default function AdminVerificationQueue() {
                     void run(
                       r.user_id,
                       () =>
-                        markPaymentPaid(r.user_id, ASSESSMENT_FEE_INR, {
+                        markPaymentPaid(r.user_id, r.service_charge ?? ASSESSMENT_FEE_INR, {
                           provider: 'admin_manual',
                         }),
                       'Payment marked paid',
@@ -223,7 +235,7 @@ export default function AdminVerificationQueue() {
                   {actingId === r.user_id ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   ) : null}
-                  Mark payment received (₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')})
+                  Mark payment received (₹{(r.service_charge ?? ASSESSMENT_FEE_INR).toLocaleString('en-IN')})
                 </Button>
               )}
 

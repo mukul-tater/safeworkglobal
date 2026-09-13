@@ -19,7 +19,9 @@ import {
   normalizeVerificationStage,
   skillRequiresTradeTest,
 } from '../constants';
+import { resolveServiceChargeInr } from '@/lib/jobServiceCharge';
 import { loadQuizItemsFromJson } from '../quiz-data';
+import { gradeLocalQuiz } from '../quiz-data/gradeLocal';
 import { resolveQuizSkillCode } from '../quiz-data/quizSkill';
 import { shuffleCopy } from '../quiz-data/shuffle';
 import type { QuizOption } from '../types';
@@ -50,6 +52,29 @@ export async function getOrCreateVerification(userId: string): Promise<WorkerVer
 
   if (insertErr) throw new Error(insertErr.message);
   return created as WorkerVerification;
+}
+
+export async function getServiceChargeForJob(jobId: string | null | undefined): Promise<number> {
+  if (!jobId) return ASSESSMENT_FEE_INR;
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('service_charge')
+    .eq('id', jobId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return resolveServiceChargeInr(data?.service_charge);
+}
+
+export async function getServiceChargesForJobs(jobIds: string[]): Promise<Map<string, number>> {
+  const unique = [...new Set(jobIds.filter(Boolean))];
+  const map = new Map<string, number>();
+  if (unique.length === 0) return map;
+  const { data, error } = await supabase.from('jobs').select('id, service_charge').in('id', unique);
+  if (error) throw new Error(error.message);
+  (data || []).forEach((row: { id: string; service_charge: number | null }) => {
+    map.set(row.id, resolveServiceChargeInr(row.service_charge));
+  });
+  return map;
 }
 
 export async function acceptTerms(userId: string): Promise<void> {
@@ -346,6 +371,7 @@ export async function setActiveBondTemplate(id: string): Promise<void> {
 export async function submitQuiz(
   userId: string,
   answers: { quiz_item_id: string; answer: boolean | string }[],
+  items: SkillQuizItem[] = [],
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
   // Grading and scoring are done server-side against the hidden answer key.
@@ -362,9 +388,15 @@ export async function submitQuiz(
       gradeErr = null;
     }
   }
-  if (gradeErr) throw new Error(gradeErr.message);
-  const result = Array.isArray(graded) ? graded[0] : graded;
-  const score = Number(result?.score ?? 0);
+  let score = Number((Array.isArray(graded) ? graded[0] : graded)?.score ?? 0);
+  if (gradeErr) {
+    const local = items.length ? gradeLocalQuiz(items, answers) : null;
+    if (!local) throw new Error(gradeErr.message);
+    score = local.score;
+  } else {
+    const result = Array.isArray(graded) ? graded[0] : graded;
+    score = Number(result?.score ?? 0);
+  }
   const passed = score >= QUIZ_PASS_SCORE;
   const now = new Date().toISOString();
 

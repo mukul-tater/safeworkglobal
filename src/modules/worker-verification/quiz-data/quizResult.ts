@@ -10,7 +10,7 @@ export type QuizResultBand = {
 
 /**
  * Screening labels only — never “Certified Electrician” / “Skilled Welder”.
- * Bands assume a 10-question paper: 9–10 / 7–8 / 5–6 / 0–4.
+ * Bands assume a 10-question paper: 9–10 strong / 6–8 pass / 5 needs review / 0–4 insufficient.
  */
 export function describeQuizResult(scorePercent: number): QuizResultBand {
   const passed = scorePercent >= QUIZ_PASS_SCORE;
@@ -30,7 +30,7 @@ export function describeQuizResult(scorePercent: number): QuizResultBand {
       screeningHi,
     };
   }
-  if (scorePercent >= 70) {
+  if (scorePercent >= QUIZ_PASS_SCORE) {
     return {
       passed,
       bandEn: 'Basic Knowledge — Pass',

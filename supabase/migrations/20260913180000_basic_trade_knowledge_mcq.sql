@@ -124,10 +124,10 @@ WHERE skill_code IN (
   )
   AND (options IS NULL OR jsonb_typeof(options) <> 'array' OR jsonb_array_length(options) < 2);
 
--- 10 questions, 70% pass (7/10) per UAE listed trade.
+-- 10 questions, 60% pass (6/10) per UAE listed trade.
 UPDATE public.skill_quiz_configs
 SET questions_to_show = 10,
-    pass_score = 70,
+    pass_score = 60,
     selection_mode = 'random_active',
     active = true,
     updated_at = now()
@@ -142,7 +142,7 @@ WHERE region IS NULL
 
 INSERT INTO public.skill_quiz_configs
   (skill_code, region, questions_to_show, selection_mode, selected_ids, pass_score, active)
-SELECT v.skill_code, NULL, 10, 'random_active', '{}'::uuid[], 70, true
+SELECT v.skill_code, NULL, 10, 'random_active', '{}'::uuid[], 60, true
 FROM (VALUES
   ('Electrician'),
   ('Welder'),

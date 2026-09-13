@@ -26,6 +26,7 @@ interface FeaturedJob {
   job_type: string;
   visa_sponsorship: boolean;
   posted_at: string;
+  service_charge?: number | null;
   job_skills: {
     skill_name: string;
   }[];
@@ -222,13 +223,13 @@ export default function FeaturedJobs() {
                     />
                     <p className="text-xs text-muted-foreground">per month (approx.)</p>
                     <div className="mt-2">
-                      <JobServiceFee />
+                      <JobServiceFee amount={job.service_charge} />
                     </div>
                   </div>
                 )}
                 {!hasSalary(job) && (
                   <div className="mb-3">
-                    <JobServiceFee />
+                    <JobServiceFee amount={job.service_charge} />
                   </div>
                 )}
 

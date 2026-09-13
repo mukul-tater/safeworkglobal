@@ -27,6 +27,7 @@ export interface JobListItem {
   postedAt: Date;
   description: string;
   skills: string[];
+  serviceCharge: number | null;
 }
 
 function relativeTime(date: Date): string {
@@ -110,7 +111,7 @@ export default function JobResultCard({
                 Visa sponsored
               </Badge>
             )}
-            <JobServiceFee />
+            <JobServiceFee amount={job.serviceCharge} />
           </div>
 
           <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground">

@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { adminJobPostSchema, type AdminJobPostFormData } from "@/lib/validations/job";
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
+import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
 import { PUBLIC_JOB_BENEFITS_TEXT } from "@/lib/jobBenefits";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobTitleAutocomplete from "@/components/employer/JobTitleAutocomplete";
@@ -53,6 +54,7 @@ export default function AdminPostJob() {
       skills: [],
       employer_id: "",
       benefits: PUBLIC_JOB_BENEFITS_TEXT,
+      service_charge: DEFAULT_SERVICE_CHARGE_INR,
     },
   });
 
@@ -146,6 +148,7 @@ export default function AdminPostJob() {
         status: data.status,
         expires_at: data.expires_at || null,
         posted_at: data.status === "ACTIVE" ? new Date().toISOString() : null,
+        service_charge: data.service_charge,
       };
 
       const { data: jobId, error } = await adminCreateJob(data.employer_id, jobData, skills);
@@ -348,6 +351,23 @@ export default function AdminPostJob() {
                   <Label htmlFor="salary_max">Max Salary</Label>
                   <Input id="salary_max" type="number" {...register("salary_max", { valueAsNumber: true })} />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="service_charge">SafeWork Global service charge (₹) *</Label>
+                <Input
+                  id="service_charge"
+                  type="number"
+                  min={1}
+                  step={1}
+                  {...register("service_charge", { valueAsNumber: true })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Shown on this job and charged after the video interview. Default is ₹{DEFAULT_SERVICE_CHARGE_INR.toLocaleString("en-IN")}.
+                </p>
+                {errors.service_charge && (
+                  <p className="text-sm text-destructive mt-1">{errors.service_charge.message}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

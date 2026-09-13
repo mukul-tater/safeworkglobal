@@ -1146,6 +1146,7 @@ export type Database = {
           salary_display: string | null
           salary_max: number | null
           salary_min: number | null
+          service_charge: number
           slug: string | null
           status: string
           title: string
@@ -1174,6 +1175,7 @@ export type Database = {
           salary_display?: string | null
           salary_max?: number | null
           salary_min?: number | null
+          service_charge?: number
           slug?: string | null
           status?: string
           title: string
@@ -1202,6 +1204,7 @@ export type Database = {
           salary_display?: string | null
           salary_max?: number | null
           salary_min?: number | null
+          service_charge?: number
           slug?: string | null
           status?: string
           title?: string

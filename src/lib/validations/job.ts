@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SERVICE_CHARGE_MAX_INR, SERVICE_CHARGE_MIN_INR } from "@/lib/jobServiceCharge";
 import { requiredFutureDateString, parseDateInput } from "@/lib/validations/common";
 
 const salaryRangeRefine = {
@@ -123,6 +124,13 @@ const adminJobFieldsSchema = jobPostingBaseSchema
       "EXPIRED",
       "REJECTED",
     ]),
+    service_charge: z.number({
+      required_error: "Service charge is required",
+      invalid_type_error: "Enter the service charge in rupees",
+    })
+      .int("Service charge must be a whole rupee amount")
+      .min(SERVICE_CHARGE_MIN_INR, `Service charge must be at least ₹${SERVICE_CHARGE_MIN_INR}`)
+      .max(SERVICE_CHARGE_MAX_INR, `Service charge cannot exceed ₹${SERVICE_CHARGE_MAX_INR.toLocaleString("en-IN")}`),
   });
 
 /** Admin edit form — all job statuses, optional expiry, relaxed requirements */

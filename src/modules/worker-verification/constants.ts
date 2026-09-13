@@ -341,8 +341,8 @@ export function gccJourneyNavSteps(opts?: { includeAccountDetails?: boolean }): 
   ];
 }
 
-/** Minimum Test 1 score to pass (7/10). Failing allows unlimited retries for now. */
-export const QUIZ_PASS_SCORE = 70;
+/** Minimum Test 1 score to pass (6/10). Below this, the worker can retake immediately. */
+export const QUIZ_PASS_SCORE = 60;
 
 /** Default Test 1 length when a skill has no CMS config row. */
 export const QUIZ_QUESTIONS_TO_SHOW = 10;

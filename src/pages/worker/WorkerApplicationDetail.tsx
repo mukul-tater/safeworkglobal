@@ -51,6 +51,7 @@ interface JobData {
   requirements: string | null;
   responsibilities: string | null;
   employer_id: string;
+  service_charge?: number | null;
 }
 
 interface StatusHistory {
@@ -225,7 +226,7 @@ export default function WorkerApplicationDetail() {
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <JobServiceFee showWhenCharged />
+                    <JobServiceFee amount={job.service_charge} showWhenCharged />
                   </div>
                 </div>
                 

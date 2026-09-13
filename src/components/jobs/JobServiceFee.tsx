@@ -1,12 +1,12 @@
 import type { MouseEvent } from 'react';
 import { Info } from 'lucide-react';
-import { ASSESSMENT_FEE_INR } from '@/modules/worker-verification/constants';
+import { formatServiceChargeInr, resolveServiceChargeInr } from '@/lib/jobServiceCharge';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-export function formatJobServiceFee(): string {
-  return `₹${ASSESSMENT_FEE_INR.toLocaleString('en-IN')}/-`;
+export function formatJobServiceFee(amount?: number | null): string {
+  return `${formatServiceChargeInr(amount)}/-`;
 }
 
 /** Shown on every public job. Payment is only after the video interview. */
@@ -15,15 +15,18 @@ export const SERVICE_FEE_WHEN_CHARGED =
 
 interface Props {
   className?: string;
+  /** Per-job INR amount. Falls back to the platform default. */
+  amount?: number | null;
   /** Show the “when charged” sentence next to the badge (apply box / job details). */
   showWhenCharged?: boolean;
 }
 
 /** SafeWork Global service fee, styled like the Visa sponsored badge. */
-export default function JobServiceFee({ className, showWhenCharged = false }: Props) {
+export default function JobServiceFee({ className, amount, showWhenCharged = false }: Props) {
   const stopCardClick = (e: MouseEvent) => {
     e.stopPropagation();
   };
+  const fee = resolveServiceChargeInr(amount);
 
   return (
     <span className={cn('inline-flex flex-wrap items-center gap-x-1 gap-y-1', className)} onClick={stopCardClick}>
@@ -31,7 +34,7 @@ export default function JobServiceFee({ className, showWhenCharged = false }: Pr
         variant="outline"
         className="gap-1 border-success/30 bg-success/10 font-normal text-success"
       >
-        SafeWork Global service fee {formatJobServiceFee()}
+        SafeWork Global service fee {formatJobServiceFee(fee)}
       </Badge>
       <Popover>
         <PopoverTrigger asChild>

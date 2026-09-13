@@ -23,6 +23,7 @@ interface Job {
   currency: string;
   experience_level: string;
   visa_sponsorship: boolean | null;
+  service_charge?: number | null;
 }
 
 /**
@@ -64,7 +65,7 @@ export default function WorkerDiscover() {
         // Show featured jobs (top destinations matter more than personalization here)
         const { data } = await supabase
           .from('jobs')
-          .select('id, title, slug, location, country, salary_min, salary_max, currency, experience_level, visa_sponsorship')
+          .select('id, title, slug, location, country, salary_min, salary_max, currency, experience_level, visa_sponsorship, service_charge')
           .eq('status', 'ACTIVE')
           .order('posted_at', { ascending: false })
           .limit(6);
@@ -191,7 +192,7 @@ export default function WorkerDiscover() {
                           </p>
                         )}
                         <div className="mt-2">
-                          <JobServiceFee />
+                          <JobServiceFee amount={job.service_charge} />
                         </div>
                       </div>
                       <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />

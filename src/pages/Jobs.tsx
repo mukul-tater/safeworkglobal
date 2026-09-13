@@ -214,6 +214,7 @@ export default function Jobs() {
             postedAt: new Date(job.posted_at),
             description: description.length > 180 ? `${description.slice(0, 180).trimEnd()}…` : description,
             skills: job.job_skills?.map((s: any) => s.skill_name) || [],
+            serviceCharge: job.service_charge ?? null,
           };
         });
 

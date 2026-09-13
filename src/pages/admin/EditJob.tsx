@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { adminJobEditSchema, type AdminJobEditFormData } from "@/lib/validations/job";
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
+import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import { adminUpdateJob } from "@/services/AdminService";
 import PostedByBadge from "@/components/jobs/PostedByBadge";
@@ -40,6 +41,9 @@ export default function EditJob() {
     reset,
   } = useForm<AdminJobEditFormData>({
     resolver: zodResolver(adminJobEditSchema),
+    defaultValues: {
+      service_charge: DEFAULT_SERVICE_CHARGE_INR,
+    },
   });
 
   const jobType = watch("job_type");
@@ -104,6 +108,7 @@ export default function EditJob() {
         expires_at: job.expires_at ? job.expires_at.split("T")[0] : "",
         status: job.status as any,
         skills: skillNames,
+        service_charge: Number(job.service_charge) || DEFAULT_SERVICE_CHARGE_INR,
       });
     } catch (error: any) {
       console.error("Error fetching job:", error);
@@ -154,6 +159,7 @@ export default function EditJob() {
         remote_allowed: data.remote_allowed,
         status: data.status,
         expires_at: data.expires_at || null,
+        service_charge: data.service_charge,
       };
 
       const { error: jobError } = await adminUpdateJob(jobId, jobData, skills);
@@ -322,6 +328,23 @@ export default function EditJob() {
                     <Label htmlFor="salary_max">Max Salary</Label>
                     <Input id="salary_max" type="number" {...register("salary_max", { valueAsNumber: true })} />
                   </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="service_charge">SafeWork Global service charge (₹) *</Label>
+                  <Input
+                    id="service_charge"
+                    type="number"
+                    min={1}
+                    step={1}
+                    {...register("service_charge", { valueAsNumber: true })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Shown on this job and charged after the video interview. Default is ₹{DEFAULT_SERVICE_CHARGE_INR.toLocaleString("en-IN")}.
+                  </p>
+                  {errors.service_charge && (
+                    <p className="text-sm text-destructive mt-1">{errors.service_charge.message}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

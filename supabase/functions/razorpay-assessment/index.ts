@@ -10,6 +10,12 @@ const corsHeaders = {
 
 const ASSESSMENT_FEE_INR = 35400;
 
+function resolveFeeInr(value: unknown): number {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 1) return ASSESSMENT_FEE_INR;
+  return Math.round(n);
+}
+
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -135,12 +141,29 @@ serve(async (req) => {
     return { payment: items.find((p) => isSettled(p.status)) || null };
   }
 
-  async function completePayment(paymentId: string, orderId: string, payerId: string) {
+  async function resolveAssessmentFee(payerId: string): Promise<number> {
+    const { data: row, error } = await admin
+      .from("worker_verification")
+      .select("journey_job_id")
+      .eq("user_id", payerId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row?.journey_job_id) return ASSESSMENT_FEE_INR;
+    const { data: job, error: jobErr } = await admin
+      .from("jobs")
+      .select("service_charge")
+      .eq("id", row.journey_job_id)
+      .maybeSingle();
+    if (jobErr) throw new Error(jobErr.message);
+    return resolveFeeInr(job?.service_charge);
+  }
+
+  async function completePayment(paymentId: string, orderId: string, payerId: string, amountInr: number) {
     const { data, error } = await admin.rpc("complete_assessment_payment_razorpay", {
       p_user_id: payerId,
       p_payment_id: paymentId,
       p_order_id: orderId,
-      p_amount: ASSESSMENT_FEE_INR,
+      p_amount: amountInr,
     });
     if (error) throw new Error(error.message);
     return data;
@@ -148,6 +171,7 @@ serve(async (req) => {
 
   try {
     const payerId = await resolvePayerUserId(body.worker_user_id);
+    const assessmentFee = await resolveAssessmentFee(payerId);
 
     if (action === "create_order") {
       const { data: row, error: rowErr } = await admin
@@ -171,12 +195,12 @@ serve(async (req) => {
           return json(502, { error: findErr });
         }
         if (payment) {
-          const verification = await completePayment(payment.id, row.razorpay_order_id, payerId);
+          const verification = await completePayment(payment.id, row.razorpay_order_id, payerId, assessmentFee);
           return json(200, { recovered: true, verification, already_paid: true });
         }
       }
 
-      const amountPaise = ASSESSMENT_FEE_INR * 100;
+      const amountPaise = assessmentFee * 100;
       const receipt = `assess_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`
         .slice(0, 40);
 
@@ -208,7 +232,7 @@ serve(async (req) => {
         .from("worker_verification")
         .update({
           razorpay_order_id: orderJson.id,
-          payment_amount: ASSESSMENT_FEE_INR,
+          payment_amount: assessmentFee,
           updated_at: new Date().toISOString(),
         })
         .eq("id", row.id);
@@ -216,7 +240,7 @@ serve(async (req) => {
 
       return json(200, {
         order_id: orderJson.id,
-        amount_inr: ASSESSMENT_FEE_INR,
+        amount_inr: assessmentFee,
         amount_paise: amountPaise,
         currency: "INR",
         key_id: keyId,
@@ -269,7 +293,7 @@ serve(async (req) => {
         verifiedBy = "razorpay_api";
       }
 
-      const completed = await completePayment(paymentId, orderId, payerId);
+      const completed = await completePayment(paymentId, orderId, payerId, assessmentFee);
       return json(200, { verification: completed, already_paid: false, verified_by: verifiedBy });
     }
 
@@ -313,7 +337,7 @@ serve(async (req) => {
         }
       }
 
-      const verification = await completePayment(paymentId, targetOrder, payerId);
+      const verification = await completePayment(paymentId, targetOrder, payerId, assessmentFee);
       return json(200, { verification, recovered: true });
     }
 

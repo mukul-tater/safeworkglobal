@@ -59,6 +59,7 @@ interface JobData {
   posted_at: string;
   slug: string;
   posted_by_role?: string | null;
+  service_charge?: number | null;
   job_skills: { skill_name: string }[];
 }
 
@@ -433,7 +434,7 @@ export default function JobDetail() {
                         Visa Sponsorship
                       </Badge>
                     )}
-                    <JobServiceFee />
+                    <JobServiceFee amount={job.service_charge} />
                     <Badge variant={job.status === 'ACTIVE' ? 'default' : 'secondary'}>
                       {job.status}
                     </Badge>
@@ -570,7 +571,7 @@ export default function JobDetail() {
                     </Alert>
                   ) : showApply ? (
                     <>
-                      <JobServiceFee showWhenCharged />
+                      <JobServiceFee amount={job.service_charge} showWhenCharged />
                       <Button 
                         size="lg" 
                         onClick={handleApplyClick}
@@ -642,7 +643,7 @@ export default function JobDetail() {
                   </div>
                   <div className="space-y-1 pt-1">
                     <span className="text-muted-foreground">Service fee</span>
-                    <JobServiceFee showWhenCharged />
+                    <JobServiceFee amount={job.service_charge} showWhenCharged />
                   </div>
                 </CardContent>
               </Card>

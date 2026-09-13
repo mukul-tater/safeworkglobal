@@ -29,6 +29,7 @@ interface SavedJob {
     slug: string | null;
     openings: number;
     employer_id: string;
+    service_charge?: number | null;
   } | null;
 }
 
@@ -48,7 +49,7 @@ export default function SavedJobs() {
     try {
       const { data, error } = await supabase
         .from("saved_jobs")
-        .select("id, created_at, job:jobs(id, title, location, country, salary_min, salary_max, currency, job_type, status, slug, openings, employer_id)")
+        .select("id, created_at, job:jobs(id, title, location, country, salary_min, salary_max, currency, job_type, status, slug, openings, employer_id, service_charge)")
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false });
 
@@ -138,7 +139,7 @@ export default function SavedJobs() {
                         title={job.title}
                       />
                       </span>
-                      <JobServiceFee />
+                      <JobServiceFee amount={job.service_charge} />
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">

@@ -59,6 +59,7 @@ import {
   submitTradeTestResult,
   waiveAssessmentInterviewPilot,
   waiveAssessmentPaymentPilot,
+  getServiceChargeForJob,
 } from '@/modules/worker-verification/services/verificationService';
 import BondSecurityStage from '@/modules/worker-verification/components/bond-security/BondSecurityStage';
 import {
@@ -70,6 +71,7 @@ import { getWorkerActiveAssessment } from '@/modules/trade-test/services/assessm
 import type { AssessmentRow } from '@/modules/trade-test/types';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { serviceChargeGstSplit } from '@/lib/jobServiceCharge';
 import JourneyHero from '@/modules/worker-verification/components/journey/JourneyHero';
 import StageActionShell from '@/modules/worker-verification/components/journey/StageActionShell';
 import StageWaitingShell from '@/modules/worker-verification/components/journey/StageWaitingShell';
@@ -380,6 +382,7 @@ export default function WorkerVerificationPage({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [row, setRow] = useState<WorkerVerification | null>(null);
+  const [assessmentFee, setAssessmentFee] = useState(ASSESSMENT_FEE_INR);
 
   const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
@@ -394,6 +397,7 @@ export default function WorkerVerificationPage({
   const [quizAnswers, setQuizAnswers] = useState<Record<string, boolean | string | undefined>>({});
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizFailScore, setQuizFailScore] = useState<number | null>(null);
+  const [quizNeedsRetake, setQuizNeedsRetake] = useState(false);
 
   const [photoCount, setPhotoCount] = useState(0);
   const [videoCount, setVideoCount] = useState(0);
@@ -464,8 +468,10 @@ export default function WorkerVerificationPage({
         Number(v.quiz_score) < QUIZ_PASS_SCORE
       ) {
         setQuizFailScore(Number(v.quiz_score));
+        setQuizNeedsRetake(true);
       } else if (v.quiz_completed_at) {
         setQuizFailScore(null);
+        setQuizNeedsRetake(false);
       }
       const { data: subj } = await supabase
         .from('profiles')
@@ -649,10 +655,30 @@ export default function WorkerVerificationPage({
   }, [subjectId, profile?.email, partnerKiosk]);
 
   const displayProfile = subjectProfile || profile;
+  const feeSplit = serviceChargeGstSplit(assessmentFee);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const jobId = row?.journey_job_id;
+    if (!jobId) {
+      setAssessmentFee(ASSESSMENT_FEE_INR);
+      return;
+    }
+    void getServiceChargeForJob(jobId)
+      .then((fee) => {
+        if (!cancelled) setAssessmentFee(fee);
+      })
+      .catch(() => {
+        if (!cancelled) setAssessmentFee(ASSESSMENT_FEE_INR);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [row?.journey_job_id]);
 
   const rawStage: VerificationStage = row
     ? normalizeVerificationStage(row.stage, row.trade_test_required)
@@ -914,7 +940,7 @@ export default function WorkerVerificationPage({
         quiz_item_id: item.id,
         answer: quizAnswers[item.id] as boolean | string,
       }));
-      const next = await submitQuiz(subjectId, answers);
+      const next = await submitQuiz(subjectId, answers, quizItems);
       const score = Number(next.quiz_score) || 0;
       const result = describeQuizResult(score);
       if (!result.passed) {
@@ -922,15 +948,13 @@ export default function WorkerVerificationPage({
         setQuizIndex(0);
         setQuizAnswers({});
         setQuizFailScore(score);
+        setQuizNeedsRetake(true);
         try {
           setQuizItems(await loadQuizItemsForWorker(next));
         } catch {
           /* keep current items */
         }
         notifyVerificationUpdated();
-        toast.error(
-          `${result.screeningEn} — ${score}%. ${result.bandEn}. You need ${QUIZ_PASS_SCORE}% to continue.`,
-        );
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
@@ -944,6 +968,7 @@ export default function WorkerVerificationPage({
       setRow({ ...next, stage: normalized });
       setQuizIndex(0);
       setQuizFailScore(null);
+      setQuizNeedsRetake(false);
       notifyVerificationUpdated();
       toast.success(
         `${result.screeningEn} — ${score}%. ${result.bandEn}. ${result.screeningHi}`,
@@ -993,6 +1018,27 @@ export default function WorkerVerificationPage({
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Quiz submit failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startQuizRetake = async () => {
+    if (!row) return;
+    setSaving(true);
+    try {
+      const items = await loadQuizItemsForWorker(row);
+      if (!items.length) {
+        toast.error('Could not load Test 1 questions. Please try again.');
+        return;
+      }
+      setQuizItems(items);
+      setQuizIndex(0);
+      setQuizAnswers({});
+      setQuizNeedsRetake(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not start retest');
     } finally {
       setSaving(false);
     }
@@ -1409,13 +1455,37 @@ export default function WorkerVerificationPage({
                   setQuizItems(items);
                   setQuizIndex(0);
                   setQuizAnswers({});
+                  setQuizNeedsRetake(false);
+                  setQuizFailScore(null);
                 }
               }}
             />
           </StageActionShell>
         )}
 
-        {!viewingCompletedStep && stage === 'quiz' && !currentQuiz && (
+        {!viewingCompletedStep && stage === 'quiz' && quizNeedsRetake && quizFailScore !== null && (
+          <StageResultShell
+            tone="error"
+            title="Basic Trade Knowledge Screening: NOT PASSED"
+            body={`Score ${quizFailScore}%. Pass mark is ${QUIZ_PASS_SCORE}%. You can retake Test 1 immediately — no waiting.`}
+            stats={[
+              { label: 'Your score', value: `${quizFailScore}%` },
+              { label: 'Pass mark', value: `${QUIZ_PASS_SCORE}%` },
+              { label: 'Next step', value: 'Retake now' },
+            ]}
+          >
+            <p className="text-sm text-muted-foreground" lang="hi">
+              बेसिक ट्रेड नॉलेज स्क्रीनिंग: पास नहीं। स्कोर {quizFailScore}%. पास मार्क्स {QUIZ_PASS_SCORE}% है।
+              आप टेस्ट 1 अभी दोबारा दे सकते हैं।
+            </p>
+            <Button onClick={() => void startQuizRetake()} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              Retake Test 1 now / टेस्ट अभी दोबारा दें
+            </Button>
+          </StageResultShell>
+        )}
+
+        {!viewingCompletedStep && stage === 'quiz' && !quizNeedsRetake && !currentQuiz && (
           <StageActionShell
             icon={ClipboardList}
             title="Test 1 — Basic trade knowledge"
@@ -1428,7 +1498,7 @@ export default function WorkerVerificationPage({
           </StageActionShell>
         )}
 
-        {!viewingCompletedStep && stage === 'quiz' && currentQuiz && (
+        {!viewingCompletedStep && stage === 'quiz' && !quizNeedsRetake && currentQuiz && (
           <StageActionShell
             icon={ClipboardList}
             title="Test 1 — Basic trade knowledge"
@@ -1455,12 +1525,13 @@ export default function WorkerVerificationPage({
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                   <div className="text-sm text-foreground">
                     <p>
-                      {describeQuizResult(quizFailScore).screeningEn} — score{' '}
-                      <span className="font-semibold">{quizFailScore}%</span>. Pass mark is {QUIZ_PASS_SCORE}%
-                      ({describeQuizResult(quizFailScore).bandEn}).
+                    Last score <span className="font-semibold">{quizFailScore}%</span>. Pass mark is{' '}
+                    {QUIZ_PASS_SCORE}%. This is a new attempt — answer all {quizItems.length} questions
+                    again.
                     </p>
                     <p className="mt-1 text-muted-foreground" lang="hi">
-                      {describeQuizResult(quizFailScore).screeningHi}. पास मार्क्स {QUIZ_PASS_SCORE}% है।
+                      पिछला स्कोर {quizFailScore}%. पास मार्क्स {QUIZ_PASS_SCORE}% है। यह नया प्रयास है —
+                      सभी प्रश्न फिर से उत्तर दें।
                     </p>
                   </div>
                 </div>
@@ -2018,14 +2089,14 @@ export default function WorkerVerificationPage({
                 <div>
                   <h2 className="text-lg font-semibold font-heading leading-tight">Assessment fee</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    A one-time ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')} fee covering visa, flights, documentation, insurance, government fees, and more. Pay securely — you continue automatically once it succeeds.
+                    A one-time ₹{assessmentFee.toLocaleString('en-IN')} fee covering visa, flights, documentation, insurance, government fees, and more. Pay securely — you continue automatically once it succeeds.
                   </p>
                 </div>
               </div>
 
               <div className="rounded-xl border border-border p-4">
                 <p className="text-3xl font-bold font-heading tabular-nums text-foreground">
-                  ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')}
+                  ₹{assessmentFee.toLocaleString('en-IN')}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   One-time all-inclusive fee for your overseas job application
@@ -2033,24 +2104,24 @@ export default function WorkerVerificationPage({
                 <div className="mt-3 border-t border-border pt-3 text-sm">
                   <div className="flex items-center justify-between py-0.5">
                     <span className="text-muted-foreground">Skill assessment &amp; processing</span>
-                    <span className="tabular-nums">₹{Math.round(ASSESSMENT_FEE_INR / 1.18).toLocaleString('en-IN')}</span>
+                    <span className="tabular-nums">₹{feeSplit.base.toLocaleString('en-IN')}</span>
                   </div>
                   <div className="flex items-center justify-between py-0.5">
                     <span className="text-muted-foreground">GST (18%)</span>
                     <span className="tabular-nums">
-                      ₹{(ASSESSMENT_FEE_INR - Math.round(ASSESSMENT_FEE_INR / 1.18)).toLocaleString('en-IN')}
+                      ₹{feeSplit.gst.toLocaleString('en-IN')}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between border-t border-border pt-2 font-semibold">
                     <span>Total</span>
-                    <span className="tabular-nums">₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')}</span>
+                    <span className="tabular-nums">₹{assessmentFee.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>
 
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                 <p className="text-sm font-semibold font-heading text-foreground">
-                  What you get in this ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')}
+                  What you get in this ₹{assessmentFee.toLocaleString('en-IN')}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   No hidden agent charges — this fee covers:
@@ -2128,7 +2199,7 @@ export default function WorkerVerificationPage({
                 }}
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Lock className="h-4 w-4 mr-1.5" />}
-                Pay ₹{ASSESSMENT_FEE_INR.toLocaleString('en-IN')} securely
+                Pay ₹{assessmentFee.toLocaleString('en-IN')} securely
               </Button>
               <p className="text-center text-[11px] text-muted-foreground">
                 By proceeding you agree to SafeWork Global's terms &amp; conditions.
