@@ -5,12 +5,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useI18n } from "@/i18n";
+import { COMING_SOON_PATHS, showEmployerChrome } from "@/lib/launchGate";
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const { isAuthenticated, role, loading, profileLoading } = useAuth();
   const { t } = useI18n();
-  const isEmployer = role === "employer";
+  const isEmployer = showEmployerChrome(role);
   const isAdmin = role === "admin";
   const authResolving = loading || (isAuthenticated && profileLoading);
 
@@ -19,7 +20,7 @@ const HeroSection = () => {
       navigate("/admin/jobs");
       return;
     }
-    if (role === "employer") {
+    if (showEmployerChrome(role)) {
       toast.error(t("hero.employerToast"));
       return;
     }
@@ -28,14 +29,14 @@ const HeroSection = () => {
 
   const handleHireWorkers = () => {
     if (!isAuthenticated) {
-      navigate("/employer/login");
+      navigate(COMING_SOON_PATHS.employer);
       return;
     }
     if (role === "worker") {
       toast.error(t("hero.workerToast"));
       return;
     }
-    navigate("/employer/dashboard");
+    navigate(showEmployerChrome(role) ? "/employer/dashboard" : COMING_SOON_PATHS.employer);
   };
 
   return (

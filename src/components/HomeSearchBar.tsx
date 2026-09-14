@@ -8,12 +8,13 @@ import { DESTINATION_COUNTRIES } from "@/lib/constants";
 import { UAE_LISTED_JOBS } from "@/lib/uaeListedJobs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
+import { showEmployerChrome } from "@/lib/launchGate";
 
 const HomeSearchBar = () => {
   const navigate = useNavigate();
   const { role } = useAuth();
   const { t } = useI18n();
-  const isEmployer = role === "employer";
+  const isEmployer = showEmployerChrome(role);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
   const [searchCategory, setSearchCategory] = useState("");

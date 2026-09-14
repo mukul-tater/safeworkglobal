@@ -19,6 +19,7 @@ import {
 import Header from '@/components/Header';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { GET_STARTED_PATHS, PARTNER_EXISTING_ACCOUNT_PATH } from '@/lib/getStarted';
+import { USERS_ONLY_LAUNCH, comingSoonPathForRole, isGatedLaunchRole } from '@/lib/launchGate';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { passwordValidation } from '@/components/ValidatedInput';
@@ -32,8 +33,12 @@ type AuthView = 'login' | 'signup' | 'forgot' | 'role-select';
 const roles: { value: AppRole; label: string; description: string; icon: React.ReactNode; color: string }[] = [
   { value: 'worker', label: 'Worker', description: 'Find international job opportunities', icon: <HardHat className="h-6 w-6" />, color: 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:border-emerald-400' },
   { value: 'employer', label: 'Employer', description: 'Hire skilled workers globally', icon: <Briefcase className="h-6 w-6" />, color: 'bg-blue-50 text-blue-600 border-blue-200 hover:border-blue-400' },
-  { value: 'partner', label: 'Partner', description: 'E-Mitra, SSVN, ITI, MEA Licensed RA, consultants & employers', icon: <Users className="h-6 w-6" />, color: 'bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-400' },
+  { value: 'partner', label: 'Partner', description: 'E-Mitra, ITI, trade-test centres, consultants & employers', icon: <Users className="h-6 w-6" />, color: 'bg-amber-50 text-amber-600 border-amber-200 hover:border-amber-400' },
 ];
+
+const selectableRoles = USERS_ONLY_LAUNCH
+  ? roles.filter((r) => r.value === 'worker')
+  : roles;
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -82,7 +87,7 @@ export default function Auth() {
     if (roleHint === 'worker') {
       navigate('/worker/login', { replace: true });
     } else if (roleHint === 'employer') {
-      navigate('/employer/login', { replace: true });
+      navigate(GET_STARTED_PATHS.employer, { replace: true });
     } else if (roleHint === 'partner') {
       navigate(GET_STARTED_PATHS.partner, { replace: true });
     }
@@ -108,6 +113,10 @@ export default function Auth() {
     const pending = peekPendingOAuthRole() as AppRole | null;
     if (pending && (pending === 'worker' || pending === 'employer' || pending === 'partner')) {
       clearPendingOAuthRole();
+      if (USERS_ONLY_LAUNCH && isGatedLaunchRole(pending)) {
+        navigate(comingSoonPathForRole(pending)!, { replace: true });
+        return;
+      }
       handleRoleSelect(pending);
       return;
     }
@@ -147,6 +156,12 @@ export default function Auth() {
       return;
     }
 
+    const gatedPath = comingSoonPathForRole(role);
+    if (USERS_ONLY_LAUNCH && gatedPath) {
+      navigate(gatedPath, { replace: true });
+      return;
+    }
+
     if (role === 'employer') {
       let cancelled = false;
       (async () => {
@@ -183,12 +198,21 @@ export default function Auth() {
   // Step 1 — open the role chooser modal. We do NOT trigger OAuth yet.
   const openGoogleRoleChooser = (context: 'login' | 'signup') => {
     setError('');
+    if (USERS_ONLY_LAUNCH) {
+      void handleGoogleRolePick('worker');
+      return;
+    }
     setGoogleRoleContext(context);
     setGoogleRoleOpen(true);
   };
 
   // Step 2 — user picked a role inside the modal. Persist it and start OAuth.
   const handleGoogleRolePick = async (chosenRole: AppRole) => {
+    if (USERS_ONLY_LAUNCH && isGatedLaunchRole(chosenRole)) {
+      setGoogleRoleOpen(false);
+      navigate(comingSoonPathForRole(chosenRole)!, { replace: true });
+      return;
+    }
     setGoogleLoading(true);
     setError('');
     try {
@@ -280,6 +304,10 @@ export default function Auth() {
     // Already authenticated (e.g. Google sign-in with no role yet) — assign
     // the role server-side and let the redirect effect take over.
     if (isAuthenticated && needsRoleSelection) {
+      if (USERS_ONLY_LAUNCH && isGatedLaunchRole(selectedRole)) {
+        navigate(comingSoonPathForRole(selectedRole)!, { replace: true });
+        return;
+      }
       setAssigningRole(selectedRole);
       const result = await assignRole(selectedRole);
       setAssigningRole(null);
@@ -406,7 +434,9 @@ export default function Auth() {
           <p className="text-sm text-muted-foreground mt-1">
             {view === 'login' && 'Choose Worker, Employer, or Partner. We’ll take you to the next step.'}
             {view === 'role-select' && (needsRoleSelection
-              ? `Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! Choose how you want to use SafeWorkGlobal.`
+              ? USERS_ONLY_LAUNCH
+                ? `Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! Worker signup is live. Employer and partner portals are coming soon.`
+                : `Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! Choose how you want to use SafeWorkGlobal.`
               : 'Choose how you want to use the platform')}
             {view === 'signup' && `Continuing as ${roles.find(r => r.value === signupRole)?.label}`}
             {view === 'forgot' && "We'll send you a link to reset it"}
@@ -424,7 +454,7 @@ export default function Auth() {
             {/* ROLE SELECT */}
             {view === 'role-select' && (
               <div className="space-y-3">
-                {roles.map(r => {
+                {selectableRoles.map(r => {
                   const isAssigningThis = assigningRole === r.value;
                   return (
                     <button
@@ -578,7 +608,7 @@ export default function Auth() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 pt-2">
-            {roles.map(r => (
+            {selectableRoles.map(r => (
               <button
                 key={r.value}
                 type="button"

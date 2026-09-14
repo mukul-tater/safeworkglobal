@@ -1,3 +1,5 @@
+import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH, comingSoonPathForRole } from '@/lib/launchGate';
+
 const KEY = 'pending_oauth_redirect';
 const ROLE_KEY = 'pending_oauth_role';
 const TTL_MS = 15 * 60 * 1000;
@@ -122,6 +124,22 @@ function isLoginFormPath(path: string): boolean {
  * `/dashboard` waits for role and then forwards to the right portal.
  */
 export function resolvePostOAuthPath(path: string | null, pendingRole?: string | null): string | null {
+  if (USERS_ONLY_LAUNCH) {
+    const gated = comingSoonPathForRole(pendingRole);
+    if (gated) return gated;
+    const pathname = (path || '').split('?')[0];
+    if (
+      pathname.startsWith('/employer') ||
+      pathname.startsWith('/partner') ||
+      pathname.startsWith('/emitra') ||
+      pathname.startsWith('/interviewer') ||
+      pathname.startsWith('/lsp')
+    ) {
+      if (pathname.startsWith('/employer')) return COMING_SOON_PATHS.employer;
+      if (pathname.startsWith('/interviewer')) return COMING_SOON_PATHS.interviewer;
+      return COMING_SOON_PATHS.partner;
+    }
+  }
   if (path && isSafePath(path) && !isLoginFormPath(path) && path !== '/') return path;
   if (path || pendingRole) return '/dashboard';
   return null;

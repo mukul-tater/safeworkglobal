@@ -55,6 +55,8 @@ import AdminPartnerTickets from "./pages/admin/AdminPartnerTickets";
 import AdminPartnersV2 from "./pages/admin/AdminPartnersV2";
 import BenefitsForEmployers from "./pages/BenefitsForEmployers";
 import Dashboard from "./pages/Dashboard";
+import { comingSoonPortalRoutes } from "./routes/comingSoonPortalRoutes";
+import { USERS_ONLY_LAUNCH } from "./lib/launchGate";
 import { legacyEmployerRoutes } from "./routes/legacyEmployerRoutes";
 import { legacyPublicRoutes } from "./routes/legacyPublicRoutes";
 import { legacyWorkerRoutes } from "./routes/legacyWorkerRoutes";
@@ -167,6 +169,8 @@ function AppShell() {
           {/* Public pages used by employer hiring flow + marketing footer */}
           {legacyPublicRoutes}
 
+          {USERS_ONLY_LAUNCH ? comingSoonPortalRoutes : null}
+
           {/* Worker auth — dedicated pages (legacy Supabase flow) */}
           <Route path="/register" element={<Navigate to="/worker/login" replace />} />
           <Route path="/login" element={<Navigate to="/worker/login" replace />} />
@@ -175,11 +179,13 @@ function AppShell() {
           <Route path="/onboarding" element={<Navigate to="/worker/journey" replace />} />
 
           {/* Employer portal */}
-          {legacyEmployerRoutes}
+          {!USERS_ONLY_LAUNCH && legacyEmployerRoutes}
 
           {/* Legacy Supabase worker portal */}
           {legacyWorkerRoutes}
 
+          {!USERS_ONLY_LAUNCH && (
+          <>
           {/* LSP (Rajasthan) trusted entry → E-Mitra */}
           <Route path="/lsp/entry" element={<LspEntryPage />} />
           <Route path="/lsp/verify" element={<LspVerifyPage />} />
@@ -380,6 +386,8 @@ function AppShell() {
           <Route path="/partner/sen-global/revenue" element={<ProtectedRoute allowedRoles={["partner"]}><SenGlobalRevenue /></ProtectedRoute>} />
 
           <Route path="/partner/legacy-dashboard" element={<Navigate to="/partner/dashboard" replace />} />
+          </>
+          )}
 
           {/* Admin portal */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -402,13 +410,21 @@ function AppShell() {
           <Route path="/admin/verification-queue" element={<AdminRoute><AdminVerificationQueue /></AdminRoute>} />
           <Route path="/admin/journey-ops" element={<AdminRoute><AdminJourneyOps /></AdminRoute>} />
           <Route path="/admin/quiz-cms" element={<AdminRoute><AdminQuizCms /></AdminRoute>} />
-          <Route path="/interviewer/login" element={<InterviewerLoginPage />} />
+          {!USERS_ONLY_LAUNCH && (
+            <Route path="/interviewer/login" element={<InterviewerLoginPage />} />
+          )}
           <Route
             path="/interviewer/queue"
             element={
-              <ProtectedRoute allowedRoles={["interviewer", "admin"]} loginPath="/interviewer/login">
-                <InterviewerQueuePage />
-              </ProtectedRoute>
+              USERS_ONLY_LAUNCH ? (
+                <AdminRoute>
+                  <InterviewerQueuePage />
+                </AdminRoute>
+              ) : (
+                <ProtectedRoute allowedRoles={["interviewer", "admin"]} loginPath="/interviewer/login">
+                  <InterviewerQueuePage />
+                </ProtectedRoute>
+              )
             }
           />
           <Route path="/admin/trade-test-allocations" element={<AdminRoute><AdminTradeTestAllocations /></AdminRoute>} />

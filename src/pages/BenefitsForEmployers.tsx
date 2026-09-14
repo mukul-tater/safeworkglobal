@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { GET_STARTED_PATHS } from "@/lib/getStarted";
+import { USERS_ONLY_LAUNCH } from "@/lib/launchGate";
 import {
   ArrowRight,
   BadgeCheck,
@@ -157,6 +159,7 @@ export default function BenefitsForEmployers() {
   const { isAuthenticated, role } = useAuth();
 
   const postRequirement = () => {
+    if (USERS_ONLY_LAUNCH) return navigate(GET_STARTED_PATHS.employer);
     if (!isAuthenticated) return navigate("/employer/quick-signup");
     if (role === "employer") return navigate("/employer/dashboard");
     if (role === "worker") {

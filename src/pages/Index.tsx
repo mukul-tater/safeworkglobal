@@ -16,6 +16,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import { useAuth } from "@/contexts/AuthContext";
 import { peekPendingOAuthRedirect, peekPendingOAuthRole, hasOAuthCallbackInUrl } from "@/lib/oauthRedirect";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { showEmployerChrome } from "@/lib/launchGate";
 
 const Index = () => {
   const { loading, profileLoading, role, isAuthenticated } = useAuth();
@@ -27,8 +28,8 @@ const Index = () => {
   const oauthReturning =
     (loading || !isAuthenticated || waitingForRole) &&
     (hasOAuthCallbackInUrl() || !!peekPendingOAuthRedirect() || !!peekPendingOAuthRole());
-  const isEmployer = !waitingForRole && !oauthReturning && role === "employer";
-  const showDefaultHome = !waitingForRole && !oauthReturning && role !== "employer";
+  const isEmployer = !waitingForRole && !oauthReturning && showEmployerChrome(role);
+  const showDefaultHome = !waitingForRole && !oauthReturning && !isEmployer;
 
   if (oauthReturning) {
     return (

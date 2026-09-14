@@ -12,6 +12,7 @@ import { useI18n } from "@/i18n";
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
+import { comingSoonPathForRole, showEmployerChrome } from "@/lib/launchGate";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -59,7 +60,7 @@ const Header = () => {
   const navLinks = [
     ...(role === 'admin'
       ? [{ to: "/admin/jobs", label: "Jobs", icon: Search }]
-      : role === 'employer'
+      : showEmployerChrome(role)
       ? [{ to: "/employer/search-workers", label: t("nav.findWorkers"), icon: Search }]
       : [{ to: "/jobs", label: t("nav.findJobs"), icon: Search }]),
     { to: "/about", label: t("nav.about"), icon: Globe },
@@ -116,7 +117,7 @@ const Header = () => {
               <ThemeToggle />
               {isAuthenticated ? (
                 <>
-                  <Link to={role === "admin" ? "/admin/dashboard" : "/dashboard"}>
+                  <Link to={role === "admin" ? "/admin/dashboard" : comingSoonPathForRole(role) ?? "/dashboard"}>
                     <Button
                       variant="outline"
                       className={`flex items-center gap-2.5 pr-3 ${overlaysHomeHero ? "border-white/30 bg-white/10 hover:text-white" : ""}`}
@@ -231,7 +232,7 @@ const Header = () => {
               {isAuthenticated && (
                 <div className="pt-6 mt-6 border-t border-border space-y-3">
                   <Link
-                    to={role === "admin" ? "/admin/dashboard" : "/dashboard"}
+                    to={role === "admin" ? "/admin/dashboard" : comingSoonPathForRole(role) ?? "/dashboard"}
                     onClick={closeMobileMenu}
                     className="flex items-center gap-3 px-4 py-4 rounded-xl bg-primary/5 text-primary"
                   >

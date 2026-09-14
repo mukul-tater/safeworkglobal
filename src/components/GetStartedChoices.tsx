@@ -2,6 +2,7 @@ import { Briefcase, HardHat, Handshake } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '@/i18n';
 import { GET_STARTED_PATHS } from '@/lib/getStarted';
+import { USERS_ONLY_LAUNCH } from '@/lib/launchGate';
 
 type Props = {
   onChosen?: () => void;
@@ -43,7 +44,12 @@ export default function GetStartedChoices({ onChosen }: Props) {
           <Briefcase className="h-4 w-4" />
         </div>
         <div>
-          <div className="font-semibold text-sm">{t('header.hire')}</div>
+          <div className="font-semibold text-sm flex items-center gap-2">
+            {t('header.hire')}
+            {USERS_ONLY_LAUNCH && (
+              <span className="text-[10px] font-medium uppercase tracking-wide text-warning">Coming soon</span>
+            )}
+          </div>
           <div className="text-xs text-muted-foreground">{t('header.hireSub')}</div>
         </div>
       </button>
@@ -56,7 +62,12 @@ export default function GetStartedChoices({ onChosen }: Props) {
           <Handshake className="h-4 w-4" />
         </div>
         <div>
-          <div className="font-semibold text-sm">{t('header.partner')}</div>
+          <div className="font-semibold text-sm flex items-center gap-2">
+            {t('header.partner')}
+            {USERS_ONLY_LAUNCH && (
+              <span className="text-[10px] font-medium uppercase tracking-wide text-warning">Coming soon</span>
+            )}
+          </div>
           <div className="text-xs text-muted-foreground">{t('header.partnerSub')}</div>
         </div>
       </button>

@@ -3,6 +3,7 @@ import { useAuth, type AppRole } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShieldAlert, ArrowRight, Home } from "lucide-react";
+import { USERS_ONLY_LAUNCH, comingSoonPathForRole } from "@/lib/launchGate";
 
 const dashboardForRole: Record<AppRole, { path: string; label: string }> = {
   worker: { path: "/worker/dashboard", label: "Worker Dashboard" },
@@ -16,7 +17,12 @@ export default function AccessDenied() {
   const { role, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const target = role ? dashboardForRole[role] : null;
+  const gated = USERS_ONLY_LAUNCH ? comingSoonPathForRole(role) : null;
+  const target = gated
+    ? { path: gated, label: "Coming Soon" }
+    : role
+      ? dashboardForRole[role]
+      : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">

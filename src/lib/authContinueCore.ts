@@ -1,3 +1,5 @@
+import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH } from './launchGate.ts';
+
 export type AuthPortalRole = 'worker' | 'employer' | 'partner';
 
 export type AuthContinueNextStep =
@@ -149,6 +151,10 @@ export function mapAuthContinuePayload(raw: unknown): AuthContinueResult {
 }
 
 export function portalAuthPath(role: AuthPortalRole): string {
+  if (USERS_ONLY_LAUNCH) {
+    if (role === 'employer') return COMING_SOON_PATHS.employer;
+    if (role === 'partner') return COMING_SOON_PATHS.partner;
+  }
   if (role === 'employer') return '/employer/login';
   if (role === 'partner') return '/partner/login';
   return '/worker/login';

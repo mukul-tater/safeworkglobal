@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { SAFEWORK_CONTACT } from "@/config/workerSupport";
 import { useI18n } from "@/i18n";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
+import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH, showEmployerChrome } from "@/lib/launchGate";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const Footer = () => {
 
   // Employer destinations — gated by auth + role
   const goEmployer = (workerPath: string) => () => {
+    if (USERS_ONLY_LAUNCH) return navigate(COMING_SOON_PATHS.employer);
     if (!isAuthenticated) return navigate('/employer/login');
     if (role === 'employer') return navigate(workerPath);
     if (role === 'worker') {
@@ -79,7 +81,7 @@ const Footer = () => {
             </div>
 
             {/* For Workers */}
-            {role !== 'employer' && (
+            {!showEmployerChrome(role) && (
             <div className="lg:col-span-2 space-y-4">
               <h3 className="text-xs sm:text-sm font-semibold font-heading uppercase tracking-wider text-white/80">{t("footer.workers")}</h3>
               <ul className="space-y-2.5">

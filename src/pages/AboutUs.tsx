@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { GET_STARTED_PATHS } from "@/lib/getStarted";
+import { USERS_ONLY_LAUNCH } from "@/lib/launchGate";
 import { useWorkerLanguage } from "@/modules/worker-registration";
 import { pick } from "@/pages/about/copy";
 import {
@@ -120,6 +122,7 @@ export default function AboutUs() {
   };
 
   const goHire = () => {
+    if (USERS_ONLY_LAUNCH) return navigate(GET_STARTED_PATHS.employer);
     if (!isAuthenticated) return navigate("/employer/quick-signup");
     if (role === "employer") return navigate("/employer/dashboard");
     if (role === "worker") {
@@ -280,7 +283,7 @@ export default function AboutUs() {
                     Find Jobs | नौकरी खोजें
                   </Button>
                   <Button size="lg" variant="outline" className="h-auto min-h-12 py-3 rounded-xl w-full sm:w-auto whitespace-normal sm:whitespace-nowrap" asChild>
-                    <Link to="/partner/register">Partner With Us | साझेदार बनें</Link>
+                    <Link to={GET_STARTED_PATHS.partner}>Partner With Us | साझेदार बनें</Link>
                   </Button>
                 </div>
               </ScrollReveal>

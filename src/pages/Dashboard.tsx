@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { hasOAuthCallbackInUrl, peekPendingOAuthRedirect, peekPendingOAuthRole } from "@/lib/oauthRedirect";
+import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH, comingSoonPathForRole } from "@/lib/launchGate";
 
 export default function Dashboard() {
   const { user, role, isAuthenticated, loading, profileLoading, needsRoleSelection } = useAuth();
@@ -45,6 +46,10 @@ export default function Dashboard() {
         go("/admin/dashboard");
         break;
       case 'partner':
+        if (USERS_ONLY_LAUNCH) {
+          go(COMING_SOON_PATHS.partner);
+          break;
+        }
         (async () => {
           try {
             const { data } = await supabase
@@ -61,6 +66,10 @@ export default function Dashboard() {
         })();
         break;
       case 'employer':
+        if (USERS_ONLY_LAUNCH) {
+          go(COMING_SOON_PATHS.employer);
+          break;
+        }
         (async () => {
           try {
             const { data } = await supabase
@@ -78,8 +87,10 @@ export default function Dashboard() {
       case 'worker':
         go('/worker/dashboard');
         break;
-      default:
-        go("/");
+      default: {
+        const gated = comingSoonPathForRole(role);
+        go(gated ?? "/");
+      }
     }
 
     return () => {

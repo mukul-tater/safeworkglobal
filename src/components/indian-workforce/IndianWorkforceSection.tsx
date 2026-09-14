@@ -10,6 +10,7 @@ import HindiText from "./HindiText";
 import WorkerPhotoCollage from "./WorkerPhotoCollage";
 import TradeCategoryCard from "./TradeCategoryCard";
 import ManyMoreTradeCard from "./ManyMoreTradeCard";
+import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH, showEmployerChrome } from "@/lib/launchGate";
 
 const HOME_TRADE_PREVIEW_COUNT = 7;
 
@@ -17,10 +18,10 @@ export default function IndianWorkforceSection() {
   const navigate = useNavigate();
   const { isAuthenticated, role } = useAuth();
   const { t } = useI18n();
-  const isEmployer = role === "employer";
+  const isEmployer = showEmployerChrome(role);
 
   const handleFindJobs = () => {
-    if (role === "employer") {
+    if (showEmployerChrome(role)) {
       toast.error(t("hero.employerToast"));
       return;
     }
@@ -39,7 +40,11 @@ export default function IndianWorkforceSection() {
     navigate("/worker/quick-signup");
   };
 
-  const employerHref = isEmployer ? "/employer/dashboard" : "/employer/quick-signup";
+  const employerHref = USERS_ONLY_LAUNCH
+    ? COMING_SOON_PATHS.employer
+    : isEmployer
+      ? "/employer/dashboard"
+      : "/employer/quick-signup";
 
   return (
     <section

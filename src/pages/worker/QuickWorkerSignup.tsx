@@ -683,7 +683,7 @@ export default function QuickWorkerSignup({
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <Button asChild variant="outline" className="h-10 text-sm font-medium">
-                          <Link to="/employer/login">Employer</Link>
+                          <Link to={GET_STARTED_PATHS.employer}>Employer</Link>
                         </Button>
                         <Button asChild variant="outline" className="h-10 text-sm font-medium">
                           <Link to={GET_STARTED_PATHS.partner}>Partner</Link>

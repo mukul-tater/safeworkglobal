@@ -94,7 +94,7 @@ const STEPS: JourneyStep[] = [
   {
     id: "payment",
     number: 5,
-    title: "Payment — starts from ₹20,000 + GST",
+    title: "Payment",
     shortTitle: "Payment",
     descriptionHi:
       "फी हर जॉब के हिसाब से अलग होती है। अधिक जानकारी के लिए Find Jobs पर देखें।",
@@ -287,15 +287,11 @@ function StepDetail({
 
         {isPayment && (
           <div className="mb-4 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-              Starts from
-            </p>
-            <p className="mt-0.5 text-2xl font-bold font-heading tabular-nums text-foreground">
-              ₹20,000{" "}
-              <span className="text-base font-semibold text-muted-foreground">+ GST</span>
+            <p className="text-sm font-semibold text-foreground">
+              Fee varies by job
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-              वीज़ा, फ्लाइट, डॉक्स और इंश्योरेंस शामिल। Visa, flights, docs &amp; insurance included.
+              फी हर जॉब के हिसाब से अलग होती है। Visa, flights, docs &amp; insurance included.
             </p>
             <Link
               to="/jobs"
@@ -455,11 +451,6 @@ export default function WorkerJourneyDemo() {
                             Nearest verified center
                           </span>
                         )}
-                        {step.id === "payment" && (
-                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                            Starts from ₹20,000 + GST
-                          </span>
-                        )}
                         {step.id === "agreement" && (
                           <span className="mt-0.5 block text-[11px] text-muted-foreground">
                             2-year work commitment
@@ -542,11 +533,6 @@ export default function WorkerJourneyDemo() {
                       {step.id === "trade-test" && (
                         <span className="block text-xs text-muted-foreground mt-0.5">
                           At your nearest trade test center
-                        </span>
-                      )}
-                      {step.id === "payment" && (
-                        <span className="block text-xs text-muted-foreground mt-0.5">
-                          Starts from ₹20,000 + GST
                         </span>
                       )}
                       {step.id === "agreement" && (
