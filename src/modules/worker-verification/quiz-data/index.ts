@@ -2,7 +2,7 @@ import type { SkillQuizItem } from '../types';
 import { BASIC_TRADE_KNOWLEDGE_BANK } from './basic-trade-knowledge';
 import driver from './driver.questions.json';
 import other from './other.questions.json';
-import { isUaeListedQuizSkill } from './quizSkill';
+import { isUaeListedQuizSkill, resolveQuizSkillCode } from './quizSkill';
 import { shuffleCopy } from './shuffle';
 
 export interface SkillQuizJsonFile {
@@ -45,12 +45,13 @@ function slugSkill(skill: string): string {
 
 /** Load Test 1 questions from the bundled bank when the CMS has nothing for the skill. */
 export function loadQuizItemsFromJson(skill: string): SkillQuizItem[] {
-  if (isUaeListedQuizSkill(skill)) {
-    const prefix = slugSkill(skill);
+  const resolved = resolveQuizSkillCode({ primarySkill: skill });
+  if (isUaeListedQuizSkill(resolved)) {
+    const prefix = slugSkill(resolved);
     return shuffleCopy(
-      BASIC_TRADE_KNOWLEDGE_BANK[skill].map((q, index) => ({
+      BASIC_TRADE_KNOWLEDGE_BANK[resolved].map((q, index) => ({
         id: `${prefix}-${index + 1}`,
-        skill_code: skill,
+        skill_code: resolved,
         question: q.question,
         question_hi: q.question_hi,
         youtube_url: null,
@@ -61,6 +62,6 @@ export function loadQuizItemsFromJson(skill: string): SkillQuizItem[] {
       })),
     );
   }
-  const file = YES_NO_BY_SKILL[skill] || YES_NO_BY_SKILL.Other;
+  const file = YES_NO_BY_SKILL[resolved] || YES_NO_BY_SKILL.Other;
   return toYesNoItems(file);
 }

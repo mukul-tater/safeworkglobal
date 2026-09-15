@@ -19,6 +19,8 @@ type Props = {
   emailPlaceholder?: string;
   submitLabel?: string;
   idPrefix?: string;
+  /** Bind Firebase invisible reCAPTCHA to Continue (mobile OTP send). */
+  submitButtonId?: string;
 };
 
 export default function AuthContinueIdentifier({
@@ -36,6 +38,7 @@ export default function AuthContinueIdentifier({
   emailPlaceholder = 'you@example.com',
   submitLabel = 'Continue',
   idPrefix = 'auth',
+  submitButtonId,
 }: Props) {
   const showTabs = methods.length > 1;
   const active = methods.includes(method) ? method : methods[0];
@@ -116,6 +119,7 @@ export default function AuthContinueIdentifier({
       )}
 
       <Button
+        id={submitButtonId}
         type="submit"
         className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
         disabled={loading || disabled}

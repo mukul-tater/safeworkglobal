@@ -20,6 +20,7 @@ type Props = {
   placeholder?: string;
   disabled?: boolean;
   allowCustom?: boolean;
+  hint?: string;
 };
 
 export default function SearchableSelect({
@@ -30,6 +31,7 @@ export default function SearchableSelect({
   placeholder = 'Select',
   disabled,
   allowCustom,
+  hint,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -63,6 +65,7 @@ export default function SearchableSelect({
           {value || placeholder}
         </Text>
       </Pressable>
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
         <View style={styles.modal}>
           <View style={styles.modalHeader}>
@@ -116,6 +119,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   triggerText: { fontSize: 16, color: colors.text },
   placeholder: { color: colors.mutedForeground },
+  hint: { ...typography.caption, marginTop: spacing.sm },
   modal: { flex: 1, backgroundColor: colors.background, paddingTop: 56 },
   modalHeader: {
     flexDirection: 'row',

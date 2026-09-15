@@ -22,7 +22,7 @@ import {
 import { resolveServiceChargeInr } from '@/lib/jobServiceCharge';
 import { loadQuizItemsFromJson } from '../quiz-data';
 import { gradeLocalQuiz } from '../quiz-data/gradeLocal';
-import { resolveQuizSkillCode } from '../quiz-data/quizSkill';
+import { isQuizItemUuid, resolveQuizSkillCode } from '../quiz-data/quizSkill';
 import { shuffleCopy } from '../quiz-data/shuffle';
 import type { QuizOption } from '../types';
 
@@ -374,24 +374,36 @@ export async function submitQuiz(
   items: SkillQuizItem[] = [],
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
-  // Grading and scoring are done server-side against the hidden answer key.
+  // CMS rows are UUIDs. Bundled JSON fallbacks use slugs like mason-1 — those
+  // cannot be graded by submit_worker_quiz until the resolver migration is live.
   const payload = answers.map((a) => ({ quiz_item_id: a.quiz_item_id, answer: a.answer }));
-  let { data: graded, error: gradeErr } = await (supabase as any).rpc('submit_worker_quiz', {
-    p_answers: payload,
-    p_user_id: userId,
-  });
-  // Older DBs only accept p_answers (pre-partner kiosk). Retry once.
-  if (gradeErr) {
-    const retry = await (supabase as any).rpc('submit_worker_quiz', { p_answers: payload });
-    if (!retry.error) {
-      graded = retry.data;
-      gradeErr = null;
+  const canGradeServerSide = payload.every((a) => isQuizItemUuid(a.quiz_item_id));
+  let graded: unknown = null;
+  let gradeErr: { message?: string } | null = null;
+  if (canGradeServerSide) {
+    const first = await (supabase as any).rpc('submit_worker_quiz', {
+      p_answers: payload,
+      p_user_id: userId,
+    });
+    graded = first.data;
+    gradeErr = first.error;
+    // Older DBs only accept p_answers (pre-partner kiosk). Retry once.
+    if (gradeErr) {
+      const retry = await (supabase as any).rpc('submit_worker_quiz', { p_answers: payload });
+      if (!retry.error) {
+        graded = retry.data;
+        gradeErr = null;
+      }
     }
   }
   let score = Number((Array.isArray(graded) ? graded[0] : graded)?.score ?? 0);
-  if (gradeErr) {
+  if (gradeErr || !canGradeServerSide) {
     const local = items.length ? gradeLocalQuiz(items, answers) : null;
-    if (!local) throw new Error(gradeErr.message);
+    if (!local) {
+      throw new Error(
+        gradeErr?.message || 'Could not submit Test 1. Please reload and try again.',
+      );
+    }
     score = local.score;
   } else {
     const result = Array.isArray(graded) ? graded[0] : graded;

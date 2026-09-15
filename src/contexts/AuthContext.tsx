@@ -32,6 +32,11 @@ interface AuthContextType {
   /** True when authenticated but no role has been assigned yet (e.g. fresh OAuth sign-in). */
   needsRoleSelection: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  /** Apply tokens from worker mobile OTP login (edge function). */
+  loginWithSession: (
+    accessToken: string,
+    refreshToken: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   signup: (data: {
     email: string;
     password: string;
@@ -415,6 +420,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithSession = async (accessToken: string, refreshToken: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+      if (error) {
+        setLoading(false);
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (error) {
+      setLoading(false);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Login failed',
+      };
+    }
+  };
+
   const signup = async (data: {
     email: string;
     password: string;
@@ -580,6 +606,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profileLoading,
         needsRoleSelection,
         login,
+        loginWithSession,
         signup,
         logout,
         hasRole,
@@ -609,6 +636,7 @@ const noopAuth: AuthContextType = {
   profileLoading: false,
   needsRoleSelection: false,
   login: async () => ({ success: false, error: 'Auth not ready' }),
+  loginWithSession: async () => ({ success: false, error: 'Auth not ready' }),
   signup: async () => ({ success: false, error: 'Auth not ready' }),
   logout: async () => {},
   hasRole: () => false,

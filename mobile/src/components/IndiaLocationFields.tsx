@@ -21,6 +21,8 @@ type Props = {
   showDistrict?: boolean;
   showPincode?: boolean;
   cityLabel?: string;
+  /** Shown under the city field. Pass empty string to hide. */
+  cityHint?: string;
 };
 
 export default function IndiaLocationFields({
@@ -30,6 +32,7 @@ export default function IndiaLocationFields({
   showDistrict = true,
   showPincode = true,
   cityLabel = 'City',
+  cityHint = 'If your village is not listed, select the nearest city.',
 }: Props) {
   const patch = (partial: Partial<Value>) => onChange({ ...value, ...partial });
 
@@ -58,9 +61,10 @@ export default function IndiaLocationFields({
           value={value.city}
           options={getIndiaCities(value.state, value.district)}
           onChange={(city) => patch({ city, pincode: '' })}
-          placeholder={value.district ? 'Select city / town' : 'Select district first'}
+          placeholder={value.district ? 'Select city or nearest city' : 'Select district first'}
           disabled={!value.district}
           allowCustom
+          hint={cityHint}
         />
       ) : null}
       {showPincode ? (

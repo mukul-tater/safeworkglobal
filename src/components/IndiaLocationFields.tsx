@@ -26,17 +26,21 @@ type Props = {
   showPincode?: boolean;
   cityLabel?: string;
   cityAllowCustom?: boolean;
+  /** Shown under the city field. Pass empty string to hide. */
+  cityHint?: string;
   className?: string;
 };
 
 function FieldWrap({
   label,
   error,
+  hint,
   required,
   children,
 }: {
   label: string;
   error?: string;
+  hint?: string;
   required?: boolean;
   children: ReactNode;
 }) {
@@ -48,6 +52,7 @@ function FieldWrap({
       </Label>
       {children}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {!error && hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }
@@ -61,6 +66,7 @@ export default function IndiaLocationFields({
   showPincode = true,
   cityLabel = 'Village / Town / City',
   cityAllowCustom = true,
+  cityHint = 'If your village is not listed, select the nearest city.',
   className,
 }: Props) {
   const states = getIndiaStates();
@@ -99,7 +105,7 @@ export default function IndiaLocationFields({
       ) : null}
 
       {showCity ? (
-        <FieldWrap label={cityLabel} error={errors?.city} required>
+        <FieldWrap label={cityLabel} error={errors?.city} hint={cityHint} required>
           <SearchSelect
             value={value.city}
             onChange={(city) => patch({ city, pincode: '' })}
@@ -107,15 +113,21 @@ export default function IndiaLocationFields({
             placeholder={
               showDistrict
                 ? value.district
-                  ? 'Select city / town'
+                  ? 'Select city or nearest city'
                   : 'Select district first'
                 : value.state
-                  ? 'Select city / town'
+                  ? 'Select city or nearest city'
                   : 'Select state first'
             }
             searchPlaceholder="Search city / town"
             disabled={showDistrict ? !value.district : !value.state}
-            emptyText={showDistrict ? 'Select a district first' : 'Select a state first'}
+            emptyText={
+              (showDistrict ? value.district : value.state)
+                ? 'No match — select the nearest city'
+                : showDistrict
+                  ? 'Select a district first'
+                  : 'Select a state first'
+            }
             allowCustom={cityAllowCustom}
             customHint="Use this village / town name"
           />

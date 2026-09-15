@@ -44,3 +44,11 @@ export function resolveQuizSkillCode(opts: {
 export function isUaeListedQuizSkill(skill: string): skill is UaeListedJob {
   return (UAE_LISTED_JOBS as readonly string[]).includes(skill);
 }
+
+const QUIZ_ITEM_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** CMS quiz rows use UUIDs; bundled JSON fallbacks use slugs like mason-1. */
+export function isQuizItemUuid(id: string): boolean {
+  return QUIZ_ITEM_UUID_RE.test(id);
+}

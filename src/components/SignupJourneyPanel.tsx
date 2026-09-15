@@ -35,7 +35,7 @@ const COPY = {
       headline: 'Welcome back — continue the safe way',
       body: 'Sign in to pick up your verification journey and access verified Gulf opportunities — no agent fees.',
       steps: [
-        { n: '1', title: 'Sign in', detail: 'Mobile or email + password' },
+        { n: '1', title: 'Sign in', detail: 'Mobile OTP or email + password' },
         { n: '2', title: 'Continue journey', detail: 'Pick up where you left off' },
         { n: '3', title: 'Get matched', detail: 'Verified Gulf employers' },
       ],
