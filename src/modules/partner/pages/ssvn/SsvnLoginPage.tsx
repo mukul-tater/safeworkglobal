@@ -29,7 +29,6 @@ import { cn } from '@/lib/utils';
 import DevOtpHint from '@/components/DevOtpHint';
 import ForgotPasswordControl from '@/components/ForgotPasswordControl';
 import { AUTH_CONTINUE_MESSAGES, continueAuth, type AuthContinueLocationState } from '@/lib/authContinue';
-import { bindVerifiedMobile } from '@/lib/phoneVerifiedAccount';
 
 type Method = 'mobile' | 'email';
 type Step = 'credentials' | 'otp';
@@ -181,7 +180,7 @@ export default function SsvnLoginPage() {
     const digits = mobile.replace(/\D/g, '');
 
     try {
-      const idToken = await firebaseOtp.verifyOtp(otp);
+      await firebaseOtp.verifyOtp(otp);
       try {
         await firebaseSignOut(getFirebaseAuth());
       } catch {
@@ -211,7 +210,7 @@ export default function SsvnLoginPage() {
         setError('Authentication failed');
         return;
       }
-      await bindVerifiedMobile({ mobile: digits, idToken });
+      await supabase.from('profiles').update({ phone: digits, mobile_verified: true }).eq('id', user.id);
       try {
         sessionStorage.setItem(`swg_mobile_verified_${user.id}`, '1');
       } catch {

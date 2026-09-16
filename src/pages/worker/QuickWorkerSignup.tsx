@@ -106,7 +106,6 @@ export default function QuickWorkerSignup({
   const country = 'India';
   const [otp, setOtp] = useState('');
   const [phoneOtpVerified, setPhoneOtpVerified] = useState(false);
-  const [firebaseIdToken, setFirebaseIdToken] = useState('');
   const [needsPasswordRetry, setNeedsPasswordRetry] = useState(false);
   const [emitraNoticeOpen, setEmitraNoticeOpen] = useState(false);
   const isEmitraAssisted = partnerAssisted && partnerCtx?.source.type === 'emitra';
@@ -281,14 +280,13 @@ export default function QuickWorkerSignup({
     }
   };
 
-  const createAccountAfterOtp = async (idToken = firebaseIdToken) => {
+  const createAccountAfterOtp = async () => {
     const created = await createVerifiedWorkerAccount({
       fullName: name.trim(),
       email: email.trim().toLowerCase(),
       mobile,
       password,
       country,
-      firebaseIdToken: idToken,
       source: partnerAssisted ? (partnerCtx?.source ?? { type: 'partner' }) : { type: 'organic' },
       ...(partnerAssisted
         ? {
@@ -367,16 +365,13 @@ export default function QuickWorkerSignup({
     setFormLoading(true);
     try {
       if (!phoneOtpVerified) {
-        const idToken = await firebaseOtp.verifyOtp(otp);
-        setFirebaseIdToken(idToken);
+        await firebaseOtp.verifyOtp(otp);
         setPhoneOtpVerified(true);
         try {
           await firebaseSignOut(getFirebaseAuth());
         } catch {
           /* ignore */
         }
-        await createAccountAfterOtp(idToken);
-        return;
       }
 
       await createAccountAfterOtp();
