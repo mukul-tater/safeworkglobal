@@ -37,7 +37,7 @@ import {
   PARTNER_DECLARATION_TEXT,
 } from '../validations/emitraOnboardingV2';
 import { getPartnerProfile, savePartnerApplication } from '../services/emitraService';
-import { getLspSession } from '@/modules/lsp/services/lspSession';
+import { createPhoneVerifiedPartnerAccount } from '@/lib/phoneVerifiedAccount';
 import type { AuthContinueLocationState } from '@/lib/authContinue';
 import IndiaLocationFields from '@/components/IndiaLocationFields';
 
@@ -101,6 +101,7 @@ export default function EmitraOnboardingPage() {
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState('');
   const [mobileVerified, setMobileVerified] = useState(false);
+  const [firebaseIdToken, setFirebaseIdToken] = useState('');
   const [agreementOtpStep, setAgreementOtpStep] = useState(false);
   const [agreementOtp, setAgreementOtp] = useState('');
   const [agreementOtpBusy, setAgreementOtpBusy] = useState(false);
@@ -323,12 +324,13 @@ export default function EmitraOnboardingPage() {
     }
     setOtpBusy(true);
     try {
-      await firebaseOtp.verifyOtp(otp);
+      const idToken = await firebaseOtp.verifyOtp(otp);
       try {
         await firebaseSignOut(getFirebaseAuth());
       } catch {
         /* ignore */
       }
+      setFirebaseIdToken(idToken);
       setMobileVerified(true);
       update({ mobile_verified: true, whatsapp: data.mobile });
       setOtpStep(false);
@@ -458,59 +460,29 @@ export default function EmitraOnboardingPage() {
       return uid;
     };
 
-    const { data: rpcId, error: rpcErr } = await supabase.rpc(
-      'create_phone_verified_partner_account',
-      {
-        p_email: authEmail,
-        p_password: accountPassword,
-        p_full_name: data.owner_name || '',
-        p_phone: digits,
-      },
-    );
+    if (!firebaseIdToken) {
+      toast.error('Verify your mobile number with SMS OTP first');
+      return null;
+    }
 
-    const rpcMissing = !!rpcErr && /could not find|does not exist|schema cache/i.test(rpcErr.message);
-    if (!rpcMissing) {
-      if (rpcErr && /already registered|already exists|duplicate/i.test(rpcErr.message)) {
+    try {
+      await createPhoneVerifiedPartnerAccount({
+        email: authEmail,
+        password: accountPassword,
+        fullName: data.owner_name || '',
+        mobile: digits,
+        idToken: firebaseIdToken,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not create account';
+      if (/already registered|already exists|duplicate/i.test(msg)) {
         return finish(await signIn());
       }
-      if (rpcErr) return fail(rpcErr.message);
-      if (rpcId) return finish(await signIn());
+      if (isWeakPasswordAuthError(msg)) return fail(COMMON_PASSWORD_MESSAGE);
+      return fail(msg);
     }
 
-    const { data: signupData, error: signupErr } = await supabase.auth.signUp({
-      email: authEmail,
-      password: accountPassword,
-      options: {
-        emailRedirectTo: `${window.location.origin}/emitra/register`,
-        data: {
-          full_name: data.owner_name,
-          phone: digits,
-          role: 'partner',
-          mobile_verified: true,
-        },
-      },
-    });
-
-    if (signupErr) {
-      if (/already registered|already exists/i.test(signupErr.message)) {
-        return finish(await signIn());
-      }
-      if (isWeakPasswordAuthError(signupErr.message)) return fail(COMMON_PASSWORD_MESSAGE);
-      return fail(signupErr.message);
-    }
-
-    let uid = signupData.session?.user?.id || signupData.user?.id || null;
-    if (!signupData.session) {
-      uid = await signIn();
-      if (!uid) return null;
-    }
-    if (!uid) {
-      const { data: { user: current } } = await supabase.auth.getUser();
-      uid = current?.id ?? null;
-    }
-    if (!uid) return fail('Could not start your account session. Please try again.');
-
-    return finish(uid);
+    return finish(await signIn());
   };
 
   const buildPayload = (overrides: Record<string, unknown> = {}) => {

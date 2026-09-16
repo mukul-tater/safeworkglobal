@@ -1,40 +1,30 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-Deno.serve(async () => {
-  const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-purge-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
-  const buckets = [
-    "avatars",
-    "worker-documents",
-    "worker-videos",
-    "partner-documents",
-    "partner-worker-media",
-    "assessment-evidence",
-  ];
-  const result: Record<string, number> = {};
+function json(status: number, body: Record<string, unknown>) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
-  async function walk(bucket: string, prefix = ""): Promise<string[]> {
-    const { data, error } = await admin.storage.from(bucket).list(prefix, { limit: 1000 });
-    if (error || !data) return [];
-    const files: string[] = [];
-    for (const entry of data) {
-      const path = prefix ? `${prefix}/${entry.name}` : entry.name;
-      if (entry.id === null) files.push(...(await walk(bucket, path)));
-      else files.push(path);
-    }
-    return files;
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
 
-  for (const bucket of buckets) {
-    const files = await walk(bucket);
-    if (files.length) await admin.storage.from(bucket).remove(files);
-    result[bucket] = files.length;
+  const expected = (Deno.env.get("PURGE_SECRET") || "").trim();
+  const incoming = (req.headers.get("x-purge-secret") || "").trim();
+  if (!expected || incoming !== expected) {
+    return json(401, { error: "Unauthorized" });
   }
 
-  return new Response(JSON.stringify({ deleted: result }), {
-    headers: { "Content-Type": "application/json" },
+  return json(403, {
+    error: "Storage purge is disabled. KYC and media cannot be bulk-deleted from this endpoint.",
   });
 });

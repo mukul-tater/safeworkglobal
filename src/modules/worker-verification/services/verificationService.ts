@@ -736,42 +736,16 @@ export async function recordInterviewScore(
  * Pilot path — skip waiting for admin video-interview score.
  * Advances awaiting_interview (or identity after KYC) → awaiting_payment.
  */
-export async function waiveAssessmentInterviewPilot(userId: string): Promise<WorkerVerification> {
-  // If DB still on identity after KYC submit, nudge stage before pilot waive.
-  const current = await getOrCreateVerification(userId);
-  if (current.stage === 'identity') {
-    const { error: nudgeErr } = await supabase
-      .from('worker_verification')
-      .update({ stage: 'awaiting_interview', updated_at: new Date().toISOString() })
-      .eq('id', current.id);
-    if (nudgeErr) {
-      console.warn('Could not advance identity → interview before pilot waive:', nudgeErr.message);
-    }
-  }
-
-  const { data, error } = await supabase.rpc('waive_assessment_interview_pilot');
-  if (error) {
-    const msg = error.message || 'Could not skip interview';
-    if (/could not find the function|schema cache|PGRST202/i.test(msg)) {
-      throw new Error(
-        'Interview pilot RPC missing. Run supabase/migrations/20260731192000_waive_interview_pilot.sql (and 20260803120000_waive_interview_accept_identity.sql) in Lovable SQL, then retry.',
-      );
-    }
-    throw new Error(msg);
-  }
-  const next = (data || (await getOrCreateVerification(userId))) as WorkerVerification;
-  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
+export async function waiveAssessmentInterviewPilot(_userId: string): Promise<WorkerVerification> {
+  throw new Error('Interview cannot be skipped. An interviewer must score this worker.');
 }
 
 /**
  * Pilot path — fee waived via SECURITY DEFINER RPC.
  * Prefer payAssessmentFeeWithRazorpay when Razorpay is configured.
  */
-export async function waiveAssessmentPaymentPilot(userId: string): Promise<WorkerVerification> {
-  const { data, error } = await supabase.rpc('waive_assessment_payment_pilot');
-  if (error) throw new Error(error.message);
-  const next = (data || (await getOrCreateVerification(userId))) as WorkerVerification;
-  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
+export async function waiveAssessmentPaymentPilot(_userId: string): Promise<WorkerVerification> {
+  throw new Error('Payment cannot be skipped. The worker must pay the assessment fee.');
 }
 
 /**

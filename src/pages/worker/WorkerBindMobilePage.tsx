@@ -15,6 +15,7 @@ import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
+import { bindVerifiedMobile } from '@/lib/phoneVerifiedAccount';
 import { bindMobileLoginPath, afterMobileVerifiedPath, MOBILE_OTP_ROLES } from '@/lib/mobileVerification';
 import DevOtpHint from '@/components/DevOtpHint';
 
@@ -128,7 +129,7 @@ export default function WorkerBindMobilePage() {
 
     setSubmitting(true);
     try {
-      await firebaseOtp.verifyOtp(otp);
+      const idToken = await firebaseOtp.verifyOtp(otp);
       try {
         const { getFirebaseAuth } = await import('@/lib/firebase');
         const { signOut: firebaseSignOut } = await import('firebase/auth');
@@ -140,15 +141,7 @@ export default function WorkerBindMobilePage() {
       }
 
       const digits = mobile.replace(/\D/g, '').slice(-10);
-      await assertPhoneAvailable(digits);
-
-      const { error: updateErr } = await supabase
-        .from('profiles')
-        .update({ phone: digits, mobile_verified: true })
-        .eq('id', user.id);
-      if (updateErr) throw new Error(updateErr.message);
-
-      await supabase.auth.updateUser({ data: { phone: digits } });
+      await bindVerifiedMobile({ mobile: digits, idToken });
       if (role === 'worker') {
         await supabase.from('worker_profiles').upsert({ user_id: user.id } as any, {
           onConflict: 'user_id',

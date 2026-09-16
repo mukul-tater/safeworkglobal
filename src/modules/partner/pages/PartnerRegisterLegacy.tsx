@@ -35,6 +35,7 @@ import {
 import DevOtpHint from "@/components/DevOtpHint";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { signOut as firebaseSignOut } from "firebase/auth";
+import { createPhoneVerifiedPartnerAccount, bindVerifiedMobile } from "@/lib/phoneVerifiedAccount";
 
 interface PartnerType {
   id: string;
@@ -44,7 +45,7 @@ interface PartnerType {
 }
 
 export default function PartnerRegisterLegacy() {
-  const { user, isAuthenticated, assignRole, signup, refreshProfile, refreshRole } = useAuth();
+  const { user, isAuthenticated, assignRole, refreshProfile, refreshRole } = useAuth();
   const navigate = useNavigate();
   const { pathname, state: locationState } = useLocation();
   const continuePrefill = (locationState || {}) as AuthContinueLocationState;
@@ -61,6 +62,7 @@ export default function PartnerRegisterLegacy() {
   const [otp, setOtp] = useState("");
   const [otpStep, setOtpStep] = useState(false);
   const [mobileVerified, setMobileVerified] = useState(false);
+  const [firebaseIdToken, setFirebaseIdToken] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState({
@@ -112,12 +114,18 @@ export default function PartnerRegisterLegacy() {
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const ensureAuthenticated = async (): Promise<string> => {
-    if (isAuthenticated && user?.id) return user.id;
-
     const digits = form.mobile.replace(/\D/g, "");
     if (!/^[6-9]\d{9}$/.test(digits)) {
       throw new Error("Enter a valid 10-digit mobile number");
     }
+    if (!firebaseIdToken) {
+      throw new Error("Verify the SMS code first");
+    }
+    if (isAuthenticated && user?.id) {
+      await bindVerifiedMobile({ mobile: digits, idToken: firebaseIdToken });
+      return user.id;
+    }
+
     if (!form.email.trim() && !digits) {
       throw new Error("Email or mobile is required to create your login");
     }
@@ -130,39 +138,41 @@ export default function PartnerRegisterLegacy() {
     }
 
     const authEmail = form.email.trim() || partnerAuthEmailFromMobile(digits);
-    const result = await signup({
-      email: authEmail,
-      password: form.password,
-      full_name: form.owner_name || form.company_name,
-      phone: digits,
-      role: "partner",
-    });
-    if (!result.success) {
-      throw new Error(result.error || "Could not create account");
-    }
-
-    // Sign-in may already be active after signup; refresh context
-    await refreshProfile();
-    await refreshRole();
-    const { data: { user: created } } = await supabase.auth.getUser();
-    if (!created?.id) {
-      // Some projects require email confirm — try password login
-      const { error } = await supabase.auth.signInWithPassword({
+    try {
+      await createPhoneVerifiedPartnerAccount({
         email: authEmail,
         password: form.password,
+        fullName: form.owner_name || form.company_name,
+        mobile: digits,
+        idToken: firebaseIdToken,
       });
-      if (error) {
-        throw new Error(
-          "Account created but sign-in failed. Confirm email if required, then sign in and finish registration.",
-        );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not create account";
+      if (!/already registered|already exists|duplicate/i.test(msg)) {
+        throw new Error(msg);
       }
     }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password: form.password,
+    });
+    if (error) {
+      throw new Error(
+        /invalid login/i.test(error.message)
+          ? "This email is already registered. Sign in, or use a different email."
+          : error.message,
+      );
+    }
+
+    await refreshProfile();
+    await refreshRole();
     const { data: { user: after } } = await supabase.auth.getUser();
     if (!after?.id) throw new Error("Authentication failed after signup");
     await assignRole("partner").catch(() => {});
-    await (supabase as any)
+    await supabase
       .from("profiles")
-      .update({ phone: digits, full_name: form.owner_name || form.company_name, mobile_verified: true })
+      .update({ phone: digits, full_name: form.owner_name || form.company_name })
       .eq("id", after.id);
     return after.id;
   };
@@ -199,12 +209,13 @@ export default function PartnerRegisterLegacy() {
     }
     setOtpBusy(true);
     try {
-      await firebaseOtp.verifyOtp(otp);
+      const idToken = await firebaseOtp.verifyOtp(otp);
       try {
         if (!firebaseOtp.devBypass) await firebaseSignOut(getFirebaseAuth());
       } catch {
         /* ignore */
       }
+      setFirebaseIdToken(idToken);
       setMobileVerified(true);
       setOtpStep(false);
       toast.success("Mobile verified");
@@ -230,9 +241,9 @@ export default function PartnerRegisterLegacy() {
       await assignRole("partner").catch(() => {});
 
       const digits = form.mobile.replace(/\D/g, "");
-      await (supabase as any)
+      await supabase
         .from("profiles")
-        .update({ phone: digits, mobile_verified: true })
+        .update({ phone: digits, full_name: form.owner_name || form.company_name })
         .eq("id", userId);
 
       const { data: partner, error } = await (supabase as any)

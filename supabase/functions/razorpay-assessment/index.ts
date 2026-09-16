@@ -35,7 +35,14 @@ type RazorpayPayment = {
 };
 
 function isSettled(status?: string): boolean {
-  return status === "captured" || status === "authorized";
+  return status === "captured";
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let out = 0;
+  for (let i = 0; i < a.length; i++) out |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return out === 0;
 }
 
 async function hmacSha256Hex(secret: string, message: string): Promise<string> {
@@ -176,7 +183,7 @@ serve(async (req) => {
     if (action === "create_order") {
       const { data: row, error: rowErr } = await admin
         .from("worker_verification")
-        .select("id, stage, payment_status, user_id, razorpay_order_id")
+        .select("id, stage, payment_status, user_id, razorpay_order_id, payment_amount")
         .eq("user_id", payerId)
         .maybeSingle();
       if (rowErr) throw new Error(rowErr.message);
@@ -195,8 +202,26 @@ serve(async (req) => {
           return json(502, { error: findErr });
         }
         if (payment) {
-          const verification = await completePayment(payment.id, row.razorpay_order_id, payerId, assessmentFee);
-          return json(200, { recovered: true, verification, already_paid: true });
+          const { ok, json: full } = await rzpGet(`/payments/${payment.id}`);
+          const { ok: orderOk, json: order } = await rzpGet(`/orders/${row.razorpay_order_id}`);
+          const expectedPaise = resolveFeeInr(row.payment_amount ?? assessmentFee) * 100;
+          const noteUser = String(full?.notes?.user_id || order?.notes?.user_id || "").trim();
+          if (
+            ok &&
+            orderOk &&
+            isSettled(full?.status) &&
+            String(full?.order_id || "") === row.razorpay_order_id &&
+            Number(full?.amount) === expectedPaise &&
+            noteUser === payerId
+          ) {
+            const verification = await completePayment(
+              payment.id,
+              row.razorpay_order_id,
+              payerId,
+              resolveFeeInr(row.payment_amount ?? assessmentFee),
+            );
+            return json(200, { recovered: true, verification, already_paid: true });
+          }
         }
       }
 
@@ -247,10 +272,47 @@ serve(async (req) => {
       });
     }
 
+    async function assertPaymentOwned(
+      paymentId: string,
+      orderId: string,
+      expectedPaise: number,
+    ): Promise<{ verifiedBy: string }> {
+      const expected = await hmacSha256Hex(keySecret, `${orderId}|${paymentId}`);
+      const signature = String(body.razorpay_signature || "").trim();
+      let verifiedBy = "signature";
+      if (!signature || !timingSafeEqual(expected, signature)) {
+        verifiedBy = "razorpay_api";
+      }
+
+      const { ok, json: payment } = await rzpGet(`/payments/${paymentId}`);
+      if (!ok) {
+        throw Object.assign(new Error(payment?.error?.description || "Payment could not be confirmed"), {
+          status: 400,
+        });
+      }
+      if (!isSettled(payment?.status)) {
+        throw Object.assign(new Error("Payment is not captured"), { status: 400 });
+      }
+      if (String(payment?.order_id || "") !== orderId) {
+        throw Object.assign(new Error("Payment does not belong to this order"), { status: 400 });
+      }
+      const capturedPaise = Number(payment?.amount);
+      if (!Number.isFinite(capturedPaise) || capturedPaise !== expectedPaise) {
+        throw Object.assign(new Error("Payment amount does not match this assessment"), { status: 400 });
+      }
+      const noteUser = String(payment?.notes?.user_id || "").trim();
+      if (noteUser === payerId) return { verifiedBy };
+      const { ok: orderOk, json: order } = await rzpGet(`/orders/${orderId}`);
+      const orderUser = String(order?.notes?.user_id || "").trim();
+      if (!orderOk || orderUser !== payerId) {
+        throw Object.assign(new Error("Payment does not belong to this worker"), { status: 400 });
+      }
+      return { verifiedBy };
+    }
+
     if (action === "verify_payment") {
       const paymentId = String(body.razorpay_payment_id || "").trim();
       const orderId = String(body.razorpay_order_id || "").trim();
-      const signature = String(body.razorpay_signature || "").trim();
       if (!paymentId || !orderId) {
         return json(400, { error: "Missing payment verification fields" });
       }
@@ -268,33 +330,28 @@ serve(async (req) => {
       if (row.payment_status === "paid") {
         return json(200, { verification: row, already_paid: true });
       }
-      if (row.razorpay_order_id && row.razorpay_order_id !== orderId) {
+      const boundOrder = String(row.razorpay_order_id || "").trim();
+      if (!boundOrder) {
+        return json(400, { error: "No Razorpay order bound to this assessment" });
+      }
+      if (boundOrder !== orderId) {
         return json(400, { error: "Order does not match this assessment" });
       }
 
-      const expected = signature
-        ? await hmacSha256Hex(keySecret, `${orderId}|${paymentId}`)
-        : "";
-      let verifiedBy = "signature";
-
-      if (!signature || expected !== signature) {
-        // Signature missing/mismatched — confirm the real capture with Razorpay.
-        const { ok, json: payment } = await rzpGet(`/payments/${paymentId}`);
-        if (!ok) {
-          return json(400, {
-            error:
-              payment?.error?.description ||
-              "Invalid payment signature and payment could not be confirmed",
-          });
-        }
-        if (!isSettled(payment?.status) || String(payment?.order_id || "") !== orderId) {
-          return json(400, { error: "Payment is not captured for this order" });
-        }
-        verifiedBy = "razorpay_api";
+      const expectedPaise = resolveFeeInr(row.payment_amount ?? assessmentFee) * 100;
+      try {
+        const { verifiedBy } = await assertPaymentOwned(paymentId, orderId, expectedPaise);
+        const completed = await completePayment(
+          paymentId,
+          orderId,
+          payerId,
+          resolveFeeInr(row.payment_amount ?? assessmentFee),
+        );
+        return json(200, { verification: completed, already_paid: false, verified_by: verifiedBy });
+      } catch (err) {
+        const status = (err as { status?: number }).status || 400;
+        return json(status, { error: err instanceof Error ? err.message : "Payment verification failed" });
       }
-
-      const completed = await completePayment(paymentId, orderId, payerId, assessmentFee);
-      return json(200, { verification: completed, already_paid: false, verified_by: verifiedBy });
     }
 
     if (action === "recover_payment") {
@@ -312,10 +369,14 @@ serve(async (req) => {
         return json(200, { verification: row, already_paid: true });
       }
 
-      const targetOrder = orderId || String(row.razorpay_order_id || "");
-      if (!targetOrder && !paymentId) {
-        return json(400, { error: "No Razorpay order or payment to recover" });
+      const boundOrder = String(row.razorpay_order_id || "").trim();
+      if (!boundOrder) {
+        return json(400, { error: "No Razorpay order bound to this assessment" });
       }
+      if (orderId && orderId !== boundOrder) {
+        return json(400, { error: "Order does not match this assessment" });
+      }
+      const targetOrder = boundOrder;
 
       if (!paymentId) {
         const { payment, error: findErr } = await findSettledPayment(targetOrder);
@@ -325,19 +386,22 @@ serve(async (req) => {
           });
         }
         paymentId = payment.id;
-      } else {
-        const { ok, json: payment } = await rzpGet(`/payments/${paymentId}`);
-        if (!ok || !isSettled(payment?.status)) {
-          return json(400, {
-            error: payment?.error?.description || "Payment is not captured",
-          });
-        }
-        if (targetOrder && String(payment?.order_id || "") !== targetOrder) {
-          return json(400, { error: "Payment does not belong to this order" });
-        }
       }
 
-      const verification = await completePayment(paymentId, targetOrder, payerId, assessmentFee);
+      const expectedPaise = resolveFeeInr(row.payment_amount ?? assessmentFee) * 100;
+      try {
+        await assertPaymentOwned(paymentId, targetOrder, expectedPaise);
+      } catch (err) {
+        const status = (err as { status?: number }).status || 400;
+        return json(status, { error: err instanceof Error ? err.message : "Payment recovery failed" });
+      }
+
+      const verification = await completePayment(
+        paymentId,
+        targetOrder,
+        payerId,
+        resolveFeeInr(row.payment_amount ?? assessmentFee),
+      );
       return json(200, { verification, recovered: true });
     }
 

@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.worker-otp-login]
 verify_jwt = false
+
+[functions.phone-verified-account]
+verify_jwt = false
+
+[functions.purge-storage]
+verify_jwt = false
