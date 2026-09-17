@@ -4809,9 +4809,9 @@ export type Database = {
       worker_skill_quiz_items: {
         Row: {
           active: boolean
+          correct_option: string | null
           created_at: string
           expected_answer: boolean
-          correct_option: string | null
           id: string
           image_url: string | null
           options: Json | null
@@ -4825,9 +4825,9 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          correct_option?: string | null
           created_at?: string
           expected_answer?: boolean
-          correct_option?: string | null
           id?: string
           image_url?: string | null
           options?: Json | null
@@ -4841,9 +4841,9 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          correct_option?: string | null
           created_at?: string
           expected_answer?: boolean
-          correct_option?: string | null
           id?: string
           image_url?: string | null
           options?: Json | null
@@ -6094,7 +6094,11 @@ export type Database = {
         Returns: boolean
       }
       resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
-      resolve_worker_auth_email: { Args: { p_identifier: string }; Returns: string }
+      resolve_worker_auth_email: {
+        Args: { p_identifier: string }
+        Returns: string
+      }
+      resolve_worker_quiz_item_id: { Args: { p_raw: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
       submit_worker_quiz: {
