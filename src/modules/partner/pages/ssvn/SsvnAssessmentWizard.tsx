@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import PartnerLayout from '../../layout/PartnerLayout';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import { adminNavGroups, adminProfileMenu } from '@/config/adminNav';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,6 +83,29 @@ type LocalKycClip = {
   durationSeconds: number;
 };
 
+function WizardFrame({
+  isAdmin,
+  children,
+}: {
+  isAdmin: boolean;
+  children: ReactNode;
+}) {
+  if (isAdmin) {
+    return (
+      <DashboardLayout
+        navGroups={adminNavGroups}
+        portalLabel="Admin"
+        portalName="Admin"
+        portalHomePath="/admin/dashboard"
+        profileMenuItems={adminProfileMenu}
+      >
+        {children}
+      </DashboardLayout>
+    );
+  }
+  return <PartnerLayout>{children}</PartnerLayout>;
+}
+
 function evidenceHint(media: AssessmentMediaRow[]) {
   const s = practicalEvidenceSummary(media);
   return {
@@ -92,8 +117,11 @@ function evidenceHint(media: AssessmentMediaRow[]) {
 
 export default function SsvnAssessmentWizard() {
   const { assessmentId } = useParams<{ assessmentId: string }>();
-  const { partner } = useCurrentPartner();
-  const { profile } = useAuth();
+  const { partner, loading: partnerLoading } = useCurrentPartner();
+  const { profile, hasRole } = useAuth();
+  const isAdmin = hasRole('admin');
+  const inboxPath = isAdmin ? '/admin/trade-tests' : '/partner/ssvn/inbox';
+  const inboxLabel = isAdmin ? 'Trade tests' : 'Inbox';
   const defaultOperator = profile?.full_name?.trim() || profile?.email || '';
 
   const [row, setRow] = useState<AssessmentRow | null>(null);
@@ -198,43 +226,44 @@ export default function SsvnAssessmentWizard() {
     file: File,
     kind: Parameters<typeof uploadAssessmentEvidence>[3],
   ) => {
-    if (!partner?.id || !row) throw new Error('Missing partner');
-    return uploadAssessmentEvidence(partner.id, row.id, file, kind);
+    if (!row) throw new Error('Missing assessment');
+    const folder = partner?.id || row.partner_id || 'admin';
+    return uploadAssessmentEvidence(folder, row.id, file, kind);
   };
 
-  if (loading) {
+  if (loading || (!isAdmin && partnerLoading)) {
     return (
-      <PartnerLayout>
+      <WizardFrame isAdmin={isAdmin}>
         <div className="flex items-center gap-2 text-muted-foreground py-16">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading assessment…
         </div>
-      </PartnerLayout>
+      </WizardFrame>
     );
   }
 
-  if (!row || !partner?.id) {
+  if (!row || (!isAdmin && !partner?.id)) {
     return (
-      <PartnerLayout>
+      <WizardFrame isAdmin={isAdmin}>
         <Card>
           <CardContent className="p-8 text-center space-y-3">
             <p className="text-muted-foreground">Assessment not found.</p>
             <Button asChild variant="outline">
-              <Link to="/partner/ssvn/inbox">Back to inbox</Link>
+              <Link to={inboxPath}>Back to {inboxLabel.toLowerCase()}</Link>
             </Button>
           </CardContent>
         </Card>
-      </PartnerLayout>
+      </WizardFrame>
     );
   }
 
   return (
-    <PartnerLayout>
+    <WizardFrame isAdmin={isAdmin}>
       <div className="space-y-5 max-w-3xl">
         <div className="flex items-start justify-between gap-3">
           <div>
             <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-              <Link to="/partner/ssvn/inbox">
-                <ArrowLeft className="h-4 w-4 mr-1" /> Inbox
+              <Link to={inboxPath}>
+                <ArrowLeft className="h-4 w-4 mr-1" /> {inboxLabel}
               </Link>
             </Button>
             <h1 className="text-2xl font-bold font-heading">
@@ -926,6 +955,6 @@ export default function SsvnAssessmentWizard() {
           </Card>
         )}
       </div>
-    </PartnerLayout>
+    </WizardFrame>
   );
 }

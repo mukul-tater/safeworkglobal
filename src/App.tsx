@@ -38,6 +38,7 @@ import ItiDashboard from "./modules/partner/pages/iti/ItiDashboard";
 import ConsultantDashboard from "./modules/partner/pages/consultant/ConsultantDashboard";
 import PartnerLoginChooser from "./modules/partner/pages/PartnerLoginChooser";
 import AdminTradeTestAllocations from "./pages/admin/AdminTradeTestAllocations";
+import AdminTradeTestsPage from "./pages/admin/AdminTradeTestsPage";
 import PartnerWallet from "./modules/partner/pages/shared/PartnerWallet";
 import PartnerReports from "./modules/partner/pages/shared/PartnerReports";
 import PartnerSupport from "./modules/partner/pages/shared/PartnerSupport";
@@ -428,6 +429,9 @@ function AppShell() {
             }
           />
           <Route path="/admin/trade-test-allocations" element={<AdminRoute><AdminTradeTestAllocations /></AdminRoute>} />
+          <Route path="/admin/trade-tests/:assessmentId" element={<AdminRoute><SsvnAssessmentWizard /></AdminRoute>} />
+          <Route path="/admin/trade-tests" element={<AdminRoute><AdminTradeTestsPage /></AdminRoute>} />
+          <Route path="/admin/interviews" element={<AdminRoute><InterviewerQueuePage /></AdminRoute>} />
           <Route path="/admin/document-verification" element={<AdminRoute><DocumentVerification /></AdminRoute>} />
           <Route path="/admin/id-verification" element={<AdminRoute><IDVerification /></AdminRoute>} />
           <Route path="/admin/ecr-management" element={<AdminRoute><ECRManagement /></AdminRoute>} />

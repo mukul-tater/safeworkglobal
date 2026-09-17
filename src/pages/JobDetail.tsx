@@ -641,10 +641,6 @@ export default function JobDetail() {
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium">{job.country}</span>
                   </div>
-                  <div className="space-y-1 pt-1">
-                    <span className="text-muted-foreground">Service fee</span>
-                    <JobServiceFee amount={job.service_charge} showWhenCharged />
-                  </div>
                 </CardContent>
               </Card>
             </div>

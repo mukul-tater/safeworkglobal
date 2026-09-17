@@ -232,8 +232,8 @@ export async function allocateAssessment(input: {
   centerId: string;
   appointmentDate: string;
   reportingWindow?: string;
-  /** Override / set SSVN partner for the centre when allocating. */
-  partnerId?: string;
+  /** Override / set SSVN partner. Pass `null` when an admin will conduct the test. */
+  partnerId?: string | null;
   /** Per-worker note shown on the journey (falls back to centre instructions). */
   instructions?: string;
 }): Promise<AssessmentRow> {
@@ -246,9 +246,12 @@ export async function allocateAssessment(input: {
   if (cErr) throw new Error(cErr.message);
   if (!center) throw new Error('Trade test centre not found or inactive');
 
-  const partnerId = input.partnerId || center.partner_id;
-  if (!partnerId) {
-    throw new Error('Select an SSVN partner for this centre (or link one on the centre).');
+  const adminConducts = input.partnerId === null;
+  const partnerId = adminConducts ? null : input.partnerId || center.partner_id;
+  if (!partnerId && !adminConducts) {
+    throw new Error(
+      'Select an SSVN partner for this centre, or choose Admin will conduct.',
+    );
   }
   if (input.partnerId && input.partnerId !== center.partner_id) {
     await adminLinkCenterPartner(center.id, input.partnerId);
@@ -305,6 +308,38 @@ export async function listPartnerAssessments(
   filter?: 'inbox' | 'today' | 'active' | 'history',
 ): Promise<AssessmentRow[]> {
   let q = supabase.from('assessments').select('*').eq('partner_id', partnerId);
+  if (filter === 'inbox') q = q.eq('status', 'allocated');
+  else if (filter === 'today') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    q = q.gte('scheduled_at', today.toISOString()).lt('scheduled_at', tomorrow.toISOString());
+  } else if (filter === 'active') {
+    q = q.in('status', [
+      'accepted',
+      'scheduled',
+      'checked_in',
+      'kyc_done',
+      'running',
+      'centre_submitted',
+    ]);
+  } else if (filter === 'history') {
+    q = q.in('status', ['completed', 'under_review', 'centre_rejected', 'retest']);
+  }
+  q = q.order('scheduled_at', { ascending: filter !== 'history' });
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return enrichAssessments((data || []) as AssessmentRow[]);
+}
+
+/** Admin — all assessments, optionally filtered by worker. */
+export async function listAdminAssessments(
+  filter?: 'inbox' | 'today' | 'active' | 'history',
+  workerId?: string,
+): Promise<AssessmentRow[]> {
+  let q = supabase.from('assessments').select('*');
+  if (workerId) q = q.eq('worker_id', workerId);
   if (filter === 'inbox') q = q.eq('status', 'allocated');
   else if (filter === 'today') {
     const today = new Date();

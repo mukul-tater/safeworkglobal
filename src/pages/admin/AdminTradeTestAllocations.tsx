@@ -183,16 +183,25 @@ export default function AdminTradeTestAllocations() {
     }
     setActing(userId);
     try {
+      const rawPartner = partnerByWorker[userId];
+      const partnerId =
+        rawPartner === '__admin__' || (!rawPartner && partners.length === 0)
+          ? null
+          : rawPartner || undefined;
       await allocateAssessment({
         workerId: userId,
         verificationId,
         centerId,
         appointmentDate,
         reportingWindow: TRADE_TEST_REPORTING_WINDOW,
-        partnerId: partnerByWorker[userId] || undefined,
+        partnerId,
         instructions: instrByWorker[userId]?.trim() || undefined,
       });
-      toast.success('Candidate allocated — waiting for centre accept');
+      toast.success(
+        partnerId === null
+          ? 'Allocated — open Conduct trade tests to run it'
+          : 'Candidate allocated — waiting for centre accept',
+      );
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Allocate failed');
@@ -232,12 +241,17 @@ export default function AdminTradeTestAllocations() {
           <div>
             <h1 className="text-2xl font-bold font-heading">Assign trade test</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Assign candidates to a centre and SSVN partner, then quality-review submissions.
+              Assign candidates to a centre. Choose <strong>Admin will conduct</strong> when no SSVN partner is live, then open Conduct trade tests.
             </p>
           </div>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/admin/partners-v2?type=SSVN">Approve trade test partners</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/trade-tests">Conduct trade tests</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/partners-v2?type=SSVN">Approve trade test partners</Link>
+            </Button>
+          </div>
         </div>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
@@ -410,7 +424,10 @@ export default function AdminTradeTestAllocations() {
                       <div className="space-y-1.5">
                         <Label>SSVN partner</Label>
                         <Select
-                          value={partnerByWorker[w.user_id] || '__auto__'}
+                          value={
+                            partnerByWorker[w.user_id] ||
+                            (partners.length === 0 ? '__admin__' : '__auto__')
+                          }
                           onValueChange={(v) =>
                             setPartnerByWorker((prev) => ({
                               ...prev,
@@ -422,6 +439,7 @@ export default function AdminTradeTestAllocations() {
                             <SelectValue placeholder="Linked / select" />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="__admin__">Admin will conduct (no partner)</SelectItem>
                             <SelectItem value="__auto__">Use centre-linked partner</SelectItem>
                             {partners.map((p) => (
                               <SelectItem key={p.id} value={p.id}>
@@ -472,9 +490,8 @@ export default function AdminTradeTestAllocations() {
               ))
             )}
             {partners.length === 0 && (
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                No approved SSVN partners yet. Create/approve an SSVN partner, then select it when allocating
-                (links the centre automatically).
+              <p className="text-xs text-muted-foreground">
+                No approved SSVN partners yet. Choose <strong>Admin will conduct</strong> when allocating, then run the test from Conduct trade tests.
               </p>
             )}
           </div>

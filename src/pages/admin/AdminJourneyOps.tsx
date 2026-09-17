@@ -17,6 +17,7 @@ import { Loader2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { displayableEmail } from '@/lib/workerAuthEmail';
+import { useAuth } from '@/contexts/AuthContext';
 import { ASSESSMENT_FEE_INR } from '@/modules/worker-verification/constants';
 import {
   approveMedical,
@@ -68,6 +69,7 @@ const fmt = (v?: string | null) =>
   v ? new Date(v).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
 export default function AdminJourneyOps() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab: OpsTab = isOpsTab(searchParams.get('tab')) ? searchParams.get('tab') as OpsTab : 'kyc';
   const setTab = (next: OpsTab) => setSearchParams({ tab: next }, { replace: true });
@@ -76,7 +78,7 @@ export default function AdminJourneyOps() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, Record<string, string>>>({});
   const [interviewers, setInterviewers] = useState<
-    { user_id: string; full_name: string | null; email: string | null }[]
+    { user_id: string; full_name: string | null; email: string | null; isAdmin?: boolean }[]
   >([]);
   const [templates, setTemplates] = useState<BondTemplate[]>([]);
   const [tplForm, setTplForm] = useState({
@@ -154,12 +156,40 @@ export default function AdminJourneyOps() {
 
   useEffect(() => {
     if (tab === 'interview') {
-      listInterviewers().then(setInterviewers).catch(() => setInterviewers([]));
+      listInterviewers()
+        .then((list) => {
+          if (user && !list.some((i) => i.user_id === user.id)) {
+            list = [
+              ...list,
+              {
+                user_id: user.id,
+                full_name: (user.user_metadata?.full_name as string) || null,
+                email: user.email ?? null,
+                isAdmin: true,
+              },
+            ];
+          }
+          setInterviewers(list);
+        })
+        .catch(() => {
+          if (user) {
+            setInterviewers([
+              {
+                user_id: user.id,
+                full_name: (user.user_metadata?.full_name as string) || null,
+                email: user.email ?? null,
+                isAdmin: true,
+              },
+            ]);
+          } else {
+            setInterviewers([]);
+          }
+        });
     }
     if (tab === 'bond') {
       listBondTemplates().then(setTemplates).catch(() => setTemplates([]));
     }
-  }, [tab]);
+  }, [tab, user]);
 
   const run = async (id: string, fn: () => Promise<unknown>, ok: string) => {
     setActingId(id);
@@ -248,7 +278,7 @@ export default function AdminJourneyOps() {
               <div className="space-y-1">
                 <Label className="text-xs">Interviewer</Label>
                 <Select
-                  value={field(r.user_id, 'interviewer')}
+                  value={field(r.user_id, 'interviewer') || user?.id || ''}
                   onValueChange={(v) => setField(r.user_id, 'interviewer', v)}
                 >
                   <SelectTrigger><SelectValue placeholder="Assign interviewer" /></SelectTrigger>
@@ -256,15 +286,14 @@ export default function AdminJourneyOps() {
                     {interviewers.map((i) => (
                       <SelectItem key={i.user_id} value={i.user_id}>
                         {i.full_name || i.email || i.user_id.slice(0, 8)}
+                        {i.isAdmin ? ' (admin)' : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {interviewers.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    No interviewer accounts yet — grant the interviewer role from All Users.
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  Defaults to you. Admins can conduct interviews while the interviewer portal is Coming Soon.
+                </p>
               </div>
               <Button
                 size="sm"
@@ -272,7 +301,7 @@ export default function AdminJourneyOps() {
                 onClick={() => {
                   const when = field(r.user_id, 'when');
                   const link = field(r.user_id, 'link');
-                  const who = field(r.user_id, 'interviewer');
+                  const who = field(r.user_id, 'interviewer') || user?.id;
                   if (!when || !link || !who) {
                     toast.error('Date, meeting link and interviewer are all required');
                     return;
@@ -369,6 +398,9 @@ export default function AdminJourneyOps() {
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm">
               <Link to="/admin/trade-test-allocations">Assign centre &amp; partner</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to={`/admin/trade-tests?worker=${r.user_id}`}>Conduct this trade test</Link>
             </Button>
             <Button asChild size="sm" variant="outline">
               <Link to="/admin/partners-v2?type=SSVN">Approve trade test partners</Link>
@@ -662,6 +694,25 @@ export default function AdminJourneyOps() {
       <p className="text-sm text-muted-foreground mb-4">
         GCC journey in stage order: KYC → interview → payment → trade test → medical → bond → PDOT → deployment.
       </p>
+
+      {tab === 'interview' && (
+        <p className="text-sm text-muted-foreground mb-4">
+          Admins can be assigned as interviewer.{' '}
+          <Link to="/admin/interviews" className="text-primary underline">
+            Open the interview queue
+          </Link>{' '}
+          to join the meeting and record the decision.
+        </p>
+      )}
+      {tab === 'trade_test' && (
+        <p className="text-sm text-muted-foreground mb-4">
+          Admins can run the trade test while SSVN partners are Coming Soon.{' '}
+          <Link to="/admin/trade-tests" className="text-primary underline">
+            Conduct trade tests
+          </Link>
+          {' '}after allocating a centre.
+        </p>
+      )}
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as OpsTab)} className="mb-4">
         <TabsList className="flex-wrap h-auto">

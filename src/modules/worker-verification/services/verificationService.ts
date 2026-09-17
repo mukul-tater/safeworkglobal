@@ -297,14 +297,21 @@ export async function loadActiveBondTemplate(): Promise<BondTemplate | null> {
 
 /** Admin — list users holding the interviewer role (for assignment dropdowns). */
 export async function listInterviewers(): Promise<
-  { user_id: string; full_name: string | null; email: string | null }[]
+  { user_id: string; full_name: string | null; email: string | null; isAdmin: boolean }[]
 > {
   const { data: roles, error } = await supabase
     .from('user_roles')
-    .select('user_id')
-    .eq('role', 'interviewer' as never);
+    .select('user_id, role')
+    .in('role', ['interviewer', 'admin'] as never);
   if (error) throw new Error(error.message);
-  const ids = (roles || []).map((r) => (r as { user_id: string }).user_id);
+  const byId = new Map<string, { isAdmin: boolean }>();
+  for (const row of roles || []) {
+    const r = row as { user_id: string; role: string };
+    const prev = byId.get(r.user_id) || { isAdmin: false };
+    if (r.role === 'admin') prev.isAdmin = true;
+    byId.set(r.user_id, prev);
+  }
+  const ids = [...byId.keys()];
   if (!ids.length) return [];
   const { data: profiles } = await supabase
     .from('profiles')
@@ -312,7 +319,12 @@ export async function listInterviewers(): Promise<
     .in('id', ids);
   return ids.map((id) => {
     const p = (profiles || []).find((x) => x.id === id);
-    return { user_id: id, full_name: p?.full_name ?? null, email: p?.email ?? null };
+    return {
+      user_id: id,
+      full_name: p?.full_name ?? null,
+      email: p?.email ?? null,
+      isAdmin: byId.get(id)?.isAdmin ?? false,
+    };
   });
 }
 

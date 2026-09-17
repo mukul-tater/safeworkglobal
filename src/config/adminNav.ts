@@ -2,7 +2,7 @@ import {
   LayoutDashboard, TrendingUp, Users, FileCheck, CreditCard, Plane, Shield,
   BarChart3, AlertTriangle, Mail, Store, HardHat, Building2, FileText, Briefcase, UserCog,
   MessageSquare, ShieldAlert, IndianRupee,
-  ClipboardCheck, Wallet, BarChartBig, Network, BookOpen, PlusCircle, MapPin,
+  ClipboardCheck, Wallet, BarChartBig, Network, BookOpen, PlusCircle, MapPin, Video, Wrench,
 } from "lucide-react";
 import type { NavGroup } from "@/components/layout/DashboardSidebar";
 
@@ -21,7 +21,9 @@ export const adminNavGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { path: "/admin/journey-ops", icon: ClipboardCheck, label: "Worker queue" },
+      { path: "/admin/interviews", icon: Video, label: "Conduct interviews" },
       { path: "/admin/trade-test-allocations", icon: MapPin, label: "Assign trade test" },
+      { path: "/admin/trade-tests", icon: Wrench, label: "Conduct trade tests" },
       { path: "/admin/partners-v2?type=SSVN", icon: Store, label: "Trade test partners" },
     ],
   },
