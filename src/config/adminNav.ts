@@ -1,8 +1,8 @@
 import {
-  LayoutDashboard, TrendingUp, Users, FileCheck, CreditCard, Plane, CheckCircle, Shield,
+  LayoutDashboard, TrendingUp, Users, FileCheck, CreditCard, Plane, Shield,
   BarChart3, AlertTriangle, Mail, Store, HardHat, Building2, FileText, Briefcase, UserCog,
   MessageSquare, ShieldAlert, IndianRupee,
-  ClipboardCheck, Wallet, BarChartBig, Network, BookOpen, PlusCircle,
+  ClipboardCheck, Wallet, BarChartBig, Network, BookOpen, PlusCircle, MapPin,
 } from "lucide-react";
 import type { NavGroup } from "@/components/layout/DashboardSidebar";
 
@@ -14,6 +14,15 @@ export const adminNavGroups: NavGroup[] = [
       { path: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { path: "/admin/investor-dashboard", icon: TrendingUp, label: "Investor Dashboard" },
       { path: "/admin/reports", icon: BarChart3, label: "Reports" },
+    ],
+  },
+  {
+    label: "GCC Journey",
+    defaultOpen: true,
+    items: [
+      { path: "/admin/journey-ops", icon: ClipboardCheck, label: "Worker queue" },
+      { path: "/admin/trade-test-allocations", icon: MapPin, label: "Assign trade test" },
+      { path: "/admin/partners-v2?type=SSVN", icon: Store, label: "Trade test partners" },
     ],
   },
   {
@@ -32,7 +41,7 @@ export const adminNavGroups: NavGroup[] = [
       { path: "/admin/workers", icon: HardHat, label: "Workers" },
       { path: "/admin/employers", icon: Building2, label: "Employers" },
       { path: "/admin/employer-access", icon: Shield, label: "Employer Access" },
-      { path: "/admin/partners", icon: Store, label: "Partners" },
+      { path: "/admin/partners", icon: Store, label: "e-Mitra partners" },
       { path: "/admin/partner-workers", icon: UserCog, label: "E-Mitra Workers" },
       { path: "/admin/partner-rewards", icon: IndianRupee, label: "Partner Rewards" },
     ],
@@ -53,20 +62,15 @@ export const adminNavGroups: NavGroup[] = [
       { path: "/admin/jobs", icon: Briefcase, label: "All Jobs" },
       { path: "/admin/post-job", icon: PlusCircle, label: "Post a Job" },
       { path: "/admin/applications", icon: FileText, label: "Applications" },
-      { path: "/admin/job-verification", icon: CheckCircle, label: "Job Verification" },
     ],
   },
   {
-    label: "Verification",
+    label: "Records",
     items: [
-      { path: "/admin/verification-queue", icon: ClipboardCheck, label: "GCC Queue" },
-      { path: "/admin/journey-ops", icon: Plane, label: "Journey Ops" },
       { path: "/admin/quiz-cms", icon: BookOpen, label: "Quiz CMS (Test 1)" },
-      { path: "/admin/trade-test-allocations", icon: ClipboardCheck, label: "Trade Test Allocations" },
       { path: "/admin/document-verification", icon: FileCheck, label: "Documents" },
       { path: "/admin/id-verification", icon: CreditCard, label: "ID Verification" },
-      { path: "/admin/ecr-management", icon: Plane, label: "ECR Management" },
-      { path: "/admin/compliance", icon: Shield, label: "Compliance" },
+      { path: "/admin/ecr-management", icon: Plane, label: "ECR" },
     ],
   },
   {

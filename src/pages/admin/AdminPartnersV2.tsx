@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import AdminLayout from "./AdminLayout";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { adminNavGroups, adminProfileMenu } from "@/config/adminNav";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,8 @@ interface PartnerRow {
 }
 
 export default function AdminPartnersV2() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const typeCode = searchParams.get("type");
   const [rows, setRows] = useState<PartnerRow[]>([]);
   const [types, setTypes] = useState<{ id: string; code: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,8 +57,15 @@ export default function AdminPartnersV2() {
 
   useEffect(() => {
     (supabase as any).from("partner_types").select("id, code, name").eq("active", true).order("sort_order")
-      .then(({ data }: any) => setTypes(data ?? []));
-  }, []);
+      .then(({ data }: any) => {
+        const list = (data ?? []) as { id: string; code: string; name: string }[];
+        setTypes(list);
+        if (typeCode) {
+          const match = list.find((t) => t.code.toLowerCase() === typeCode.toLowerCase());
+          if (match) setTypeFilter(match.id);
+        }
+      });
+  }, [typeCode]);
 
   useEffect(() => { load(); }, [typeFilter, statusFilter]);
 
@@ -68,6 +79,23 @@ export default function AdminPartnersV2() {
       load();
     }
   };
+
+  const onTypeChange = (id: string) => {
+    setTypeFilter(id);
+    if (id === "all") {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+    const code = types.find((t) => t.id === id)?.code;
+    if (code) setSearchParams({ type: code }, { replace: true });
+  };
+
+  const selectedType = types.find((t) => t.id === typeFilter);
+  const heading = selectedType?.code === "SSVN"
+    ? "Trade test partners"
+    : selectedType
+      ? selectedType.name
+      : "Partners";
 
   const filtered = rows.filter((r) => {
     if (!q) return true;
@@ -83,11 +111,13 @@ export default function AdminPartnersV2() {
   });
 
   return (
-    <AdminLayout>
+    <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Partner Ecosystem</h1>
-          <p className="text-muted-foreground">Manage all partner organizations across every network</p>
+          <h1 className="text-2xl md:text-3xl font-bold">{heading}</h1>
+          <p className="text-sm text-muted-foreground">
+            Approve SSVN trade test centres (and other partner types). After approval, assign workers under Assign trade test.
+          </p>
         </div>
 
         <Card className="p-4 flex flex-wrap gap-3 items-end">
@@ -97,7 +127,7 @@ export default function AdminPartnersV2() {
           </div>
           <div className="w-48">
             <label className="text-xs text-muted-foreground">Type</label>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <Select value={typeFilter} onValueChange={onTypeChange}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All types</SelectItem>
@@ -178,6 +208,6 @@ export default function AdminPartnersV2() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </DashboardLayout>
   );
 }

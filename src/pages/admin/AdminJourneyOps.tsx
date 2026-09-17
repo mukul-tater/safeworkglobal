@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { adminNavGroups, adminProfileMenu } from '@/config/adminNav';
 import { Card } from '@/components/ui/card';
@@ -16,11 +17,18 @@ import { Loader2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { displayableEmail } from '@/lib/workerAuthEmail';
+import { ASSESSMENT_FEE_INR } from '@/modules/worker-verification/constants';
 import {
+  approveMedical,
+  approveTradeTest,
   createBondTemplate,
+  getServiceChargesForJobs,
   listBondTemplates,
   listInterviewers,
+  markPaymentPaid,
   markPdotCompleted,
+  medicalTestDocumentsComplete,
+  recordInterviewScore,
   reviewWorkerKyc,
   scheduleWorkerAssessment,
   scheduleWorkerInterview,
@@ -31,17 +39,21 @@ import {
 import type { BondTemplate } from '@/modules/worker-verification/types';
 import AdminBondSecurityReview from '@/pages/admin/AdminBondSecurityReview';
 
-type OpsTab = 'kyc' | 'interview' | 'trade_test' | 'medical' | 'bond' | 'pdot' | 'deployment';
+type OpsTab = 'kyc' | 'interview' | 'payment' | 'trade_test' | 'medical' | 'bond' | 'pdot' | 'deployment';
 
 const TABS: { value: OpsTab; label: string }[] = [
-  { value: 'kyc', label: 'KYC review' },
+  { value: 'kyc', label: 'KYC' },
   { value: 'interview', label: 'Interviews' },
+  { value: 'payment', label: 'Payments' },
   { value: 'trade_test', label: 'Trade test' },
   { value: 'medical', label: 'Medical' },
-  { value: 'bond', label: 'Bond & Security' },
+  { value: 'bond', label: 'Bond' },
   { value: 'pdot', label: 'PDOT' },
   { value: 'deployment', label: 'Deployment' },
 ];
+
+const isOpsTab = (value: string | null): value is OpsTab =>
+  TABS.some((t) => t.value === value);
 
 type Row = Record<string, any> & {
   id: string;
@@ -56,7 +68,9 @@ const fmt = (v?: string | null) =>
   v ? new Date(v).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
 export default function AdminJourneyOps() {
-  const [tab, setTab] = useState<OpsTab>('kyc');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab: OpsTab = isOpsTab(searchParams.get('tab')) ? searchParams.get('tab') as OpsTab : 'kyc';
+  const setTab = (next: OpsTab) => setSearchParams({ tab: next }, { replace: true });
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
@@ -89,6 +103,7 @@ export default function AdminJourneyOps() {
 
       if (tab === 'kyc') query = query.eq('kyc_status', 'submitted');
       else if (tab === 'interview') query = query.in('stage', ['kyc', 'interview', 'awaiting_interview']);
+      else if (tab === 'payment') query = query.eq('stage', 'awaiting_payment');
       else if (tab === 'trade_test') query = query.eq('stage', 'trade_test');
       else if (tab === 'medical') query = query.eq('stage', 'medical');
       else if (tab === 'bond') query = query.eq('stage', 'bond');
@@ -112,6 +127,17 @@ export default function AdminJourneyOps() {
           r.phone = p?.phone;
           r.email = displayableEmail(p?.email) || null;
         });
+        if (tab === 'payment') {
+          const jobIds = list.map((r) => r.journey_job_id).filter((id): id is string => Boolean(id));
+          if (jobIds.length) {
+            const fees = await getServiceChargesForJobs(jobIds);
+            list.forEach((r) => {
+              r.service_charge = r.journey_job_id
+                ? fees.get(r.journey_job_id) ?? ASSESSMENT_FEE_INR
+                : ASSESSMENT_FEE_INR;
+            });
+          }
+        }
       }
       setRows(list);
     } catch (e) {
@@ -269,37 +295,129 @@ export default function AdminJourneyOps() {
               </Button>
             </>
           )}
+          {r.stage === 'awaiting_interview' && (
+            <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2 items-end pt-2 border-t border-border">
+              <div className="space-y-1">
+                <Label className="text-xs">Score (0–100)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={field(r.user_id, 'score') || '75'}
+                  onChange={(e) => setField(r.user_id, 'score', e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Notes</Label>
+                <Input
+                  value={field(r.user_id, 'scoreNotes')}
+                  onChange={(e) => setField(r.user_id, 'scoreNotes', e.target.value)}
+                />
+              </div>
+              <Button
+                size="sm"
+                disabled={busy}
+                onClick={() =>
+                  void run(
+                    r.user_id,
+                    () =>
+                      recordInterviewScore(
+                        r.user_id,
+                        Number(field(r.user_id, 'score') || 75),
+                        field(r.user_id, 'scoreNotes'),
+                      ),
+                    'Interview scored — moved to payment',
+                  )
+                }
+              >
+                Save score
+              </Button>
+            </div>
+          )}
         </div>
       );
     }
 
-    if (tab === 'trade_test' || tab === 'medical') {
-      const kind = tab === 'trade_test' ? 'trade_test' : 'medical';
+    if (tab === 'payment') {
+      const fee = r.service_charge ?? ASSESSMENT_FEE_INR;
+      return (
+        <Button
+          size="sm"
+          disabled={busy}
+          onClick={() =>
+            void run(
+              r.user_id,
+              () => markPaymentPaid(r.user_id, fee, { provider: 'admin_manual' }),
+              'Payment marked paid',
+            )
+          }
+        >
+          {busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+          Mark payment received (₹{Number(fee).toLocaleString('en-IN')})
+        </Button>
+      );
+    }
+
+    if (tab === 'trade_test') {
+      return (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Status: <strong>{r.trade_test_status || 'pending'}</strong>
+            {r.trade_test_center_name ? ` · Centre: ${r.trade_test_center_name}` : ' · Centre not assigned'}
+            {r.trade_test_reporting_window ? ` · Report ${r.trade_test_reporting_window}` : ''}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm">
+              <Link to="/admin/trade-test-allocations">Assign centre &amp; partner</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/admin/partners-v2?type=SSVN">Approve trade test partners</Link>
+            </Button>
+            {r.trade_test_result_url && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void run(r.user_id, () => approveTradeTest(r.user_id), 'Trade test passed')}
+              >
+                Legacy approve upload
+              </Button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (tab === 'medical') {
       return (
         <div className="space-y-2">
           <div className="text-xs text-muted-foreground">
-            Status: <strong>{(tab === 'trade_test' ? r.trade_test_status : r.medical_status) || 'pending'}</strong>
-            {' · '}Scheduled: {fmt(tab === 'trade_test' ? r.trade_test_scheduled_at : r.medical_scheduled_at)}
+            Status: <strong>{r.medical_status || 'pending'}</strong>
+            {' · '}Scheduled: {fmt(r.medical_scheduled_at)}
           </div>
-          {tab === 'medical' && (
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-              {(r.medical_blood_report_url || r.medical_result_url) && (
-                <a className="text-primary underline" href={r.medical_blood_report_url || r.medical_result_url} target="_blank" rel="noreferrer">
-                  Blood report
-                </a>
-              )}
-              {r.medical_xray_report_url && (
-                <a className="text-primary underline" href={r.medical_xray_report_url} target="_blank" rel="noreferrer">
-                  X-ray report
-                </a>
-              )}
-              {r.medical_xray_photo_url && (
-                <a className="text-primary underline" href={r.medical_xray_photo_url} target="_blank" rel="noreferrer">
-                  X-ray photo
-                </a>
-              )}
-            </div>
-          )}
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+            {(r.medical_blood_report_url || r.medical_result_url) ? (
+              <a className="text-primary underline" href={r.medical_blood_report_url || r.medical_result_url} target="_blank" rel="noreferrer">
+                Blood report
+              </a>
+            ) : (
+              <span className="text-muted-foreground">Blood report missing</span>
+            )}
+            {r.medical_xray_report_url ? (
+              <a className="text-primary underline" href={r.medical_xray_report_url} target="_blank" rel="noreferrer">
+                X-ray report
+              </a>
+            ) : (
+              <span className="text-muted-foreground">X-ray report missing</span>
+            )}
+            {r.medical_xray_photo_url ? (
+              <a className="text-primary underline" href={r.medical_xray_photo_url} target="_blank" rel="noreferrer">
+                X-ray photo
+              </a>
+            ) : (
+              <span className="text-muted-foreground">X-ray photo missing</span>
+            )}
+          </div>
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-xs">Date &amp; time</Label>
@@ -323,32 +441,42 @@ export default function AdminJourneyOps() {
             value={field(r.user_id, 'instr')}
             onChange={(e) => setField(r.user_id, 'instr', e.target.value)}
           />
-          <Button
-            size="sm"
-            disabled={busy}
-            onClick={() => {
-              const when = field(r.user_id, 'when');
-              if (!when) {
-                toast.error('Pick a date and time');
-                return;
-              }
-              void run(
-                r.user_id,
-                () =>
-                  scheduleWorkerAssessment({
-                    userId: r.user_id,
-                    kind: kind as 'trade_test' | 'medical',
-                    scheduledAt: new Date(when).toISOString(),
-                    place: field(r.user_id, 'place'),
-                    instructions: field(r.user_id, 'instr'),
-                  }),
-                'Schedule sent to worker',
-              );
-            }}
-          >
-            {busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-            Save schedule
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                const when = field(r.user_id, 'when');
+                if (!when) {
+                  toast.error('Pick a date and time');
+                  return;
+                }
+                void run(
+                  r.user_id,
+                  () =>
+                    scheduleWorkerAssessment({
+                      userId: r.user_id,
+                      kind: 'medical',
+                      scheduledAt: new Date(when).toISOString(),
+                      place: field(r.user_id, 'place'),
+                      instructions: field(r.user_id, 'instr'),
+                    }),
+                  'Schedule sent to worker',
+                );
+              }}
+            >
+              {busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Save schedule
+            </Button>
+            <Button
+              size="sm"
+              disabled={busy || !medicalTestDocumentsComplete(r)}
+              onClick={() => void run(r.user_id, () => approveMedical(r.user_id), 'Medical passed')}
+            >
+              Approve medical
+            </Button>
+          </div>
         </div>
       );
     }
@@ -530,10 +658,9 @@ export default function AdminJourneyOps() {
       portalName="Admin Panel"
       profileMenuItems={adminProfileMenu}
     >
-      <h1 className="text-2xl md:text-3xl font-bold mb-2">Journey operations</h1>
+      <h1 className="text-2xl md:text-3xl font-bold mb-2">Worker queue</h1>
       <p className="text-sm text-muted-foreground mb-4">
-        KYC verification, interview scheduling and interviewer assignment, trade test and medical
-        appointments, bond receipt, PDOT training, and the deployment checklist.
+        GCC journey in stage order: KYC → interview → payment → trade test → medical → bond → PDOT → deployment.
       </p>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as OpsTab)} className="mb-4">

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { adminNavGroups, adminProfileMenu } from '@/config/adminNav';
 import { Card, CardContent } from '@/components/ui/card';
@@ -227,11 +228,16 @@ export default function AdminTradeTestAllocations() {
       profileMenuItems={adminProfileMenu}
     >
       <div className="space-y-6 max-w-5xl">
-        <div>
-          <h1 className="text-2xl font-bold font-heading">Trade Test Allocations</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Assessment Allocation Engine — assign candidates to centres, then quality-review submissions.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold font-heading">Assign trade test</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Assign candidates to a centre and SSVN partner, then quality-review submissions.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/partners-v2?type=SSVN">Approve trade test partners</Link>
+          </Button>
         </div>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>

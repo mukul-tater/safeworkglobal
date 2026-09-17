@@ -39,9 +39,21 @@ interface DashboardSidebarProps {
 }
 
 export function itemIsActive(item: NavItem, pathname: string, search: string): boolean {
+  const qIndex = item.path.indexOf("?");
+  const itemPath = qIndex === -1 ? item.path : item.path.slice(0, qIndex);
+  const itemQuery = qIndex === -1 ? "" : item.path.slice(qIndex + 1);
+
   const pathMatches =
-    pathname === item.path || pathname.startsWith(`${item.path}/`);
+    pathname === itemPath || pathname.startsWith(`${itemPath}/`);
   if (!pathMatches) return false;
+
+  if (itemQuery) {
+    const wanted = new URLSearchParams(itemQuery);
+    const current = new URLSearchParams(search);
+    for (const [key, value] of wanted.entries()) {
+      if (current.get(key) !== value) return false;
+    }
+  }
 
   const journey = new URLSearchParams(search).get("journey");
 
