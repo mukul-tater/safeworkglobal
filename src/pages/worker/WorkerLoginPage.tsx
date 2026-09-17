@@ -37,7 +37,6 @@ import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
-import { exchangeWorkerOtpLogin } from '@/lib/workerOtpLogin';
 import { normalizeIndianMobile } from '@/lib/validations/common';
 
 type Step = 'identifier' | 'login' | 'otp' | 'signup' | 'conflict';
@@ -47,14 +46,13 @@ async function resolveAuthEmail(identifier: string): Promise<string | null> {
 }
 
 /**
- * Unified worker authentication — one Continue entry for login and signup.
- * Mobile login uses SMS OTP; email login uses password.
+ * Worker auth: password is the primary sign-in. SMS OTP is a secondary option
+ * that still opens the session with the same password (no edge function).
  */
 export default function WorkerLoginPage() {
   const navigate = useNavigate();
   const {
     login,
-    loginWithSession,
     isAuthenticated,
     role,
     isMobileVerified,
@@ -149,65 +147,113 @@ export default function WorkerLoginPage() {
     setLoading(false);
   };
 
-  const handleContinue = async () => {
-    setError('');
+  const gateExistingWorker = async (): Promise<boolean> => {
     const built = buildAuthContinueRequest('worker', method, email, mobile);
     if ('error' in built) {
       setError(built.error);
-      return;
+      return false;
     }
 
-    setLoading(true);
     const result = await continueAuth(built.request);
-
     if (result.nextStep === 'RATE_LIMITED' || result.nextStep === 'ERROR') {
       setError(result.error || AUTH_CONTINUE_MESSAGES.server);
-      setLoading(false);
-      return;
+      return false;
     }
     if (result.nextStep === 'ACCOUNT_CONFLICT') {
       setConflictMessage(result.error || AUTH_CONTINUE_MESSAGES.conflict);
       setWrongPortal(null);
       setStep('conflict');
-      setLoading(false);
-      return;
+      return false;
     }
     if (result.nextStep === 'WRONG_PORTAL') {
       setConflictMessage(result.error || AUTH_CONTINUE_MESSAGES.wrong_portal(result.portal));
       setWrongPortal(result.portal ?? null);
       setStep('conflict');
-      setLoading(false);
-      return;
+      return false;
     }
     if (result.nextStep === 'SIGNUP') {
       setStep('signup');
+      return false;
+    }
+    return true;
+  };
+
+  const completePasswordLogin = async () => {
+    const identifier = method === 'mobile' ? mobile : email;
+    const resolved = await resolveAuthEmail(identifier);
+    if (!resolved) {
+      setError(method === 'mobile' ? 'Enter a valid 10-digit Indian mobile number' : 'Please enter a valid email');
+      setLoading(false);
+      return;
+    }
+    if (!password) {
+      setError('Password is required');
       setLoading(false);
       return;
     }
 
-    if (method === 'mobile') {
-      if (!firebaseOtp.isAvailable) {
-        setError('SMS verification is not available right now. Please contact support.');
-        setLoading(false);
-        return;
-      }
-      try {
-        const digits = normalizeIndianMobile(mobile);
-        await firebaseOtp.sendOtp(digits);
-        toast.success(`Verification code sent to +91 ${digits}`);
-        setOtp('');
-        setStep('otp');
-      } catch (err) {
-        firebaseOtp.resetRecaptcha();
-        setError(err instanceof Error ? err.message : 'Failed to send OTP');
-      } finally {
-        setLoading(false);
-      }
+    const result = await login(resolved, password);
+    if (!result.success) {
+      setError(result.error || 'Login failed');
+      setLoading(false);
+      return;
+    }
+    await finishWorkerSession();
+  };
+
+  const handlePasswordSignIn = async () => {
+    setError('');
+    if (!acceptedTerms) {
+      setError('Please agree to the terms and declarations to continue');
+      return;
+    }
+    if (!password) {
+      setError('Enter your password to sign in');
       return;
     }
 
-    setStep('login');
-    setLoading(false);
+    setLoading(true);
+    const exists = await gateExistingWorker();
+    if (!exists) {
+      setLoading(false);
+      return;
+    }
+    await completePasswordLogin();
+  };
+
+  const handleStartOtp = async () => {
+    setError('');
+    if (method !== 'mobile') {
+      setError('Switch to Mobile to sign in with SMS OTP');
+      return;
+    }
+    if (!acceptedTerms) {
+      setError('Please agree to the terms and declarations to continue');
+      return;
+    }
+    if (!firebaseOtp.isAvailable) {
+      setError('SMS verification is not available right now. Please contact support.');
+      return;
+    }
+
+    setLoading(true);
+    const exists = await gateExistingWorker();
+    if (!exists) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const digits = normalizeIndianMobile(mobile);
+      await firebaseOtp.sendOtp(digits);
+      toast.success(`Verification code sent to +91 ${digits}`);
+      setOtp('');
+      setStep('otp');
+    } catch (err) {
+      firebaseOtp.resetRecaptcha();
+      setError(err instanceof Error ? err.message : 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,26 +265,8 @@ export default function WorkerLoginPage() {
       return;
     }
 
-    const identifier = method === 'mobile' ? mobile : email;
-    const resolved = await resolveAuthEmail(identifier);
-    if (!resolved) {
-      setError(method === 'mobile' ? 'Enter a valid 10-digit Indian mobile number' : 'Please enter a valid email');
-      return;
-    }
-
-    if (!password) {
-      setError('Password is required');
-      return;
-    }
-
     setLoading(true);
-    const result = await login(resolved, password);
-    if (!result.success) {
-      setError(result.error || 'Login failed');
-      setLoading(false);
-      return;
-    }
-    await finishWorkerSession();
+    await completePasswordLogin();
   };
 
   const handleOtpVerify = async (e: React.FormEvent) => {
@@ -257,7 +285,7 @@ export default function WorkerLoginPage() {
     setLoading(true);
     const digits = normalizeIndianMobile(mobile);
     try {
-      const idToken = await firebaseOtp.verifyOtp(otp);
+      await firebaseOtp.verifyOtp(otp);
       try {
         if (!firebaseOtp.devBypass) {
           await firebaseSignOut(getFirebaseAuth());
@@ -266,25 +294,30 @@ export default function WorkerLoginPage() {
         /* Firebase session is only used to prove the phone */
       }
 
-      const session = await exchangeWorkerOtpLogin(digits, idToken);
-      const result = await loginWithSession(session.access_token, session.refresh_token);
-      if (!result.success) {
-        setError(result.error || 'Login failed');
-        setLoading(false);
+      const resolved = await resolveAuthEmail(digits);
+      if (!resolved) {
+        throw new Error('No worker account found for this mobile. Create an account first.');
+      }
+
+      markMobileVerified(digits);
+      if (password) {
+        const result = await login(resolved, password);
+        if (!result.success) {
+          setError(result.error || 'Login failed');
+          setStep('login');
+          setLoading(false);
+          return;
+        }
+        await finishWorkerSession();
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) markMobileVerified(digits, user.id);
-      await finishWorkerSession();
+      toast.success('Mobile verified. Enter your password to continue.');
+      setStep('login');
+      setLoading(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Invalid OTP';
-      if (firebaseOtp.devBypass) {
-        setError('Local OTP skip cannot mint a session. Enter your password to continue.');
-        setStep('login');
-      } else {
-        setError(message);
-      }
+      setError(message);
       setLoading(false);
     }
   };
@@ -324,7 +357,7 @@ export default function WorkerLoginPage() {
       ? 'Enter the OTP sent to your mobile'
       : step === 'login'
         ? 'Enter your password'
-        : 'Continue as a worker';
+        : 'Sign in as a worker';
   const subheading =
     step === 'otp'
       ? `Enter the 6-digit SMS code sent to +91 ${normalizeIndianMobile(mobile)}`
@@ -332,12 +365,12 @@ export default function WorkerLoginPage() {
         ? method === 'mobile'
           ? `Welcome back. Enter the password for +91 ${mobile}.`
           : `Welcome back. Enter the password for ${email.trim()}.`
-        : 'Enter your mobile number or email. We’ll take you to the next step.';
+        : 'Enter your mobile or email and password. New here? We’ll open signup.';
 
   return (
     <AuthSplitLayout
       audience="worker"
-      variant={step === 'login' || step === 'otp' ? 'login' : 'continue'}
+      variant="login"
     >
               <div className="mb-5">
                 <h2 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-[1.35rem]">
@@ -390,10 +423,74 @@ export default function WorkerLoginPage() {
                     mobile={mobile}
                     onEmailChange={setEmail}
                     onMobileChange={setMobile}
-                    onSubmit={() => void handleContinue()}
+                    onSubmit={() => void handlePasswordSignIn()}
                     loading={loading}
                     idPrefix="worker"
-                    submitButtonId={method === 'mobile' ? WORKER_OTP_RECAPTCHA_BTN_ID : undefined}
+                    submitLabel="Sign in"
+                    extraFields={
+                      <>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <Label htmlFor="worker-password-main">Password</Label>
+                            <ForgotPasswordControl
+                              loginPath="/worker/login"
+                              initialIdentifier={method === 'email' ? email : mobile}
+                              title="Reset worker password"
+                              description="Enter the email you used to create your worker account. We'll send a secure link to set a new password. Mobile-only accounts should contact SafeWork support."
+                              identifierType="text"
+                              resolveAuthEmail={resolveWorkerAuthEmail}
+                              triggerClassName="text-xs"
+                            />
+                          </div>
+                          <div className="relative">
+                            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              id="worker-password-main"
+                              type={showPassword ? 'text' : 'password'}
+                              placeholder="Your password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              minLength={6}
+                              className="h-11 pl-10 pr-10"
+                              autoComplete="current-password"
+                            />
+                            <button
+                              type="button"
+                              data-inline
+                              onClick={() => setShowPassword((v) => !v)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </div>
+                        <TermsAgreeRow
+                          id="worker-login-main-terms"
+                          checked={acceptedTerms}
+                          onCheckedChange={setAcceptedTerms}
+                          onOpenTerms={() => setTermsOpen(true)}
+                        />
+                      </>
+                    }
+                    secondaryAction={
+                      method === 'mobile' ? (
+                        <button
+                          id={WORKER_OTP_RECAPTCHA_BTN_ID}
+                          type="button"
+                          data-inline
+                          onClick={() => void handleStartOtp()}
+                          disabled={loading}
+                          className="w-full pt-0.5 text-sm font-medium text-primary hover:underline disabled:opacity-50"
+                        >
+                          Sign in with SMS OTP
+                        </button>
+                      ) : (
+                        <p className="text-center text-xs text-muted-foreground">
+                          SMS OTP is available on the Mobile tab.
+                        </p>
+                      )
+                    }
                   />
                 </>
               )}
@@ -448,7 +545,7 @@ export default function WorkerLoginPage() {
                     type="button"
                     data-inline
                     onClick={() => {
-                      setStep('login');
+                      setStep('identifier');
                       setError('');
                     }}
                     className="w-full text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -532,10 +629,7 @@ export default function WorkerLoginPage() {
                     <button
                       type="button"
                       data-inline
-                      onClick={() => {
-                        setStep('otp');
-                        setError('');
-                      }}
+                      onClick={() => void handleStartOtp()}
                       className="w-full text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       Use SMS OTP instead

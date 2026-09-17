@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Loader2, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,8 @@ type Props = {
   idPrefix?: string;
   /** Bind Firebase invisible reCAPTCHA to Continue (mobile OTP send). */
   submitButtonId?: string;
+  extraFields?: ReactNode;
+  secondaryAction?: ReactNode;
 };
 
 export default function AuthContinueIdentifier({
@@ -39,6 +42,8 @@ export default function AuthContinueIdentifier({
   submitLabel = 'Continue',
   idPrefix = 'auth',
   submitButtonId,
+  extraFields,
+  secondaryAction,
 }: Props) {
   const showTabs = methods.length > 1;
   const active = methods.includes(method) ? method : methods[0];
@@ -118,6 +123,8 @@ export default function AuthContinueIdentifier({
         </div>
       )}
 
+      {extraFields}
+
       <Button
         id={submitButtonId}
         type="submit"
@@ -127,6 +134,8 @@ export default function AuthContinueIdentifier({
         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {submitLabel}
       </Button>
+
+      {secondaryAction}
     </form>
   );
 }
