@@ -2399,7 +2399,7 @@ export default function WorkerVerificationPage({
               {showLegacyPilot && (
                 <details className="rounded-lg border p-4 space-y-3">
                   <summary className="text-sm font-medium cursor-pointer">
-                    Pilot fallback — self-confirm centre &amp; upload (only if not allocated yet)
+                    Self-select centre &amp; upload
                   </summary>
                   <div className="pt-3 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
