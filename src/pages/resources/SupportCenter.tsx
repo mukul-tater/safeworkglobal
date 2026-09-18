@@ -13,10 +13,6 @@ import { SAFEWORK_CONTACT, getSafeworkMailtoUrl } from "@/config/workerSupport";
 
 const faqs = [
   {
-    q: "Is SafeWorkGlobal really free for workers?",
-    a: "Yes. We charge zero placement fees from workers. Employers pay a 1% platform fee. You will never be asked to pay an agent or recruiter through our platform.",
-  },
-  {
     q: "How are employers verified?",
     a: "Every employer goes through company-registration checks, document verification and contract review before they can post jobs. You'll see a verified badge on profiles that have passed these checks.",
   },
