@@ -13,7 +13,6 @@ import {
   EDUCATION_LEVELS,
   JOURNEY_STEPS,
   MEDICAL_TEST_SCREENING_NOTE,
-  PRIMARY_SKILLS,
   acceptTerms,
   getOrCreateVerification,
   saveEssentials,
@@ -54,7 +53,6 @@ export default function WorkerVerificationScreen() {
   const [district, setDistrict] = useState('');
   const [stateName, setStateName] = useState('');
   const [education, setEducation] = useState<string>(EDUCATION_LEVELS[2]);
-  const [skill, setSkill] = useState<string>(PRIMARY_SKILLS[0]);
   const [tenthPass, setTenthPass] = useState<boolean | null>(null);
   const [pan, setPan] = useState('');
   const [aadhaar, setAadhaar] = useState('');
@@ -89,7 +87,6 @@ export default function WorkerVerificationScreen() {
       setCity(data.city || '');
       setStateName(data.state || '');
       setEducation(data.education_level || EDUCATION_LEVELS[2]);
-      setSkill(data.primary_skill || PRIMARY_SKILLS[0]);
       if (data.education_level === 'Below 10th') setTenthPass(false);
       else if (data.education_level) setTenthPass(true);
     } catch (e) {
@@ -135,7 +132,6 @@ export default function WorkerVerificationScreen() {
         city,
         state: stateName,
         education_level: education,
-        primary_skill: skill,
         tenth_pass: tenthPass,
       });
       setRow(updated);
@@ -271,7 +267,7 @@ export default function WorkerVerificationScreen() {
           </Card>
         ) : null}
 
-        {(row?.stage === 'essentials' || !row?.primary_skill) && row?.terms_accepted_at ? (
+        {(row?.stage === 'essentials' || !row?.stage) && row?.terms_accepted_at ? (
           <Card>
             <SectionTitle title="Essentials" />
             <Input label="Contact email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
@@ -332,19 +328,19 @@ export default function WorkerVerificationScreen() {
                 </Pressable>
               ))}
             </View>
-            <Text style={styles.chipLabel}>Primary skill</Text>
-            <View style={styles.chips}>
-              {PRIMARY_SKILLS.map((s) => (
-                <Pressable
-                  key={s}
-                  onPress={() => setSkill(s)}
-                  style={[styles.chip, skill === s && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, skill === s && styles.chipTextActive]}>{s}</Text>
-                </Pressable>
-              ))}
-            </View>
             <Button title="Save essentials" onPress={onSaveEssentials} loading={saving} fullWidth />
+          </Card>
+        ) : null}
+
+        {(row?.stage === 'find_jobs' || row?.stage === 'apply_job') ? (
+          <Card>
+            <SectionTitle
+              title="Find a job"
+              subtitle="Apply to one UAE job. Tests match that job."
+            />
+            <Text style={styles.body}>
+              Open the Jobs tab and apply to one opening. Test 1 will use the skill from that job.
+            </Text>
           </Card>
         ) : null}
 

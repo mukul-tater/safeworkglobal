@@ -29,7 +29,7 @@ export type AssessmentMediaType =
   | 'scorecard';
 
 export type VideoKycLogEntry = {
-  challenge: 'blink' | 'turn_left' | 'turn_right';
+  challenge: 'liveness' | 'blink' | 'turn_left' | 'turn_right';
   started_at: string;
   completed_at: string;
   storage_path: string;

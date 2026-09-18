@@ -342,7 +342,6 @@ export default function CompletedStepReview({
               label="ECR category"
               value={ecrCategory === 'ECNR' ? 'ECNR (no clearance required)' : ecrCategory === 'ECR' ? 'ECR (clearance required)' : '—'}
             />
-            <Detail label="Primary skill" value={row.primary_skill || '—'} />
           </dl>
         )}
 

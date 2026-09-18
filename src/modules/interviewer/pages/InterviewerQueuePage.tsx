@@ -16,6 +16,16 @@ import {
   listInterviewerAssignments,
   recordInterviewDecision,
 } from '@/modules/worker-verification/services/verificationService';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const fmt = (v?: string | null) =>
   v ? new Date(v).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Not scheduled';
@@ -28,6 +38,10 @@ export default function InterviewerQueuePage() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, { score: string; reason: string }>>({});
+  const [pendingDecision, setPendingDecision] = useState<{
+    row: InterviewerAssignment;
+    approved: boolean;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,6 +65,15 @@ export default function InterviewerQueuePage() {
       toast.error('Please add a reason when not approving');
       return;
     }
+    setPendingDecision({ row, approved });
+  };
+
+  const confirmDecision = async () => {
+    const pending = pendingDecision;
+    if (!pending) return;
+    const { row, approved } = pending;
+    const entry = form[row.interview_id] || { score: '', reason: '' };
+    setPendingDecision(null);
     setBusyId(row.interview_id);
     try {
       await recordInterviewDecision({
@@ -178,6 +201,32 @@ export default function InterviewerQueuePage() {
           );
         })
       )}
+
+      <AlertDialog
+        open={!!pendingDecision}
+        onOpenChange={(open) => {
+          if (!open) setPendingDecision(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingDecision?.approved ? 'Approve this interview?' : 'Mark interview not approved?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDecision?.approved
+                ? `Confirm approval for ${pendingDecision.row.full_name || 'this worker'}. If they already paid or completed later steps, that progress will be kept.`
+                : `Confirm not-approved for ${pendingDecision?.row.full_name || 'this worker'}. Later journey steps will not be reset.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmDecision()}>
+              {pendingDecision?.approved ? 'Yes, approve' : 'Yes, mark not approved'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 

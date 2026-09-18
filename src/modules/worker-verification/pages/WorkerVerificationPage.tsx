@@ -18,7 +18,6 @@ import {
   GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList, Info,
   MapPin, Phone, ExternalLink, Search,
 } from 'lucide-react';
-import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import IndiaLocationFields from '@/components/IndiaLocationFields';
 import { displayableEmail, isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
 import {
@@ -389,7 +388,6 @@ export default function WorkerVerificationPage({
   const [district, setDistrict] = useState('');
   const [state, setState] = useState('');
   const [education, setEducation] = useState('');
-  const [primarySkill, setPrimarySkill] = useState('');
   const [tenthPass, setTenthPass] = useState<boolean | null>(null);
   const [ecrCategory, setEcrCategory] = useState<string | null>(null);
 
@@ -503,7 +501,6 @@ export default function WorkerVerificationPage({
       setCity(v.city || '');
       setState(v.state || '');
       setEducation(v.education_level || '');
-      setPrimarySkill(v.primary_skill || '');
       const centersForState = getTradeTestCentersForState(v.state);
       setSelectedTradeCenterId(
         v.trade_test_center_id
@@ -618,7 +615,13 @@ export default function WorkerVerificationPage({
       const missingLaterDocs = strictDocs && (!panOk || !passportOk);
       setForceIdentity((!kycOk && pastMedia && v.stage !== 'identity') || missingLaterDocs);
 
-      if (v.primary_skill && (v.stage === 'quiz' || (!v.quiz_completed_at && v.stage !== 'find_jobs' && v.stage !== 'apply_job' && v.stage !== 'essentials'))) {
+      const shouldLoadQuiz =
+        v.stage === 'quiz' ||
+        (!v.quiz_completed_at &&
+          v.stage !== 'find_jobs' &&
+          v.stage !== 'apply_job' &&
+          v.stage !== 'essentials');
+      if (shouldLoadQuiz && (v.primary_skill || v.journey_job_id)) {
         const items = await loadQuizItemsForWorker(v);
         setQuizItems(items);
       }
@@ -889,7 +892,7 @@ export default function WorkerVerificationPage({
       toast.error('Enter a real email address before continuing');
       return;
     }
-    if (!city.trim() || !state || !education || !primarySkill) {
+    if (!city.trim() || !state || !education) {
       toast.error('Fill all essentials fields');
       return;
     }
@@ -904,7 +907,6 @@ export default function WorkerVerificationPage({
         city: city.trim(),
         state,
         education_level: education,
-        primary_skill: primarySkill,
         tenth_pass: tenthPass,
       });
       setRow(next);
@@ -997,7 +999,7 @@ export default function WorkerVerificationPage({
             setPhotoCount((media || []).filter((m) => m.media_type === 'photo').length);
             setVideoCount((media || []).filter((m) => m.media_type === 'video').length);
           } else {
-            // Essentials should have created this — create now so uploads work.
+            // Apply should have created this — create now so uploads work.
             const { data: inserted } = await supabase
               .from('worker_skills')
               .insert({
@@ -1048,7 +1050,7 @@ export default function WorkerVerificationPage({
     const list = files ? Array.from(files) : [];
     if (!list.length) return;
     if (!subjectId || !skillId) {
-      toast.error('Primary skill not ready — go back to essentials');
+      toast.error('Skill for this job is not ready — apply to a job first');
       return;
     }
 
@@ -1108,7 +1110,7 @@ export default function WorkerVerificationPage({
   const onCompleteMedia = async () => {
     if (!subjectId) return;
     if (photoCount < 1 || videoCount < 1) {
-      toast.error('Upload at least 1 photo and 1 video of your primary skill');
+      toast.error('Upload at least 1 photo and 1 video of your work');
       return;
     }
     if (photoCount < PHOTO_TARGET_MIN || videoCount < VIDEO_TARGET_MIN) {
@@ -1326,8 +1328,8 @@ export default function WorkerVerificationPage({
             title={partnerKiosk ? 'Worker details' : 'Your major details'}
             description={
               partnerKiosk
-                ? 'Name and mobile are already saved. Fill email, Class 10 status, location, education, and primary skill for this worker.'
-                : 'Name and mobile are already saved. Confirm your email, then add Class 10 status, location, education, and one primary skill.'
+                ? 'Name and mobile are already saved. Fill email, Class 10 status, location, and education for this worker.'
+                : 'Name and mobile are already saved. Confirm your email, then add Class 10 status, location, and education.'
             }
             timeEstimate="Takes 2–3 minutes"
             footer={
@@ -1418,18 +1420,6 @@ export default function WorkerVerificationPage({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Primary skill *</Label>
-                  <Select value={primarySkill} onValueChange={setPrimarySkill}>
-                    <SelectTrigger><SelectValue placeholder="One skill only" /></SelectTrigger>
-                    <SelectContent>
-                      {WORKER_SKILLS.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground">You can add secondary skills later on your profile.</p>
-                </div>
               </div>
           </StageActionShell>
         )}
@@ -1443,7 +1433,6 @@ export default function WorkerVerificationPage({
           >
             <JourneyJobPicker
               workerUserId={subjectId}
-              primarySkill={row.primary_skill}
               journeyJobId={row.journey_job_id}
               canChangeJob={canChangeJourneyJob(row)}
               onAdvanced={async (next) => {

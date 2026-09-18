@@ -236,6 +236,8 @@ export default function AboutUs() {
             legalName: SAFEWORK_CONTACT.operatingCompany,
             url: SAFEWORK_CONTACT.websiteUrl,
             founder: { "@type": "Person", name: SAFEWORK_CONTACT.founderName },
+            telephone: SAFEWORK_CONTACT.mobileTel.replace("tel:", ""),
+            email: SAFEWORK_CONTACT.email,
           },
         }}
       />

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import { Mail, Phone, MessageCircle, Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { SAFEWORK_CONTACT, getSafeworkMailtoUrl } from "@/config/workerSupport";
 
 const faqs = [
   {
@@ -62,8 +63,8 @@ export default function SupportCenter() {
             </div>
             <h3 className="font-semibold mb-1">Email Support</h3>
             <p className="text-xs text-muted-foreground mb-3">Reply within 24 hours</p>
-            <a href="mailto:mukultater@safeworkglobal.com" className="text-sm text-primary font-medium hover:underline">
-              mukultater@safeworkglobal.com
+            <a href={getSafeworkMailtoUrl()} className="text-sm text-primary font-medium hover:underline">
+              {SAFEWORK_CONTACT.email}
             </a>
           </CardContent>
         </Card>
@@ -74,9 +75,19 @@ export default function SupportCenter() {
             </div>
             <h3 className="font-semibold mb-1">WhatsApp Support</h3>
             <p className="text-xs text-muted-foreground mb-3">Mon – Sat, 9am – 8pm IST</p>
-            <a href="mailto:mukultater@safeworkglobal.com" className="text-sm text-success font-medium hover:underline">
-              mukultater@safeworkglobal.com
+            <a
+              href={SAFEWORK_CONTACT.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-success font-medium hover:underline"
+            >
+              {SAFEWORK_CONTACT.whatsappDisplay}
             </a>
+            <p className="mt-1">
+              <a href={SAFEWORK_CONTACT.mobileTel} className="text-xs text-muted-foreground hover:underline">
+                Call {SAFEWORK_CONTACT.mobileDisplay}
+              </a>
+            </p>
           </CardContent>
         </Card>
         <Card className="hover:shadow-lg hover:border-primary/40 transition-all">

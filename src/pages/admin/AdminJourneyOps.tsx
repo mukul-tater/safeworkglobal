@@ -18,7 +18,22 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import { useAuth } from '@/contexts/AuthContext';
-import { ASSESSMENT_FEE_INR } from '@/modules/worker-verification/constants';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  ASSESSMENT_FEE_INR,
+  VERIFICATION_STAGE_LABELS,
+  workerHasProgressPastInterview,
+  type VerificationStage,
+} from '@/modules/worker-verification/constants';
 import {
   approveMedical,
   approveTradeTest,
@@ -90,6 +105,15 @@ export default function AdminJourneyOps() {
     guarantorChequeAmount: '',
   });
   const [tplFile, setTplFile] = useState<File | null>(null);
+  const [pendingInterview, setPendingInterview] = useState<{
+    userId: string;
+    name: string;
+    whenIso: string;
+    meetingUrl: string;
+    interviewerUserId: string;
+    rewind: boolean;
+    stage: string;
+  } | null>(null);
 
   const setField = (id: string, key: string, value: string) =>
     setForm((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), [key]: value } }));
@@ -204,6 +228,26 @@ export default function AdminJourneyOps() {
     }
   };
 
+  const confirmPendingInterview = () => {
+    const pending = pendingInterview;
+    if (!pending) return;
+    setPendingInterview(null);
+    void run(
+      pending.userId,
+      () =>
+        scheduleWorkerInterview({
+          userId: pending.userId,
+          scheduledAt: pending.whenIso,
+          meetingUrl: pending.meetingUrl,
+          interviewerUserId: pending.interviewerUserId,
+          confirmRewind: pending.rewind,
+        }),
+      pending.rewind
+        ? 'Interview scheduled — worker sent back to the interview step'
+        : 'Interview scheduled',
+    );
+  };
+
   const renderActions = (r: Row) => {
     const busy = actingId === r.user_id;
 
@@ -306,17 +350,15 @@ export default function AdminJourneyOps() {
                     toast.error('Date, meeting link and interviewer are all required');
                     return;
                   }
-                  void run(
-                    r.user_id,
-                    () =>
-                      scheduleWorkerInterview({
-                        userId: r.user_id,
-                        scheduledAt: new Date(when).toISOString(),
-                        meetingUrl: link,
-                        interviewerUserId: who,
-                      }),
-                    'Interview scheduled',
-                  );
+                  setPendingInterview({
+                    userId: r.user_id,
+                    name: r.full_name || 'this worker',
+                    whenIso: new Date(when).toISOString(),
+                    meetingUrl: link,
+                    interviewerUserId: who,
+                    rewind: workerHasProgressPastInterview(r),
+                    stage: r.stage,
+                  });
                 }}
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
@@ -874,6 +916,52 @@ export default function AdminJourneyOps() {
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={!!pendingInterview}
+        onOpenChange={(open) => {
+          if (!open) setPendingInterview(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingInterview?.rewind
+                ? 'Send this worker back to interview?'
+                : 'Schedule interview?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingInterview?.rewind ? (
+                <>
+                  {pendingInterview.name} already completed the interview
+                  {pendingInterview.stage
+                    ? ` and is currently on ${
+                        VERIFICATION_STAGE_LABELS[pendingInterview.stage as VerificationStage] ||
+                        pendingInterview.stage
+                      }`
+                    : ''}
+                  . Scheduling a new one will send them back to the video interview step. Later
+                  payment / trade test records are kept only if you confirm this rewind.
+                </>
+              ) : (
+                <>
+                  Schedule a video interview for {pendingInterview?.name}? Cancel if you clicked
+                  this by mistake — nothing is saved until you confirm.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={pendingInterview?.rewind ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
+              onClick={confirmPendingInterview}
+            >
+              {pendingInterview?.rewind ? 'Yes, rewind to interview' : 'Schedule interview'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

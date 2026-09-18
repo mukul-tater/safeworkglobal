@@ -4646,6 +4646,7 @@ export type Database = {
           p_meeting_url: string
           p_scheduled_at: string
           p_user_id: string
+          p_confirm_rewind?: boolean
         }
         Returns: string
       }

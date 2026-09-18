@@ -506,6 +506,34 @@ export default function ContactUs() {
               </Card>
               <Card className="border-border/50">
                 <CardContent className="p-5 flex items-start gap-3">
+                  <div className="p-2.5 rounded-xl bg-success/10 shrink-0">
+                    <MessageCircle className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      WhatsApp / Mobile
+                    </p>
+                    <a
+                      href={SAFEWORK_CONTACT.whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-semibold text-foreground hover:text-primary"
+                    >
+                      {SAFEWORK_CONTACT.whatsappDisplay}
+                    </a>
+                    <p className="mt-1">
+                      <a
+                        href={SAFEWORK_CONTACT.mobileTel}
+                        className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                      >
+                        Call {SAFEWORK_CONTACT.mobileDisplay}
+                      </a>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50 sm:col-span-2">
+                <CardContent className="p-5 flex items-start gap-3">
                   <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
                     <MapPin className="h-5 w-5 text-primary" />
                   </div>

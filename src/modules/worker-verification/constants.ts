@@ -368,6 +368,36 @@ export function normalizeVerificationStage(
   return stage as VerificationStage;
 }
 
+const STAGES_AFTER_INTERVIEW = new Set<string>([
+  'awaiting_payment',
+  'trade_test',
+  'medical',
+  'tests',
+  'bond',
+  'pdot',
+  'deployment',
+  'gcc_ready',
+]);
+
+/** True when scheduling a new interview would send the worker backwards. */
+export function workerHasProgressPastInterview(row: {
+  stage?: string | null;
+  payment_status?: string | null;
+  paid_at?: string | null;
+  interview_status?: string | null;
+  trade_test_status?: string | null;
+  medical_status?: string | null;
+}): boolean {
+  return (
+    STAGES_AFTER_INTERVIEW.has(row.stage || '') ||
+    row.payment_status === 'paid' ||
+    Boolean(row.paid_at) ||
+    row.interview_status === 'approved' ||
+    row.trade_test_status === 'passed' ||
+    row.medical_status === 'passed'
+  );
+}
+
 export function navStepIndex(id: GccNavStepId): number {
   return GCC_JOURNEY_NAV_STEPS.findIndex((s) => s.id === id);
 }

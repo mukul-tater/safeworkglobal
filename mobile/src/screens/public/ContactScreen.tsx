@@ -112,6 +112,12 @@ export default function ContactScreen() {
         <Pressable onPress={() => openUrl(getSafeworkMailtoUrl())}>
           <Text style={styles.link}>{SAFEWORK_CONTACT.email}</Text>
         </Pressable>
+        <Pressable onPress={() => openUrl(SAFEWORK_CONTACT.whatsappUrl)}>
+          <Text style={styles.link}>WhatsApp {SAFEWORK_CONTACT.whatsappDisplay}</Text>
+        </Pressable>
+        <Pressable onPress={() => openUrl(SAFEWORK_CONTACT.mobileTel)}>
+          <Text style={styles.link}>Call {SAFEWORK_CONTACT.mobileDisplay}</Text>
+        </Pressable>
         <Text style={styles.muted}>{SAFEWORK_CONTACT.officeAddress}</Text>
         <Text style={[styles.muted, styles.topGap]}>
           {SAFEWORK_CONTACT.operatingCompany} · {SAFEWORK_CONTACT.founderName}, {SAFEWORK_CONTACT.founderTitle}

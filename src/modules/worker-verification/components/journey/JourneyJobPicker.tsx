@@ -98,7 +98,6 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
 
 interface Props {
   workerUserId: string;
-  primarySkill?: string | null;
   journeyJobId?: string | null;
   canChangeJob?: boolean;
   onAdvanced: (next: WorkerVerification) => void;
@@ -106,7 +105,6 @@ interface Props {
 
 export default function JourneyJobPicker({
   workerUserId,
-  primarySkill,
   journeyJobId,
   canChangeJob = true,
   onAdvanced,
@@ -214,7 +212,6 @@ export default function JourneyJobPicker({
         title: job.title,
         description: job.description,
         skills: job.skills,
-        fallbackSkill: primarySkill,
       });
       setAppliedIds((prev) => new Set(prev).add(job.id));
       clearPendingJourneyJob();
@@ -286,7 +283,6 @@ export default function JourneyJobPicker({
           jobId: pending.jobId,
           workerUserId,
           title: pending.title,
-          fallbackSkill: primarySkill,
         });
         clearPendingJourneyJob();
         toast.success('Application submitted. Continue to Test 1.');
@@ -296,7 +292,7 @@ export default function JourneyJobPicker({
         toast.error(err instanceof Error ? err.message : 'Could not apply to the job you selected');
       }
     })();
-  }, [loading, journeyJobId, jobs, workerUserId, primarySkill, onAdvanced]);
+  }, [loading, journeyJobId, jobs, workerUserId, onAdvanced]);
 
   if (loading) {
     return (

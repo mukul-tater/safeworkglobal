@@ -407,6 +407,16 @@ export default function FaqPage() {
               >
                 {SAFEWORK_CONTACT.email}
               </a>
+              <p className="mt-2">
+                <a
+                  href={SAFEWORK_CONTACT.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
+                >
+                  WhatsApp {SAFEWORK_CONTACT.whatsappDisplay}
+                </a>
+              </p>
               <p className="text-sm text-muted-foreground mt-1 mb-5">
                 <a
                   href={SAFEWORK_CONTACT.websiteUrl}

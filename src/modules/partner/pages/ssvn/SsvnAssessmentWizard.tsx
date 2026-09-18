@@ -48,7 +48,6 @@ import {
   type AssessmentMediaRow,
   type AssessmentRow,
   type AssessmentScoresInput,
-  type VideoKycLogEntry,
   type WorkerIdentityPack,
 } from '@/modules/trade-test/types';
 import {
@@ -58,7 +57,10 @@ import {
   MIN_PRACTICAL_VIDEOS,
   TEST_ANGLES,
   VIDEO_KYC_CHALLENGES,
+  VIDEO_KYC_LABEL,
+  VIDEO_KYC_MEDIA_TYPE,
   formatAuditTs,
+  videoKycLogLabel,
 } from '@/modules/trade-test/constants';
 import { getMediaDurationSeconds } from '@/modules/trade-test/lib/mediaDuration';
 
@@ -76,7 +78,6 @@ const emptyScores = (): AssessmentScoresInput => ({
 });
 
 type LocalKycClip = {
-  challenge: VideoKycLogEntry['challenge'];
   file: File;
   startedAt: string;
   completedAt: string;
@@ -139,8 +140,7 @@ export default function SsvnAssessmentWizard() {
   const [operatorName, setOperatorName] = useState(defaultOperator);
   const [arrivalPhoto, setArrivalPhoto] = useState<File | null>(null);
 
-  const [kycClips, setKycClips] = useState<LocalKycClip[]>([]);
-  const [kycChallengeIdx, setKycChallengeIdx] = useState(0);
+  const [kycClip, setKycClip] = useState<LocalKycClip | null>(null);
   const [kycStartedAt, setKycStartedAt] = useState<string | null>(null);
 
   const [media, setMedia] = useState<AssessmentMediaRow[]>([]);
@@ -218,9 +218,7 @@ export default function SsvnAssessmentWizard() {
 
   const locked = !!row && ['centre_submitted', 'under_review', 'completed'].includes(row.status);
   const evidence = useMemo(() => evidenceHint(media), [media]);
-  const kycDone = (row?.video_kyc_log?.length || 0) >= VIDEO_KYC_CHALLENGES.length || !!row?.kyc_completed_at;
-  const currentChallenge = VIDEO_KYC_CHALLENGES[kycChallengeIdx] || VIDEO_KYC_CHALLENGES[0];
-  const recordedIds = new Set(kycClips.map((c) => c.challenge));
+  const kycDone = (row?.video_kyc_log?.length || 0) > 0 || !!row?.kyc_completed_at;
 
   const uploadFile = async (
     file: File,
@@ -485,8 +483,8 @@ export default function SsvnAssessmentWizard() {
                 <Video className="h-4 w-4" /> Video KYC (liveness)
               </h2>
               <p className="text-sm text-muted-foreground">
-                Record blink, turn left, and turn right. Each clip is timestamped. Face must stay in
-                frame.
+                Record one clip of at least {MIN_KYC_VIDEO_SECONDS} seconds. In that same video: blink,
+                turn head left, then turn head right. Face must stay in frame.
               </p>
               {kycDone && (
                 <div className="text-xs space-y-1 text-muted-foreground">
@@ -494,9 +492,9 @@ export default function SsvnAssessmentWizard() {
                     Completed {formatAuditTs(row.kyc_completed_at)} by{' '}
                     {row.video_kyc_operator_name || 'staff'}
                   </p>
-                  {(row.video_kyc_log || []).map((entry) => (
-                    <p key={entry.challenge}>
-                      {entry.challenge.replace('_', ' ')} · {formatAuditTs(entry.started_at)} →{' '}
+                  {(row.video_kyc_log || []).map((entry, idx) => (
+                    <p key={`${entry.challenge}-${idx}`}>
+                      {videoKycLogLabel(entry.challenge)} · {formatAuditTs(entry.started_at)} →{' '}
                       {formatAuditTs(entry.completed_at)}
                       {entry.duration_seconds != null
                         ? ` · ${Math.round(entry.duration_seconds)}s`
@@ -509,19 +507,16 @@ export default function SsvnAssessmentWizard() {
                 <>
                   <div className="flex flex-wrap gap-2">
                     {VIDEO_KYC_CHALLENGES.map((c, idx) => (
-                      <Badge
-                        key={c.id}
-                        variant={recordedIds.has(c.id) ? 'default' : idx === kycChallengeIdx ? 'outline' : 'secondary'}
-                      >
+                      <Badge key={c.id} variant="outline">
                         {idx + 1}. {c.label}
-                        {recordedIds.has(c.id) ? ' ✓' : ''}
                       </Badge>
                     ))}
                   </div>
                   <Alert>
                     <AlertDescription>
-                      <span className="font-medium">{currentChallenge.label}. </span>
-                      {currentChallenge.instruction}
+                      <span className="font-medium">One video — {VIDEO_KYC_LABEL}. </span>
+                      Prompts will change on screen while you record. Do all three actions before
+                      stopping.
                     </AlertDescription>
                   </Alert>
                   <div className="space-y-1.5">
@@ -534,8 +529,12 @@ export default function SsvnAssessmentWizard() {
                   <CameraCapture
                     mode="video"
                     minDurationSec={MIN_KYC_VIDEO_SECONDS}
-                    disabled={saving || recordedIds.has(currentChallenge.id)}
-                    captureLabel={`Record: ${currentChallenge.label}`}
+                    disabled={saving}
+                    recordingPrompts={VIDEO_KYC_CHALLENGES.map((c) => ({
+                      startSec: c.startSec,
+                      title: c.label,
+                      instruction: c.instruction,
+                    }))}
                     onRecordingStart={() => setKycStartedAt(new Date().toISOString())}
                     onCapture={(file, meta) => {
                       const started =
@@ -543,62 +542,38 @@ export default function SsvnAssessmentWizard() {
                         new Date(
                           Date.now() - Math.round((meta.durationSeconds || MIN_KYC_VIDEO_SECONDS) * 1000),
                         ).toISOString();
-                      setKycClips((prev) => [
-                        ...prev.filter((c) => c.challenge !== currentChallenge.id),
-                        {
-                          challenge: currentChallenge.id,
-                          file,
-                          startedAt: started,
-                          completedAt: meta.capturedAt,
-                          durationSeconds: meta.durationSeconds || MIN_KYC_VIDEO_SECONDS,
-                        },
-                      ]);
+                      setKycClip({
+                        file,
+                        startedAt: started,
+                        completedAt: meta.capturedAt,
+                        durationSeconds: meta.durationSeconds || MIN_KYC_VIDEO_SECONDS,
+                      });
                       setKycStartedAt(null);
-                      const nextIdx = VIDEO_KYC_CHALLENGES.findIndex(
-                        (c, i) => i > kycChallengeIdx && !recordedIds.has(c.id) && c.id !== currentChallenge.id,
-                      );
-                      const fallback = VIDEO_KYC_CHALLENGES.findIndex(
-                        (c) => c.id !== currentChallenge.id && !recordedIds.has(c.id),
-                      );
-                      const idx = nextIdx >= 0 ? nextIdx : fallback;
-                      if (idx >= 0) setKycChallengeIdx(idx);
-                      toast.success(`${currentChallenge.label} recorded`);
+                      toast.success('Liveness video recorded');
                     }}
                   />
-                  <div className="text-xs text-muted-foreground space-y-0.5">
-                    {kycClips.map((c) => (
-                      <p key={c.challenge}>
-                        {c.challenge.replace('_', ' ')} · {formatAuditTs(c.startedAt)} →{' '}
-                        {formatAuditTs(c.completedAt)} · {Math.round(c.durationSeconds)}s
-                      </p>
-                    ))}
-                  </div>
+                  {kycClip && (
+                    <p className="text-xs text-muted-foreground">
+                      Ready · {formatAuditTs(kycClip.startedAt)} → {formatAuditTs(kycClip.completedAt)} ·{' '}
+                      {Math.round(kycClip.durationSeconds)}s
+                    </p>
+                  )}
                   <Button
-                    disabled={saving || kycClips.length < VIDEO_KYC_CHALLENGES.length}
+                    disabled={saving || !kycClip}
                     onClick={async () => {
+                      if (!kycClip) return;
                       setSaving(true);
                       try {
-                        const uploaded = [];
-                        for (const clip of kycClips) {
-                          const spec = VIDEO_KYC_CHALLENGES.find((c) => c.id === clip.challenge);
-                          const path = await uploadFile(
-                            clip.file,
-                            spec?.mediaType || 'kyc_video',
-                          );
-                          uploaded.push({
-                            challenge: clip.challenge,
-                            storagePath: path,
-                            startedAt: clip.startedAt,
-                            completedAt: clip.completedAt,
-                            durationSeconds: clip.durationSeconds,
-                          });
-                        }
+                        const storagePath = await uploadFile(kycClip.file, VIDEO_KYC_MEDIA_TYPE);
                         const next = await saveVideoKyc(row.id, {
-                          clips: uploaded,
+                          storagePath,
+                          startedAt: kycClip.startedAt,
+                          completedAt: kycClip.completedAt,
+                          durationSeconds: kycClip.durationSeconds,
                           operatorName,
                         });
                         setRow(next);
-                        setKycClips([]);
+                        setKycClip(null);
                         toast.success('Video KYC saved');
                         await load();
                       } catch (e) {
@@ -608,7 +583,7 @@ export default function SsvnAssessmentWizard() {
                       }
                     }}
                   >
-                    Save video KYC ({kycClips.length}/{VIDEO_KYC_CHALLENGES.length})
+                    Save video KYC
                   </Button>
                 </>
               )}

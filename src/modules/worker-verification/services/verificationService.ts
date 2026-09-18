@@ -14,6 +14,7 @@ import {
   ASSESSMENT_FEE_INR,
   QUIZ_PASS_SCORE,
   QUIZ_QUESTIONS_TO_SHOW,
+  VERIFICATION_STAGE_ORDER,
   WORKER_TERMS_VERSION,
   ecrFromTenthPass,
   normalizeVerificationStage,
@@ -90,6 +91,33 @@ export async function acceptTerms(userId: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+export async function ensureWorkerSkillRow(userId: string, skillName: string): Promise<string | null> {
+  const name = skillName.trim();
+  if (!name) return null;
+
+  const { data: existingSkill, error: skillFetchErr } = await supabase
+    .from('worker_skills')
+    .select('id')
+    .eq('worker_id', userId)
+    .eq('skill_name', name)
+    .maybeSingle();
+  if (skillFetchErr) throw new Error(skillFetchErr.message);
+  if (existingSkill?.id) return existingSkill.id as string;
+
+  const { data: inserted, error: skillInsertErr } = await supabase
+    .from('worker_skills')
+    .insert({
+      worker_id: userId,
+      skill_name: name,
+      proficiency_level: 'intermediate',
+      years_of_experience: 0,
+    })
+    .select('id')
+    .maybeSingle();
+  if (skillInsertErr) throw new Error(skillInsertErr.message);
+  return (inserted?.id as string | undefined) ?? null;
+}
+
 export async function saveEssentials(
   userId: string,
   input: {
@@ -97,7 +125,6 @@ export async function saveEssentials(
     city: string;
     state: string;
     education_level: string;
-    primary_skill: string;
     tenth_pass: boolean;
   },
 ): Promise<WorkerVerification> {
@@ -113,8 +140,6 @@ export async function saveEssentials(
     user_id: userId,
     current_city: input.city,
     current_location: [input.city, input.state].filter(Boolean).join(', '),
-    primary_skill: input.primary_skill,
-    primary_work_type: input.primary_skill,
     experience_range: input.education_level,
     tenth_pass_confirmed: ecr.tenth_pass_confirmed,
     ecr_category: ecr.ecr_category,
@@ -146,25 +171,6 @@ export async function saveEssentials(
 
   await supabase.from('profiles').update({ email }).eq('id', userId);
 
-  // Ensure a worker_skills row for media uploads — fail loudly if this breaks
-  const { data: existingSkill, error: skillFetchErr } = await supabase
-    .from('worker_skills')
-    .select('id')
-    .eq('worker_id', userId)
-    .eq('skill_name', input.primary_skill)
-    .maybeSingle();
-  if (skillFetchErr) throw new Error(skillFetchErr.message);
-
-  if (!existingSkill) {
-    const { error: skillInsertErr } = await supabase.from('worker_skills').insert({
-      worker_id: userId,
-      skill_name: input.primary_skill,
-      proficiency_level: 'intermediate',
-      years_of_experience: 0,
-    });
-    if (skillInsertErr) throw new Error(skillInsertErr.message);
-  }
-
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
@@ -172,9 +178,6 @@ export async function saveEssentials(
       city: input.city,
       state: input.state,
       education_level: input.education_level,
-      primary_skill: input.primary_skill,
-      trade_test_required: skillRequiresTradeTest(input.primary_skill),
-      trade_test_status: skillRequiresTradeTest(input.primary_skill) ? 'pending' : 'not_required',
       essentials_completed_at: new Date().toISOString(),
       stage: 'find_jobs',
       updated_at: new Date().toISOString(),
@@ -605,13 +608,17 @@ export async function scheduleWorkerInterview(input: {
   scheduledAt: string;
   meetingUrl: string;
   interviewerUserId: string;
+  confirmRewind?: boolean;
 }): Promise<string> {
-  return rpc<string>('admin_schedule_worker_interview', {
+  const args: Record<string, unknown> = {
     p_user_id: input.userId,
     p_scheduled_at: input.scheduledAt,
     p_meeting_url: input.meetingUrl,
     p_interviewer_user_id: input.interviewerUserId,
-  });
+  };
+  // Omit unless true so scheduling still works before the rewind-flag migration is applied.
+  if (input.confirmRewind) args.p_confirm_rewind = true;
+  return rpc<string>('admin_schedule_worker_interview', args);
 }
 
 /** Interviewer (or admin) — Approved unlocks payment automatically. */
@@ -720,11 +727,28 @@ export async function recordInterviewScore(
   const row = await getOrCreateVerification(userId);
   const tradeRequired = skillRequiresTradeTest(row.primary_skill);
   const alreadyPaid = row.payment_status === 'paid' || Boolean(row.paid_at);
+  const current = normalizeVerificationStage(row.stage, row.trade_test_required);
   let nextStage: VerificationStage = 'awaiting_payment';
   if (alreadyPaid) {
-    if (tradeRequired) nextStage = 'trade_test';
-    else nextStage = row.medical_status === 'passed' ? 'bond' : 'medical';
+    if (tradeRequired && row.trade_test_status !== 'passed' && row.trade_test_status !== 'not_required') {
+      nextStage = 'trade_test';
+    } else if (row.medical_status === 'passed') {
+      nextStage = 'bond';
+    } else {
+      nextStage = 'medical';
+    }
   }
+  const currentIdx = VERIFICATION_STAGE_ORDER.indexOf(current);
+  const nextIdx = VERIFICATION_STAGE_ORDER.indexOf(nextStage);
+  if (currentIdx > nextIdx && currentIdx >= 0) {
+    nextStage = current;
+  }
+  const tradeStatus =
+    row.trade_test_status === 'passed' || row.trade_test_status === 'not_required'
+      ? row.trade_test_status
+      : tradeRequired
+        ? row.trade_test_status || 'pending'
+        : 'not_required';
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
@@ -732,7 +756,7 @@ export async function recordInterviewScore(
       interview_notes: notes || null,
       interview_rated_at: new Date().toISOString(),
       trade_test_required: tradeRequired,
-      trade_test_status: tradeRequired ? 'pending' : 'not_required',
+      trade_test_status: tradeStatus,
       stage: nextStage,
       updated_at: new Date().toISOString(),
     })

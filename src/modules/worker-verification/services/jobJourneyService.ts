@@ -2,7 +2,7 @@ import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { skillRequiresTradeTest } from '../constants';
 import type { WorkerVerification } from '../types';
-import { getOrCreateVerification } from './verificationService';
+import { ensureWorkerSkillRow, getOrCreateVerification } from './verificationService';
 
 const supabase: any = supabaseTyped;
 
@@ -11,35 +11,32 @@ export function canChangeJourneyJob(row: Pick<WorkerVerification, 'stage' | 'gcc
   return row.stage !== 'gcc_ready' && row.stage !== 'deployment';
 }
 
-async function patchSkillFromJob(
+async function syncSkillFromJob(
   row: WorkerVerification,
   opts: {
     jobId: string;
     title?: string;
     description?: string;
     skills?: string[];
-    fallbackSkill?: string | null;
+    advanceFromFindJobs?: boolean;
   },
 ): Promise<WorkerVerification> {
-  const inferred = inferWorkerSkillFromJob(
+  const nextSkill = inferWorkerSkillFromJob(
     opts.title || '',
     opts.description || '',
     opts.skills || [],
   );
-  const nextSkill = inferred !== 'Other' ? inferred : opts.fallbackSkill || null;
+  const tradeRequired = skillRequiresTradeTest(nextSkill);
   const patch: Record<string, unknown> = {
     journey_job_id: opts.jobId,
+    primary_skill: nextSkill,
+    trade_test_required: tradeRequired,
     updated_at: new Date().toISOString(),
   };
-  if (nextSkill && nextSkill !== row.primary_skill) {
-    patch.primary_skill = nextSkill;
-    patch.trade_test_required = skillRequiresTradeTest(nextSkill);
-    const tradeRequired = skillRequiresTradeTest(nextSkill);
-    if (row.stage === 'quiz' || !row.journey_job_id || row.journey_job_id === opts.jobId) {
-      patch.trade_test_status = tradeRequired ? 'pending' : 'not_required';
-    }
+  if (row.stage === 'quiz' || !row.journey_job_id || row.journey_job_id === opts.jobId) {
+    patch.trade_test_status = tradeRequired ? 'pending' : 'not_required';
   }
-  if (row.stage === 'find_jobs' || row.stage === 'apply_job') {
+  if (opts.advanceFromFindJobs && (row.stage === 'find_jobs' || row.stage === 'apply_job')) {
     patch.stage = 'quiz';
   }
 
@@ -50,6 +47,16 @@ async function patchSkillFromJob(
     .select('*')
     .single();
   if (updErr) throw new Error(updErr.message);
+
+  await ensureWorkerSkillRow(row.user_id, nextSkill);
+  await supabase
+    .from('worker_profiles')
+    .update({
+      primary_skill: nextSkill,
+      primary_work_type: nextSkill,
+    })
+    .eq('user_id', row.user_id);
+
   return updated as WorkerVerification;
 }
 
@@ -59,7 +66,6 @@ export async function applyToJobForJourney(opts: {
   title?: string;
   description?: string;
   skills?: string[];
-  fallbackSkill?: string | null;
 }): Promise<{ applicationId: string; verification: WorkerVerification | null }> {
   const existing = await getOrCreateVerification(opts.workerUserId);
   if (existing.journey_job_id && existing.journey_job_id !== opts.jobId) {
@@ -73,7 +79,7 @@ export async function applyToJobForJourney(opts: {
   if (error) throw new Error(error.message);
 
   const row = await getOrCreateVerification(opts.workerUserId);
-  const updated = await patchSkillFromJob(row, opts);
+  const updated = await syncSkillFromJob(row, { ...opts, advanceFromFindJobs: true });
 
   return {
     applicationId: String(data),
@@ -87,7 +93,6 @@ export async function changeJourneyJob(opts: {
   title?: string;
   description?: string;
   skills?: string[];
-  fallbackSkill?: string | null;
 }): Promise<{ applicationId: string; verification: WorkerVerification | null }> {
   const existing = await getOrCreateVerification(opts.workerUserId);
   if (!canChangeJourneyJob(existing)) {
@@ -101,29 +106,11 @@ export async function changeJourneyJob(opts: {
   if (error) throw new Error(error.message);
 
   const row = await getOrCreateVerification(opts.workerUserId);
-  const inferred = inferWorkerSkillFromJob(
-    opts.title || '',
-    opts.description || '',
-    opts.skills || [],
-  );
-  const nextSkill = inferred !== 'Other' ? inferred : opts.fallbackSkill || row.primary_skill;
-  const tradeRequired = skillRequiresTradeTest(nextSkill);
-  const { data: updated, error: updErr } = await supabase
-    .from('worker_verification')
-    .update({
-      primary_skill: nextSkill,
-      trade_test_required: tradeRequired,
-      trade_test_status: tradeRequired ? 'pending' : 'not_required',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', row.id)
-    .select('*')
-    .single();
-  if (updErr) throw new Error(updErr.message);
+  const updated = await syncSkillFromJob(row, opts);
 
   return {
     applicationId: String(data),
-    verification: updated as WorkerVerification,
+    verification: updated,
   };
 }
 

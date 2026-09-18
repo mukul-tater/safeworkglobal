@@ -218,7 +218,6 @@ export default function JobDetail() {
         title: job.title,
         description: job.description || '',
         skills: job.job_skills?.map((s) => s.skill_name) || [],
-        fallbackSkill: null,
       });
 
       setHasApplied(true);

@@ -32,7 +32,8 @@ export type WorkerVerification = {
 };
 
 export const JOURNEY_STEPS: { id: VerificationStage; label: string; description: string }[] = [
-  { id: 'essentials', label: 'Essentials', description: 'Contact, skill, education, location' },
+  { id: 'essentials', label: 'Essentials', description: 'Contact, education, location' },
+  { id: 'find_jobs', label: 'Find jobs', description: 'Apply to one UAE job. Tests match that job.' },
   { id: 'quiz', label: 'Test 1', description: 'Skill knowledge quiz' },
   { id: 'media', label: 'Skill proof', description: 'Upload work photos / video' },
   { id: 'identity', label: 'Identity (KYC)', description: 'PAN, Aadhaar, and passport valid 6+ months' },
@@ -57,18 +58,6 @@ export const EDUCATION_LEVELS = [
   'Diploma',
   'Graduate',
   'Post Graduate',
-  'Other',
-] as const;
-
-export const PRIMARY_SKILLS = [
-  'Electrician',
-  'Welder',
-  'Plumber',
-  'Mason',
-  'Carpenter',
-  'HVAC Technician',
-  'Driver',
-  'Helper',
   'Other',
 ] as const;
 
@@ -127,7 +116,6 @@ export async function saveEssentials(
     city: string;
     state: string;
     education_level: string;
-    primary_skill: string;
     tenth_pass: boolean;
   },
 ): Promise<WorkerVerification> {
@@ -144,8 +132,6 @@ export async function saveEssentials(
       user_id: userId,
       current_city: input.city,
       current_location: [input.city, input.state].filter(Boolean).join(', '),
-      primary_skill: input.primary_skill,
-      primary_work_type: input.primary_skill,
       experience_range: input.education_level,
       tenth_pass_confirmed: ecr.tenth_pass_confirmed,
       ecr_category: ecr.ecr_category,
@@ -157,7 +143,7 @@ export async function saveEssentials(
 
   await supabase.from('profiles').update({ email }).eq('id', userId);
 
-  const nextStage = row.stage === 'essentials' || !row.stage ? 'quiz' : row.stage;
+  const nextStage = row.stage === 'essentials' || !row.stage ? 'find_jobs' : row.stage;
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
@@ -165,7 +151,6 @@ export async function saveEssentials(
       city: input.city,
       state: input.state,
       education_level: input.education_level,
-      primary_skill: input.primary_skill,
       stage: nextStage,
       updated_at: new Date().toISOString(),
     })

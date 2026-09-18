@@ -15,6 +15,12 @@ export const SAFEWORK_CONTACT = {
   founderTitle: "Founder & CEO",
   websiteDisplay: "www.safeworkglobal.com",
   websiteUrl: "https://www.safeworkglobal.com",
+  /** Support-center WhatsApp / mobile (India). */
+  mobileDigits: "8320111413",
+  mobileDisplay: "+91 83201 11413",
+  mobileTel: "tel:+918320111413",
+  whatsappDisplay: "+91 83201 11413",
+  whatsappUrl: "https://wa.me/918320111413",
 } as const;
 
 /** Licensed overseas recruitment is conducted through this designated partner — not by SafeWork Global. */

@@ -6,7 +6,8 @@ import {
   MIN_PRACTICAL_PHOTOS,
   MIN_PRACTICAL_VIDEOS,
   MIN_PRACTICAL_VIDEO_SECONDS,
-  VIDEO_KYC_CHALLENGES,
+  VIDEO_KYC_LABEL,
+  VIDEO_KYC_MEDIA_TYPE,
 } from '../constants';
 import {
   averageSopScore,
@@ -659,54 +660,46 @@ async function upsertTypedMedia(
 export async function saveVideoKyc(
   assessmentId: string,
   input: {
-    clips: Array<{
-      challenge: VideoKycLogEntry['challenge'];
-      storagePath: string;
-      startedAt: string;
-      completedAt: string;
-      durationSeconds: number;
-    }>;
+    storagePath: string;
+    startedAt: string;
+    completedAt: string;
+    durationSeconds: number;
     operatorName: string;
   },
 ): Promise<AssessmentRow> {
-  const required = VIDEO_KYC_CHALLENGES.map((c) => c.id);
-  const got = new Set(input.clips.map((c) => c.challenge));
-  if (required.some((id) => !got.has(id))) {
-    throw new Error('Record all video KYC steps: blink, turn left, and turn right');
+  if (!input.storagePath) {
+    throw new Error('Record one video KYC clip with blink, turn left, and turn right');
   }
   const operator = input.operatorName.trim();
   if (!operator) throw new Error('Record who conducted video KYC');
 
   const userId = await currentUserId();
-  const log: VideoKycLogEntry[] = input.clips.map((c) => ({
-    challenge: c.challenge,
-    started_at: c.startedAt,
-    completed_at: c.completedAt,
-    storage_path: c.storagePath,
-    duration_seconds: c.durationSeconds,
-    operator_name: operator,
-  }));
-  const blink = input.clips.find((c) => c.challenge === 'blink');
+  const log: VideoKycLogEntry[] = [
+    {
+      challenge: 'liveness',
+      started_at: input.startedAt,
+      completed_at: input.completedAt,
+      storage_path: input.storagePath,
+      duration_seconds: input.durationSeconds,
+      operator_name: operator,
+    },
+  ];
 
-  for (const clip of input.clips) {
-    const spec = VIDEO_KYC_CHALLENGES.find((c) => c.id === clip.challenge);
-    if (!spec) continue;
-    await upsertTypedMedia(assessmentId, {
-      mediaType: spec.mediaType,
-      storagePath: clip.storagePath,
-      label: spec.label,
-      capturedByName: operator,
-      capturedAt: clip.completedAt,
-      durationSeconds: clip.durationSeconds,
-      replaceExisting: true,
-    });
-  }
+  await upsertTypedMedia(assessmentId, {
+    mediaType: VIDEO_KYC_MEDIA_TYPE,
+    storagePath: input.storagePath,
+    label: VIDEO_KYC_LABEL,
+    capturedByName: operator,
+    capturedAt: input.completedAt,
+    durationSeconds: input.durationSeconds,
+    replaceExisting: true,
+  });
 
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('assessments')
     .update({
-      kyc_video_path: blink?.storagePath || input.clips[0]?.storagePath || null,
+      kyc_video_path: input.storagePath,
       video_kyc_log: log,
       video_kyc_operator_id: userId,
       video_kyc_operator_name: operator,
@@ -750,14 +743,12 @@ export async function saveCentreKyc(
     arrivalPhotoPath: input.kycPhotoPath,
     capturedByName: 'Centre staff',
   });
+  const nowIso = new Date().toISOString();
   return saveVideoKyc(assessmentId, {
-    clips: VIDEO_KYC_CHALLENGES.map((c) => ({
-      challenge: c.id,
-      storagePath: input.kycVideoPath as string,
-      startedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      durationSeconds: 0,
-    })),
+    storagePath: input.kycVideoPath as string,
+    startedAt: nowIso,
+    completedAt: nowIso,
+    durationSeconds: 0,
     operatorName: 'Centre staff',
   });
 }
@@ -996,8 +987,8 @@ export async function submitCentreAssessment(assessmentId: string): Promise<Asse
     throw new Error('Arrival live photo is required');
   }
   const kycLog = asVideoKycLog(a.video_kyc_log);
-  if (kycLog.length < VIDEO_KYC_CHALLENGES.length && !a.kyc_video_path) {
-    throw new Error('Complete video KYC (blink, turn left, turn right) before submitting');
+  if (kycLog.length < 1 && !a.kyc_video_path) {
+    throw new Error('Complete video KYC (blink, turn left, and turn right in one clip) before submitting');
   }
 
   const media = await listAssessmentMedia(assessmentId);

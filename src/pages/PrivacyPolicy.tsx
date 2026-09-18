@@ -109,7 +109,8 @@ export default function PrivacyPolicy() {
             <h2 className="text-xl font-semibold font-heading text-foreground">11. Contact Us</h2>
             <p>If you have questions about this Privacy Policy, please contact us at:</p>
             <ul className="list-none space-y-1">
-              <li>Email: <a href="mailto:mukultater@safeworkglobal.com" className="text-primary underline">mukultater@safeworkglobal.com</a></li>
+              <li>Email: <a href={`mailto:${SAFEWORK_CONTACT.email}`} className="text-primary underline">{SAFEWORK_CONTACT.email}</a></li>
+              <li>WhatsApp / Mobile: <a href={SAFEWORK_CONTACT.whatsappUrl} className="text-primary underline" target="_blank" rel="noopener noreferrer">{SAFEWORK_CONTACT.whatsappDisplay}</a></li>
               <li>Office Address: {SAFEWORK_CONTACT.officeAddress}</li>
             </ul>
           </section>

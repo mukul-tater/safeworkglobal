@@ -8,6 +8,12 @@ type CaptureMeta = {
   durationSeconds: number | null;
 };
 
+type RecordingPrompt = {
+  startSec: number;
+  title: string;
+  instruction: string;
+};
+
 export default function CameraCapture({
   mode,
   minDurationSec = 0,
@@ -15,6 +21,7 @@ export default function CameraCapture({
   onRecordingStart,
   disabled,
   captureLabel,
+  recordingPrompts,
 }: {
   mode: 'photo' | 'video';
   minDurationSec?: number;
@@ -22,6 +29,7 @@ export default function CameraCapture({
   onRecordingStart?: () => void;
   disabled?: boolean;
   captureLabel?: string;
+  recordingPrompts?: RecordingPrompt[];
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -122,6 +130,14 @@ export default function CameraCapture({
     recorderRef.current = null;
   };
 
+  const currentPrompt =
+    recording && recordingPrompts?.length
+      ? [...recordingPrompts].reverse().find((p) => elapsed >= p.startSec) ?? recordingPrompts[0]
+      : null;
+  const promptIndex = currentPrompt
+    ? recordingPrompts!.findIndex((p) => p.startSec === currentPrompt.startSec)
+    : -1;
+
   return (
     <div className="space-y-2">
       <div className="relative overflow-hidden rounded-md border bg-black aspect-video">
@@ -141,6 +157,15 @@ export default function CameraCapture({
           <div className="absolute top-2 left-2 rounded bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
             REC {elapsed}s
             {minDurationSec > 0 ? ` / ${minDurationSec}s min` : ''}
+          </div>
+        )}
+        {currentPrompt && (
+          <div className="absolute inset-x-2 bottom-2 rounded-md bg-black/75 px-3 py-2 text-white">
+            <p className="text-[11px] uppercase tracking-wide text-white/70">
+              Step {promptIndex + 1} of {recordingPrompts!.length}
+            </p>
+            <p className="text-sm font-semibold">{currentPrompt.title}</p>
+            <p className="text-xs text-white/90">{currentPrompt.instruction}</p>
           </div>
         )}
       </div>
