@@ -59,6 +59,13 @@ export function displayableEmail(email: string | null | undefined): string | nul
   return email.trim();
 }
 
+/** True for a usable contact address (not empty, not a mobile-login placeholder). */
+export function isValidContactEmail(email: string | null | undefined): boolean {
+  const trimmed = email?.trim().toLowerCase() ?? '';
+  if (!trimmed || isSyntheticAuthEmail(trimmed) || isWorkerMobileAuthEmail(trimmed)) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
 export function formatIndianMobile(phone: string | null | undefined): string | null {
   if (!phone?.trim()) return null;
   const digits = phone.replace(/\D/g, '').slice(-10);

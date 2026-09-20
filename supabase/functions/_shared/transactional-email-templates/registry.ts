@@ -18,7 +18,9 @@ export interface TemplateEntry {
  *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
 import { template as contactEnquiryTemplate } from './contact-enquiry.tsx'
+import { template as journeyStepClearedTemplate } from './journey-step-cleared.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'contact-enquiry': contactEnquiryTemplate,
+  'journey-step-cleared': journeyStepClearedTemplate,
 }

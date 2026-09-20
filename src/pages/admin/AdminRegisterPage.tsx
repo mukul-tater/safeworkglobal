@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { isWhitelistedAdminEmail } from '@/lib/adminAuth';
+import { isWhitelistedAdminEmail, WHITELISTED_ADMIN_EMAILS } from '@/lib/adminAuth';
 import AdminLayout from './AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,9 +68,14 @@ export default function AdminRegisterPage() {
         <CardContent className="p-6 md:p-8">
           <Alert className="mb-5">
             <AlertDescription className="text-sm">
-              Allowed emails: <strong>admin@safeworkglobal.com</strong>,{' '}
-              <strong>ops@safeworkglobal.com</strong>, or{' '}
-              <strong>admin@safeworkglobal.demo</strong> (demo).
+              Allowed emails:{' '}
+              {WHITELISTED_ADMIN_EMAILS.map((allowed, index) => (
+                <span key={allowed}>
+                  {index > 0 && (index === WHITELISTED_ADMIN_EMAILS.length - 1 ? ', or ' : ', ')}
+                  <strong>{allowed}</strong>
+                </span>
+              ))}
+              .
             </AlertDescription>
           </Alert>
 

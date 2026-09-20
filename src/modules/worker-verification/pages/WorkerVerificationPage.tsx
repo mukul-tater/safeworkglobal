@@ -19,7 +19,7 @@ import {
   MapPin, Phone, ExternalLink, Search,
 } from 'lucide-react';
 import IndiaLocationFields from '@/components/IndiaLocationFields';
-import { displayableEmail, isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
+import { displayableEmail, isValidContactEmail } from '@/lib/workerAuthEmail';
 import {
   ASSESSMENT_FEE_INR,
   ASSESSMENT_FEE_INCLUSIONS,
@@ -49,6 +49,7 @@ import {
   loadActiveBondTemplate,
   loadQuizItemsForWorker,
   saveEssentials,
+  saveContactEmail,
   medicalTestDocumentsComplete,
   submitMedicalResult,
   submitQuiz,
@@ -83,6 +84,7 @@ import CompletedStepReview, {
 } from '@/modules/worker-verification/components/journey/CompletedStepReview';
 import { phaseForStage } from '@/modules/worker-verification/journey/phases';
 import WorkerPreJourneyScreeningModal from '@/modules/worker-verification/components/journey/WorkerPreJourneyScreeningModal';
+import WorkerEmailGate from '@/modules/worker-verification/components/journey/WorkerEmailGate';
 import { CREATED_BY_PARTNER_LABEL, hasParkedPartnerSession } from '@/modules/partner/lib/partnerAssistedWorker';
 import EmitraWorkerOnboardingNoticeDialog from '@/modules/emitra/components/EmitraWorkerOnboardingNoticeDialog';
 import { hasAckedEmitraOnboardingNotice } from '@/modules/emitra/lib/emitraWorkerOnboarding';
@@ -703,6 +705,8 @@ export default function WorkerVerificationPage({
   const currentNav: GccNavStepId = !declaration && showDeclarationModal
     ? 'pre_declaration'
     : navStepForStage(stage);
+  const hasContactEmail = Boolean(displayableEmail(email));
+  const showEmailGate = showDeclarationModal && !hasContactEmail;
   const heroSubheading = HERO_SUBHEADINGS[phaseForStage(stage)];
 
   const journeyParamRaw = searchParams.get('journey');
@@ -888,7 +892,7 @@ export default function WorkerVerificationPage({
   const onSaveEssentials = async () => {
     if (!subjectId) return;
     const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail || !trimmedEmail.includes('@') || isWorkerMobileAuthEmail(trimmedEmail)) {
+    if (!isValidContactEmail(trimmedEmail)) {
       toast.error('Enter a real email address before continuing');
       return;
     }
@@ -1199,7 +1203,22 @@ export default function WorkerVerificationPage({
 
   return (
     <JourneyShell embedded={embedded}>
-      {showDeclarationModal && !emitraNoticeOpen ? (
+      {showEmailGate && !emitraNoticeOpen ? (
+        <div className="mx-auto w-full min-w-0 max-w-5xl">
+          <WorkerEmailGate
+            initialEmail={email}
+            onSave={async (nextEmail) => {
+              if (!subjectId) return;
+              const saved = await saveContactEmail(subjectId, nextEmail);
+              setEmail(saved);
+              setRow((prev) => (prev ? { ...prev, email: saved } : prev));
+              setSubjectProfile((prev) => (prev ? { ...prev, email: saved } : prev));
+              notifyVerificationUpdated();
+              toast.success('Email saved — continue with pre-declaration');
+            }}
+          />
+        </div>
+      ) : showDeclarationModal && !emitraNoticeOpen ? (
         <div className="mx-auto w-full min-w-0 max-w-5xl">
           <WorkerPreJourneyScreeningModal
             userId={subjectId || ''}

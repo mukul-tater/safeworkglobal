@@ -1,4 +1,5 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
+import { displayableEmail } from '@/lib/workerAuthEmail';
 import {
   WorkerPreJourneyDeclaration,
   ValidationResult,
@@ -257,6 +258,17 @@ export async function saveWorkerDeclarations(
     throw new Error(errorMsg);
   }
 
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+  if (isUuid) {
+    const [{ data: wv }, { data: prof }] = await Promise.all([
+      supabase.from('worker_verification').select('email').eq('user_id', userId).maybeSingle(),
+      supabase.from('profiles').select('email').eq('id', userId).maybeSingle(),
+    ]);
+    if (!displayableEmail(wv?.email) && !displayableEmail(prof?.email)) {
+      throw new Error('Enter a real email before completing pre-declaration.');
+    }
+  }
+
   // Always cache locally first
   try {
     localStorage.setItem(`${LOCAL_STORAGE_KEY_PREFIX}${userId}`, JSON.stringify(declRecord));
@@ -264,7 +276,6 @@ export async function saveWorkerDeclarations(
     /* ignore */
   }
 
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
   if (!isUuid) {
     return declRecord;
   }

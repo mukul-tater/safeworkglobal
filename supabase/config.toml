@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.purge-storage]
 verify_jwt = false
+
+[functions.email-journey-step-cleared]
+verify_jwt = false

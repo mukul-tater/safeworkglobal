@@ -1,5 +1,5 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
-import { isWorkerMobileAuthEmail } from '@/lib/workerAuthEmail';
+import { isValidContactEmail } from '@/lib/workerAuthEmail';
 import { assertValidPassportKyc, parseOptionalPassportKyc } from '@/lib/validations/passport';
 import { validatePAN } from '@/lib/security';
 import type {
@@ -129,7 +129,7 @@ export async function saveEssentials(
   },
 ): Promise<WorkerVerification> {
   const email = input.email.trim().toLowerCase();
-  if (!email.includes('@') || isWorkerMobileAuthEmail(email)) {
+  if (!isValidContactEmail(email)) {
     throw new Error('Enter a real email before continuing. Temporary mobile login emails are not allowed.');
   }
 
@@ -188,6 +188,24 @@ export async function saveEssentials(
 
   if (error) throw new Error(error.message);
   return data as WorkerVerification;
+}
+
+/** Save a real contact email before pre-declaration. Does not advance stage. */
+export async function saveContactEmail(userId: string, rawEmail: string): Promise<string> {
+  const email = rawEmail.trim().toLowerCase();
+  if (!isValidContactEmail(email)) {
+    throw new Error('Enter a real email before continuing. Temporary mobile login emails are not allowed.');
+  }
+
+  const row = await getOrCreateVerification(userId);
+  await supabase.from('profiles').update({ email }).eq('id', userId);
+
+  const { error } = await supabase
+    .from('worker_verification')
+    .update({ email, updated_at: new Date().toISOString() })
+    .eq('id', row.id);
+  if (error) throw new Error(error.message);
+  return email;
 }
 
 /**
