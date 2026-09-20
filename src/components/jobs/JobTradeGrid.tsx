@@ -1,26 +1,40 @@
 import { HardHat } from 'lucide-react';
 import electricalImg from '@/assets/trade-electrical.jpg';
 import welderImg from '@/assets/trade-welder.jpg';
-import constructionImg from '@/assets/trade-construction.jpg';
-import { UAE_LISTED_JOBS, isHiddenPublicJob, type UaeListedJob } from '@/lib/uaeListedJobs';
+import plumberImg from '@/assets/trades/plumber.jpg';
+import shutteringImg from '@/assets/trades/shuttering.jpg';
+import masonImg from '@/assets/trades/mason.jpg';
+import labourImg from '@/assets/trades/labour.jpg';
+import pipeFitterImg from '@/assets/trades/pipe-fitter.jpg';
+import furnitureImg from '@/assets/trades/furniture.jpg';
+import acTechnicianImg from '@/assets/trades/ac-technician.jpg';
+import warehouseImg from '@/assets/trades/warehouse.jpg';
+import scaffolderImg from '@/assets/trades/scaffolder.jpg';
+import painterImg from '@/assets/trades/painter.jpg';
+import aluminiumImg from '@/assets/trades/aluminium.jpg';
+import HindiText from '@/components/indian-workforce/HindiText';
+import {
+  UAE_LISTED_JOBS,
+  UAE_LISTED_JOB_LABELS,
+  isHiddenPublicJob,
+  type UaeListedJob,
+} from '@/lib/uaeListedJobs';
 
-const TRADE_CARDS: Record<UaeListedJob, { image: string }> = {
-  Electrician: { image: electricalImg },
-  Welder: { image: welderImg },
-  Plumber: { image: '/country-insights/uae/worksite-business-bay-2.png' },
-  'Shuttering Carpenter': { image: '/country-insights/uae/worksite-rebar.png' },
-  'Mason (tiles/marble)': { image: constructionImg },
-  'Construction Labour/Helper': { image: '/country-insights/uae/worksite-skyline.png' },
-  'Pipe Fitter': { image: '/country-insights/uae/worksite-business-bay-1.png' },
-  'Furniture Carpenter - Finishing, All Rounder': {
-    image: '/country-insights/uae/worksite-business-bay-1.png',
-  },
-  'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png' },
-  'AC Technician': { image: electricalImg },
-  'General Labour - Warehouse/Supermarket': { image: '/country-insights/uae/worksite-crane.png' },
-  Scaffolder: { image: '/country-insights/uae/worksite-crane.png' },
-  Painter: { image: constructionImg },
-  'Aluminium Fixer/Fabricator': { image: welderImg },
+const TRADE_CARDS: Record<UaeListedJob, { image: string; position?: string }> = {
+  Electrician: { image: electricalImg, position: 'center 28%' },
+  Welder: { image: welderImg, position: 'center 22%' },
+  Plumber: { image: plumberImg, position: 'center 40%' },
+  'Shuttering Carpenter': { image: shutteringImg, position: 'center 40%' },
+  'Mason (tiles/marble)': { image: masonImg, position: 'center 55%' },
+  'Construction Labour/Helper': { image: labourImg, position: 'center 30%' },
+  'Pipe Fitter': { image: pipeFitterImg, position: 'center 45%' },
+  'Furniture Carpenter - Finishing, All Rounder': { image: furnitureImg, position: 'center 55%' },
+  'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png', position: 'center 60%' },
+  'AC Technician': { image: acTechnicianImg, position: 'center 30%' },
+  'General Labour - Warehouse/Supermarket': { image: warehouseImg, position: 'center 40%' },
+  Scaffolder: { image: scaffolderImg, position: 'center 70%' },
+  Painter: { image: painterImg, position: 'center 40%' },
+  'Aluminium Fixer/Fabricator': { image: aluminiumImg, position: 'center 40%' },
 };
 
 interface Props {
@@ -39,6 +53,7 @@ export default function JobTradeGrid({ onSelect }: Props) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {UAE_LISTED_JOBS.filter((job) => !isHiddenPublicJob(job)).map((job) => {
           const card = TRADE_CARDS[job];
+          const label = UAE_LISTED_JOB_LABELS[job];
           return (
             <button
               key={job}
@@ -49,16 +64,21 @@ export default function JobTradeGrid({ onSelect }: Props) {
               <div className="relative h-40 w-full overflow-hidden sm:h-48">
                 <img
                   src={card.image}
-                  alt=""
+                  alt={`${label.en} / ${label.hi}`}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  style={{ objectPosition: card.position ?? 'center' }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/25 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-4 text-white">
                   <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-white/80">
                     <HardHat className="h-3.5 w-3.5" />
                     Job
                   </p>
-                  <p className="mt-1 font-heading text-xl font-semibold leading-snug">{job}</p>
+                  <p className="mt-1 font-heading text-lg font-semibold leading-snug sm:text-xl">
+                    {label.en}
+                    <span className="font-medium text-white/85"> / </span>
+                    <HindiText className="inline font-medium">{label.hi}</HindiText>
+                  </p>
                 </div>
               </div>
             </button>

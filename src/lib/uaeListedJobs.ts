@@ -18,6 +18,30 @@ export const UAE_LISTED_JOBS = [
 
 export type UaeListedJob = (typeof UAE_LISTED_JOBS)[number];
 
+/** Card title: English / Hindi, shown next to each other on Find jobs. */
+export const UAE_LISTED_JOB_LABELS: Record<UaeListedJob, { en: string; hi: string }> = {
+  Electrician: { en: 'Electrician', hi: 'इलेक्ट्रीशियन' },
+  Welder: { en: 'Welder', hi: 'वेल्डर' },
+  Plumber: { en: 'Plumber', hi: 'प्लंबर' },
+  'Shuttering Carpenter': { en: 'Shuttering Carpenter', hi: 'शटरिंग कारपेंटर' },
+  'Mason (tiles/marble)': { en: 'Mason (tiles/marble)', hi: 'मेसन (टाइल/मारबल)' },
+  'Construction Labour/Helper': { en: 'Construction Labour', hi: 'निर्माण मजदूर' },
+  'Pipe Fitter': { en: 'Pipe Fitter', hi: 'पाइप फिटर' },
+  'Furniture Carpenter - Finishing, All Rounder': {
+    en: 'Furniture Carpenter',
+    hi: 'फर्नीचर कारपेंटर',
+  },
+  'Steel Fixer': { en: 'Steel Fixer', hi: 'स्टील फिक्सर' },
+  'AC Technician': { en: 'AC Technician', hi: 'AC तकनीशियन' },
+  'General Labour - Warehouse/Supermarket': {
+    en: 'Warehouse / Supermarket',
+    hi: 'गोदाम / सुपरमार्केट',
+  },
+  Scaffolder: { en: 'Scaffolder', hi: 'स्कैफोल्डर' },
+  Painter: { en: 'Painter', hi: 'पेंटर' },
+  'Aluminium Fixer/Fabricator': { en: 'Aluminium Fixer', hi: 'एल्युमिनियम फिक्सर' },
+};
+
 const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'Aluminium Fixer/Fabricator', needles: ['aluminium fixer', 'aluminum fixer', 'aluminium fabricator', 'aluminum fabricator', 'glazing fabricator'] },
   { job: 'Shuttering Carpenter', needles: ['shuttering carpenter', 'shuttering', 'formwork carpenter', 's. carpenter'] },
