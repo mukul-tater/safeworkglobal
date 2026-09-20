@@ -1,0 +1,1 @@
+DROP FUNCTION public.bootstrap_journey_email_vault(text);
