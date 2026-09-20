@@ -1750,7 +1750,7 @@ export default function WorkerVerificationPage({
             title="We're verifying your identity"
             body="Your identity documents are submitted. SafeWork reviews them before scheduling your video interview."
             expected="Usually within a few hours"
-            notifyNote="You'll get an SMS and an app notification the moment verification is done — no need to keep this page open."
+            notifyNote="You'll get an app notification the moment verification is done — no need to keep this page open."
             timeline={[
               {
                 label: 'Identity documents submitted',
@@ -2002,7 +2002,7 @@ export default function WorkerVerificationPage({
                   : 'SafeWork will schedule your video interview and assign an interviewer. The date, time and joining link appear here.'
             }
             expected={row.interview_scheduled_at ? undefined : 'Usually scheduled within 1–2 days'}
-            notifyNote="We'll SMS you the date and joining link as soon as your interview is scheduled."
+            notifyNote="You'll get an app notification when your interview is approved and you can proceed to the next step."
             timeline={[
               { label: 'Identity verified', status: 'done' },
               {
@@ -2703,7 +2703,7 @@ export default function WorkerVerificationPage({
                 : `SafeWork will confirm your PDOT training batch${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Details appear here.`
             }
             expected={row.pdot_scheduled_at ? undefined : 'Batch usually confirmed within a few days'}
-            notifyNote="We'll notify you by SMS once your PDOT batch and schedule are confirmed."
+            notifyNote="You'll get an app notification when PDOT is completed and you can proceed to GCC ready."
             timeline={[
               { label: 'Bond received by SafeWork', status: 'done' },
               {

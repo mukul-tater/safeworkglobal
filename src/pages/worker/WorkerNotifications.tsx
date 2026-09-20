@@ -4,6 +4,7 @@ import { Bell, Briefcase, MessageSquare, CheckCircle, FileText, Plane } from "lu
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 
@@ -22,10 +23,23 @@ const typeIconMap: Record<string, any> = {
   formality_update: Plane,
   message: MessageSquare,
   success: CheckCircle,
+  journey_step_cleared: CheckCircle,
 };
+
+function notificationHref(notification: Notification): string | null {
+  const href = notification.data?.href;
+  if (typeof href === "string" && href.startsWith("/") && !href.startsWith("//")) {
+    return href;
+  }
+  if (notification.type === "journey_step_cleared") {
+    return "/worker/journey";
+  }
+  return null;
+}
 
 export default function WorkerNotifications() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,6 +84,14 @@ export default function WorkerNotifications() {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.is_read) {
+      void markAsRead(notification.id);
+    }
+    const href = notificationHref(notification);
+    if (href) navigate(href);
+  };
+
   return (
     <WorkerPortalLayout>
       <PortalBreadcrumb />
@@ -109,7 +131,7 @@ export default function WorkerNotifications() {
                 className={`p-5 cursor-pointer transition-colors hover:bg-muted/50 ${
                   !notification.is_read ? "border-l-4 border-l-primary" : ""
                 }`}
-                onClick={() => !notification.is_read && markAsRead(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start gap-4">
                   <div className={`p-2.5 rounded-lg ${!notification.is_read ? "bg-primary/10" : "bg-muted"}`}>

@@ -124,10 +124,19 @@ export function NotificationDrawer() {
 
   const handleNotificationClick = (notification: Notification) => {
     markAsRead(notification.id);
-    
-    // Navigate based on notification type
+
     const data = notification.data as Record<string, unknown> | null;
-    if (data?.job_id) {
+    const href = typeof data?.href === 'string' ? data.href : null;
+    const internalHref =
+      href && href.startsWith('/') && !href.startsWith('//') ? href : null;
+
+    if (internalHref) {
+      navigate(internalHref);
+      setIsOpen(false);
+    } else if (notification.type === 'journey_step_cleared') {
+      navigate('/worker/journey');
+      setIsOpen(false);
+    } else if (data?.job_id) {
       navigate(`/jobs/${data.job_id}`);
       setIsOpen(false);
     } else if (data?.application_id) {
@@ -148,6 +157,8 @@ export function NotificationDrawer() {
         return <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600">📅</div>;
       case 'message':
         return <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600">💬</div>;
+      case 'journey_step_cleared':
+        return <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600">✓</div>;
       default:
         return <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">🔔</div>;
     }
@@ -165,6 +176,8 @@ export function NotificationDrawer() {
         return 'Interview';
       case 'message':
         return 'Message';
+      case 'journey_step_cleared':
+        return 'Journey';
       default:
         return 'Update';
     }
