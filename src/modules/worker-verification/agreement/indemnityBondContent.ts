@@ -29,16 +29,12 @@ export const INDEMNITY_BOND_HIGHLIGHTS = {
   hi: [
     'कम से कम 2 वर्ष तक कार्य करने की सहमति',
     '6 माह की परिवीक्षा अवधि',
-    '₹1,00,000 वीज़ा/प्रोसेसिंग + ₹20,000 फ्लाइट = कुल ₹1,20,000',
-    '6 माह से पहले छोड़ने पर ₹1,20,000; उसके बाद 2 वर्ष से पहले ₹75,000',
     'कर्मचारी एवं गारंटर के सुरक्षा चेक',
     '₹100 स्टाम्प पेपर पर नोटरीकृत Indemnity Bond',
   ],
   en: [
     'Agree to work for at least 2 years',
     'Six-month probation period',
-    '₹1,00,000 visa/processing + ₹20,000 flight = ₹1,20,000 total',
-    'Leave within 6 months: ₹1,20,000; after 6 months but before 2 years: ₹75,000',
     'Security cheques from the worker and the guarantor',
     'Notarised Indemnity Bond on ₹100 stamp paper',
   ],
