@@ -26,7 +26,7 @@ export const UAE_LISTED_JOB_LABELS: Record<UaeListedJob, { en: string; hi: strin
   'Shuttering Carpenter': { en: 'Shuttering Carpenter', hi: 'साँचा बढ़ई' },
   'Mason (tiles/marble)': { en: 'Mason (tiles/marble)', hi: 'राजमिस्त्री (टाइल/संगमरमर)' },
   'Construction Labour/Helper': { en: 'Construction Labour', hi: 'निर्माण मजदूर' },
-  'Pipe Fitter': { en: 'Pipe Fitter', hi: 'पाइप जोड़ने वाला' },
+  'Pipe Fitter': { en: 'Pipe Fitter (Steel / GI Pipe)', hi: 'पाइप जोड़ने वाला (स्टील / GI पाइप)' },
   'Furniture Carpenter - Finishing, All Rounder': {
     en: 'Furniture Carpenter',
     hi: 'फर्नीचर बढ़ई',
@@ -76,7 +76,8 @@ export function inferUaeListedJob(title: string, description = ''): UaeListedJob
 
 /** Public-facing title: listed trade name when we can infer one. */
 export function getPublicJobTitle(title: string, description = ''): string {
-  return inferUaeListedJob(title, description) ?? title;
+  const job = inferUaeListedJob(title, description);
+  return job ? UAE_LISTED_JOB_LABELS[job].en : title;
 }
 
 /** Generic Carpenter listing — removed from Find jobs; shuttering / furniture stay. */
