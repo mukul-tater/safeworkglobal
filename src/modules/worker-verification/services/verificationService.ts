@@ -615,6 +615,118 @@ async function rpc<T = unknown>(name: string, args?: Record<string, unknown>): P
   return data as T;
 }
 
+const KYC_REVIEW_DOC_TYPES = [
+  'pan',
+  'aadhaar',
+  'aadhaar_front',
+  'aadhaar_back',
+  'passport',
+  'passport_front',
+  'passport_last',
+  'tenth_marksheet',
+  'certificate',
+  'id_proof',
+  'id_card',
+  'national_id',
+  'Aadhar',
+  'PAN Card',
+  'Passport',
+  'Identity Card',
+  'Driving License',
+];
+
+export type AdminKycDocument = {
+  id: string;
+  document_name: string;
+  document_type: string;
+  view_url: string;
+};
+
+export type AdminKycPack = {
+  pan_number: string | null;
+  aadhaar_number: string | null;
+  aadhaar_last4: string | null;
+  passport_number: string | null;
+  passport_expiry: string | null;
+  kyc_submitted_at: string | null;
+  docs: AdminKycDocument[];
+};
+
+/** Identity numbers + latest KYC files for admin review. */
+export async function loadAdminKycPacks(userIds: string[]): Promise<Map<string, AdminKycPack>> {
+  const packs = new Map<string, AdminKycPack>();
+  if (!userIds.length) return packs;
+
+  const [{ data: profiles }, { data: documents }] = await Promise.all([
+    supabase
+      .from('worker_profiles')
+      .select('user_id, pan_number, aadhaar_number, aadhaar_last4, passport_number, passport_expiry, kyc_submitted_at')
+      .in('user_id', userIds),
+    supabase
+      .from('worker_documents')
+      .select('id, worker_id, document_name, document_type, file_url, uploaded_at')
+      .in('worker_id', userIds)
+      .in('document_type', KYC_REVIEW_DOC_TYPES)
+      .order('uploaded_at', { ascending: false }),
+  ]);
+
+  for (const id of userIds) {
+    packs.set(id, {
+      pan_number: null,
+      aadhaar_number: null,
+      aadhaar_last4: null,
+      passport_number: null,
+      passport_expiry: null,
+      kyc_submitted_at: null,
+      docs: [],
+    });
+  }
+
+  for (const row of profiles || []) {
+    const pack = packs.get(row.user_id);
+    if (!pack) continue;
+    pack.pan_number = row.pan_number || null;
+    pack.aadhaar_number = row.aadhaar_number || null;
+    pack.aadhaar_last4 = row.aadhaar_last4 || null;
+    pack.passport_number = row.passport_number || null;
+    pack.passport_expiry = row.passport_expiry || null;
+    pack.kyc_submitted_at = row.kyc_submitted_at || null;
+  }
+
+  const latest = new Map<string, {
+    id: string;
+    worker_id: string;
+    document_name: string;
+    document_type: string;
+    file_url: string;
+  }>();
+  for (const doc of documents || []) {
+    const key = `${doc.worker_id}:${doc.document_name}`;
+    if (!latest.has(key)) latest.set(key, doc);
+  }
+
+  await Promise.all(
+    [...latest.values()].map(async (doc) => {
+      const pack = packs.get(doc.worker_id);
+      if (!pack) return;
+      let view_url = doc.file_url;
+      try {
+        view_url = await getWorkerDocumentSignedUrl(doc.file_url, 60 * 60);
+      } catch {
+        // Fall back to the stored URL (often a long-lived signed link).
+      }
+      pack.docs.push({
+        id: doc.id,
+        document_name: doc.document_name,
+        document_type: doc.document_type,
+        view_url,
+      });
+    }),
+  );
+
+  return packs;
+}
+
 /** Admin — approve or reject KYC. Approving unlocks interview scheduling. */
 export async function reviewWorkerKyc(
   userId: string,

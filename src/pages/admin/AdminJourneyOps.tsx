@@ -46,11 +46,13 @@ import {
   listMedicalReports,
   recordInterviewScore,
   reviewWorkerKyc,
+  loadAdminKycPacks,
   scheduleWorkerAssessment,
   scheduleWorkerInterview,
   setActiveBondTemplate,
   setPdotPlan,
   updateDeploymentChecklist,
+  type AdminKycDocument,
 } from '@/modules/worker-verification/services/verificationService';
 import type { BondTemplate } from '@/modules/worker-verification/types';
 import AdminBondSecurityReview from '@/pages/admin/AdminBondSecurityReview';
@@ -84,10 +86,36 @@ type Row = Record<string, any> & {
   medical_xray_report_url?: string | null;
   medical_xray_photo_url?: string | null;
   medical_result_url?: string | null;
+  pan_number?: string | null;
+  aadhaar_number?: string | null;
+  aadhaar_last4?: string | null;
+  passport_number?: string | null;
+  passport_expiry?: string | null;
+  kyc_submitted_at?: string | null;
+  kycDocs?: AdminKycDocument[];
 };
 
 const fmt = (v?: string | null) =>
   v ? new Date(v).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+
+function formatAadhaar(value?: string | null, last4?: string | null) {
+  const digits = (value || '').replace(/\D/g, '');
+  if (digits.length === 12) return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`;
+  if (last4) return `XXXX XXXX ${last4}`;
+  return value || '—';
+}
+
+function isPdfUrl(url: string, name?: string) {
+  return /\.pdf(\?|$)/i.test(url) || /\.pdf$/i.test(name || '');
+}
+
+function formatDateOnly(iso?: string | null) {
+  if (!iso) return '—';
+  const d = iso.length <= 10 ? new Date(`${iso}T00:00:00`) : new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? '—'
+    : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 export default function AdminJourneyOps() {
   const { user } = useAuth();
@@ -169,6 +197,20 @@ export default function AdminJourneyOps() {
                 : ASSESSMENT_FEE_INR;
             });
           }
+        }
+        if (tab === 'kyc') {
+          const packs = await loadAdminKycPacks(ids);
+          list.forEach((r) => {
+            const pack = packs.get(r.user_id);
+            if (!pack) return;
+            r.pan_number = pack.pan_number;
+            r.aadhaar_number = pack.aadhaar_number;
+            r.aadhaar_last4 = pack.aadhaar_last4;
+            r.passport_number = pack.passport_number;
+            r.passport_expiry = pack.passport_expiry;
+            r.kyc_submitted_at = r.kyc_submitted_at || pack.kyc_submitted_at;
+            r.kycDocs = pack.docs;
+          });
         }
       }
       setRows(list);
@@ -258,11 +300,63 @@ export default function AdminJourneyOps() {
     const busy = actingId === r.user_id;
 
     if (tab === 'kyc') {
+      const docs = r.kycDocs || [];
       return (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="text-xs text-muted-foreground">
             Aadhaar / PAN submitted {fmt(r.kyc_submitted_at)}
           </div>
+          <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-xs text-muted-foreground">PAN</dt>
+              <dd className="font-mono text-[13px]">{r.pan_number || '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Aadhaar</dt>
+              <dd className="font-mono text-[13px]">{formatAadhaar(r.aadhaar_number, r.aadhaar_last4)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Passport</dt>
+              <dd className="font-mono text-[13px]">{r.passport_number || 'Not provided'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Passport expiry</dt>
+              <dd className="text-[13px]">{formatDateOnly(r.passport_expiry)}</dd>
+            </div>
+          </dl>
+          {docs.length === 0 ? (
+            <p className="text-sm text-amber-700">
+              No KYC photos found for this worker. Ask them to re-upload Aadhaar / PAN before approving.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {docs.map((doc) => (
+                <a
+                  key={doc.id}
+                  href={doc.view_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group overflow-hidden rounded-lg border border-border bg-muted/20 hover:border-primary/50"
+                >
+                  <div className="flex h-36 items-center justify-center overflow-hidden bg-muted/40">
+                    {isPdfUrl(doc.view_url, doc.document_name) ? (
+                      <span className="px-2 text-center text-xs text-muted-foreground">PDF — open to view</span>
+                    ) : (
+                      <img
+                        src={doc.view_url}
+                        alt={doc.document_name}
+                        className="h-full w-full object-contain"
+                      />
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between gap-1 px-2 py-1.5">
+                    <span className="min-w-0 truncate text-xs font-medium">{doc.document_name}</span>
+                    <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground group-hover:text-primary" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          )}
           <Textarea
             rows={2}
             placeholder="Reason (required if rejecting)"
