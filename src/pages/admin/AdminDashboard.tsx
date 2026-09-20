@@ -336,21 +336,21 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <div id="section-users" className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Recent Users</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => navigate('/admin/users')}>Manage All</Button>
+      <div id="section-users" className="mb-8 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="min-w-0 overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+            <CardTitle className="flex min-w-0 items-center gap-2"><Users className="h-5 w-5 shrink-0" /> Recent Users</CardTitle>
+            <Button variant="outline" size="sm" className="shrink-0" onClick={() => navigate('/admin/users')}>Manage All</Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {recentUsers.length > 0 ? recentUsers.map((u) => (
-                <div key={u.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{u.full_name || 'No name'}</p>
-                    <p className="text-sm text-muted-foreground">{u.email || 'No contact email yet'}</p>
+                <div key={u.id} className="flex min-w-0 items-start justify-between gap-3 rounded-lg bg-muted/50 p-3 sm:items-center">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{u.full_name || 'No name'}</p>
+                    <p className="truncate text-sm text-muted-foreground">{u.email || 'No contact email yet'}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                     <Badge className={getRoleBadgeColor(u.role)}>{u.role}</Badge>
                     <span className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</span>
                     <AdminDeleteUserButton
@@ -366,20 +366,20 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2"><Briefcase className="h-5 w-5" /> Recent Jobs</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => navigate('/admin/jobs')}>Manage All</Button>
+        <Card className="min-w-0 overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+            <CardTitle className="flex min-w-0 items-center gap-2"><Briefcase className="h-5 w-5 shrink-0" /> Recent Jobs</CardTitle>
+            <Button variant="outline" size="sm" className="shrink-0" onClick={() => navigate('/admin/jobs')}>Manage All</Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {recentJobs.length > 0 ? recentJobs.map((job) => (
-                <div key={job.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{job.title}</p>
-                    <p className="text-sm text-muted-foreground">{job.location}</p>
+                <div key={job.id} className="flex min-w-0 items-start justify-between gap-3 rounded-lg bg-muted/50 p-3 sm:items-center">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{job.title}</p>
+                    <p className="truncate text-sm text-muted-foreground">{job.location}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2">
                     <PostedByBadge role={job.posted_by_role} />
                     <Badge className={getStatusBadgeColor(job.status)}>{job.status}</Badge>
                     <span className="text-xs text-muted-foreground">{new Date(job.created_at).toLocaleDateString()}</span>

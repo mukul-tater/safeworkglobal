@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import DashboardSidebar, { NavItem, NavGroup, itemIsActive } from "./DashboardSidebar";
 import DashboardHeader from "./DashboardHeader";
@@ -54,10 +54,15 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
   const pageTitle = resolvePageTitle(portalName, location.pathname, location.search, navItems, navGroups);
 
+  useLayoutEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname, location.search, location.hash]);
+
   return (
-    <div className="flex min-h-screen bg-background w-full">
+    <div className="flex h-svh max-h-svh w-full overflow-hidden bg-background">
       <DashboardSidebar
         navItems={navItems}
         navGroups={navGroups}
@@ -65,7 +70,7 @@ export default function DashboardLayout({
         menuOpen={menuOpen}
         onMenuOpenChange={setMenuOpen}
       />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <DashboardHeader
           portalLabel={shortPortalLabel(portalLabel)}
           pageTitle={pageTitle}
@@ -73,7 +78,10 @@ export default function DashboardLayout({
           showLanguageSwitcher={showLanguageSwitcher}
           onOpenMenu={() => setMenuOpen(true)}
         />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden animate-in fade-in duration-300">
+        <main
+          ref={mainRef}
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 animate-in fade-in duration-300 md:p-6 lg:p-8"
+        >
           {children}
         </main>
       </div>

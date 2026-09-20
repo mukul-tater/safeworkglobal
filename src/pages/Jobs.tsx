@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import SEOHead from '@/components/SEOHead';
 import { PublicOrWorkerPortalLayout } from '@/modules/worker-registration/components/WorkerPortalShell';
 import WorkerJobsGate from '@/modules/worker-registration/components/WorkerJobsGate';
@@ -34,6 +34,7 @@ import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListe
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, jobsBrowsePath } from '@/lib/jobsBrowse';
+import { scrollToTop } from '@/lib/scrollToTop';
 
 const JOBS_PER_PAGE = 20;
 const SUGGESTED_CATEGORIES = [...UAE_LISTED_JOBS];
@@ -137,9 +138,15 @@ export default function Jobs() {
   const { user, isAuthenticated, role } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const initialBrowse = browseFromSearchParams(searchParams);
 
-  const [filters, setFilters] = useState<JobFilters>(EMPTY_JOB_FILTERS);
-  const [keywordInput, setKeywordInput] = useState('');
+  const [filters, setFilters] = useState<JobFilters>(() => ({
+    ...EMPTY_JOB_FILTERS,
+    keyword: initialBrowse.keyword,
+    country: initialBrowse.country,
+    jobCategory: initialBrowse.jobCategory,
+  }));
+  const [keywordInput, setKeywordInput] = useState(initialBrowse.keyword);
   const [loading, setLoading] = useState(true);
   const [allJobs, setAllJobs] = useState<JobListItem[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>('recent');
@@ -156,7 +163,8 @@ export default function Jobs() {
   }, [debouncedKeyword]);
 
   // Country + category live in the URL so browser back returns to the previous wizard step.
-  useEffect(() => {
+  // useLayoutEffect: swap the step before paint so a focused category card cannot keep the page pinned to the bottom.
+  useLayoutEffect(() => {
     const { keyword, country, jobCategory } = browseFromSearchParams(searchParams);
     setKeywordInput((prev) => (prev === keyword ? prev : keyword));
     setFilters((prev) =>
@@ -166,11 +174,16 @@ export default function Jobs() {
     );
   }, [searchParams]);
 
+  useLayoutEffect(() => {
+    scrollToTop();
+  }, [filters.country, filters.jobCategory]);
+
   const goBrowse = useCallback(
     (
       next: { country: string; jobCategory: string; keyword?: string },
       mode: 'push' | 'replace' = 'push',
     ) => {
+      scrollToTop();
       navigate(
         jobsBrowsePath({
           country: next.country,

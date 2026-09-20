@@ -88,8 +88,8 @@ export default function EmitraLayout({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-background w-full">
-      <aside className="hidden md:flex flex-col w-[260px] bg-card border-r border-border min-h-screen p-5 shrink-0">
+    <div className="flex h-svh max-h-svh w-full overflow-hidden bg-background">
+      <aside className="hidden h-full min-h-0 w-[260px] shrink-0 flex-col border-r border-border bg-card p-5 md:flex">
         <SidebarBrand />
         <SidebarNav />
         <div className="mt-auto pt-6 border-t border-border space-y-4">
@@ -101,14 +101,14 @@ export default function EmitraLayout({
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         <div
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{ background: 'var(--gradient-mesh)' }}
           aria-hidden
         />
 
-        <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
+        <header className="z-40 w-full shrink-0 border-b border-border/80 bg-background/80 backdrop-blur-md">
           <div className="flex h-14 items-center justify-between px-4 md:px-6">
             <div className="flex items-center gap-3">
                 <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
@@ -144,7 +144,7 @@ export default function EmitraLayout({
 
         <main
           className={cn(
-            'relative z-10 flex-1 px-4 py-6 md:px-8 md:py-8 overflow-x-hidden',
+            'relative z-10 min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 md:px-8 md:py-8',
             centered && 'flex flex-col items-center justify-center',
           )}
         >

@@ -318,7 +318,7 @@ export default function DashboardSidebar({
           />
         </SheetContent>
       </Sheet>
-      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-card border-r h-screen sticky top-0 p-4 lg:p-5">
+      <aside className="hidden h-full min-h-0 w-64 shrink-0 flex-col border-r bg-card p-4 md:flex lg:p-5">
         <SidebarBody
           navItems={navItems}
           navGroups={navGroups}

@@ -21,7 +21,7 @@ function PartnerNav({
   onNavigate?: () => void;
 }) {
   return (
-    <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
+    <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
       {navItems.map((item) => {
         const active = pathname === item.to || pathname.startsWith(item.to + "/");
         const Icon = item.icon;
@@ -85,7 +85,7 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
         : "bg-red-500/10 text-red-700 border-red-200";
 
   const brand = (
-    <div className="p-4 border-b">
+    <div className="shrink-0 border-b p-4">
       <div className="text-sm text-muted-foreground">Partner Portal</div>
       <div className="font-semibold truncate">{partner.company_name ?? "—"}</div>
       <div className="text-xs mt-1">
@@ -95,7 +95,7 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
   );
 
   const footer = (
-    <div className="p-3 border-t space-y-3">
+    <div className="shrink-0 space-y-3 border-t p-3">
       <AboutLanguageToggle labeled />
       <Button variant="ghost" className="w-full justify-start" onClick={() => logout()}>
         <LogOut className="h-4 w-4 mr-2" /> Logout
@@ -104,7 +104,7 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen bg-muted/30 flex">
+    <div className="flex h-svh max-h-svh w-full overflow-hidden bg-muted/30">
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="left" className="flex w-72 flex-col p-0 md:hidden">
           {brand}
@@ -113,14 +113,14 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
         </SheetContent>
       </Sheet>
 
-      <aside className="hidden md:flex w-64 bg-card border-r flex-col shrink-0">
+      <aside className="hidden h-full min-h-0 w-64 shrink-0 flex-col border-r bg-card md:flex">
         {brand}
         <PartnerNav navItems={navItems} pathname={location.pathname} />
         {footer}
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-card border-b px-4 md:px-6 py-3 flex items-center gap-3 md:gap-4 flex-wrap">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="flex shrink-0 flex-wrap items-center gap-3 border-b bg-card px-4 py-3 md:gap-4 md:px-6">
           <Button
             type="button"
             variant="outline"
@@ -172,13 +172,13 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
         </header>
 
         {partner.status !== "approved" && (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 md:px-6 py-2 text-sm text-amber-800">
+          <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 md:px-6">
             Your partner account is <b>{partner.status}</b>. You can still add workers while awaiting
             admin approval.
           </div>
         )}
 
-        <main className="flex-1 p-4 md:p-6 overflow-auto">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">{children}</main>
       </div>
     </div>
   );
