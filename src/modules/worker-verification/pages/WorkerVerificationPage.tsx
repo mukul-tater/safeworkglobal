@@ -2031,7 +2031,7 @@ export default function WorkerVerificationPage({
                 <div>
                   <h2 className="text-lg font-semibold font-heading leading-tight">Assessment fee</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    A one-time ₹{assessmentFee.toLocaleString('en-IN')} fee covering visa, flights, documentation, insurance, government fees, and more. Pay securely — you continue automatically once it succeeds.
+                    This fee depends on your selected job. It is a one-time ₹{assessmentFee.toLocaleString('en-IN')} amount covering visa, flights, documentation, insurance, government fees, and more. Pay securely — you continue automatically once it succeeds.
                   </p>
                 </div>
               </div>

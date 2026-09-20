@@ -42,8 +42,8 @@ export const WORKER_TERMS_SECTIONS: WorkerTermsSection[] = [
   },
   {
     id: 'bond',
-    title: 'Bond & compliance',
-    body: 'When selected for placement you may be required to execute a bond (stamp paper / eStamp / E-Mitra assisted) with video proof, and to follow Ministry of External Affairs recruitment guidelines.',
+    title: 'Agreement — Indemnity Bond',
+    body: 'When selected for placement you must execute an Indemnity Bond (consent, employment continuation bond and guarantee) on ₹100 stamp paper, get it notarised, and upload it or send it with Aadhaar copies of the worker and the guarantor.',
   },
   {
     id: 'contact',
@@ -133,7 +133,7 @@ export const ASSESSMENT_FEE_INCLUSIONS = [
   'Pre-departure assistance',
 ] as const;
 
-/** Shown on the logged-in worker Medical test step (not the homepage demo). */
+/** Shown on the logged-in worker Medical test step and the homepage journey demo. */
 export const MEDICAL_TEST_INTRO =
   'Get these tests done at any nearest laboratory, then upload the reports on this portal.';
 
@@ -197,7 +197,7 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   trade_test: 'Test 3 — Physical trade test',
   medical: 'Medical test',
   tests: 'Test 3 — Physical trade test',
-  bond: 'Bond & Security',
+  bond: 'Agreement',
   pdot: 'PDOT training',
   deployment: 'Deployment',
   gcc_ready: 'GCC ready',
@@ -315,7 +315,7 @@ const GCC_JOURNEY_NAV_STEPS_CORE: GccNavStepMeta[] = [
     navLabel: 'Medical test',
     stages: ['medical'],
   },
-  { id: 'bond', label: 'Bond & Security', shortLabel: 'Bond', navLabel: 'Bond & Security', stages: ['bond'] },
+  { id: 'bond', label: 'Agreement', shortLabel: 'Agreement', navLabel: 'Agreement', stages: ['bond'] },
   {
     id: 'pdot',
     label: 'PDOT training',

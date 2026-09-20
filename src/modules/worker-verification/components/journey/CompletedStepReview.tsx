@@ -26,6 +26,7 @@ import {
 import { describeQuizResult } from '@/modules/worker-verification/quiz-data/quizResult';
 import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
 import { MedicalRequiredTestsNote } from '@/modules/worker-verification/components/journey/MedicalTestStage';
+import IndemnityBondAgreement from '@/modules/worker-verification/components/agreement/IndemnityBondAgreement';
 import { listMedicalReports } from '@/modules/worker-verification/services/verificationService';
 
 export interface KycDocument {
@@ -578,6 +579,19 @@ export default function CompletedStepReview({
           );
         })()}
 
+        {stepId === 'bond' && (
+          <div className="space-y-4">
+            <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              <Detail label="Agreement status" value={row.bond_status || 'Submitted'} />
+              <Detail
+                label="Original received"
+                value={row.bond_received_at ? formatDate(row.bond_received_at) : 'Pending'}
+              />
+            </dl>
+            <IndemnityBondAgreement heightClass="h-[360px]" />
+          </div>
+        )}
+
         {stepId === 'payment' && (() => {
           const waived = !row.razorpay_payment_id && paymentRecord?.provider === 'pilot_waive';
           return (
@@ -650,6 +664,7 @@ export default function CompletedStepReview({
           'test2',
           'payment',
           'medical',
+          'bond',
         ].includes(stepId) ? (
           <p className="text-sm text-muted-foreground">
             You've finished this step. SafeWork has everything it needs here.

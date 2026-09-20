@@ -13,6 +13,11 @@ import { normalizeIndianMobile } from '@/lib/validations/common';
 import type { BondTemplate, WorkerVerification } from '@/modules/worker-verification/types';
 import { BOND_SECURITY_COPY, type EnHi } from '@/modules/worker-verification/bond-security/copy';
 import { formatStampInr } from '@/modules/worker-verification/bond-security/stampPaper';
+import IndemnityBondAgreement from '@/modules/worker-verification/components/agreement/IndemnityBondAgreement';
+import {
+  INDEMNITY_BOND_EXECUTION,
+  INDEMNITY_BOND_STAMP_INR,
+} from '@/modules/worker-verification/agreement/indemnityBondContent';
 import { bondChecklist, checklistComplete, displayBondStatus, isBondLockedForEdit } from '@/modules/worker-verification/bond-security/status';
 import type { BondFileKind, BondSecurityDraftPayload, BondSecurityRow, StampPaperValue } from '@/modules/worker-verification/bond-security/types';
 import {
@@ -283,6 +288,7 @@ export default function BondSecurityStage({
     () => stampForRegisteredState(verification.state, catalog),
     [catalog, verification.state],
   );
+  const requiredStamp = Math.max(INDEMNITY_BOND_STAMP_INR, stamp?.minimum_stamp_value ?? INDEMNITY_BOND_STAMP_INR);
   const locked = isBondLockedForEdit(row?.status);
   const display = displayBondStatus({
     journeyStage: verification.stage,
@@ -431,6 +437,40 @@ export default function BondSecurityStage({
         </CardContent>
       </Card>
 
+      <Card className="border-primary/30 bg-primary/5 shadow-sm">
+        <CardContent className="space-y-3 p-5 sm:p-6">
+          <Dual copy={INDEMNITY_BOND_EXECUTION.title} as="h3" className="font-heading text-base font-semibold" />
+          <Dual copy={INDEMNITY_BOND_EXECUTION.body} className="text-sm text-foreground" />
+          <ul className="space-y-2">
+            {INDEMNITY_BOND_EXECUTION.bullets.en.map((en, i) => (
+              <li key={en} className="flex items-start gap-2 text-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <span>
+                  <span className="block">{en}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {INDEMNITY_BOND_EXECUTION.bullets.hi[i]}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted-foreground">
+            Stamp paper: {formatStampInr(INDEMNITY_BOND_STAMP_INR)} · ₹100 स्टाम्प पेपर
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-sm">
+        <CardContent className="space-y-3 p-5 sm:p-6">
+          <Dual
+            copy={{ en: 'Read the full Indemnity Bond', hi: 'पूरा Indemnity Bond पढ़ें' }}
+            as="h3"
+            className="font-semibold"
+          />
+          <IndemnityBondAgreement heightClass="h-[480px]" showPrintButton />
+        </CardContent>
+      </Card>
+
       <Card className="shadow-sm">
         <CardContent className="space-y-4 p-5 sm:p-6">
           <Dual copy={{ en: '[1] Your State', hi: '[1] आपका राज्य' }} as="h3" className="font-semibold" />
@@ -439,20 +479,27 @@ export default function BondSecurityStage({
           {stamp ? (
             <div className="rounded-xl border border-border bg-muted/30 p-4">
               <Dual copy={C.stampValueLabel} className="text-sm text-muted-foreground" />
-              <p className="mt-1 text-3xl font-bold tracking-tight">{formatStampInr(stamp.minimum_stamp_value)}</p>
+              <p className="mt-1 text-3xl font-bold tracking-tight">{formatStampInr(requiredStamp)}</p>
               <p className="mt-1 text-sm">
-                {stamp.state_name}
+                Indemnity Bond · {formatStampInr(INDEMNITY_BOND_STAMP_INR)} stamp paper
+                {stamp.minimum_stamp_value > INDEMNITY_BOND_STAMP_INR
+                  ? ` · ${stamp.state_name} minimum ${formatStampInr(stamp.minimum_stamp_value)}`
+                  : ` · ${stamp.state_name}`}
                 {stamp.name_hi ? <span className="ml-2 text-muted-foreground">{stamp.name_hi}</span> : null}
               </p>
             </div>
           ) : (
-            <p className="text-sm text-amber-800">{C.missingState.en}</p>
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <Dual copy={C.stampValueLabel} className="text-sm text-muted-foreground" />
+              <p className="mt-1 text-3xl font-bold tracking-tight">{formatStampInr(INDEMNITY_BOND_STAMP_INR)}</p>
+              <p className="mt-1 text-sm text-amber-800">{C.missingState.en}</p>
+            </div>
           )}
           <label className="flex items-start gap-3 rounded-xl border border-border p-4">
             <Checkbox
               className="mt-0.5 h-6 w-6 min-h-6 min-w-6 max-h-6 max-w-6"
               checked={stateConfirmed}
-              disabled={locked || !stamp}
+              disabled={locked}
               onCheckedChange={(v) => setStateConfirmed(v === true)}
             />
             <Dual copy={C.confirmState} className="text-sm" />

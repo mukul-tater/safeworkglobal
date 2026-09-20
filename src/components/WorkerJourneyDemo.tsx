@@ -29,7 +29,9 @@ import {
 import { TRADE_TEST_CENTERS } from "@/data/tradeTestCenters";
 import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo";
 import InsuranceCoverageInfo from "@/components/worker/InsuranceCoverageInfo";
-import { ASSESSMENT_FEE_INCLUSIONS } from "@/modules/worker-verification/constants";
+import { ASSESSMENT_FEE_INCLUSIONS, MEDICAL_REQUIRED_TESTS, MEDICAL_TEST_INTRO } from "@/modules/worker-verification/constants";
+import IndemnityBondAgreement from "@/modules/worker-verification/components/agreement/IndemnityBondAgreement";
+import { INDEMNITY_BOND_HIGHLIGHTS } from "@/modules/worker-verification/agreement/indemnityBondContent";
 import { cn } from "@/lib/utils";
 
 type JourneyStep = {
@@ -123,30 +125,24 @@ const STEPS: JourneyStep[] = [
     number: 7,
     title: "Medical Test",
     shortTitle: "Medical Test",
-    description:
-      "Get these tests done at any nearest laboratory, then upload the reports on the portal.",
+    description: MEDICAL_TEST_INTRO,
     icon: Stethoscope,
     bullets: [
-      "Blood test: Screens for HIV, Syphilis, and Hepatitis B & C. Additional vaccinations or tests may apply for food handlers or healthcare workers.",
-      "Chest X-ray: Screens for active or pulmonary Tuberculosis (TB).",
+      ...MEDICAL_REQUIRED_TESTS.map((test) => `${test.title}: ${test.body}`),
       "Upload multiple reports on the portal",
     ],
   },
   {
     id: "agreement",
     number: 8,
-    title: "Agreement",
+    title: "Agreement — Indemnity Bond",
     shortTitle: "Agreement",
     descriptionHi:
-      "मैं कंपनी द्वारा निर्धारित रोजगार अवधि (जहां लागू हो, सामान्यतः 2 वर्ष) तक काम करने के लिए सहमत हूं। यदि मैं निर्धारित रोजगार अवधि पूरी होने से पहले नौकरी छोड़कर भारत वापस आना चाहता/चाहती हूं, तो मैं समझता/समझती हूं कि वापसी की यात्रा का खर्च मुझे स्वयं वहन करना पड़ सकता है तथा रोजगार अनुबंध और लागू कानून के अनुसार नियोक्ता को देय कोई कानूनी रूप से लागू शुल्क या वसूल योग्य खर्च भी मुझे देना पड़ सकता है।",
+      "विदेश रोजगार हेतु सहमति पत्र, घोषणा पत्र एवं क्षतिपूर्ति बंधपत्र (Indemnity Bond)। दो वर्ष की सेवा, 6 माह की परिवीक्षा, सुरक्षा चेक तथा गारंटर — पूरा पाठ नीचे पढ़ें।",
     description:
-      "I agree to work for the employment period specified by the employer (normally 2 years, where applicable). If I choose to leave or return to India before completing the agreed employment period, I understand that I may be responsible for my own return travel expenses and any legally applicable fees or recoverable costs payable to the employer under my employment contract and applicable law.",
+      "Overseas employment consent, declaration and Indemnity Bond. Two-year service, six-month probation, security cheques and a family guarantor — read the full text below.",
     icon: FileSignature,
-    bullets: [
-      "Employment period specified by the employer (normally 2 years, where applicable)",
-      "Early return travel may be at your own expense",
-      "Legally applicable fees or recoverable costs may be payable under the contract and law",
-    ],
+    bullets: [...INDEMNITY_BOND_HIGHLIGHTS.en],
   },
   {
     id: "travel",
@@ -231,6 +227,7 @@ function StepDetail({
   const isTradeTest = step.id === "trade-test";
   const isInterview = step.id === "interview";
   const isPayment = step.id === "payment";
+  const isAgreement = step.id === "agreement";
 
   return (
     <AnimatePresence mode="wait">
@@ -329,6 +326,12 @@ function StepDetail({
             </li>
           ))}
         </ul>
+
+        {isAgreement && (
+          <div className="mb-5">
+            <IndemnityBondAgreement heightClass="h-[420px]" />
+          </div>
+        )}
 
         {step.branch && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
@@ -457,7 +460,7 @@ export default function WorkerJourneyDemo() {
                         )}
                         {step.id === "agreement" && (
                           <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                            2-year work commitment
+                            Indemnity Bond
                           </span>
                         )}
                         {step.id === "travel" && (
@@ -541,7 +544,7 @@ export default function WorkerJourneyDemo() {
                       )}
                       {step.id === "agreement" && (
                         <span className="block text-xs text-muted-foreground mt-0.5">
-                          2-year work commitment
+                          Indemnity Bond
                         </span>
                       )}
                       {step.id === "travel" && (

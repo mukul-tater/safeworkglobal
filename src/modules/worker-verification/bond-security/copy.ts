@@ -2,12 +2,12 @@ export type EnHi = { en: string; hi: string };
 
 export const BOND_SECURITY_COPY = {
   title: {
-    en: 'Final Bond & Security Submission',
-    hi: 'अंतिम बॉन्ड एवं सुरक्षा दस्तावेज़ जमा करें',
+    en: 'Agreement — Indemnity Bond',
+    hi: 'समझौता — क्षतिपूर्ति बंधपत्र (Indemnity Bond)',
   } satisfies EnHi,
   intro: {
-    en: 'Your required assessment and selection stages have been completed. Before proceeding to the next stage, please submit the required bond and security documents according to your state.',
-    hi: 'आपकी आवश्यक screening, testing और selection प्रक्रिया पूरी हो चुकी है। अगले चरण में जाने से पहले अपने राज्य के अनुसार आवश्यक bond और security documents जमा करें।',
+    en: 'Read the merged consent letter and employment bond below. Then complete the stamp-paper, notary and upload steps.',
+    hi: 'नीचे सहमति पत्र और रोजगार बॉन्ड का पूरा पाठ पढ़ें। फिर स्टाम्प पेपर, नोटरी और अपलोड के चरण पूरे करें।',
   } satisfies EnHi,
   objective: {
     en: 'Your assessment and selection process is complete. Complete the required bond and security documentation to proceed to the next stage.',
@@ -29,21 +29,21 @@ export const BOND_SECURITY_COPY = {
   } satisfies EnHi,
   stampBoxTitle: { en: 'Stamp Paper Requirement', hi: 'स्टाम्प पेपर आवश्यकता' } satisfies EnHi,
   stampBoxBody: {
-    en: 'Please obtain the required stamp paper according to your registered state and execute the prescribed bond/document. Upload a clear scanned copy/photo through this portal and submit the original document through the designated courier process.',
-    hi: 'अपने पंजीकृत राज्य के अनुसार आवश्यक स्टाम्प पेपर प्राप्त करें और निर्धारित बॉन्ड/दस्तावेज़ तैयार करें। इसकी साफ scanned copy/photo portal पर upload करें और original document निर्धारित courier प्रक्रिया के माध्यम से भेजें।',
+    en: 'This document is an Indemnity Bond. Get it notarised on a ₹100 stamp paper. Upload the notarised bond on this platform, or send the original stamp paper to us together with Aadhaar copies of both the worker and the guarantor. If your state requires a higher stamp value, use that higher value.',
+    hi: 'यह दस्तावेज़ Indemnity Bond (क्षतिपूर्ति बंधपत्र) है। इसे ₹100 के स्टाम्प पेपर पर नोटरी करवाएँ। नोटरी किया हुआ बॉन्ड इस पोर्टल पर अपलोड करें, अथवा मूल स्टाम्प पेपर कर्मचारी और गारंटर दोनों के आधार कार्ड की प्रतियों के साथ हमें भेजें। यदि आपके राज्य में अधिक स्टाम्प मूल्य आवश्यक हो तो वह अधिक मूल्य उपयोग करें।',
   } satisfies EnHi,
   compliance: {
     en: 'Stamp paper values displayed here are based on the SafeWork configuration provided for each state/UT. Applicable stamp duty, document execution and enforceability may depend on the nature of the instrument and applicable law. Verify before execution.',
     hi: 'यहां दिखाए गए stamp paper values प्रत्येक राज्य/UT के लिए SafeWork द्वारा configured information पर आधारित हैं। लागू stamp duty, document execution और enforceability document के प्रकार तथा लागू कानून पर निर्भर कर सकती है। Execution से पहले verification करें।',
   } satisfies EnHi,
-  uploadTitle: { en: 'Upload Stamp Paper / Bond', hi: 'स्टाम्प पेपर / बॉन्ड अपलोड करें' } satisfies EnHi,
+  uploadTitle: { en: 'Upload notarised Indemnity Bond', hi: 'नोटरीकृत Indemnity Bond अपलोड करें' } satisfies EnHi,
   uploadHint: {
     en: 'Make sure all text, signatures, stamp details and document numbers are clearly visible.',
     hi: 'सुनिश्चित करें कि सभी text, signatures, stamp details और document numbers स्पष्ट रूप से दिखाई दें।',
   } satisfies EnHi,
   uploadRequired: {
-    en: 'Required: front page and the complete bond/document. Prefer one PDF containing all pages.',
-    hi: 'आवश्यक: सामने वाला पेज और पूरा bond/document. सभी पेज एक PDF में अपलोड करना बेहतर है।',
+    en: 'Required: the full notarised ₹100 stamp paper plus Aadhaar copies of the worker and the guarantor. Prefer one PDF containing all pages.',
+    hi: 'आवश्यक: पूरा नोटरीकृत ₹100 स्टाम्प पेपर तथा कर्मचारी और गारंटर के आधार कार्ड की प्रतियाँ। सभी पेज एक PDF में अपलोड करना बेहतर है।',
   } satisfies EnHi,
   formats: {
     en: 'Accepted: PDF, JPG, JPEG, PNG. Maximum 10 MB.',
@@ -93,7 +93,7 @@ export const BOND_SECURITY_COPY = {
   } satisfies EnHi,
   checklistTitle: { en: 'FINAL DOCUMENT CHECKLIST', hi: 'अंतिम दस्तावेज़ चेकलिस्ट' } satisfies EnHi,
   checklist: {
-    stampBondUploaded: { en: 'State-specific stamp paper / bond uploaded', hi: 'State-specific stamp paper / bond upload' },
+    stampBondUploaded: { en: 'Notarised ₹100 Indemnity Bond uploaded (with Aadhaar copies)', hi: 'नोटरीकृत ₹100 Indemnity Bond अपलोड (आधार प्रतियों सहित)' },
     originalPrepared: { en: 'Original bond prepared for courier', hi: 'Original bond courier के लिए तैयार' },
     courierReceiptUploaded: { en: 'Courier receipt uploaded', hi: 'Courier receipt upload' },
     workerChequeUploaded: { en: 'Worker security cheque uploaded', hi: 'Worker security cheque upload' },
@@ -124,6 +124,6 @@ export const BOND_SECURITY_COPY = {
     en: 'Documents approved. Waiting for the original to be received.',
     hi: 'दस्तावेज़ स्वीकृत। मूल दस्तावेज़ प्राप्त होने की प्रतीक्षा।',
   } satisfies EnHi,
-  downloadTemplate: { en: 'Download bond', hi: 'बॉन्ड डाउनलोड करें' } satisfies EnHi,
+  downloadTemplate: { en: 'Print Indemnity Bond', hi: 'Indemnity Bond प्रिंट करें' } satisfies EnHi,
   courierTo: { en: 'Courier the signed original to:', hi: 'Signed original यहां courier करें:' } satisfies EnHi,
 } as const;
