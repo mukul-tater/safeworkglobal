@@ -25,10 +25,10 @@ test('parseWorkerOtpLoginPayload: prefers function error body', () => {
   }
 });
 
-test('parseWorkerOtpLoginPayload: falls back to invoke error', () => {
+test('parseWorkerOtpLoginPayload: maps unreachable function errors', () => {
   const parsed = parseWorkerOtpLoginPayload(null, { message: 'Failed to send a request to the Edge Function' });
   assert.equal(parsed.ok, false);
   if (!parsed.ok) {
-    assert.equal(parsed.error, 'Failed to send a request to the Edge Function');
+    assert.equal(parsed.error, 'Sign-in service is updating. Wait a minute and try again.');
   }
 });

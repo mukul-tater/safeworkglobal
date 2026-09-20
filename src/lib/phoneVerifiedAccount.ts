@@ -40,8 +40,8 @@ async function invokePhoneVerifiedAccount(
     throw new Error(bodyError);
   }
   if (error?.message) {
-    if (/not found|404/i.test(error.message)) {
-      throw new Error('Account service is updating. Wait a minute and try again.');
+    if (/not found|404|Failed to send a request/i.test(error.message)) {
+      throw new Error('Verification service is updating. Wait a minute and try again.');
     }
     throw new Error(error.message);
   }

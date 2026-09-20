@@ -25,6 +25,11 @@ export function parseWorkerOtpLoginPayload(
     }
   }
   if (bodyError) return { ok: false, error: bodyError };
-  if (invokeError?.message) return { ok: false, error: invokeError.message };
+  if (invokeError?.message) {
+    if (/not found|404|Failed to send a request/i.test(invokeError.message)) {
+      return { ok: false, error: 'Sign-in service is updating. Wait a minute and try again.' };
+    }
+    return { ok: false, error: invokeError.message };
+  }
   return { ok: false, error: 'Could not sign in with OTP. Please try again.' };
 }
