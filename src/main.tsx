@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { startBuildVersionWatcher } from "@/lib/checkAppVersion";
 import "./index.css";
 
 // Aggressively unregister any existing service workers and clear caches
@@ -15,6 +16,8 @@ if (typeof window !== "undefined" && "caches" in window) {
     keys.forEach((key) => caches.delete(key));
   }).catch(() => {});
 }
+
+startBuildVersionWatcher();
 
 const root = document.getElementById("root")!;
 
