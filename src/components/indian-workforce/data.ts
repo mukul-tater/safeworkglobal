@@ -1,77 +1,28 @@
-import constructionImg from "@/assets/trade-construction.jpg";
-import electricalImg from "@/assets/trade-electrical.jpg";
-import welderImg from "@/assets/trade-welder.jpg";
 import type { TradeCategory } from "./types";
+import {
+  UAE_LISTED_JOBS,
+  UAE_LISTED_JOB_LABELS,
+  isHiddenPublicJob,
+} from "@/lib/uaeListedJobs";
+import {
+  UAE_LISTED_JOB_CARD_VISUALS,
+  UAE_LISTED_JOB_SKILLS,
+} from "@/components/jobs/listedJobCardVisuals";
 
-export const tradeCategories: TradeCategory[] = [
-  {
-    id: "electrician",
-    name: "Electrician",
-    hindiName: "इलेक्ट्रीशियन",
-    image: electricalImg,
-    imageAlt: "Electrician working on an electrical control panel",
-    skills: ["Wiring", "DB / MCB", "Testing"],
-    verification: "Skill Verification",
-    objectPosition: "center 30%",
+/** Homepage trade cards — same catalog as Find jobs / Choose a job. */
+export const tradeCategories: TradeCategory[] = UAE_LISTED_JOBS.filter((job) => !isHiddenPublicJob(job)).map(
+  (job) => {
+    const label = UAE_LISTED_JOB_LABELS[job];
+    const visual = UAE_LISTED_JOB_CARD_VISUALS[job];
+    return {
+      id: job,
+      name: label.en,
+      hindiName: label.hi,
+      image: visual.image,
+      imageAlt: `${label.en} / ${label.hi}`,
+      skills: UAE_LISTED_JOB_SKILLS[job],
+      verification: "Skill Verification",
+      objectPosition: visual.position,
+    };
   },
-  {
-    id: "plumber",
-    name: "Plumber",
-    hindiName: "प्लंबर",
-    image: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&w=900&q=80",
-    imageAlt: "Representative image of plumbing work — pipes and fittings",
-    skills: ["Piping", "Fixtures", "Drainage"],
-    verification: "Skill Screening",
-    objectPosition: "center center",
-  },
-  {
-    id: "welder",
-    name: "Welder",
-    hindiName: "वेल्डर",
-    image: welderImg,
-    imageAlt: "Welder holding a welding helmet",
-    skills: ["ARC", "MIG", "TIG"],
-    verification: "Trade Assessment",
-    objectPosition: "center 20%",
-  },
-  {
-    id: "hvac",
-    name: "HVAC Technician",
-    hindiName: "HVAC तकनीशियन",
-    image: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=900&q=80",
-    imageAlt: "Representative image of industrial HVAC and mechanical work",
-    skills: ["Installation", "Servicing", "Controls"],
-    verification: "Skill Verification",
-    objectPosition: "center center",
-  },
-  {
-    id: "fitter",
-    name: "Fitter",
-    hindiName: "फिटर",
-    image: constructionImg,
-    imageAlt: "Skilled tradespeople on a construction site — representative image for fitters",
-    skills: ["Assembly", "Alignment", "Maintenance"],
-    verification: "Skill Screening",
-    objectPosition: "right center",
-  },
-  {
-    id: "construction",
-    name: "Construction",
-    hindiName: "निर्माण कार्य",
-    image: constructionImg,
-    imageAlt: "Construction workers in safety gear on a building site",
-    skills: ["Formwork", "Masonry", "Safety"],
-    verification: "Skill Screening",
-    objectPosition: "center center",
-  },
-  {
-    id: "driver",
-    name: "Driver & Logistics",
-    hindiName: "ड्राइवर एवं लॉजिस्टिक्स",
-    image: "https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=900&q=80",
-    imageAlt: "Representative image of a heavy vehicle used in logistics",
-    skills: ["HMV", "Route", "Safety"],
-    verification: "Skill Screening",
-    objectPosition: "center center",
-  },
-];
+);

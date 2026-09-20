@@ -1,17 +1,4 @@
 import { HardHat } from 'lucide-react';
-import electricalImg from '@/assets/trade-electrical.jpg';
-import welderImg from '@/assets/trade-welder.jpg';
-import plumberImg from '@/assets/trades/plumber.jpg';
-import shutteringImg from '@/assets/trades/shuttering.jpg';
-import masonImg from '@/assets/trades/mason.jpg';
-import labourImg from '@/assets/trades/labour.jpg';
-import pipeFitterImg from '@/assets/trades/pipe-fitter.jpg';
-import furnitureImg from '@/assets/trades/furniture.jpg';
-import acTechnicianImg from '@/assets/trades/ac-technician.jpg';
-import warehouseImg from '@/assets/trades/warehouse.jpg';
-import scaffolderImg from '@/assets/trades/scaffolder.jpg';
-import painterImg from '@/assets/trades/painter.jpg';
-import aluminiumImg from '@/assets/trades/aluminium.jpg';
 import HindiText from '@/components/indian-workforce/HindiText';
 import {
   UAE_LISTED_JOBS,
@@ -19,23 +6,7 @@ import {
   isHiddenPublicJob,
   type UaeListedJob,
 } from '@/lib/uaeListedJobs';
-
-const TRADE_CARDS: Record<UaeListedJob, { image: string; position?: string }> = {
-  Electrician: { image: electricalImg, position: 'center 28%' },
-  Welder: { image: welderImg, position: 'center 22%' },
-  Plumber: { image: plumberImg, position: 'center 40%' },
-  'Shuttering Carpenter': { image: shutteringImg, position: 'center 45%' },
-  'Mason (tiles/marble)': { image: masonImg, position: 'center 55%' },
-  'Construction Labour/Helper': { image: labourImg, position: 'center 30%' },
-  'Pipe Fitter': { image: pipeFitterImg, position: 'center 45%' },
-  'Furniture Carpenter - Finishing, All Rounder': { image: furnitureImg, position: 'center 55%' },
-  'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png', position: 'center 60%' },
-  'AC Technician': { image: acTechnicianImg, position: 'center 30%' },
-  'Warehouse Helper': { image: warehouseImg, position: 'center 40%' },
-  Scaffolder: { image: scaffolderImg, position: 'center 70%' },
-  Painter: { image: painterImg, position: 'center 40%' },
-  'Aluminium Fixer/Fabricator': { image: aluminiumImg, position: 'center 40%' },
-};
+import { UAE_LISTED_JOB_CARD_VISUALS } from '@/components/jobs/listedJobCardVisuals';
 
 interface Props {
   onSelect: (job: UaeListedJob) => void;
@@ -52,7 +23,7 @@ export default function JobTradeGrid({ onSelect }: Props) {
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {UAE_LISTED_JOBS.filter((job) => !isHiddenPublicJob(job)).map((job) => {
-          const card = TRADE_CARDS[job];
+          const card = UAE_LISTED_JOB_CARD_VISUALS[job];
           const label = UAE_LISTED_JOB_LABELS[job];
           return (
             <button

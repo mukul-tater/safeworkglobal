@@ -85,6 +85,12 @@ export function isHiddenPublicJob(title: string, slug?: string | null): boolean 
   return title.trim().toLowerCase() === 'carpenter';
 }
 
+/** True when the listing maps onto a Find-jobs / homepage trade. */
+export function isPublicListedJob(title: string, description = '', slug?: string | null): boolean {
+  if (isHiddenPublicJob(title, slug)) return false;
+  return inferUaeListedJob(title, description) != null;
+}
+
 function inrBand(salary_min: number, salary_max: number): {
   salary_min: number;
   salary_max: number;

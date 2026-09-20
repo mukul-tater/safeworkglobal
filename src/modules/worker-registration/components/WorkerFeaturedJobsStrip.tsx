@@ -9,7 +9,7 @@ import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
-import { getPublicJobTitle, isHiddenPublicJob } from "@/lib/uaeListedJobs";
+import { getPublicJobTitle, isPublicListedJob } from "@/lib/uaeListedJobs";
 
 interface JobPreview {
   id: string;
@@ -52,7 +52,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
           .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display, service_charge")
           .eq("status", "ACTIVE")
           .order("posted_at", { ascending: false })
-          .limit(3);
+          .limit(20);
 
         if (preferredCountry) {
           query = query.ilike("country", `%${preferredCountry}%`);
@@ -69,14 +69,15 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
             .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display, service_charge")
             .eq("status", "ACTIVE")
             .order("posted_at", { ascending: false })
-            .limit(3);
+            .limit(20);
           results = (fallback || []) as JobPreview[];
         }
 
         setJobs(
           results
-            .filter((job) => !isHiddenPublicJob(job.title, job.slug))
-            .map((job) => ({ ...job, title: getPublicJobTitle(job.title) })),
+            .filter((job) => isPublicListedJob(job.title, '', job.slug))
+            .map((job) => ({ ...job, title: getPublicJobTitle(job.title) }))
+            .slice(0, 3),
         );
       } catch (error) {
         console.error("Error loading featured jobs:", error);

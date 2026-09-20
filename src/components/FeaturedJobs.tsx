@@ -10,7 +10,7 @@ import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
-import { getPublicJobAbout, getPublicJobTitle, isHiddenPublicJob } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobTitle, isPublicListedJob } from '@/lib/uaeListedJobs';
 
 interface FeaturedJob {
   id: string;
@@ -75,13 +75,14 @@ export default function FeaturedJobs() {
           `)
           .eq('status', 'ACTIVE')
           .order('posted_at', { ascending: false })
-          .limit(6);
+          .limit(40);
 
         if (error) throw error;
         setJobs(
           ((data || []) as FeaturedJob[])
-            .filter((job) => !isHiddenPublicJob(job.title, job.slug))
-            .map((job) => ({ ...job, title: getPublicJobTitle(job.title, job.description) })),
+            .filter((job) => isPublicListedJob(job.title, job.description, job.slug))
+            .map((job) => ({ ...job, title: getPublicJobTitle(job.title, job.description) }))
+            .slice(0, 6),
         );
       } catch (error) {
         console.error('Error loading jobs:', error);
