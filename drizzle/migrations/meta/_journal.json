@@ -15,6 +15,13 @@
       "when": 1789924104784,
       "tag": "0001_add_temporary_journey_vault_bootstrap",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789924156282,
+      "tag": "0002_remove_temporary_journey_vault_bootstrap",
+      "breakpoints": true
     }
   ]
 }

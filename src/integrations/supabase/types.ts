@@ -5672,10 +5672,6 @@ export type Database = {
         Args: { p_emitra_id?: string; p_lsp_id: string }
         Returns: Json
       }
-      bootstrap_journey_email_vault: {
-        Args: { p_value: string }
-        Returns: undefined
-      }
       change_journey_job: {
         Args: { p_job_id: string; p_user_id?: string }
         Returns: string
