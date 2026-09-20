@@ -9,8 +9,33 @@ const corsHeaders = {
 const MUKUL_EMAIL = 'mukultater@safeworkglobal.com'
 const MUKUL_FROM = `SafeWork Global <${MUKUL_EMAIL}>`
 const JOURNEY_URL = 'https://safeworkglobal.com/worker/journey'
+const ADMIN_URL = 'https://safeworkglobal.com/admin/journey-ops'
 const WORKER_MOBILE_DOMAIN = 'workers.safeworkglobal.app'
 const PARTNER_MOBILE_DOMAIN = 'partners.safeworkglobal.app'
+
+const STAGE_LABELS: Record<string, string> = {
+  pre_declaration: 'Pre-declaration',
+  essentials: 'Essentials',
+  find_jobs: 'Find jobs',
+  apply_job: 'Find jobs',
+  quiz: 'Test 1 — Basic trade knowledge',
+  media: 'Skill proof upload',
+  identity: 'Identity (KYC)',
+  awaiting_interview: 'Test 2 — Video interview',
+  awaiting_payment: 'Payment',
+  trade_test: 'Test 3 — Physical trade test',
+  tests: 'Test 3 — Physical trade test',
+  medical: 'Medical test',
+  bond: 'Bond & Security',
+  pdot: 'PDOT training',
+  deployment: 'Deployment',
+  gcc_ready: 'GCC ready',
+}
+
+function stageLabel(stage: string | null | undefined): string {
+  if (!stage) return 'a journey step'
+  return STAGE_LABELS[stage] || stage
+}
 
 function displayableEmail(email: string | null | undefined): string | null {
   const trimmed = email?.trim() ?? ''
@@ -21,6 +46,11 @@ function displayableEmail(email: string | null | undefined): string | null {
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lower)) return null
   return lower
+}
+
+function displayText(value: string | null | undefined, fallback = 'not provided'): string {
+  const trimmed = value?.trim() ?? ''
+  return trimmed || fallback
 }
 
 function bearerToken(req: Request): string | null {
@@ -95,60 +125,108 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const [{ data: verification }, { data: profile }] = await Promise.all([
       supabase
         .from('worker_verification')
-        .select('email')
+        .select('email, primary_skill, city, state, journey_job_id')
         .eq('user_id', notification.user_id)
         .maybeSingle(),
       supabase
         .from('profiles')
-        .select('email, full_name')
+        .select('email, full_name, phone')
         .eq('id', notification.user_id)
         .maybeSingle(),
     ])
 
-    const to = displayableEmail(verification?.email) || displayableEmail(profile?.email)
-    if (!to) {
-      return new Response(JSON.stringify({ skipped: true, reason: 'no_contact_email' }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    let jobTitle: string | null = null
+    if (verification?.journey_job_id) {
+      const { data: job } = await supabase
+        .from('jobs')
+        .select('title')
+        .eq('id', verification.journey_job_id)
+        .maybeSingle()
+      jobTitle = job?.title ?? null
     }
 
     const data = (notification.data || {}) as Record<string, unknown>
     const nextStage = typeof data.next_stage === 'string' ? data.next_stage : ''
+    const clearedStage = typeof data.cleared_stage === 'string' ? data.cleared_stage : ''
     const isTerminal = nextStage === 'gcc_ready' || nextStage === 'deployment'
-    const workerName = (profile?.full_name || '').trim() || 'there'
-    const templateData = {
-      workerName,
+    const workerName = displayText(profile?.full_name, 'Unknown worker')
+    const workerEmail = displayableEmail(verification?.email) || displayableEmail(profile?.email)
+    const location = [verification?.city, verification?.state].filter(Boolean).join(', ')
+
+    const workerTemplateData = {
+      workerName: displayText(profile?.full_name, 'there'),
       title: notification.title,
       message: notification.message,
       journeyUrl: JOURNEY_URL,
       isTerminal,
     }
-    const idempotencyKey = `journey-step-${notification.id}`
-
-    try {
-      const result = await sendTemplateEmail('journey-step-cleared', to, {
-        templateData,
-        idempotencyKey,
-        replyTo: MUKUL_EMAIL,
-        from: MUKUL_FROM,
-      })
-      return new Response(JSON.stringify({ success: true, emailed: result.sent, to }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    } catch (firstErr) {
-      console.warn('journey email from Mukul failed, retrying noreply + reply-to', firstErr)
-      const result = await sendTemplateEmail('journey-step-cleared', to, {
-        templateData,
-        idempotencyKey: `${idempotencyKey}-noreply`,
-        replyTo: MUKUL_EMAIL,
-      })
-      return new Response(JSON.stringify({ success: true, emailed: result.sent, to, fromFallback: true }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    const opsTemplateData = {
+      workerName,
+      workerEmail: workerEmail || 'not provided',
+      workerPhone: displayText(profile?.phone),
+      trade: displayText(verification?.primary_skill, 'not specified'),
+      location: displayText(location, 'not specified'),
+      jobTitle: displayText(jobTitle, 'not specified'),
+      clearedStep: stageLabel(clearedStage),
+      nextStep: stageLabel(nextStage || (isTerminal ? 'gcc_ready' : null)),
+      isTerminal,
+      adminUrl: ADMIN_URL,
     }
+
+    let workerEmailed = false
+    let workerSkipped: string | undefined
+    let workerFromFallback = false
+
+    if (!workerEmail) {
+      workerSkipped = 'no_contact_email'
+    } else {
+      const idempotencyKey = `journey-step-${notification.id}`
+      try {
+        const result = await sendTemplateEmail('journey-step-cleared', workerEmail, {
+          templateData: workerTemplateData,
+          idempotencyKey,
+          replyTo: MUKUL_EMAIL,
+          from: MUKUL_FROM,
+        })
+        workerEmailed = result.sent
+      } catch (firstErr) {
+        console.warn('journey email from Mukul failed, retrying noreply + reply-to', firstErr)
+        try {
+          const result = await sendTemplateEmail('journey-step-cleared', workerEmail, {
+            templateData: workerTemplateData,
+            idempotencyKey: `${idempotencyKey}-noreply`,
+            replyTo: MUKUL_EMAIL,
+          })
+          workerEmailed = result.sent
+          workerFromFallback = true
+        } catch (workerErr) {
+          console.error('journey email to worker failed', workerErr)
+        }
+      }
+    }
+
+    let opsEmailed = false
+    try {
+      const opsResult = await sendTemplateEmail('journey-step-cleared-ops', MUKUL_EMAIL, {
+        templateData: opsTemplateData,
+        idempotencyKey: `journey-step-ops-${notification.id}`,
+      })
+      opsEmailed = opsResult.sent
+    } catch (opsErr) {
+      console.error('journey ops email to Mukul failed', opsErr)
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      emailed: workerEmailed,
+      to: workerEmail,
+      skipped: workerSkipped,
+      fromFallback: workerFromFallback || undefined,
+      opsEmailed,
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to send journey email'
     console.error('email-journey-step-cleared error:', error)
