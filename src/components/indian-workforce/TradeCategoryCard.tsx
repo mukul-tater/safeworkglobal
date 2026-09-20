@@ -19,7 +19,7 @@ export default function TradeCategoryCard({ trade, index }: TradeCategoryCardPro
       transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.28), ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <Link
-        to={jobsBrowsePath({ country: "UAE", category: trade.id })}
+        to={jobsBrowsePath({ country: "UAE", category: trade.name })}
         className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         aria-label={`${trade.name}: ${trade.skills.join(", ")}. ${trade.verification}`}
       >

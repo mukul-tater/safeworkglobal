@@ -20,23 +20,23 @@ export type UaeListedJob = (typeof UAE_LISTED_JOBS)[number];
 
 /** Card title: English / Hindi, shown next to each other on Find jobs. */
 export const UAE_LISTED_JOB_LABELS: Record<UaeListedJob, { en: string; hi: string }> = {
-  Electrician: { en: 'Electrician', hi: 'इलेक्ट्रीशियन' },
-  Welder: { en: 'Welder', hi: 'वेल्डर' },
-  Plumber: { en: 'Plumber', hi: 'प्लंबर' },
-  'Shuttering Carpenter': { en: 'Shuttering Carpenter', hi: 'शटरिंग कारपेंटर' },
-  'Mason (tiles/marble)': { en: 'Mason (tiles/marble)', hi: 'मेसन (टाइल/मारबल)' },
+  Electrician: { en: 'Electrician', hi: 'बिजली मिस्त्री' },
+  Welder: { en: 'Welder', hi: 'वेल्डिंग मिस्त्री' },
+  Plumber: { en: 'Plumber', hi: 'नलसाज़' },
+  'Shuttering Carpenter': { en: 'Shuttering Carpenter', hi: 'साँचा बढ़ई' },
+  'Mason (tiles/marble)': { en: 'Mason (tiles/marble)', hi: 'राजमिस्त्री (टाइल/संगमरमर)' },
   'Construction Labour/Helper': { en: 'Construction Labour', hi: 'निर्माण मजदूर' },
-  'Pipe Fitter': { en: 'Pipe Fitter', hi: 'पाइप फिटर' },
+  'Pipe Fitter': { en: 'Pipe Fitter', hi: 'पाइप जोड़ने वाला' },
   'Furniture Carpenter - Finishing, All Rounder': {
     en: 'Furniture Carpenter',
-    hi: 'फर्नीचर कारपेंटर',
+    hi: 'फर्नीचर बढ़ई',
   },
-  'Steel Fixer': { en: 'Steel Fixer', hi: 'स्टील फिक्सर' },
-  'AC Technician': { en: 'AC Technician', hi: 'AC तकनीशियन' },
-  'Warehouse Helper': { en: 'Warehouse Helper', hi: 'वेयरहाउस हेल्पर' },
-  Scaffolder: { en: 'Scaffolder', hi: 'स्कैफोल्डर' },
-  Painter: { en: 'Painter', hi: 'पेंटर' },
-  'Aluminium Fixer/Fabricator': { en: 'Aluminium Fixer', hi: 'एल्युमिनियम फिक्सर' },
+  'Steel Fixer': { en: 'Steel Fixer', hi: 'सरिया बाँधने वाला' },
+  'AC Technician': { en: 'AC Technician', hi: 'एसी मिस्त्री' },
+  'Warehouse Helper': { en: 'Warehouse Helper', hi: 'गोदाम सहायक' },
+  Scaffolder: { en: 'Scaffolder', hi: 'पाड़ बाँधने वाला / मचान बनाने वाला' },
+  Painter: { en: 'Painter', hi: 'रंगसाज़' },
+  'Aluminium Fixer/Fabricator': { en: 'Aluminium Fixer', hi: 'एल्युमिनियम लगाने वाला' },
 };
 
 const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [

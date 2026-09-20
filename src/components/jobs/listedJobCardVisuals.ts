@@ -25,7 +25,7 @@ export const UAE_LISTED_JOB_CARD_VISUALS: Record<UaeListedJob, { image: string; 
   'Steel Fixer': { image: '/country-insights/uae/worksite-rebar.png', position: 'center 60%' },
   'AC Technician': { image: acTechnicianImg, position: 'center 30%' },
   'Warehouse Helper': { image: warehouseImg, position: 'center 40%' },
-  Scaffolder: { image: scaffolderImg, position: 'center 70%' },
+  Scaffolder: { image: scaffolderImg, position: 'center 40%' },
   Painter: { image: painterImg, position: 'center 40%' },
   'Aluminium Fixer/Fabricator': { image: aluminiumImg, position: 'center 40%' },
 };
