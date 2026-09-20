@@ -5,6 +5,7 @@ import constructionImg from "@/assets/trade-construction.jpg";
 import electricalImg from "@/assets/trade-electrical.jpg";
 import welderImg from "@/assets/trade-welder.jpg";
 import HindiText from "./HindiText";
+import { jobsBrowsePath } from "@/lib/jobsBrowse";
 
 const mosaicImages = [
   { src: electricalImg, alt: "" },
@@ -16,7 +17,7 @@ const mosaicImages = [
   },
 ] as const;
 
-const extraTrades = ["Driver", "Mason", "Painter"];
+const extraTrades = ["AC", "Mason", "Painter"];
 
 type ManyMoreTradeCardProps = {
   index: number;
@@ -31,7 +32,7 @@ export default function ManyMoreTradeCard({ index }: ManyMoreTradeCardProps) {
       transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.28), ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <Link
-        to="/jobs"
+        to={jobsBrowsePath({ country: "UAE" })}
         className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/70 bg-card shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         aria-label="View all jobs"
       >

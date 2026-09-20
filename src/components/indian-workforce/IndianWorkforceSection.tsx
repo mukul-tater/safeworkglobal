@@ -9,6 +9,7 @@ import { tradeCategories } from "./data";
 import HindiText from "./HindiText";
 import WorkerPhotoCollage from "./WorkerPhotoCollage";
 import TradeCategoryCard from "./TradeCategoryCard";
+import ManyMoreTradeCard from "./ManyMoreTradeCard";
 import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH, showEmployerChrome } from "@/lib/launchGate";
 
 export default function IndianWorkforceSection() {
@@ -108,6 +109,7 @@ export default function IndianWorkforceSection() {
             {tradeCategories.map((trade, index) => (
               <TradeCategoryCard key={trade.id} trade={trade} index={index} />
             ))}
+            <ManyMoreTradeCard index={tradeCategories.length} />
           </div>
         </div>
 
