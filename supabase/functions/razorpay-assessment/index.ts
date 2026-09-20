@@ -9,11 +9,19 @@ const corsHeaders = {
 };
 
 const ASSESSMENT_FEE_INR = 35400;
+/** Keep in sync with src/modules/worker-verification/payment/bankTransfer.ts */
+const RAZORPAY_GATEWAY_FEE_PCT = 2.5;
 
 function resolveFeeInr(value: unknown): number {
   const n = Number(value);
   if (!Number.isFinite(n) || n < 1) return ASSESSMENT_FEE_INR;
   return Math.round(n);
+}
+
+function withGatewayFee(baseFee: number): { base: number; fee: number; charged: number } {
+  const base = resolveFeeInr(baseFee);
+  const charged = Math.round(base * (1 + RAZORPAY_GATEWAY_FEE_PCT / 100));
+  return { base, fee: charged - base, charged };
 }
 
 function json(status: number, body: Record<string, unknown>) {
@@ -225,7 +233,8 @@ serve(async (req) => {
         }
       }
 
-      const amountPaise = assessmentFee * 100;
+      const { base, fee, charged } = withGatewayFee(assessmentFee);
+      const amountPaise = charged * 100;
       const receipt = `assess_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`
         .slice(0, 40);
 
@@ -242,6 +251,9 @@ serve(async (req) => {
           notes: {
             user_id: payerId,
             purpose: "worker_assessment_fee",
+            base_fee_inr: String(base),
+            gateway_fee_pct: String(RAZORPAY_GATEWAY_FEE_PCT),
+            charged_inr: String(charged),
           },
         }),
       });
@@ -257,7 +269,7 @@ serve(async (req) => {
         .from("worker_verification")
         .update({
           razorpay_order_id: orderJson.id,
-          payment_amount: assessmentFee,
+          payment_amount: charged,
           updated_at: new Date().toISOString(),
         })
         .eq("id", row.id);
@@ -265,8 +277,11 @@ serve(async (req) => {
 
       return json(200, {
         order_id: orderJson.id,
-        amount_inr: assessmentFee,
+        amount_inr: charged,
         amount_paise: amountPaise,
+        base_fee_inr: base,
+        gateway_fee_inr: fee,
+        gateway_fee_pct: RAZORPAY_GATEWAY_FEE_PCT,
         currency: "INR",
         key_id: keyId,
       });

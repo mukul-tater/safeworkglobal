@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
-  Calendar, CreditCard, ShieldCheck, Wrench,
+  Calendar, ShieldCheck, Wrench,
   GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList,
   MapPin, Phone, ExternalLink, Search,
 } from 'lucide-react';
@@ -22,7 +22,6 @@ import IndiaLocationFields from '@/components/IndiaLocationFields';
 import { displayableEmail, isValidContactEmail } from '@/lib/workerAuthEmail';
 import {
   ASSESSMENT_FEE_INR,
-  ASSESSMENT_FEE_INCLUSIONS,
   educationOptionsForTenthPass,
   ecrFromTenthPass,
   gccJourneyNavSteps,
@@ -51,14 +50,12 @@ import {
   saveContactEmail,
   submitQuiz,
   bookTradeTestCenter,
-  payAssessmentFeeWithRazorpay,
-  syncAssessmentPaymentAfterCheckout,
   submitTradeTestResult,
   waiveAssessmentInterviewPilot,
-  waiveAssessmentPaymentPilot,
   getServiceChargeForJob,
 } from '@/modules/worker-verification/services/verificationService';
 import BondSecurityStage from '@/modules/worker-verification/components/bond-security/BondSecurityStage';
+import PaymentStage from '@/modules/worker-verification/components/payment/PaymentStage';
 import {
   TRADE_TEST_REPORTING_WINDOW,
   TRADE_TEST_REPORTING_WINDOW_HINT,
@@ -68,7 +65,6 @@ import { getWorkerActiveAssessment } from '@/modules/trade-test/services/assessm
 import type { AssessmentRow } from '@/modules/trade-test/types';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { serviceChargeGstSplit } from '@/lib/jobServiceCharge';
 import JourneyHero from '@/modules/worker-verification/components/journey/JourneyHero';
 import StageActionShell from '@/modules/worker-verification/components/journey/StageActionShell';
 import StageWaitingShell from '@/modules/worker-verification/components/journey/StageWaitingShell';
@@ -92,7 +88,6 @@ import { canChangeJourneyJob } from '@/modules/worker-verification/services/jobJ
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
 import PassportRequirementInfo, { PanUploadLaterInfo } from '@/components/worker/PassportRequirementInfo';
-import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
 import { todayDateInputValue } from '@/lib/validations/common';
 import {
   isValidPassportNumber,
@@ -523,7 +518,7 @@ export default function WorkerVerificationPage({
       if (v.payment_status === 'paid' || v.paid_at) {
         const { data: pay } = await supabase
           .from('worker_assessment_payments')
-          .select('id, amount, currency, provider, provider_ref, status, paid_at')
+          .select('id, amount, currency, provider, provider_ref, status, paid_at, transfer_method, payment_note')
           .eq('user_id', subjectId)
           .order('created_at', { ascending: false })
           .limit(1);
@@ -594,7 +589,6 @@ export default function WorkerVerificationPage({
   }, [subjectId, profile?.email, partnerKiosk]);
 
   const displayProfile = subjectProfile || profile;
-  const feeSplit = serviceChargeGstSplit(assessmentFee);
 
   useEffect(() => {
     void load();
@@ -2021,186 +2015,23 @@ export default function WorkerVerificationPage({
           </StageWaitingShell>
         )}
 
-        {!viewingCompletedStep && stage === 'awaiting_payment' && (
-          <Card className="overflow-hidden shadow-sm">
-            <CardContent className="space-y-4 p-5 sm:p-6">
-              <div className="flex items-start gap-3 border-b border-border/60 pb-4">
-                <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
-                  <CreditCard className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold font-heading leading-tight">Assessment fee</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    This fee depends on your selected job. It is a one-time ₹{assessmentFee.toLocaleString('en-IN')} amount covering visa, flights, documentation, insurance, government fees, and more. Pay securely — you continue automatically once it succeeds.
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-border p-4">
-                <p className="text-3xl font-bold font-heading tabular-nums text-foreground">
-                  ₹{assessmentFee.toLocaleString('en-IN')}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  One-time all-inclusive fee for your overseas job application
-                </p>
-                <div className="mt-3 border-t border-border pt-3 text-sm">
-                  <div className="flex items-center justify-between py-0.5">
-                    <span className="text-muted-foreground">Skill assessment &amp; processing</span>
-                    <span className="tabular-nums">₹{feeSplit.base.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-0.5">
-                    <span className="text-muted-foreground">GST (18%)</span>
-                    <span className="tabular-nums">
-                      ₹{feeSplit.gst.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between border-t border-border pt-2 font-semibold">
-                    <span>Total</span>
-                    <span className="tabular-nums">₹{assessmentFee.toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-                <p className="text-sm font-semibold font-heading text-foreground">
-                  What you get in this ₹{assessmentFee.toLocaleString('en-IN')}
-                </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  No hidden agent charges — this fee covers:
-                </p>
-                <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {ASSESSMENT_FEE_INCLUSIONS.map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm text-foreground">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                      <span className="inline-flex items-center gap-1.5">
-                        {item}
-                        {item === 'Insurance' && <InsuranceCoverageInfo />}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="rounded-xl border border-success/30 bg-success/5 p-3">
-                <p className="flex items-center gap-1.5 text-sm font-medium text-success">
-                  <ShieldCheck className="h-4 w-4" /> Safe, secure &amp; trusted
-                </p>
-                <ul className="mt-2 space-y-1 text-xs text-foreground">
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Payment is encrypted and PCI-DSS compliant
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success" /> You get an official receipt with an ID
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Processed by Razorpay — UPI, card or netbanking
-                  </li>
-                </ul>
-              </div>
-
-              <div className="flex items-start gap-2 rounded-xl border border-warning/40 bg-warning/10 px-3 py-2.5">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                <p className="text-xs text-foreground">
-                  <span className="font-semibold">Never pay any agent or person.</span> All official payments happen only on this screen. Report anyone asking for cash to SafeWork.
-                </p>
-              </div>
-
-              <Button
-                className="w-full"
-                disabled={saving}
-                onClick={async () => {
-                  if (!subjectId) return;
-                  setSaving(true);
-                  try {
-                    const next = await payAssessmentFeeWithRazorpay({
-                      name: displayProfile?.full_name,
-                      email: displayableEmail(row?.email) || displayableEmail(displayProfile?.email),
-                      contact: displayProfile?.phone,
-                      workerUserId: partnerKiosk ? subjectId : undefined,
-                    });
-                    setRow({
-                      ...next,
-                      stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                    });
-                    notifyVerificationUpdated();
-                    toast.success(
-                      next.trade_test_required
-                        ? 'Payment successful — continue to trade test'
-                        : 'Payment successful — continue to medical',
-                    );
-                  } catch (e) {
-                    const msg = e instanceof Error ? e.message : 'Payment failed';
-                    if (/cancelled/i.test(msg)) {
-                      toast.message('Payment cancelled');
-                    } else {
-                      toast.error(msg);
-                    }
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Lock className="h-4 w-4 mr-1.5" />}
-                Pay ₹{assessmentFee.toLocaleString('en-IN')} securely
-              </Button>
-              <p className="text-center text-[11px] text-muted-foreground">
-                By proceeding you agree to SafeWork Global's terms &amp; conditions.
-              </p>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                disabled={saving}
-                onClick={async () => {
-                  setSaving(true);
-                  try {
-                    const next = await syncAssessmentPaymentAfterCheckout();
-                    setRow({
-                      ...next,
-                      stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                    });
-                    notifyVerificationUpdated();
-                    toast.success('Payment synced — journey unlocked');
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'No completed payment found yet');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
-                Already paid? Sync payment
-              </Button>
-
-              {showDevReset && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full border border-dashed border-amber-500/40 text-muted-foreground"
-                  disabled={saving}
-                  onClick={async () => {
-                    if (!subjectId) return;
-                    setSaving(true);
-                    try {
-                      const next = await waiveAssessmentPaymentPilot(subjectId);
-                      setRow({
-                        ...next,
-                        stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                      });
-                      notifyVerificationUpdated();
-                      toast.success('Fee waived for pilot (dev)');
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : 'Could not continue');
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                >
-                  Dev: continue without payment
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+        {!viewingCompletedStep && stage === 'awaiting_payment' && subjectId && (
+          <PaymentStage
+            assessmentFee={assessmentFee}
+            subjectId={subjectId}
+            payerName={displayProfile?.full_name}
+            payerEmail={displayableEmail(row?.email) || displayableEmail(displayProfile?.email)}
+            payerContact={displayProfile?.phone}
+            partnerKiosk={partnerKiosk}
+            showDevReset={showDevReset}
+            onPaid={(next) => {
+              setRow({
+                ...next,
+                stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+              });
+              notifyVerificationUpdated();
+            }}
+          />
         )}
 
         {!viewingCompletedStep && (stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (() => {

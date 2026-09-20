@@ -45,6 +45,8 @@ export interface AssessmentPaymentRecord {
   provider_ref: string | null;
   status: string;
   paid_at: string | null;
+  transfer_method?: string | null;
+  payment_note?: string | null;
 }
 
 interface Props {
@@ -594,6 +596,13 @@ export default function CompletedStepReview({
 
         {stepId === 'payment' && (() => {
           const waived = !row.razorpay_payment_id && paymentRecord?.provider === 'pilot_waive';
+          const viaBank = paymentRecord?.provider === 'bank_transfer';
+          const viaRazorpay = paymentRecord?.provider === 'razorpay' || Boolean(row.razorpay_payment_id);
+          const paidVia = waived
+            ? 'Cleared by SafeWork — no amount was collected'
+            : viaBank
+              ? 'Paid via direct bank transfer'
+              : `Paid via ${viaRazorpay ? 'Razorpay' : paymentRecord?.provider || 'Razorpay'}`;
           return (
             <div className="space-y-4">
               <div className="overflow-hidden rounded-xl border border-border">
@@ -603,24 +612,29 @@ export default function CompletedStepReview({
                     <p className="mt-1 font-heading text-3xl font-bold tabular-nums text-foreground">
                       ₹{(row.payment_amount ?? paymentRecord?.amount ?? 0).toLocaleString('en-IN')}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {waived
-                        ? 'Cleared by SafeWork — no amount was collected'
-                        : `Paid via ${paymentRecord?.provider === 'razorpay' || row.razorpay_payment_id ? 'Razorpay' : paymentRecord?.provider || 'Razorpay'}`}
-                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{paidVia}</p>
                   </div>
                   <StatusPill tone="success" label={waived ? 'Waived' : 'Paid'} />
                 </div>
                 <dl className="grid gap-x-6 gap-y-3 border-t border-border p-4 sm:grid-cols-2">
                   <Detail label="Paid on" value={formatDate(row.paid_at || paymentRecord?.paid_at)} />
                   <Detail label="Currency" value={paymentRecord?.currency || 'INR'} />
+                  {viaBank && paymentRecord?.transfer_method && (
+                    <Detail label="Transfer method" value={paymentRecord.transfer_method.toUpperCase()} />
+                  )}
+                  {viaBank && paymentRecord?.provider_ref && (
+                    <Detail label="UTR / UPI reference" value={paymentRecord.provider_ref} mono copyable />
+                  )}
+                  {viaBank && paymentRecord?.payment_note && (
+                    <Detail label="Payment remark" value={paymentRecord.payment_note} mono copyable />
+                  )}
                   {row.razorpay_payment_id && (
                     <Detail label="Payment ID" value={row.razorpay_payment_id} mono copyable />
                   )}
                   {row.razorpay_order_id && (
                     <Detail label="Order ID" value={row.razorpay_order_id} mono copyable />
                   )}
-                  {paymentRecord?.provider_ref && paymentRecord.provider_ref !== row.razorpay_payment_id && (
+                  {paymentRecord?.provider_ref && paymentRecord.provider_ref !== row.razorpay_payment_id && !viaBank && (
                     <Detail label="Provider reference" value={paymentRecord.provider_ref} mono copyable />
                   )}
                   {paymentRecord?.id && (

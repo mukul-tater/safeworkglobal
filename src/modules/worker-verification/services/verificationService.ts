@@ -22,6 +22,13 @@ import {
   skillRequiresTradeTest,
 } from '../constants';
 import { resolveServiceChargeInr } from '@/lib/jobServiceCharge';
+import { getWorkerDocumentSignedUrl } from '@/lib/storage';
+import {
+  type BankTransferMethod,
+  type BankTransferPayment,
+  normalizeTransferRef,
+  validateTransferRef,
+} from '../payment/bankTransfer';
 import { loadQuizItemsFromJson } from '../quiz-data';
 import { gradeLocalQuiz } from '../quiz-data/gradeLocal';
 import { isQuizItemUuid, resolveQuizSkillCode } from '../quiz-data/quizSkill';
@@ -973,6 +980,98 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
       throw verifyError instanceof Error ? verifyError : new Error('Payment verification failed');
     }
   }
+}
+
+const PAYMENT_PROOF_BUCKET = 'worker-documents';
+const PAYMENT_PROOF_MAX_BYTES = 10 * 1024 * 1024;
+const PAYMENT_PROOF_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf']);
+
+export async function loadLatestBankTransferPayment(
+  userId: string,
+): Promise<BankTransferPayment | null> {
+  const { data, error } = await supabase
+    .from('worker_assessment_payments')
+    .select(
+      'id, user_id, amount, currency, status, provider, provider_ref, transfer_method, proof_path, proof_file_name, payment_note, transferred_on, rejection_reason, paid_at, created_at',
+    )
+    .eq('user_id', userId)
+    .eq('provider', 'bank_transfer')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as BankTransferPayment | null) || null;
+}
+
+export async function previewBankTransferProof(pathOrUrl: string): Promise<string> {
+  return getWorkerDocumentSignedUrl(pathOrUrl, 60 * 10);
+}
+
+export async function uploadBankTransferProof(userId: string, file: File): Promise<{
+  path: string;
+  fileName: string;
+}> {
+  const ext = (file.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const mimeExt = file.type === 'application/pdf' ? 'pdf' : file.type.split('/')[1]?.toLowerCase();
+  const safeExt = PAYMENT_PROOF_EXTS.has(ext)
+    ? ext === 'jpeg'
+      ? 'jpg'
+      : ext
+    : mimeExt === 'jpeg'
+      ? 'jpg'
+      : mimeExt;
+  if (!safeExt || !PAYMENT_PROOF_EXTS.has(safeExt)) {
+    throw new Error('Upload a JPG, PNG, WEBP or PDF of the transfer');
+  }
+  if (file.size > PAYMENT_PROOF_MAX_BYTES) {
+    throw new Error('File must be 10 MB or smaller');
+  }
+  const path = `${userId}/assessment-payments/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${safeExt}`;
+  const { error } = await supabase.storage.from(PAYMENT_PROOF_BUCKET).upload(path, file, {
+    upsert: false,
+    contentType: file.type || undefined,
+  });
+  if (error) throw new Error(error.message);
+  return { path, fileName: file.name };
+}
+
+export async function submitBankTransferPayment(input: {
+  method: BankTransferMethod;
+  providerRef: string;
+  proofPath: string;
+  proofFileName: string;
+  amount: number;
+  transferredOn: string;
+  workerUserId?: string | null;
+}): Promise<BankTransferPayment> {
+  const refError = validateTransferRef(input.providerRef);
+  if (refError) throw new Error(refError);
+  const { data, error } = await supabase.rpc('submit_bank_transfer_payment', {
+    p_method: input.method,
+    p_provider_ref: normalizeTransferRef(input.providerRef),
+    p_proof_path: input.proofPath,
+    p_proof_file_name: input.proofFileName,
+    p_amount: input.amount,
+    p_transferred_on: input.transferredOn,
+    ...(input.workerUserId ? { p_worker_user_id: input.workerUserId } : {}),
+  });
+  if (error) throw new Error(error.message);
+  return data as BankTransferPayment;
+}
+
+export async function reviewBankTransferPayment(
+  userId: string,
+  action: 'approve' | 'reject',
+  reason?: string,
+): Promise<WorkerVerification> {
+  const { data, error } = await supabase.rpc('admin_review_bank_transfer_payment', {
+    p_user_id: userId,
+    p_action: action,
+    p_reason: reason || null,
+  });
+  if (error) throw new Error(error.message);
+  const next = data as WorkerVerification;
+  return { ...next, stage: normalizeVerificationStage(next.stage, next.trade_test_required) };
 }
 
 /**

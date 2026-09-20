@@ -4096,9 +4096,17 @@ export type Database = {
           currency: string
           id: string
           paid_at: string | null
+          payment_note: string | null
+          proof_file_name: string | null
+          proof_path: string | null
           provider: string | null
           provider_ref: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
+          transfer_method: string | null
+          transferred_on: string | null
           user_id: string
         }
         Insert: {
@@ -4107,9 +4115,17 @@ export type Database = {
           currency?: string
           id?: string
           paid_at?: string | null
+          payment_note?: string | null
+          proof_file_name?: string | null
+          proof_path?: string | null
           provider?: string | null
           provider_ref?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
+          transfer_method?: string | null
+          transferred_on?: string | null
           user_id: string
         }
         Update: {
@@ -4118,9 +4134,17 @@ export type Database = {
           currency?: string
           id?: string
           paid_at?: string | null
+          payment_note?: string | null
+          proof_file_name?: string | null
+          proof_path?: string | null
           provider?: string | null
           provider_ref?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
+          transfer_method?: string | null
+          transferred_on?: string | null
           user_id?: string
         }
         Relationships: []
@@ -5425,6 +5449,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_review_bank_transfer_payment: {
+        Args: { p_action: string; p_reason?: string; p_user_id: string }
+        Returns: Database["public"]["Tables"]["worker_verification"]["Row"]
+      }
       admin_review_bond_security: {
         Args: { p_action: string; p_reason?: string; p_user_id: string }
         Returns: undefined
@@ -6102,6 +6130,18 @@ export type Database = {
       resolve_worker_quiz_item_id: { Args: { p_raw: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
+      submit_bank_transfer_payment: {
+        Args: {
+          p_amount: number
+          p_method: string
+          p_proof_file_name: string
+          p_proof_path: string
+          p_provider_ref: string
+          p_transferred_on: string
+          p_worker_user_id?: string
+        }
+        Returns: Database["public"]["Tables"]["worker_assessment_payments"]["Row"]
+      }
       submit_worker_quiz: {
         Args: { p_answers: Json; p_user_id?: string }
         Returns: {

@@ -41,7 +41,6 @@ import {
   getServiceChargesForJobs,
   listBondTemplates,
   listInterviewers,
-  markPaymentPaid,
   markPdotCompleted,
   medicalTestDocumentsComplete,
   listMedicalReports,
@@ -55,6 +54,7 @@ import {
 } from '@/modules/worker-verification/services/verificationService';
 import type { BondTemplate } from '@/modules/worker-verification/types';
 import AdminBondSecurityReview from '@/pages/admin/AdminBondSecurityReview';
+import AdminBankTransferReview from '@/pages/admin/AdminBankTransferReview';
 
 type OpsTab = 'kyc' | 'interview' | 'payment' | 'trade_test' | 'medical' | 'bond' | 'pdot' | 'deployment';
 
@@ -413,20 +413,14 @@ export default function AdminJourneyOps() {
     if (tab === 'payment') {
       const fee = r.service_charge ?? ASSESSMENT_FEE_INR;
       return (
-        <Button
-          size="sm"
-          disabled={busy}
-          onClick={() =>
-            void run(
-              r.user_id,
-              () => markPaymentPaid(r.user_id, fee, { provider: 'admin_manual' }),
-              'Payment marked paid',
-            )
-          }
-        >
-          {busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-          Mark payment received (₹{Number(fee).toLocaleString('en-IN')})
-        </Button>
+        <AdminBankTransferReview
+          userId={r.user_id}
+          expectedFee={Number(fee) || ASSESSMENT_FEE_INR}
+          busy={busy}
+          onDone={async () => {
+            await load();
+          }}
+        />
       );
     }
 

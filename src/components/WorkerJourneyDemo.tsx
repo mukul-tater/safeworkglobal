@@ -101,7 +101,7 @@ const STEPS: JourneyStep[] = [
     descriptionHi:
       "फी हर जॉब के हिसाब से अलग होती है। अधिक जानकारी के लिए Find Jobs पर देखें।",
     description:
-      "The fee varies by job. For more details, see Find Jobs.",
+      "The fee varies by job. Pay the exact amount by bank transfer, or pay instantly with Razorpay (2.5% extra).",
     icon: CreditCard,
     bullets: [...ASSESSMENT_FEE_INCLUSIONS],
   },
