@@ -15,6 +15,13 @@ export type VerificationStage =
   | 'deployment'
   | 'gcc_ready';
 
+export type MedicalReport = {
+  id: string;
+  url: string;
+  name: string;
+  uploaded_at: string;
+};
+
 export interface WorkerVerification {
   id: string;
   user_id: string;
@@ -49,6 +56,7 @@ export interface WorkerVerification {
   medical_blood_report_url: string | null;
   medical_xray_report_url: string | null;
   medical_xray_photo_url: string | null;
+  medical_report_urls?: MedicalReport[] | null;
   razorpay_payment_id: string | null;
   razorpay_order_id: string | null;
   bond_status: string | null;

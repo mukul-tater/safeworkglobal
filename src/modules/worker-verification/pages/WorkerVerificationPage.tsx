@@ -14,8 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
-  Calendar, CreditCard, Stethoscope, ShieldCheck, Wrench,
-  GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList, Info,
+  Calendar, CreditCard, ShieldCheck, Wrench,
+  GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList,
   MapPin, Phone, ExternalLink, Search,
 } from 'lucide-react';
 import IndiaLocationFields from '@/components/IndiaLocationFields';
@@ -23,7 +23,6 @@ import { displayableEmail, isValidContactEmail } from '@/lib/workerAuthEmail';
 import {
   ASSESSMENT_FEE_INR,
   ASSESSMENT_FEE_INCLUSIONS,
-  MEDICAL_TEST_SCREENING_NOTE,
   educationOptionsForTenthPass,
   ecrFromTenthPass,
   gccJourneyNavSteps,
@@ -50,8 +49,6 @@ import {
   loadQuizItemsForWorker,
   saveEssentials,
   saveContactEmail,
-  medicalTestDocumentsComplete,
-  submitMedicalResult,
   submitQuiz,
   bookTradeTestCenter,
   payAssessmentFeeWithRazorpay,
@@ -82,6 +79,7 @@ import CompletedStepReview, {
   type AssessmentPaymentRecord,
   type KycDocument,
 } from '@/modules/worker-verification/components/journey/CompletedStepReview';
+import MedicalTestStage from '@/modules/worker-verification/components/journey/MedicalTestStage';
 import { phaseForStage } from '@/modules/worker-verification/journey/phases';
 import WorkerPreJourneyScreeningModal from '@/modules/worker-verification/components/journey/WorkerPreJourneyScreeningModal';
 import WorkerEmailGate from '@/modules/worker-verification/components/journey/WorkerEmailGate';
@@ -251,67 +249,6 @@ async function uploadJourneyDoc(userId: string, file: File, folder: string): Pro
   return signed.signedUrl;
 }
 
-function MedicalFileField({
-  label,
-  hint,
-  accept,
-  file,
-  existingUrl,
-  disabled,
-  onChange,
-}: {
-  label: string;
-  hint: string;
-  accept: string;
-  file: File | null;
-  existingUrl: string | null;
-  disabled: boolean;
-  onChange: (file: File | null) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const shown = file ? displayFileName(file.name) : null;
-  return (
-    <div className="min-w-0 space-y-1.5">
-      <Label>{label} *</Label>
-      <p className="text-xs text-muted-foreground">{hint}</p>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={accept}
-        className="sr-only"
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.files?.[0] || null)}
-      />
-      <Button
-        type="button"
-        variant="outline"
-        className="h-11 w-full min-w-0 justify-start font-normal"
-        disabled={disabled}
-        onClick={() => inputRef.current?.click()}
-      >
-        <Upload className="mr-2 h-4 w-4 shrink-0" />
-        <span className="truncate">{shown || 'Choose file'}</span>
-      </Button>
-      {file && (
-        <p className="flex min-w-0 items-start gap-1 text-xs text-success">
-          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 break-all">{shown}</span>
-        </p>
-      )}
-      {!file && existingUrl && (
-        <a
-          href={existingUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="text-xs text-primary underline"
-        >
-          View uploaded file
-        </a>
-      )}
-    </div>
-  );
-}
-
 const PHOTO_TARGET_MIN = 8;
 const PHOTO_TARGET_MAX = 10;
 const VIDEO_TARGET_MIN = 4;
@@ -432,9 +369,6 @@ export default function WorkerVerificationPage({
   const [tradeResultFile, setTradeResultFile] = useState<File | null>(null);
   const [selectedTradeCenterId, setSelectedTradeCenterId] = useState('');
   const [tradeAssessment, setTradeAssessment] = useState<AssessmentRow | null>(null);
-  const [medicalBloodFile, setMedicalBloodFile] = useState<File | null>(null);
-  const [medicalXrayReportFile, setMedicalXrayReportFile] = useState<File | null>(null);
-  const [medicalXrayPhotoFile, setMedicalXrayPhotoFile] = useState<File | null>(null);
   const [declaration, setDeclaration] = useState<WorkerPreJourneyDeclaration | null>(null);
   const [showDeclarationModal, setShowDeclarationModal] = useState(false);
   const [createdByPartner, setCreatedByPartner] = useState(false);
@@ -2553,151 +2487,19 @@ export default function WorkerVerificationPage({
           );
         })()}
 
-        {!viewingCompletedStep && stage === 'medical' && (() => {
-          const bloodUrl = row.medical_blood_report_url || row.medical_result_url;
-          const xrayReportUrl = row.medical_xray_report_url;
-          const xrayPhotoUrl = row.medical_xray_photo_url;
-          const canSubmit =
-            (medicalBloodFile || bloodUrl) &&
-            (medicalXrayReportFile || xrayReportUrl) &&
-            (medicalXrayPhotoFile || xrayPhotoUrl);
-          const waitingReview = medicalTestDocumentsComplete(row) && row.medical_status === 'scheduled';
-
-          return (
-          <Card className="overflow-hidden shadow-sm">
-            <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-start gap-3 border-b border-border/60 pb-4">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                  <Stethoscope className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="font-semibold">Medical test</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Upload your blood report, X-ray report, and X-ray photo from any nearest laboratory.
-                    {!tradeNeeded && (
-                      <> Physical trade test is not required for{' '}
-                        <span className="font-medium text-foreground">{row.primary_skill}</span>.
-                      </>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2.5">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <p className="text-sm text-foreground">{MEDICAL_TEST_SCREENING_NOTE}</p>
-              </div>
-              {waitingReview && (
-                <p className="text-sm rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
-                  All three medical documents are uploaded. SafeWork is reviewing them.
-                </p>
-              )}
-              {(row.medical_place || row.medical_scheduled_at || row.medical_instructions) && (
-                <div className="rounded-xl border border-border bg-muted/30 px-3 py-3 text-sm space-y-1">
-                  {row.medical_place && (
-                    <p>
-                      <span className="text-muted-foreground">Centre: </span>
-                      <span className="font-medium">{row.medical_place}</span>
-                    </p>
-                  )}
-                  {row.medical_scheduled_at && (
-                    <p>
-                      <span className="text-muted-foreground">When: </span>
-                      <span className="font-medium">
-                        {new Date(row.medical_scheduled_at).toLocaleString('en-IN', {
-                          dateStyle: 'medium',
-                          timeStyle: 'short',
-                        })}
-                      </span>
-                    </p>
-                  )}
-                  {row.medical_instructions && (
-                    <p className="text-xs text-muted-foreground whitespace-pre-line">
-                      {row.medical_instructions}
-                    </p>
-                  )}
-                </div>
-              )}
-              <div className="grid gap-4 sm:grid-cols-1">
-                <MedicalFileField
-                  label="Medical blood report"
-                  hint="HIV blood test report from any nearest laboratory (image or PDF)."
-                  accept="image/*,.pdf,application/pdf"
-                  file={medicalBloodFile}
-                  existingUrl={bloodUrl}
-                  disabled={saving}
-                  onChange={setMedicalBloodFile}
-                />
-                <MedicalFileField
-                  label="X-ray report"
-                  hint="TB chest X-ray report from any nearest laboratory (image or PDF)."
-                  accept="image/*,.pdf,application/pdf"
-                  file={medicalXrayReportFile}
-                  existingUrl={xrayReportUrl}
-                  disabled={saving}
-                  onChange={setMedicalXrayReportFile}
-                />
-                <MedicalFileField
-                  label="X-ray photo"
-                  hint="Chest X-ray image for Tuberculosis (TB) screening."
-                  accept="image/*"
-                  file={medicalXrayPhotoFile}
-                  existingUrl={xrayPhotoUrl}
-                  disabled={saving}
-                  onChange={setMedicalXrayPhotoFile}
-                />
-              </div>
-              <Button
-                disabled={saving || !canSubmit}
-                onClick={async () => {
-                  if (!subjectId) return;
-                  if (!medicalBloodFile && !bloodUrl) {
-                    toast.error('Upload your medical blood report');
-                    return;
-                  }
-                  if (!medicalXrayReportFile && !xrayReportUrl) {
-                    toast.error('Upload your X-ray report');
-                    return;
-                  }
-                  if (!medicalXrayPhotoFile && !xrayPhotoUrl) {
-                    toast.error('Upload your X-ray photo');
-                    return;
-                  }
-                  setSaving(true);
-                  try {
-                    const nextBlood = medicalBloodFile
-                      ? await uploadJourneyDoc(subjectId, medicalBloodFile, 'medical/blood-report')
-                      : bloodUrl!;
-                    const nextXrayReport = medicalXrayReportFile
-                      ? await uploadJourneyDoc(subjectId, medicalXrayReportFile, 'medical/xray-report')
-                      : xrayReportUrl!;
-                    const nextXrayPhoto = medicalXrayPhotoFile
-                      ? await uploadJourneyDoc(subjectId, medicalXrayPhotoFile, 'medical/xray-photo')
-                      : xrayPhotoUrl!;
-                    const next = await submitMedicalResult(subjectId, {
-                      bloodReportUrl: nextBlood,
-                      xrayReportUrl: nextXrayReport,
-                      xrayPhotoUrl: nextXrayPhoto,
-                    });
-                    setRow(next);
-                    setMedicalBloodFile(null);
-                    setMedicalXrayReportFile(null);
-                    setMedicalXrayPhotoFile(null);
-                    notifyVerificationUpdated();
-                    toast.success('Medical documents uploaded — waiting for admin review');
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'Upload failed');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-              >
-                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
-                Submit medical documents
-              </Button>
-            </CardContent>
-          </Card>
-          );
-        })()}
+        {!viewingCompletedStep && stage === 'medical' && subjectId && (
+          <MedicalTestStage
+            row={row}
+            tradeNeeded={tradeNeeded}
+            subjectId={subjectId}
+            saving={saving}
+            onSaving={setSaving}
+            onUpdated={(next) => {
+              setRow(next);
+              notifyVerificationUpdated();
+            }}
+          />
+        )}
 
         {!viewingCompletedStep && stage === 'bond' && subjectId && (
           <BondSecurityStage

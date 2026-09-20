@@ -6,7 +6,6 @@ import {
   Copy,
   ExternalLink,
   FileText,
-  Info,
   Lock,
   Star,
   XCircle,
@@ -21,12 +20,13 @@ import type { WorkerVerification } from '@/modules/worker-verification/types';
 import type { AssessmentRow } from '@/modules/trade-test/types';
 import {
   ASSESSMENT_FEE_INCLUSIONS,
-  MEDICAL_TEST_SCREENING_NOTE,
   QUIZ_PASS_SCORE,
   type GccNavStepId,
 } from '@/modules/worker-verification/constants';
 import { describeQuizResult } from '@/modules/worker-verification/quiz-data/quizResult';
 import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
+import { MedicalRequiredTestsNote } from '@/modules/worker-verification/components/journey/MedicalTestStage';
+import { listMedicalReports } from '@/modules/worker-verification/services/verificationService';
 
 export interface KycDocument {
   document_name: string;
@@ -550,40 +550,23 @@ export default function CompletedStepReview({
         })()}
 
         {stepId === 'medical' && (() => {
-          const docs = [
-            {
-              document_name: 'Blood report',
-              document_type: 'medical_blood_report',
-              file_url: row.medical_blood_report_url || row.medical_result_url || '',
-              verification_status: row.medical_status,
-            },
-            {
-              document_name: 'X-ray report',
-              document_type: 'medical_xray_report',
-              file_url: row.medical_xray_report_url || '',
-              verification_status: row.medical_status,
-            },
-            {
-              document_name: 'X-ray photo',
-              document_type: 'medical_xray_photo',
-              file_url: row.medical_xray_photo_url || '',
-              verification_status: row.medical_status,
-            },
-          ].filter((d) => d.file_url);
+          const docs = listMedicalReports(row).map((report) => ({
+            document_name: report.name,
+            document_type: 'medical_report',
+            file_url: report.url,
+            verification_status: row.medical_status,
+          }));
           const passed = row.medical_status === 'passed';
           return (
             <div className="space-y-4">
-              <div className="flex items-start gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2.5">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <p className="text-sm text-foreground">{MEDICAL_TEST_SCREENING_NOTE}</p>
-              </div>
+              <MedicalRequiredTestsNote />
               <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
                 <Detail label="Medical status" value={passed ? 'Passed' : row.medical_status || 'Submitted'} />
                 <Detail label="Centre" value={row.medical_place || '—'} />
               </dl>
               {docs.length > 0 && (
                 <div>
-                  <SectionLabel>Documents on file</SectionLabel>
+                  <SectionLabel>Reports on file</SectionLabel>
                   <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {docs.map((doc) => (
                       <DocumentTile key={`${doc.document_type}-${doc.file_url}`} doc={doc} />

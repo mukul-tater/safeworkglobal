@@ -48,7 +48,7 @@ export const JOURNEY_STEPS: { id: VerificationStage; label: string; description:
 ];
 
 export const MEDICAL_TEST_SCREENING_NOTE =
-  'The standard screening tests for everyone include a blood test for HIV and a chest X-ray/screening for Tuberculosis (TB). You can complete these at any nearest laboratory.';
+  'Get these tests done at any nearest laboratory, then upload the reports on the portal. Blood test screens for HIV, Syphilis, and Hepatitis B & C. Chest X-ray screens for active or pulmonary Tuberculosis (TB). Additional vaccinations or tests may apply for food handlers or healthcare workers.';
 
 export const EDUCATION_LEVELS = [
   'Below 10th',

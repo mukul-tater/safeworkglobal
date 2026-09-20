@@ -134,8 +134,21 @@ export const ASSESSMENT_FEE_INCLUSIONS = [
 ] as const;
 
 /** Shown on the logged-in worker Medical test step (not the homepage demo). */
-export const MEDICAL_TEST_SCREENING_NOTE =
-  'The standard screening tests for everyone include a blood test for HIV and a chest X-ray/screening for Tuberculosis (TB). You can complete these at any nearest laboratory.';
+export const MEDICAL_TEST_INTRO =
+  'Get these tests done at any nearest laboratory, then upload the reports on this portal.';
+
+export const MEDICAL_REQUIRED_TESTS = [
+  {
+    title: 'Blood test',
+    body: 'Screens for HIV, Syphilis, and Hepatitis B & C. Additional vaccinations or tests may apply for specific professions like food handlers or healthcare workers.',
+  },
+  {
+    title: 'Chest X-ray',
+    body: 'Screens for active or pulmonary Tuberculosis (TB).',
+  },
+] as const;
+
+export const MEDICAL_TEST_SCREENING_NOTE = MEDICAL_TEST_INTRO;
 
 export type VerificationStage =
   | 'essentials'

@@ -124,9 +124,13 @@ const STEPS: JourneyStep[] = [
     title: "Medical Test",
     shortTitle: "Medical Test",
     description:
-      "The standard screening tests for everyone include a blood test for HIV and a chest X-ray/screening for Tuberculosis (TB).",
+      "Get these tests done at any nearest laboratory, then upload the reports on the portal.",
     icon: Stethoscope,
-    bullets: ["Medical blood report", "X-ray report", "X-ray photo"],
+    bullets: [
+      "Blood test: Screens for HIV, Syphilis, and Hepatitis B & C. Additional vaccinations or tests may apply for food handlers or healthcare workers.",
+      "Chest X-ray: Screens for active or pulmonary Tuberculosis (TB).",
+      "Upload multiple reports on the portal",
+    ],
   },
   {
     id: "agreement",

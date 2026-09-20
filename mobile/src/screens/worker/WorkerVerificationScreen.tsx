@@ -382,7 +382,7 @@ export default function WorkerVerificationScreen() {
             />
             <Text style={styles.body}>{MEDICAL_TEST_SCREENING_NOTE}</Text>
             <Text style={styles.hint}>
-              Upload your HIV blood report, TB chest X-ray report, and X-ray photo on the web journey.
+              Upload your medical reports on the web journey. You can add multiple reports (blood test and chest X-ray).
             </Text>
           </Card>
         ) : null}

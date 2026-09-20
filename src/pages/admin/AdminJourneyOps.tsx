@@ -44,6 +44,7 @@ import {
   markPaymentPaid,
   markPdotCompleted,
   medicalTestDocumentsComplete,
+  listMedicalReports,
   recordInterviewScore,
   reviewWorkerKyc,
   scheduleWorkerAssessment,
@@ -470,27 +471,23 @@ export default function AdminJourneyOps() {
             {' · '}Scheduled: {fmt(r.medical_scheduled_at)}
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-            {(r.medical_blood_report_url || r.medical_result_url) ? (
-              <a className="text-primary underline" href={r.medical_blood_report_url || r.medical_result_url} target="_blank" rel="noreferrer">
-                Blood report
-              </a>
-            ) : (
-              <span className="text-muted-foreground">Blood report missing</span>
-            )}
-            {r.medical_xray_report_url ? (
-              <a className="text-primary underline" href={r.medical_xray_report_url} target="_blank" rel="noreferrer">
-                X-ray report
-              </a>
-            ) : (
-              <span className="text-muted-foreground">X-ray report missing</span>
-            )}
-            {r.medical_xray_photo_url ? (
-              <a className="text-primary underline" href={r.medical_xray_photo_url} target="_blank" rel="noreferrer">
-                X-ray photo
-              </a>
-            ) : (
-              <span className="text-muted-foreground">X-ray photo missing</span>
-            )}
+            {(() => {
+              const reports = listMedicalReports(r);
+              if (!reports.length) {
+                return <span className="text-muted-foreground">No reports uploaded yet</span>;
+              }
+              return reports.map((report, i) => (
+                <a
+                  key={report.id}
+                  className="text-primary underline"
+                  href={report.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {report.name || `Report ${i + 1}`}
+                </a>
+              ));
+            })()}
           </div>
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="space-y-1">

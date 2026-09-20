@@ -5,6 +5,7 @@ import { validatePAN } from '@/lib/security';
 import type {
   BondTemplate,
   InterviewerAssignment,
+  MedicalReport,
   SkillQuizConfig,
   SkillQuizItem,
   VerificationStage,
@@ -1072,6 +1073,74 @@ export async function submitTradeTestResult(
   return data as WorkerVerification;
 }
 
+export type MedicalReport = {
+  id: string;
+  url: string;
+  name: string;
+  uploaded_at: string;
+};
+
+export function parseMedicalReports(raw: unknown): MedicalReport[] {
+  if (!raw) return [];
+  const arr = Array.isArray(raw) ? raw : typeof raw === 'string' ? safeJsonArray(raw) : [];
+  const out: MedicalReport[] = [];
+  arr.forEach((item, i) => {
+    if (typeof item === 'string' && item) {
+      out.push({
+        id: `url-${i}`,
+        url: item,
+        name: `Report ${i + 1}`,
+        uploaded_at: '',
+      });
+      return;
+    }
+    if (!item || typeof item !== 'object') return;
+    const rec = item as Record<string, unknown>;
+    const url = typeof rec.url === 'string' ? rec.url : '';
+    if (!url) return;
+    out.push({
+      id: typeof rec.id === 'string' && rec.id ? rec.id : `report-${i}`,
+      url,
+      name: typeof rec.name === 'string' && rec.name.trim() ? rec.name : `Report ${i + 1}`,
+      uploaded_at: typeof rec.uploaded_at === 'string' ? rec.uploaded_at : '',
+    });
+  });
+  return out;
+}
+
+function safeJsonArray(value: string): unknown[] {
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function listMedicalReports(row: {
+  medical_report_urls?: unknown;
+  medical_blood_report_url?: string | null;
+  medical_xray_report_url?: string | null;
+  medical_xray_photo_url?: string | null;
+  medical_result_url?: string | null;
+}): MedicalReport[] {
+  const stored = parseMedicalReports(row.medical_report_urls);
+  if (stored.length) return stored;
+  const legacy: { url: string | null | undefined; name: string }[] = [
+    { url: row.medical_blood_report_url || row.medical_result_url, name: 'Blood report' },
+    { url: row.medical_xray_report_url, name: 'X-ray report' },
+    { url: row.medical_xray_photo_url, name: 'X-ray photo' },
+  ];
+  return legacy
+    .filter((d): d is { url: string; name: string } => Boolean(d.url))
+    .map((d, i) => ({
+      id: `legacy-${i}`,
+      url: d.url,
+      name: d.name,
+      uploaded_at: '',
+    }));
+}
+
 export type MedicalTestDocuments = {
   bloodReportUrl: string;
   xrayReportUrl: string;
@@ -1079,32 +1148,27 @@ export type MedicalTestDocuments = {
 };
 
 export function medicalTestDocumentsComplete(row: {
+  medical_report_urls?: unknown;
   medical_blood_report_url?: string | null;
   medical_xray_report_url?: string | null;
   medical_xray_photo_url?: string | null;
   medical_result_url?: string | null;
 }): boolean {
-  return Boolean(
-    (row.medical_blood_report_url || row.medical_result_url) &&
-      row.medical_xray_report_url &&
-      row.medical_xray_photo_url,
-  );
+  return listMedicalReports(row).length > 0;
 }
 
-/** Worker uploads blood report, X-ray report, and X-ray photo; admin must pass to advance. */
-export async function submitMedicalResult(
+/** Worker uploads one or more lab reports; admin must pass to advance. */
+export async function saveMedicalReports(
   userId: string,
-  docs: MedicalTestDocuments,
+  reports: MedicalReport[],
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
   const { data, error } = await supabase
     .from('worker_verification')
     .update({
-      medical_blood_report_url: docs.bloodReportUrl,
-      medical_xray_report_url: docs.xrayReportUrl,
-      medical_xray_photo_url: docs.xrayPhotoUrl,
-      medical_result_url: docs.bloodReportUrl,
-      medical_status: 'scheduled',
+      medical_report_urls: reports,
+      medical_result_url: reports[0]?.url ?? null,
+      medical_status: reports.length ? 'scheduled' : 'pending',
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id)
@@ -1112,6 +1176,22 @@ export async function submitMedicalResult(
     .single();
   if (error) throw new Error(error.message);
   return data as WorkerVerification;
+}
+
+/** @deprecated Prefer saveMedicalReports — kept for older three-file uploads. */
+export async function submitMedicalResult(
+  userId: string,
+  docs: MedicalTestDocuments,
+): Promise<WorkerVerification> {
+  const existing = listMedicalReports(await getOrCreateVerification(userId));
+  const now = new Date().toISOString();
+  const reports: MedicalReport[] = [
+    { id: crypto.randomUUID(), url: docs.bloodReportUrl, name: 'Blood report', uploaded_at: now },
+    { id: crypto.randomUUID(), url: docs.xrayReportUrl, name: 'X-ray report', uploaded_at: now },
+    { id: crypto.randomUUID(), url: docs.xrayPhotoUrl, name: 'X-ray photo', uploaded_at: now },
+  ];
+  const merged = existing.length ? [...existing, ...reports] : reports;
+  return saveMedicalReports(userId, merged);
 }
 
 /** Admin — pass trade test and move to medical. */
@@ -1136,7 +1216,7 @@ export async function approveTradeTest(userId: string): Promise<WorkerVerificati
 export async function approveMedical(userId: string): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
   if (!medicalTestDocumentsComplete(row)) {
-    throw new Error('Worker must upload blood report, X-ray report, and X-ray photo');
+    throw new Error('Worker must upload at least one medical report');
   }
   const { data, error } = await supabase
     .from('worker_verification')
