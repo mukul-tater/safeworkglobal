@@ -35,7 +35,6 @@ import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/
 import { formatINRAmount } from '@/lib/utils';
 
 const JOBS_PER_PAGE = 20;
-const QUICK_CATEGORIES = [...UAE_LISTED_JOBS];
 const SUGGESTED_CATEGORIES = [...UAE_LISTED_JOBS];
 const SUGGESTED_COUNTRIES = ['UAE'];
 
@@ -430,16 +429,8 @@ export default function Jobs() {
         keyword={keywordInput}
         country={filters.country}
         loading={loading}
-        quickCategories={QUICK_CATEGORIES}
         onKeywordChange={setKeywordInput}
         onCountryChange={(country) => setFilters((f) => ({ ...f, country }))}
-        onSelectCategory={(category) =>
-          setFilters((f) => ({
-            ...f,
-            jobCategory: category,
-            country: f.country === ANY_COUNTRY ? 'UAE' : f.country,
-          }))
-        }
         onSearch={() =>
           setFilters((f) => ({
             ...f,

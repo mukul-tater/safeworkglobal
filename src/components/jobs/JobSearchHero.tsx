@@ -8,10 +8,8 @@ interface JobSearchHeroProps {
   keyword: string;
   country: string;
   loading?: boolean;
-  quickCategories: string[];
   onKeywordChange: (value: string) => void;
   onCountryChange: (value: string) => void;
-  onSelectCategory: (category: string) => void;
   onSearch: () => void;
 }
 
@@ -19,10 +17,8 @@ export default function JobSearchHero({
   keyword,
   country,
   loading = false,
-  quickCategories,
   onKeywordChange,
   onCountryChange,
-  onSelectCategory,
   onSearch,
 }: JobSearchHeroProps) {
   return (
@@ -76,22 +72,6 @@ export default function JobSearchHero({
           Search jobs
         </Button>
       </form>
-
-      {quickCategories.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Popular:</span>
-          {quickCategories.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => onSelectCategory(category)}
-              className="rounded-full border border-border/60 px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:bg-accent/40 hover:text-foreground"
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-      )}
     </section>
   );
 }
