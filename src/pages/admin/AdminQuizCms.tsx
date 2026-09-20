@@ -19,9 +19,12 @@ import { QUIZ_PASS_SCORE, QUIZ_QUESTIONS_TO_SHOW, youtubeEmbedUrl } from '@/modu
 import type { QuizOption, SkillQuizConfig, SkillQuizItem } from '@/modules/worker-verification/types';
 import { isMcqQuizItem } from '@/modules/worker-verification/types';
 import {
+  defaultQuizBankForSkill,
   deleteQuizItem,
   listQuizConfigs,
   listQuizItems,
+  publishDefaultQuizBank,
+  publishMissingDefaultBanks,
   saveQuizConfig,
   saveQuizItem,
 } from '@/modules/worker-verification/services/quizCmsService';
@@ -99,6 +102,25 @@ export default function AdminQuizCms() {
   }, [load]);
 
   useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const seeded = await publishMissingDefaultBanks();
+        if (cancelled || !seeded.length) return;
+        toast.success(`Added default Test 1 questions for ${seeded.join(', ')}`);
+        await load();
+      } catch (e) {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : 'Could not add default questions');
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [load]);
+
+  useEffect(() => {
     const cfg =
       configs.find((c) => (cfgRegion === ALL_REGIONS ? !c.region : c.region === cfgRegion)) || null;
     setCfgCount(String(cfg?.questions_to_show ?? QUIZ_QUESTIONS_TO_SHOW));
@@ -164,6 +186,21 @@ export default function AdminQuizCms() {
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const defaultBank = useMemo(() => defaultQuizBankForSkill(skill), [skill]);
+
+  const onPublishDefaultBank = async () => {
+    setSaving(true);
+    try {
+      const count = await publishDefaultQuizBank(skill);
+      toast.success(count ? `Added ${count} default questions` : 'Questions already exist');
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not add default questions');
     } finally {
       setSaving(false);
     }
@@ -437,9 +474,32 @@ export default function AdminQuizCms() {
             {loading ? (
               <div className="py-8 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></div>
             ) : items.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                No questions yet for this skill.
-              </p>
+              <div className="space-y-3 py-2">
+                <p className="text-sm text-muted-foreground text-center">
+                  No questions in the CMS for this job yet.
+                </p>
+                {defaultBank.length > 0 && (
+                  <>
+                    <Button
+                      className="w-full"
+                      disabled={saving}
+                      onClick={() => void onPublishDefaultBank()}
+                    >
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                      Add {defaultBank.length} default questions
+                    </Button>
+                    <div className="space-y-2">
+                      {defaultBank.map((q, i) => (
+                        <div key={`${skill}-default-${i}`} className="rounded-lg border border-dashed border-border p-3 space-y-1">
+                          <p className="text-sm font-medium">{i + 1}. {q.question}</p>
+                          <p className="text-sm text-muted-foreground">{q.question_hi}</p>
+                          <Badge variant="outline">Answer: {q.correct}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             ) : (
               <div className="space-y-2">
                 {items.map((q) => {

@@ -1,4 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import { BASIC_TRADE_KNOWLEDGE_BANK } from '../quiz-data/basic-trade-knowledge';
+import { isUaeListedQuizSkill } from '../quiz-data/quizSkill';
+import { QUIZ_PASS_SCORE, QUIZ_QUESTIONS_TO_SHOW } from '../constants';
+import { UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import type { SkillQuizConfig, SkillQuizItem } from '../types';
 
 const db = supabase as any;
@@ -88,4 +92,80 @@ export async function saveQuizConfig(input: {
     ? await db.from('skill_quiz_configs').update(payload).eq('id', input.id)
     : await db.from('skill_quiz_configs').insert(payload);
   if (error) throw new Error(error.message);
+}
+
+/** Default bilingual bank for a UAE listed trade (used when CMS has no rows yet). */
+export function defaultQuizBankForSkill(skill: string) {
+  if (!isUaeListedQuizSkill(skill)) return [];
+  return BASIC_TRADE_KNOWLEDGE_BANK[skill];
+}
+
+/** Copy the bundled 10-question bank into the CMS for a new trade. */
+export async function publishDefaultQuizBank(skill: string): Promise<number> {
+  const bank = defaultQuizBankForSkill(skill);
+  if (!bank.length) {
+    throw new Error('No default questions for this skill');
+  }
+
+  const existing = await listQuizItems(skill);
+  if (existing.length > 0) return 0;
+
+  const rows = bank.map((q, index) => ({
+    skill_code: skill,
+    question: q.question,
+    question_hi: q.question_hi,
+    image_url: null,
+    youtube_url: null,
+    expected_answer: false,
+    options: q.options,
+    correct_option: q.correct,
+    region: null,
+    sort_order: index + 1,
+    active: true,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const { error } = await db.from('worker_skill_quiz_items').insert(rows);
+  if (error) throw new Error(error.message);
+
+  const configs = await listQuizConfigs(skill);
+  if (!configs.some((c) => !c.region)) {
+    await saveQuizConfig({
+      skill_code: skill,
+      region: null,
+      questions_to_show: QUIZ_QUESTIONS_TO_SHOW,
+      selection_mode: 'random_active',
+      selected_ids: [],
+      pass_score: QUIZ_PASS_SCORE,
+      active: true,
+    });
+  }
+
+  return rows.length;
+}
+
+/** Fill CMS banks for any UAE listed trade that still has zero questions. */
+let missingBanksInflight: Promise<string[]> | null = null;
+let missingBanksDone = false;
+
+export async function publishMissingDefaultBanks(): Promise<string[]> {
+  if (missingBanksDone) return [];
+  if (!missingBanksInflight) {
+    missingBanksInflight = (async () => {
+      const { data, error } = await db.from('worker_skill_quiz_items').select('skill_code');
+      if (error) throw new Error(error.message);
+      const have = new Set((data || []).map((row: { skill_code: string }) => row.skill_code));
+      const seeded: string[] = [];
+      for (const skill of UAE_LISTED_JOBS) {
+        if (have.has(skill)) continue;
+        const added = await publishDefaultQuizBank(skill);
+        if (added > 0) seeded.push(skill);
+      }
+      missingBanksDone = true;
+      return seeded;
+    })().finally(() => {
+      missingBanksInflight = null;
+    });
+  }
+  return missingBanksInflight;
 }
