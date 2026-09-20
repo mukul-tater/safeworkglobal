@@ -48,7 +48,6 @@ export default function WorkerOnboardingPage() {
     portalLabel,
     portalName,
     profileMenuItems,
-    portalHomePath: '/home' as const,
     showLanguageSwitcher: true,
   };
   const [step, setStep] = useState(1);

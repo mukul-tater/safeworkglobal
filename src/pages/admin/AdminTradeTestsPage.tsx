@@ -51,7 +51,6 @@ export default function AdminTradeTestsPage() {
       navGroups={adminNavGroups}
       portalLabel="Admin"
       portalName="Admin"
-      portalHomePath="/admin/dashboard"
       profileMenuItems={adminProfileMenu}
     >
       <div className="space-y-6 max-w-5xl">

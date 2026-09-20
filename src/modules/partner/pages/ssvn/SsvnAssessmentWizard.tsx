@@ -97,7 +97,6 @@ function WizardFrame({
         navGroups={adminNavGroups}
         portalLabel="Admin"
         portalName="Admin"
-        portalHomePath="/admin/dashboard"
         profileMenuItems={adminProfileMenu}
       >
         {children}

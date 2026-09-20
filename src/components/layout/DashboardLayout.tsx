@@ -17,8 +17,6 @@ interface DashboardLayoutProps {
   portalLabel: string;
   portalName: string;
   profileMenuItems?: ProfileMenuItem[];
-  /** Portal home route — defaults to main marketing site */
-  portalHomePath?: string;
   /** Show English/Hindi language switcher (worker portal) */
   showLanguageSwitcher?: boolean;
 }
@@ -52,7 +50,6 @@ export default function DashboardLayout({
   portalLabel,
   portalName,
   profileMenuItems = [],
-  portalHomePath = "/",
   showLanguageSwitcher = false,
 }: DashboardLayoutProps) {
   const location = useLocation();
@@ -65,7 +62,6 @@ export default function DashboardLayout({
         navItems={navItems}
         navGroups={navGroups}
         portalLabel={portalLabel}
-        portalHomePath={portalHomePath}
         menuOpen={menuOpen}
         onMenuOpenChange={setMenuOpen}
       />

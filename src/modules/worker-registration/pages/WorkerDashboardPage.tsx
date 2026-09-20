@@ -46,7 +46,6 @@ export default function WorkerDashboardPage() {
     portalLabel,
     portalName,
     profileMenuItems,
-    portalHomePath: "/home",
     showLanguageSwitcher: true,
   };
 

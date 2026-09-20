@@ -24,7 +24,6 @@ export function useWorkerPortalShell(page: WorkerPortalPage = "dashboard") {
         portalLabel: "Worker Portal",
         portalName: legacyPortalName,
         profileMenuItems: workerProfileMenu,
-        portalHomePath: "/worker/dashboard",
         showLanguageSwitcher: false,
       },
     };

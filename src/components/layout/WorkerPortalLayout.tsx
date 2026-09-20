@@ -18,7 +18,6 @@ export default function WorkerPortalLayout({ children }: Props) {
       portalLabel="Worker Portal"
       portalName="Worker Portal"
       profileMenuItems={workerProfileMenu}
-      portalHomePath="/worker/dashboard"
     >
       <PartnerAssistedJourneyBanner />
       {children}

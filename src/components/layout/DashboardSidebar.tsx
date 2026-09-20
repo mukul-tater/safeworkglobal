@@ -33,7 +33,6 @@ interface DashboardSidebarProps {
   navItems?: NavItem[];
   navGroups?: NavGroup[];
   portalLabel: string;
-  portalHomePath?: string;
   menuOpen?: boolean;
   onMenuOpenChange?: (open: boolean) => void;
 }
@@ -237,13 +236,11 @@ function SidebarBody({
   navItems,
   navGroups,
   portalLabel,
-  portalHomePath,
   onNavigate,
 }: {
   navItems?: NavItem[];
   navGroups?: NavGroup[];
   portalLabel: string;
-  portalHomePath: string;
   onNavigate: () => void;
 }) {
   const location = useLocation();
@@ -251,10 +248,11 @@ function SidebarBody({
   return (
     <div className="flex flex-col h-full">
       <Link
-        to={portalHomePath}
+        to="/"
+        aria-label="SafeWork Global home"
         className="flex items-center gap-2.5 mb-5 hover:opacity-80 transition-opacity shrink-0"
       >
-        <img src="/safework-global-logo.png" alt="SafeWorkGlobal" className="h-7 w-7" />
+        <img src="/safework-global-logo.png" alt="" className="h-7 w-7" />
         <span className="text-lg font-bold text-foreground font-heading">SafeWorkGlobal</span>
       </Link>
       <div className="px-3 mb-3">
@@ -303,7 +301,6 @@ export default function DashboardSidebar({
   navItems,
   navGroups,
   portalLabel,
-  portalHomePath = "/",
   menuOpen = false,
   onMenuOpenChange,
 }: DashboardSidebarProps) {
@@ -317,7 +314,6 @@ export default function DashboardSidebar({
             navItems={navItems}
             navGroups={navGroups}
             portalLabel={portalLabel}
-            portalHomePath={portalHomePath}
             onNavigate={handleNavigate}
           />
         </SheetContent>
@@ -327,7 +323,6 @@ export default function DashboardSidebar({
           navItems={navItems}
           navGroups={navGroups}
           portalLabel={portalLabel}
-          portalHomePath={portalHomePath}
           onNavigate={handleNavigate}
         />
       </aside>

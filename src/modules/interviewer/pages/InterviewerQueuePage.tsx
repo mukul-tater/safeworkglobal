@@ -236,7 +236,6 @@ export default function InterviewerQueuePage() {
         navGroups={adminNavGroups}
         portalLabel="Admin"
         portalName="Admin"
-        portalHomePath="/admin/dashboard"
         profileMenuItems={adminProfileMenu}
       >
         {body}

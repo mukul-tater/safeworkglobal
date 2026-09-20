@@ -24,14 +24,12 @@ function PartnerAddWorkerShell({
   onLoginNoticeAcked,
   declarationsDone,
   onDeclarationsDone,
-  myWorkersPath,
   attributionLabel,
 }: {
   loginNoticeAcked: boolean;
   onLoginNoticeAcked: () => void;
   declarationsDone: boolean;
   onDeclarationsDone: () => void;
-  myWorkersPath: string;
   attributionLabel: string;
 }) {
   const { navGroups } = useWorkerNavGroups();
@@ -52,7 +50,6 @@ function PartnerAddWorkerShell({
       portalLabel="Worker Portal"
       portalName="Worker creation"
       profileMenuItems={workerProfileMenu}
-      portalHomePath={myWorkersPath}
     >
       <div className="mb-5">
         <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +122,6 @@ export default function PartnerAddWorkerPage() {
         onLoginNoticeAcked={() => setLoginNoticeAcked(true)}
         declarationsDone={declarationsDone}
         onDeclarationsDone={() => setDeclarationsDone(true)}
-        myWorkersPath={myWorkersPath}
         attributionLabel={attributionLabel}
       />
     </WorkerKioskProvider>
