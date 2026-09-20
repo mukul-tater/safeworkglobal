@@ -17,7 +17,7 @@ function readError(value: unknown): string | null {
 async function invokePhoneVerifiedAccount(
   body: Record<string, unknown>,
 ): Promise<PhoneVerifiedAccountResult> {
-  const { data, error } = await supabase.functions.invoke('worker-portal', { body });
+  const { data, error } = await supabase.functions.invoke('phone-verified-account', { body });
   let payload: unknown = data;
   if ((!data || typeof data !== 'object' || !('user_id' in (data as object))) && error && 'context' in error) {
     try {

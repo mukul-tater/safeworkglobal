@@ -7,18 +7,27 @@ import {
 import { getFirebaseAuth, isFirebaseConfigured, redirectToPhoneAuthHost } from '@/lib/firebase';
 import { DEV_OTP_CODE, isDevOtpBypassEnabled, isOtpSixDigits } from '@/lib/otpConfig';
 
+const SMS_RATE_LIMIT_MESSAGE =
+  'SMS is temporarily blocked for this number after too many requests. Wait 15 minutes and try again, or use a different mobile number.';
+
 function mapFirebaseAuthError(err: unknown): string {
   const code = (err as { code?: string })?.code;
   const message = err instanceof Error ? err.message : 'Failed to send OTP';
   const host = typeof window !== 'undefined' ? window.location.hostname : '';
+
+  if (
+    code === 'auth/too-many-requests' ||
+    code === 'auth/quota-exceeded' ||
+    /too-many-requests|too many requests|TOO_MANY_ATTEMPTS|blocked all requests/i.test(message)
+  ) {
+    return SMS_RATE_LIMIT_MESSAGE;
+  }
 
   switch (code) {
     case 'auth/operation-not-allowed':
       return 'SMS verification is not available for this number. Please contact support.';
     case 'auth/invalid-phone-number':
       return 'Invalid mobile number. Use a valid 10-digit Indian number.';
-    case 'auth/too-many-requests':
-      return 'Too many attempts. Wait a few minutes and try again.';
     case 'auth/invalid-app-credential':
     case 'auth/captcha-check-failed':
       if (host === 'localhost') {
