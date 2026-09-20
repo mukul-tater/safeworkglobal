@@ -17,6 +17,11 @@ import { Loader2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { displayableEmail } from '@/lib/workerAuthEmail';
+import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
+import {
+  loadWorkersSkillsWithMedia,
+  type WorkerSkillWithMedia,
+} from '@/lib/workerSkillMedia';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   AlertDialog,
@@ -93,6 +98,7 @@ type Row = Record<string, any> & {
   passport_expiry?: string | null;
   kyc_submitted_at?: string | null;
   kycDocs?: AdminKycDocument[];
+  skillProofs?: WorkerSkillWithMedia[];
 };
 
 const fmt = (v?: string | null) =>
@@ -115,6 +121,67 @@ function formatDateOnly(iso?: string | null) {
   return Number.isNaN(d.getTime())
     ? '—'
     : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function AdminSkillProofs({
+  skills,
+  primarySkill,
+  submittedAt,
+}: {
+  skills: WorkerSkillWithMedia[];
+  primarySkill?: string | null;
+  submittedAt?: string | null;
+}) {
+  const ordered = [...skills].sort((a, b) => {
+    const aPri = a.skill_name === primarySkill ? 0 : 1;
+    const bPri = b.skill_name === primarySkill ? 0 : 1;
+    if (aPri !== bPri) return aPri - bPri;
+    return Number(b.media.length > 0) - Number(a.media.length > 0);
+  });
+  const withMedia = ordered.filter((s) => s.media.length > 0);
+  const photoCount = withMedia.reduce(
+    (n, s) => n + s.media.filter((m) => m.media_type === 'photo').length,
+    0,
+  );
+  const videoCount = withMedia.reduce(
+    (n, s) => n + s.media.filter((m) => m.media_type === 'video').length,
+    0,
+  );
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-xs font-semibold">Skill proof</p>
+        <p className="text-xs text-muted-foreground">
+          {photoCount} photo{photoCount === 1 ? '' : 's'} · {videoCount} video
+          {videoCount === 1 ? '' : 's'}
+          {submittedAt ? ` · ${fmt(submittedAt)}` : ''}
+        </p>
+      </div>
+      {withMedia.length === 0 ? (
+        <p className="text-xs text-amber-700">
+          No work photos or videos uploaded yet.
+        </p>
+      ) : (
+        withMedia.map((skill) => (
+          <div key={skill.id} className="space-y-1.5">
+            <p className="text-xs font-medium">
+              {skill.skill_name}
+              {skill.years_of_experience
+                ? ` · ${skill.years_of_experience} yr${skill.years_of_experience === 1 ? '' : 's'}`
+                : ''}
+            </p>
+            <SkillMediaGallery
+              items={skill.media}
+              label={skill.skill_name}
+              thumbnailPhotoClassName="h-24 w-24"
+              thumbnailVideoClassName="h-24 w-36"
+            />
+          </div>
+        ))
+      )}
+    </div>
+  );
 }
 
 export default function AdminJourneyOps() {
@@ -211,6 +278,18 @@ export default function AdminJourneyOps() {
             r.kyc_submitted_at = r.kyc_submitted_at || pack.kyc_submitted_at;
             r.kycDocs = pack.docs;
           });
+        }
+        if (tab === 'interview') {
+          try {
+            const proofs = await loadWorkersSkillsWithMedia(ids);
+            list.forEach((r) => {
+              r.skillProofs = proofs.get(r.user_id) ?? [];
+            });
+          } catch {
+            list.forEach((r) => {
+              r.skillProofs = [];
+            });
+          }
         }
       }
       setRows(list);
@@ -397,6 +476,11 @@ export default function AdminJourneyOps() {
           <div className="text-xs text-muted-foreground">
             KYC: <strong>{r.kyc_status || 'pending'}</strong> · Scheduled: {fmt(r.interview_scheduled_at)}
           </div>
+          <AdminSkillProofs
+            skills={r.skillProofs || []}
+            primarySkill={r.primary_skill}
+            submittedAt={r.media_submitted_at}
+          />
           {!kycOk ? (
             <p className="text-xs text-amber-600">Verify KYC before scheduling the video interview.</p>
           ) : (
