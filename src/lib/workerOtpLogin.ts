@@ -14,8 +14,8 @@ export async function exchangeWorkerOtpLogin(
   idToken: string,
 ): Promise<WorkerOtpLoginSession> {
   const digits = normalizeIndianMobile(mobile);
-  const { data, error } = await supabase.functions.invoke('worker-otp-login', {
-    body: { mobile: digits, idToken },
+  const { data, error } = await supabase.functions.invoke('worker-portal', {
+    body: { action: 'otp_login', mobile: digits, idToken },
   });
 
   let payload: unknown = data;
