@@ -8,6 +8,13 @@
       "when": 1789924023767,
       "tag": "0000_lock_journey_email_helpers",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789924104784,
+      "tag": "0001_add_temporary_journey_vault_bootstrap",
+      "breakpoints": true
     }
   ]
 }
