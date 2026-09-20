@@ -1172,13 +1172,6 @@ export async function submitTradeTestResult(
   return data as WorkerVerification;
 }
 
-export type MedicalReport = {
-  id: string;
-  url: string;
-  name: string;
-  uploaded_at: string;
-};
-
 export function parseMedicalReports(raw: unknown): MedicalReport[] {
   if (!raw) return [];
   const arr = Array.isArray(raw) ? raw : typeof raw === 'string' ? safeJsonArray(raw) : [];

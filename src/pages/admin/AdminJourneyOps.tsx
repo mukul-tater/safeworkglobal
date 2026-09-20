@@ -79,6 +79,11 @@ type Row = Record<string, any> & {
   full_name?: string | null;
   phone?: string | null;
   email?: string | null;
+  medical_report_urls?: unknown;
+  medical_blood_report_url?: string | null;
+  medical_xray_report_url?: string | null;
+  medical_xray_photo_url?: string | null;
+  medical_result_url?: string | null;
 };
 
 const fmt = (v?: string | null) =>
