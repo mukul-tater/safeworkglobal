@@ -3320,6 +3320,30 @@ export type Database = {
         }
         Relationships: []
       }
+      razorpay_webhook_events: {
+        Row: {
+          event_id: string
+          event_type: string
+          order_id: string | null
+          payment_id: string | null
+          processed_at: string
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          order_id?: string | null
+          payment_id?: string | null
+          processed_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          order_id?: string | null
+          payment_id?: string | null
+          processed_at?: string
+        }
+        Relationships: []
+      }
       reward_transactions: {
         Row: {
           amount: number
@@ -5041,6 +5065,7 @@ export type Database = {
           media_submitted_at: string | null
           medical_instructions: string | null
           medical_place: string | null
+          medical_report_urls: Json
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
@@ -5115,6 +5140,7 @@ export type Database = {
           media_submitted_at?: string | null
           medical_instructions?: string | null
           medical_place?: string | null
+          medical_report_urls?: Json
           medical_result_url?: string | null
           medical_scheduled_at?: string | null
           medical_status?: string | null
@@ -5189,6 +5215,7 @@ export type Database = {
           media_submitted_at?: string | null
           medical_instructions?: string | null
           medical_place?: string | null
+          medical_report_urls?: Json
           medical_result_url?: string | null
           medical_scheduled_at?: string | null
           medical_status?: string | null
@@ -5451,7 +5478,87 @@ export type Database = {
       }
       admin_review_bank_transfer_payment: {
         Args: { p_action: string; p_reason?: string; p_user_id: string }
-        Returns: Database["public"]["Tables"]["worker_verification"]["Row"]
+        Returns: {
+          assessment_id: string | null
+          bond_courier_tracking: string | null
+          bond_couriered_at: string | null
+          bond_received_at: string | null
+          bond_rejection_reason: string | null
+          bond_status: string | null
+          bond_template_id: string | null
+          city: string | null
+          created_at: string
+          deploy_contract_status: string
+          deploy_emigration_status: string
+          deploy_insurance_status: string
+          deploy_offer_status: string
+          deploy_ticket_status: string
+          deploy_visa_status: string
+          deployed_at: string | null
+          deployment_notes: string | null
+          education_level: string | null
+          email: string | null
+          essentials_completed_at: string | null
+          gcc_ready_at: string | null
+          id: string
+          interview_attempts: number
+          interview_meeting_url: string | null
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_scheduled_at: string | null
+          interview_score: number | null
+          interview_status: string
+          interviewer_name: string | null
+          interviewer_user_id: string | null
+          journey_job_id: string | null
+          kyc_rejection_reason: string | null
+          kyc_status: string
+          kyc_verified_at: string | null
+          media_submitted_at: string | null
+          medical_instructions: string | null
+          medical_place: string | null
+          medical_report_urls: Json
+          medical_result_url: string | null
+          medical_scheduled_at: string | null
+          medical_status: string | null
+          paid_at: string | null
+          payment_amount: number | null
+          payment_status: string | null
+          pdot_batch: string | null
+          pdot_completed_at: string | null
+          pdot_proof_url: string | null
+          pdot_provider: string | null
+          pdot_scheduled_at: string | null
+          pdot_status: string
+          pdot_training_url: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          stage: string
+          state: string | null
+          terms_accepted_at: string | null
+          terms_version: string | null
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
+          trade_test_reporting_window: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
+          trade_test_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_verification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_review_bond_security: {
         Args: { p_action: string; p_reason?: string; p_user_id: string }
@@ -5474,11 +5581,11 @@ export type Database = {
       }
       admin_schedule_worker_interview: {
         Args: {
+          p_confirm_rewind?: boolean
           p_interviewer_user_id: string
           p_meeting_url: string
           p_scheduled_at: string
           p_user_id: string
-          p_confirm_rewind?: boolean
         }
         Returns: string
       }
@@ -5541,6 +5648,10 @@ export type Database = {
         Args: { p_job_id: string; p_user_id?: string }
         Returns: string
       }
+      assessment_fee_for_worker: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       assign_employer_requirement_ref: {
         Args: { p_user_id: string }
         Returns: string
@@ -5552,6 +5663,10 @@ export type Database = {
       auth_continue: {
         Args: { p_email?: string; p_phone?: string; p_role?: string }
         Returns: Json
+      }
+      bank_transfer_payment_note: {
+        Args: { p_user_id: string }
+        Returns: string
       }
       bind_partner_to_lsp: {
         Args: { p_emitra_id?: string; p_lsp_id: string }
@@ -5607,6 +5722,7 @@ export type Database = {
           media_submitted_at: string | null
           medical_instructions: string | null
           medical_place: string | null
+          medical_report_urls: Json
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
@@ -5690,6 +5806,7 @@ export type Database = {
           media_submitted_at: string | null
           medical_instructions: string | null
           medical_place: string | null
+          medical_report_urls: Json
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
@@ -6033,6 +6150,7 @@ export type Database = {
         }
         Returns: Json
       }
+      journey_email_webhook_secret: { Args: never; Returns: string }
       list_public_workers: {
         Args: { p_limit?: number }
         Returns: {
@@ -6122,6 +6240,10 @@ export type Database = {
         Args: { _new: Database["public"]["Tables"]["partners"]["Row"] }
         Returns: boolean
       }
+      request_journey_step_email: {
+        Args: { p_notification_id: string }
+        Returns: undefined
+      }
       resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
       resolve_worker_auth_email: {
         Args: { p_identifier: string }
@@ -6140,7 +6262,31 @@ export type Database = {
           p_transferred_on: string
           p_worker_user_id?: string
         }
-        Returns: Database["public"]["Tables"]["worker_assessment_payments"]["Row"]
+        Returns: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          payment_note: string | null
+          proof_file_name: string | null
+          proof_path: string | null
+          provider: string | null
+          provider_ref: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          transfer_method: string | null
+          transferred_on: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "worker_assessment_payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       submit_worker_quiz: {
         Args: { p_answers: Json; p_user_id?: string }
@@ -6206,6 +6352,7 @@ export type Database = {
           media_submitted_at: string | null
           medical_instructions: string | null
           medical_place: string | null
+          medical_report_urls: Json
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
@@ -6289,6 +6436,7 @@ export type Database = {
           media_submitted_at: string | null
           medical_instructions: string | null
           medical_place: string | null
+          medical_report_urls: Json
           medical_result_url: string | null
           medical_scheduled_at: string | null
           medical_status: string | null
