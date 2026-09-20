@@ -68,19 +68,6 @@ function authorized(req: Request): boolean {
   return token === expected
 }
 
-async function bootstrapWebhookSecret(): Promise<void> {
-  const webhookSecret = Deno.env.get('JOURNEY_EMAIL_WEBHOOK_SECRET')
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  if (!webhookSecret || !supabaseUrl || !serviceKey) return
-
-  const admin = createClient(supabaseUrl, serviceKey)
-  const { error } = await admin.rpc('bootstrap_journey_email_webhook_secret', {
-    p_secret: webhookSecret,
-  })
-  if (error) console.error('journey email webhook secret bootstrap failed', error)
-}
-
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -92,8 +79,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
-
-  await bootstrapWebhookSecret()
 
   if (!authorized(req)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
