@@ -3,7 +3,8 @@ import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
-import { getPublicJobAbout, getPublicJobSalary, listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
+import { jobsBrowsePath } from '@/lib/jobsBrowse';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -348,6 +349,11 @@ export default function JobDetail() {
   }
 
   const lockedJobId = journeyRow?.journey_job_id || null;
+  const displayTitle = getPublicJobTitle(job.title, job.description);
+  const backToJobs = jobsBrowsePath({
+    country: job.country || 'UAE',
+    category: inferUaeListedJob(job.title, job.description),
+  });
   const aboutTheRole = getPublicJobAbout(job.title, job.description);
   const responsibilities = listPublicJobResponsibilities(
     job.title,
@@ -377,7 +383,7 @@ export default function JobDetail() {
   const jobStructuredData = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
-    "title": job.title,
+    "title": displayTitle,
     "description": aboutTheRole || job.description,
     "datePosted": job.posted_at,
     "validThrough": new Date(new Date(job.posted_at).setMonth(new Date(job.posted_at).getMonth() + 3)).toISOString(),
@@ -411,7 +417,7 @@ export default function JobDetail() {
 
   return layout(
     <>
-      <Link to={fromJourney ? '/worker/journey' : '/jobs'}>
+      <Link to={fromJourney ? '/worker/journey' : backToJobs}>
         <Button variant="ghost" className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           {fromJourney ? 'Back to journey' : 'Back to Jobs'}
@@ -440,7 +446,7 @@ export default function JobDetail() {
                     {isAdmin ? <PostedByBadge role={job.posted_by_role} /> : null}
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{job.title}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{displayTitle}</h1>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -682,15 +688,15 @@ export default function JobDetail() {
           <ChangeJobDialog
             open={changeOpen}
             currentJobTitle={null}
-            nextJobTitle={job.title}
+            nextJobTitle={displayTitle}
             onOpenChange={setChangeOpen}
             onConfirm={() => void handleApply(true)}
           />
     </>,
     <SEOHead
-      title={`${job.title} | SafeWork Global`}
-      description={`Apply for ${job.title} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(salaryMin, salaryMax, salaryCurrency)}/month.`}
-      keywords={`${job.title}, ${job.location} jobs, ${job.country} jobs, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
+      title={`${displayTitle} | SafeWork Global`}
+      description={`Apply for ${displayTitle} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(salaryMin, salaryMax, salaryCurrency)}/month.`}
+      keywords={`${displayTitle}, ${job.location} jobs, ${job.country} jobs, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
       canonicalUrl={`${job.slug ? `https://www.safeworkglobal.com/jobs/${job.slug}` : "https://www.safeworkglobal.com/jobs"}`}
       ogType="article"
       structuredData={jobStructuredData}

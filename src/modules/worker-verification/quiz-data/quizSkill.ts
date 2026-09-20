@@ -35,6 +35,8 @@ export function resolveQuizSkillCode(opts: {
 
   const skill = (opts.primarySkill || '').trim();
   if (isQuizSkillCode(skill)) return skill;
+  const listedFromSkill = inferUaeListedJob(skill);
+  if (listedFromSkill) return listedFromSkill;
   if ((WORKER_SKILLS as readonly string[]).includes(skill)) {
     return COARSE_SKILL_TO_QUIZ[skill as (typeof WORKER_SKILLS)[number]];
   }

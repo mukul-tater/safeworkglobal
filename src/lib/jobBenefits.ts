@@ -1,7 +1,7 @@
 export const STANDARD_JOB_BENEFITS = [
   'Flight tickets',
   'Accommodation',
-  'Food - Minimum 200 and kitchen facilities',
+  'Food (usually included in salary) - Minimum 200 and kitchen facilities',
   'Local transport',
   'MOL',
   'Work visa and Emirates ID',
@@ -43,7 +43,9 @@ const BENEFIT_ALIASES: Record<string, StandardJobBenefit> = {
   transportation: 'Local transport',
   visa: 'Work visa and Emirates ID',
   'food or food allowance (min. aed 200) + kitchen facilities':
-    'Food - Minimum 200 and kitchen facilities',
+    'Food (usually included in salary) - Minimum 200 and kitchen facilities',
+  'food - minimum 200 and kitchen facilities':
+    'Food (usually included in salary) - Minimum 200 and kitchen facilities',
   'return air fare after 2 years': 'Return airfare after 2 years',
   'pbby insurance': 'PBBY Insurance in India',
   uniform: 'Uniform provided by company',

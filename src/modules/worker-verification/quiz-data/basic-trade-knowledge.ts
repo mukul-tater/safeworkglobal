@@ -969,7 +969,7 @@ export const BASIC_TRADE_KNOWLEDGE_BANK: Record<UaeListedJob, TradeQuizQuestion[
     ),
   ],
 
-  'General Labour - Warehouse/Supermarket': [
+  'Warehouse Helper': [
     q(
       'What is a common job of a warehouse worker?',
       'वेयरहाउस वर्कर का सामान्य काम क्या होता है?',

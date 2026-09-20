@@ -10,7 +10,7 @@ export const UAE_LISTED_JOBS = [
   'Furniture Carpenter - Finishing, All Rounder',
   'Steel Fixer',
   'AC Technician',
-  'General Labour - Warehouse/Supermarket',
+  'Warehouse Helper',
   'Scaffolder',
   'Painter',
   'Aluminium Fixer/Fabricator',
@@ -33,10 +33,7 @@ export const UAE_LISTED_JOB_LABELS: Record<UaeListedJob, { en: string; hi: strin
   },
   'Steel Fixer': { en: 'Steel Fixer', hi: 'स्टील फिक्सर' },
   'AC Technician': { en: 'AC Technician', hi: 'AC तकनीशियन' },
-  'General Labour - Warehouse/Supermarket': {
-    en: 'Warehouse / Supermarket',
-    hi: 'गोदाम / सुपरमार्केट',
-  },
+  'Warehouse Helper': { en: 'Warehouse Helper', hi: 'वेयरहाउस हेल्पर' },
   Scaffolder: { en: 'Scaffolder', hi: 'स्कैफोल्डर' },
   Painter: { en: 'Painter', hi: 'पेंटर' },
   'Aluminium Fixer/Fabricator': { en: 'Aluminium Fixer', hi: 'एल्युमिनियम फिक्सर' },
@@ -46,7 +43,7 @@ const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'Aluminium Fixer/Fabricator', needles: ['aluminium fixer', 'aluminum fixer', 'aluminium fabricator', 'aluminum fabricator', 'glazing fabricator'] },
   { job: 'Shuttering Carpenter', needles: ['shuttering carpenter', 'shuttering', 'formwork carpenter', 's. carpenter'] },
   { job: 'Mason (tiles/marble)', needles: ['mason (tiles/marble)', 'tiles/marble', 'tile mason', 'tile fixer', 'marble mason', 'granite mason', 'marble / granite', 'marble/granite'] },
-  { job: 'General Labour - Warehouse/Supermarket', needles: ['warehouse', 'supermarket'] },
+  { job: 'Warehouse Helper', needles: ['warehouse helper', 'supermarket helper', 'warehouse/supermarket', 'general labour - warehouse', 'warehouse'] },
   { job: 'Construction Labour/Helper', needles: ['construction labour', 'construction labor', 'construction helper', 'civil helper', 'civil labour', 'civil labor', 'mechanical helper', 'general helper'] },
   { job: 'Pipe Fitter', needles: ['pipe fitter', 'pipefitter'] },
   { job: 'Steel Fixer', needles: ['steel fixer', 'rebar fixer'] },
@@ -75,6 +72,11 @@ export function inferUaeListedJob(title: string, description = ''): UaeListedJob
   const haystack = `${title} ${description}`.toLowerCase();
   const match = MATCHERS.find(({ needles }) => needles.some((needle) => haystack.includes(needle)));
   return match?.job ?? null;
+}
+
+/** Public-facing title: listed trade name when we can infer one. */
+export function getPublicJobTitle(title: string, description = ''): string {
+  return inferUaeListedJob(title, description) ?? title;
 }
 
 /** Generic Carpenter listing — removed from Find jobs; shuttering / furniture stay. */
@@ -108,7 +110,7 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ReturnType<typeof inr
   'Furniture Carpenter - Finishing, All Rounder': inrBand(37000, 41000),
   'Steel Fixer': inrBand(35000, 41000),
   'AC Technician': inrBand(39000, 50000),
-  'General Labour - Warehouse/Supermarket': inrBand(30000, 32000),
+  'Warehouse Helper': inrBand(30000, 32000),
   Scaffolder: inrBand(36000, 42000),
   Painter: inrBand(36000, 42000),
   'Aluminium Fixer/Fabricator': inrBand(39000, 42000),
@@ -141,8 +143,8 @@ export const UAE_LISTED_JOB_ABOUT: Record<UaeListedJob, string> = {
     'Steel fixer openings for UAE high-rise and infrastructure. You will read bar-bending schedules, cut, bend, place and tie reinforcement for slabs, beams, columns and walls, and keep cover, laps and chairs as specified. Visa sponsorship for shortlisted candidates.',
   'AC Technician':
     'AC technician openings for UAE facilities and residential packages. You will install, service and repair split, window and package units, run copper and drain lines, vacuum and charge circuits, and diagnose cooling faults. Visa sponsorship for shortlisted candidates.',
-  'General Labour - Warehouse/Supermarket':
-    'General labour openings for UAE warehouses, stores and supermarket back-of-house. You will load, unload, pick, pack, stack and replenish stock, keep aisles and docks clear, and help with receiving and simple inventory counts. Visa sponsorship for shortlisted candidates.',
+  'Warehouse Helper':
+    'Warehouse helper openings for UAE warehouses and stores. You will load, unload, pick, pack, stack and replenish stock, keep aisles and docks clear, and help with receiving and simple inventory counts. Visa sponsorship for shortlisted candidates.',
   Scaffolder:
     'Scaffolder openings for UAE high-rise and industrial access. You will erect, alter and dismantle tube-and-coupler or system scaffold, set standards, ledgers, braces and platforms, and tag incomplete or unsafe work. Visa sponsorship for shortlisted candidates.',
   Painter:
@@ -239,12 +241,12 @@ export const UAE_LISTED_JOB_RESPONSIBILITIES: Record<UaeListedJob, string[]> = {
     'Keep plant rooms and work areas clean',
     'Follow electrical isolation and site HSE rules',
   ],
-  'General Labour - Warehouse/Supermarket': [
-    'Load, unload and shift goods in warehouses, stores and supermarket back-of-house',
+  'Warehouse Helper': [
+    'Load, unload and shift goods in warehouses and stores',
     'Pick, pack, stack and replenish stock as directed',
     'Keep aisles, docks and storage areas clean and clear',
     'Help with receiving, put-away and simple inventory counts',
-    'Follow supervisor instructions and warehouse / store safety rules',
+    'Follow supervisor instructions and warehouse safety rules',
     'Wear PPE at all times on site',
   ],
   Scaffolder: [
@@ -357,7 +359,7 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
   ],
   'Steel Fixer': [{ youtubeId: 'NT2IeAdO7eg' }],
   'AC Technician': [{ youtubeId: 'sRy3zy84hwg' }],
-  'General Labour - Warehouse/Supermarket': [{ youtubeId: 'e8RgNqmSh2c' }],
+  'Warehouse Helper': [{ youtubeId: 'e8RgNqmSh2c' }],
   Scaffolder: [
     { youtubeId: '87oUrUvPaNg' },
     { youtubeId: 'vxUSsnpUM18' },

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { BookmarkCheck, ChevronLeft, ChevronRight, Save, SlidersHorizontal, X } from 'lucide-react';
 import JobSearchFilters, {
   ANY_CATEGORY,
@@ -30,9 +30,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/use-debounce';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, inferUaeListedJob, isHiddenPublicJob, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
+import { browseFromSearchParams, jobsBrowsePath } from '@/lib/jobsBrowse';
 
 const JOBS_PER_PAGE = 20;
 const SUGGESTED_CATEGORIES = [...UAE_LISTED_JOBS];
@@ -134,6 +135,7 @@ function topFacets(jobs: JobListItem[], key: 'category' | 'country', limit: numb
 
 export default function Jobs() {
   const { user, isAuthenticated, role } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const [filters, setFilters] = useState<JobFilters>(EMPTY_JOB_FILTERS);
@@ -153,21 +155,44 @@ export default function Jobs() {
     setFilters((prev) => (prev.keyword === debouncedKeyword ? prev : { ...prev, keyword: debouncedKeyword }));
   }, [debouncedKeyword]);
 
-  // Seed filters from homepage search links.
+  // Country + category live in the URL so browser back returns to the previous wizard step.
   useEffect(() => {
-    const keyword = searchParams.get('keyword') || '';
-    const location = searchParams.get('location') || '';
-    const category = searchParams.get('category') || ANY_CATEGORY;
-    const country =
-      location && location !== ANY_COUNTRY
-        ? location
-        : keyword || (category !== ANY_CATEGORY)
-          ? 'UAE'
-          : ANY_COUNTRY;
-
-    setKeywordInput(keyword);
-    setFilters((prev) => ({ ...prev, keyword, country, jobCategory: category }));
+    const { keyword, country, jobCategory } = browseFromSearchParams(searchParams);
+    setKeywordInput((prev) => (prev === keyword ? prev : keyword));
+    setFilters((prev) =>
+      prev.keyword === keyword && prev.country === country && prev.jobCategory === jobCategory
+        ? prev
+        : { ...prev, keyword, country, jobCategory },
+    );
   }, [searchParams]);
+
+  const goBrowse = useCallback(
+    (
+      next: { country: string; jobCategory: string; keyword?: string },
+      mode: 'push' | 'replace' = 'push',
+    ) => {
+      navigate(
+        jobsBrowsePath({
+          country: next.country,
+          category: next.jobCategory,
+          keyword: next.keyword ?? keywordInput,
+        }),
+        { replace: mode === 'replace' },
+      );
+    },
+    [keywordInput, navigate],
+  );
+
+  const handleFiltersChange = useCallback(
+    (next: JobFilters) => {
+      const browseChanged = next.country !== filters.country || next.jobCategory !== filters.jobCategory;
+      setFilters(next);
+      if (browseChanged) {
+        goBrowse({ country: next.country, jobCategory: next.jobCategory, keyword: next.keyword });
+      }
+    },
+    [filters.country, filters.jobCategory, goBrowse],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -195,7 +220,7 @@ export default function Jobs() {
           return {
             id: job.id,
             slug: job.slug || job.id,
-            title: job.title,
+            title: getPublicJobTitle(job.title, job.description ?? ''),
             company: '',
             companyLogoUrl: null,
             location: `${job.location}, ${job.country}`,
@@ -276,13 +301,19 @@ export default function Jobs() {
     const chips: { label: string; clear: () => void }[] = [];
 
     if (filters.country !== ANY_COUNTRY) {
-      chips.push({ label: filters.country, clear: () => setFilters((f) => ({ ...f, country: ANY_COUNTRY })) });
+      chips.push({
+        label: filters.country,
+        clear: () => goBrowse({ country: ANY_COUNTRY, jobCategory: ANY_CATEGORY }, 'replace'),
+      });
     }
     if (filters.location.trim()) {
       chips.push({ label: filters.location, clear: () => setFilters((f) => ({ ...f, location: '' })) });
     }
     if (filters.jobCategory !== ANY_CATEGORY) {
-      chips.push({ label: filters.jobCategory, clear: () => setFilters((f) => ({ ...f, jobCategory: ANY_CATEGORY })) });
+      chips.push({
+        label: filters.jobCategory,
+        clear: () => goBrowse({ country: filters.country, jobCategory: ANY_CATEGORY }, 'replace'),
+      });
     }
     if (filters.experienceLevel !== ANY_EXPERIENCE) {
       chips.push({
@@ -307,7 +338,7 @@ export default function Jobs() {
     });
 
     return chips;
-  }, [filters]);
+  }, [filters, goBrowse]);
 
   /** Names the filters whose removal would surface the most results. */
   const restrictiveFilters = useMemo(() => {
@@ -358,7 +389,8 @@ export default function Jobs() {
   const resetFilters = useCallback(() => {
     setKeywordInput('');
     setFilters(EMPTY_JOB_FILTERS);
-  }, []);
+    navigate('/jobs');
+  }, [navigate]);
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
@@ -430,19 +462,24 @@ export default function Jobs() {
         country={filters.country}
         loading={loading}
         onKeywordChange={setKeywordInput}
-        onCountryChange={(country) => setFilters((f) => ({ ...f, country }))}
+        onCountryChange={(country) =>
+          goBrowse({
+            country,
+            jobCategory: country === ANY_COUNTRY ? ANY_CATEGORY : filters.jobCategory,
+          })
+        }
         onSearch={() =>
-          setFilters((f) => ({
-            ...f,
+          goBrowse({
+            country: filters.country === ANY_COUNTRY && keywordInput.trim() ? 'UAE' : filters.country,
+            jobCategory: filters.jobCategory,
             keyword: keywordInput,
-            country: f.country === ANY_COUNTRY && keywordInput.trim() ? 'UAE' : f.country,
-          }))
+          })
         }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[288px_1fr] xl:grid-cols-[312px_1fr]">
         <aside className="hidden self-start lg:sticky lg:top-24 lg:block">
-          <JobSearchFilters filters={filters} onFiltersChange={setFilters} />
+          <JobSearchFilters filters={filters} onFiltersChange={handleFiltersChange} />
 
           {isAuthenticated && role === 'worker' && (
             <Button variant="outline" asChild className="mt-3 w-full gap-2">
@@ -469,12 +506,12 @@ export default function Jobs() {
                     <SheetHeader className="border-b border-border/60 px-5 py-4">
                       <SheetTitle className="text-base">Filters</SheetTitle>
                     </SheetHeader>
-                    <JobSearchFilters filters={filters} onFiltersChange={setFilters} className="rounded-none border-0" />
+                    <JobSearchFilters filters={filters} onFiltersChange={handleFiltersChange} className="rounded-none border-0" />
                   </SheetContent>
                 </Sheet>
               </div>
               <JobCountryGrid
-                onSelect={(country) => setFilters((f) => ({ ...f, country, jobCategory: ANY_CATEGORY }))}
+                onSelect={(country) => goBrowse({ country, jobCategory: ANY_CATEGORY })}
               />
             </div>
           ) : !jobSelected ? (
@@ -491,19 +528,19 @@ export default function Jobs() {
                     <SheetHeader className="border-b border-border/60 px-5 py-4">
                       <SheetTitle className="text-base">Filters</SheetTitle>
                     </SheetHeader>
-                    <JobSearchFilters filters={filters} onFiltersChange={setFilters} className="rounded-none border-0" />
+                    <JobSearchFilters filters={filters} onFiltersChange={handleFiltersChange} className="rounded-none border-0" />
                   </SheetContent>
                 </Sheet>
               </div>
               <button
                 type="button"
                 className="text-sm text-muted-foreground hover:text-foreground"
-                onClick={() => setFilters((f) => ({ ...f, country: ANY_COUNTRY, jobCategory: ANY_CATEGORY }))}
+                onClick={() => goBrowse({ country: ANY_COUNTRY, jobCategory: ANY_CATEGORY }, 'replace')}
               >
                 ← All countries
               </button>
               <JobTradeGrid
-                onSelect={(job) => setFilters((f) => ({ ...f, country: 'UAE', jobCategory: job }))}
+                onSelect={(job) => goBrowse({ country: 'UAE', jobCategory: job })}
               />
             </div>
           ) : (
@@ -511,7 +548,7 @@ export default function Jobs() {
           <button
             type="button"
             className="mb-4 text-sm text-muted-foreground hover:text-foreground"
-            onClick={() => setFilters((f) => ({ ...f, jobCategory: ANY_CATEGORY }))}
+            onClick={() => goBrowse({ country: filters.country, jobCategory: ANY_CATEGORY }, 'replace')}
           >
             ← All jobs in {filters.country}
           </button>
@@ -537,7 +574,7 @@ export default function Jobs() {
                   <SheetHeader className="border-b border-border/60 px-5 py-4">
                     <SheetTitle className="text-base">Filters</SheetTitle>
                   </SheetHeader>
-                  <JobSearchFilters filters={filters} onFiltersChange={setFilters} className="rounded-none border-0" />
+                  <JobSearchFilters filters={filters} onFiltersChange={handleFiltersChange} className="rounded-none border-0" />
                   <div className="sticky bottom-0 border-t border-border/60 bg-card p-4">
                     <Button className="w-full" onClick={() => setFiltersSheetOpen(false)}>
                       Show {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}
@@ -605,8 +642,8 @@ export default function Jobs() {
               countries={countryFacets}
               onClearFilters={resetFilters}
               onCreateAlert={() => setShowSaveDialog(true)}
-              onSelectCategory={(category) => setFilters({ ...EMPTY_JOB_FILTERS, jobCategory: category, country: 'UAE' })}
-              onSelectCountry={(country) => setFilters({ ...EMPTY_JOB_FILTERS, country })}
+              onSelectCategory={(category) => goBrowse({ country: 'UAE', jobCategory: category })}
+              onSelectCountry={(country) => goBrowse({ country, jobCategory: ANY_CATEGORY })}
             />
           ) : (
             <>
