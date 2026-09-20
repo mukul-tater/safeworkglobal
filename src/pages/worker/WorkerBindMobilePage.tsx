@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { bindVerifiedMobile } from '@/lib/phoneVerifiedAccount';
 import { toast } from 'sonner';
 import { Loader2, Phone, ShieldCheck, HardHat } from 'lucide-react';
 import { isValidIndianMobile } from '@/lib/validations/common';
@@ -128,7 +129,7 @@ export default function WorkerBindMobilePage() {
 
     setSubmitting(true);
     try {
-      await firebaseOtp.verifyOtp(otp);
+      const idToken = await firebaseOtp.verifyOtp(otp);
       try {
         const { getFirebaseAuth } = await import('@/lib/firebase');
         const { signOut: firebaseSignOut } = await import('firebase/auth');
@@ -140,20 +141,7 @@ export default function WorkerBindMobilePage() {
       }
 
       const digits = mobile.replace(/\D/g, '').slice(-10);
-      await assertPhoneAvailable(digits);
-
-      const { error: updateErr } = await supabase
-        .from('profiles')
-        .update({ phone: digits, mobile_verified: true })
-        .eq('id', user.id);
-      if (updateErr) throw new Error(updateErr.message);
-
-      await supabase.auth.updateUser({ data: { phone: digits } });
-      if (role === 'worker') {
-        await supabase.from('worker_profiles').upsert({ user_id: user.id } as any, {
-          onConflict: 'user_id',
-        });
-      }
+      await bindVerifiedMobile({ mobile: digits, idToken });
 
       markMobileVerified(digits, user.id);
       await refreshProfile();

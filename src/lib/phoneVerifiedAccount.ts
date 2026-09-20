@@ -39,7 +39,12 @@ async function invokePhoneVerifiedAccount(
     }
     throw new Error(bodyError);
   }
-  if (error?.message) throw new Error(error.message);
+  if (error?.message) {
+    if (/not found|404/i.test(error.message)) {
+      throw new Error('Account service is updating. Wait a minute and try again.');
+    }
+    throw new Error(error.message);
+  }
   throw new Error('Could not complete mobile verification. Please try again.');
 }
 

@@ -1,14 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { workerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
-import {
-  isWeakPasswordAuthError,
-  passwordSignupIssue,
-  WEAK_PASSWORD_MESSAGE,
-} from '@/lib/validations/password';
-import {
-  WORKER_TERMS_VERSION,
-} from '@/modules/worker-verification/constants';
+import { passwordSignupIssue } from '@/lib/validations/password';
 import { acceptTerms } from '@/modules/worker-verification/services/verificationService';
+import { createPhoneVerifiedWorkerAccount } from '@/lib/phoneVerifiedAccount';
 
 async function attachWorkerToCallingPartner(input: {
   workerUserId: string;
@@ -37,6 +31,8 @@ export type CreateVerifiedWorkerInput = {
   email?: string;
   password: string;
   country?: string;
+  /** Firebase ID token from the SMS OTP that just succeeded. Required. */
+  idToken: string;
   source?: WorkerSource;
   /** Optional seed fields on worker_profiles (skill/location from emitra kiosk). */
   profileSeed?: {
@@ -110,111 +106,41 @@ export async function createVerifiedWorkerAccount(
 
   const passwordIssue = passwordSignupIssue(input.password);
   if (passwordIssue) throw new Error(passwordIssue);
+  if (!String(input.idToken || '').trim()) {
+    throw new Error('Verification is required. Request a new OTP.');
+  }
 
   try {
-    const { data: rpcId, error: rpcErr } = await supabase.rpc(
-      'create_phone_verified_worker_account',
-      {
-        p_email: authEmail,
-        p_password: input.password,
-        p_full_name: input.fullName.trim(),
-        p_phone: digits,
-      },
-    );
-    const rpcMissing = !!rpcErr && /could not find|does not exist|schema cache/i.test(rpcErr.message);
+    const created = await createPhoneVerifiedWorkerAccount({
+      email: authEmail,
+      password: input.password,
+      fullName: input.fullName.trim(),
+      mobile: digits,
+      idToken: input.idToken,
+    });
+    if (!created.userId) throw new Error('Could not create account. Please try again.');
 
-    if (!rpcMissing) {
-      if (rpcErr && /already registered|already exists|duplicate/i.test(rpcErr.message)) {
-        throw new Error('This email or mobile is already registered. Sign in instead.');
-      }
-      if (rpcErr) {
-        if (isWeakPasswordAuthError(rpcErr.message)) throw new Error(WEAK_PASSWORD_MESSAGE);
-        throw new Error(rpcErr.message);
-      }
-      if (!rpcId) throw new Error('Could not create account. Please try again.');
-
-      const { data: signedIn, error: signInErr } = await supabase.auth.signInWithPassword({
-        email: authEmail,
-        password: input.password,
-      });
-      if (!signedIn?.session) {
-        if (signInErr && /email not confirmed/i.test(signInErr.message)) {
-          await new Promise((r) => setTimeout(r, 700));
-          const retry = await supabase.auth.signInWithPassword({
-            email: authEmail,
-            password: input.password,
-          });
-          if (!retry.data.session) {
-            throw new Error('Account created. Confirm the email we sent, then sign in.');
-          }
-        } else if (signInErr) {
-          throw new Error(signInErr.message);
-        } else {
-          throw new Error('Account created but session could not be established.');
-        }
-      }
-      switchedAwayFromCaller = true;
-    } else {
-      const { data: signupData, error: signupErr } = await supabase.auth.signUp({
-        email: authEmail,
-        password: input.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/worker/journey`,
-          data: {
-            full_name: input.fullName.trim(),
-            phone: digits,
-            role: 'worker',
-            // OTP already verified — handle_new_user + AuthContext honor this.
-            mobile_verified: true,
-            terms_version: WORKER_TERMS_VERSION,
-          },
-        },
-      });
-
-      if (signupErr) {
-        if (/already registered|already exists/i.test(signupErr.message)) {
-          throw new Error('This email or mobile is already registered. Sign in instead.');
-        }
-        if (isWeakPasswordAuthError(signupErr.message)) {
-          throw new Error(WEAK_PASSWORD_MESSAGE);
-        }
-        throw new Error(signupErr.message);
-      }
-
-      // Email confirmation is enabled in production, so signUp may return no
-      // session. Phone OTP already succeeded — the confirm_mobile_verified
-      // trigger should have confirmed the user. Try sign-in so the worker is
-      // login-ready instead of leaving them stuck on "email not confirmed".
-      if (!signupData.session) {
-        const userId = signupData.user?.id;
-        if (!userId) {
-          throw new Error('Account was created, but confirmation status could not be read.');
-        }
-        await new Promise((r) => setTimeout(r, 400));
+    const { data: signedIn, error: signInErr } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password: input.password,
+    });
+    if (!signedIn?.session) {
+      if (signInErr && /email not confirmed/i.test(signInErr.message)) {
+        await new Promise((r) => setTimeout(r, 700));
         const retry = await supabase.auth.signInWithPassword({
           email: authEmail,
           password: input.password,
         });
         if (!retry.data.session) {
-          if (input.preserveCallerSession) {
-            await attachWorkerToCallingPartner({
-              workerUserId: userId,
-              fullName: input.fullName.trim(),
-              mobile: digits,
-              email: contactEmail || authEmail,
-            });
-          }
-          return {
-            userId,
-            authEmail,
-            mobile: digits,
-            requiresEmailConfirmation: true,
-          };
+          throw new Error('Account created. Confirm the email we sent, then sign in.');
         }
+      } else if (signInErr) {
+        throw new Error(signInErr.message);
+      } else {
+        throw new Error('Account created but session could not be established.');
       }
-
-      switchedAwayFromCaller = true;
     }
+    switchedAwayFromCaller = true;
 
     const {
       data: { user },
@@ -277,7 +203,6 @@ export async function createVerifiedWorkerAccount(
     const profilePatch = {
       full_name: input.fullName.trim(),
       phone: digits,
-      mobile_verified: true,
       email: contactEmail || authEmail,
     };
 
@@ -285,7 +210,7 @@ export async function createVerifiedWorkerAccount(
     for (let attempt = 0; attempt < 8; attempt++) {
       const { data: existing, error: selectErr } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, mobile_verified')
         .eq('id', user.id)
         .maybeSingle();
       if (selectErr) throw new Error(selectErr.message);
@@ -296,6 +221,10 @@ export async function createVerifiedWorkerAccount(
           .eq('id', user.id);
         if (profileErr) throw new Error(profileErr.message);
         profileReady = true;
+        if (!existing.mobile_verified) {
+          await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
+          continue;
+        }
         break;
       }
       await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
@@ -304,7 +233,6 @@ export async function createVerifiedWorkerAccount(
       throw new Error('Profile was not ready yet. Please try again in a moment.');
     }
 
-    // Confirm the flag stuck (guards against RLS/trigger oddities).
     const { data: verifiedRow, error: verifiedErr } = await supabase
       .from('profiles')
       .select('mobile_verified')
@@ -312,22 +240,9 @@ export async function createVerifiedWorkerAccount(
       .maybeSingle();
     if (verifiedErr) throw new Error(verifiedErr.message);
     if (!verifiedRow?.mobile_verified) {
-      const { error: forceErr } = await supabase
-        .from('profiles')
-        .update({ mobile_verified: true, phone: digits })
-        .eq('id', user.id);
-      if (forceErr) throw new Error(forceErr.message);
-
-      const { data: again } = await supabase
-        .from('profiles')
-        .select('mobile_verified')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (!again?.mobile_verified) {
-        throw new Error(
-          'Could not save mobile verification. Please refresh and try signing in again.',
-        );
-      }
+      throw new Error(
+        'Could not save mobile verification. Please refresh and try signing in again.',
+      );
     }
 
     // Keep metadata in sync so AuthContext metaVerified works after reload.

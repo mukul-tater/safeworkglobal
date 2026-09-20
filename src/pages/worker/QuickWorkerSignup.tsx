@@ -106,6 +106,7 @@ export default function QuickWorkerSignup({
   const country = 'India';
   const [otp, setOtp] = useState('');
   const [phoneOtpVerified, setPhoneOtpVerified] = useState(false);
+  const [firebaseIdToken, setFirebaseIdToken] = useState('');
   const [needsPasswordRetry, setNeedsPasswordRetry] = useState(false);
   const [emitraNoticeOpen, setEmitraNoticeOpen] = useState(false);
   const isEmitraAssisted = partnerAssisted && partnerCtx?.source.type === 'emitra';
@@ -255,7 +256,7 @@ export default function QuickWorkerSignup({
 
       if (phoneOtpVerified) {
         setNeedsPasswordRetry(false);
-        await createAccountAfterOtp();
+        await createAccountAfterOtp(firebaseIdToken);
         return;
       }
 
@@ -280,13 +281,14 @@ export default function QuickWorkerSignup({
     }
   };
 
-  const createAccountAfterOtp = async () => {
+  const createAccountAfterOtp = async (idToken: string) => {
     const created = await createVerifiedWorkerAccount({
       fullName: name.trim(),
       email: email.trim().toLowerCase(),
       mobile,
       password,
       country,
+      idToken,
       source: partnerAssisted ? (partnerCtx?.source ?? { type: 'partner' }) : { type: 'organic' },
       ...(partnerAssisted
         ? {
@@ -365,16 +367,18 @@ export default function QuickWorkerSignup({
     setFormLoading(true);
     try {
       if (!phoneOtpVerified) {
-        await firebaseOtp.verifyOtp(otp);
+        const idToken = await firebaseOtp.verifyOtp(otp);
+        setFirebaseIdToken(idToken);
         setPhoneOtpVerified(true);
         try {
           await firebaseSignOut(getFirebaseAuth());
         } catch {
           /* ignore */
         }
+        await createAccountAfterOtp(idToken);
+      } else {
+        await createAccountAfterOtp(firebaseIdToken);
       }
-
-      await createAccountAfterOtp();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       if (isWeakPasswordAuthError(message)) {

@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { verifiedMobileFromIdToken } from '../_shared/firebasePhone.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,55 +8,11 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-/** Public web API key — same default as the Vite Firebase config. */
-const DEFAULT_FIREBASE_API_KEY = 'AIzaSyB27N7cODGEhPFJdJm-CFAoedTeW2OeJh0';
-
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
-}
-
-function normalizeIndianMobile(value: string): string | null {
-  const digits = String(value || '').replace(/\D/g, '');
-  const local = digits.length >= 10 ? digits.slice(-10) : digits;
-  return /^[6-9]\d{9}$/.test(local) ? local : null;
-}
-
-function allowDevOtpBypass(): boolean {
-  const flag = (Deno.env.get('OTP_DEV_BYPASS') || '').toLowerCase();
-  if (flag === 'true' || flag === '1') return true;
-  const url = Deno.env.get('SUPABASE_URL') || '';
-  return /localhost|127\.0\.0\.1/i.test(url);
-}
-
-async function phoneFromFirebaseIdToken(idToken: string): Promise<string> {
-  const apiKey = (
-    Deno.env.get('FIREBASE_API_KEY') ||
-    Deno.env.get('VITE_FIREBASE_API_KEY') ||
-    DEFAULT_FIREBASE_API_KEY
-  ).trim();
-  const response = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
-    },
-  );
-  const body = (await response.json()) as {
-    users?: { phoneNumber?: string }[];
-    error?: { message?: string };
-  };
-  if (!response.ok) {
-    throw new Error(body.error?.message || 'Invalid or expired verification. Request a new OTP.');
-  }
-  const phoneNumber = body.users?.[0]?.phoneNumber;
-  if (!phoneNumber) {
-    throw new Error('Phone number was not verified. Request a new OTP.');
-  }
-  return phoneNumber;
 }
 
 serve(async (req) => {
@@ -79,26 +36,11 @@ serve(async (req) => {
     return json(400, { error: 'Invalid request.' });
   }
 
-  const mobile = normalizeIndianMobile(String(payload.mobile ?? ''));
-  const idToken = String(payload.idToken ?? '').trim();
-  if (!mobile) {
-    return json(400, { error: 'Enter a valid 10-digit Indian mobile number.' });
-  }
-  if (!idToken) {
-    return json(400, { error: 'Verification is required.' });
-  }
-
   try {
-    if (idToken.startsWith('dev-otp:')) {
-      if (!allowDevOtpBypass()) {
-        return json(401, { error: 'Invalid or expired verification. Request a new OTP.' });
-      }
-    } else {
-      const tokenPhone = normalizeIndianMobile(await phoneFromFirebaseIdToken(idToken));
-      if (!tokenPhone || tokenPhone !== mobile) {
-        return json(401, { error: 'Verified phone does not match the number you entered.' });
-      }
-    }
+    const mobile = await verifiedMobileFromIdToken(
+      String(payload.idToken ?? ''),
+      String(payload.mobile ?? ''),
+    );
 
     const admin = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },

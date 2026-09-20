@@ -110,7 +110,7 @@ function Inner() {
 
     setLoading(true);
     try {
-      await firebaseOtp.verifyOtp(otp);
+      const idToken = await firebaseOtp.verifyOtp(otp);
       try {
         await firebaseSignOut(getFirebaseAuth());
       } catch {
@@ -122,6 +122,7 @@ function Inner() {
         mobile,
         password,
         country: 'India',
+        idToken,
         source: { type: 'emitra', partnerProfileId: partnerId },
         preserveCallerSession: true,
         profileSeed: {
