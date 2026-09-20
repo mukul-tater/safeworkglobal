@@ -1,7 +1,7 @@
 import { inferUaeListedJob, UAE_LISTED_JOBS, type UaeListedJob } from '@/lib/uaeListedJobs';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 
-/** Skills that have a Test 1 question bank (14 UAE trades + Driver/Other fallbacks). */
+/** Skills that have a Test 1 question bank (UAE listed trades + Driver/Other fallbacks). */
 export const QUIZ_SKILL_CODES = [...UAE_LISTED_JOBS, 'Driver', 'Other'] as const;
 export type QuizSkillCode = (typeof QUIZ_SKILL_CODES)[number];
 

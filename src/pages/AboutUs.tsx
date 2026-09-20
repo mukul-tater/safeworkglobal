@@ -277,7 +277,7 @@ export default function AboutUs() {
                   {pick(
                     locale,
                     "We believe that skilled electricians, plumbers, welders, fitters, HVAC technicians, drivers, construction workers and other skilled professionals should have access to a transparent pathway to global employment.",
-                    "हम मानते हैं कि कुशल बिजली मिस्त्री, नलसाज़, वेल्डिंग मिस्त्री, जोड़ने-लगाने वाले, एसी मिस्त्री, चालक, निर्माण श्रमिक और अन्य कुशल पेशेवरों को वैश्विक रोजगार का एक पारदर्शी रास्ता मिलना चाहिए।",
+                    "हम मानते हैं कि कुशल इलेक्ट्रीशियन, प्लंबर, वेल्डर, जोड़ने-लगाने वाले, एसी मिस्त्री, चालक, निर्माण श्रमिक और अन्य कुशल पेशेवरों को वैश्विक रोजगार का एक पारदर्शी रास्ता मिलना चाहिए।",
                   )}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">

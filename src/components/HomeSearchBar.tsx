@@ -5,7 +5,7 @@ import { Search, MapPin, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DESTINATION_COUNTRIES } from "@/lib/constants";
-import { UAE_LISTED_JOBS } from "@/lib/uaeListedJobs";
+import { UAE_LISTED_JOBS, listedJobDisplayName } from "@/lib/uaeListedJobs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n";
 import { showEmployerChrome } from "@/lib/launchGate";
@@ -79,7 +79,7 @@ const HomeSearchBar = () => {
                 <SelectContent className="max-h-64">
                   {UAE_LISTED_JOBS.map((category) => (
                     <SelectItem key={category} value={category}>
-                      {category}
+                      {listedJobDisplayName(category)}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -38,7 +38,7 @@ function q(
 }
 
 /** Entry-level bilingual MCQ bank — 10 questions per UAE listed trade. */
-export const BASIC_TRADE_KNOWLEDGE_BANK: Record<UaeListedJob, TradeQuizQuestion[]> = {
+const CORE_TRADE_KNOWLEDGE_BANK = {
   Electrician: [
     q(
       'What is the main purpose of an MCB?',
@@ -1340,4 +1340,13 @@ export const BASIC_TRADE_KNOWLEDGE_BANK: Record<UaeListedJob, TradeQuizQuestion[
       'A',
     ),
   ],
+};
+
+export const BASIC_TRADE_KNOWLEDGE_BANK: Record<UaeListedJob, TradeQuizQuestion[]> = {
+  ...CORE_TRADE_KNOWLEDGE_BANK,
+  'MIG Welder': CORE_TRADE_KNOWLEDGE_BANK.Welder,
+  'TIG Welder': CORE_TRADE_KNOWLEDGE_BANK.Welder,
+  'Mason (bricks/plaster)': CORE_TRADE_KNOWLEDGE_BANK['Mason (tiles/marble)'],
+  'Cleaner (Male)': CORE_TRADE_KNOWLEDGE_BANK['Construction Labour/Helper'],
+  'Cleaner (Female)': CORE_TRADE_KNOWLEDGE_BANK['Construction Labour/Helper'],
 };

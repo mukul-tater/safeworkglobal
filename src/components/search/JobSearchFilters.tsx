@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, Plus, X } from 'lucide-react';
 import { DESTINATION_COUNTRIES, POPULAR_SKILLS } from '@/lib/constants';
-import { UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { UAE_LISTED_JOBS, listedJobDisplayName } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, SALARY_FILTER_STEP } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -182,7 +182,7 @@ export default function JobSearchFilters({ filters, onFiltersChange, className }
             <SelectItem value={ANY_CATEGORY}>All categories</SelectItem>
             {UAE_LISTED_JOBS.map((category) => (
               <SelectItem key={category} value={category}>
-                {category}
+                {listedJobDisplayName(category)}
               </SelectItem>
             ))}
           </SelectContent>

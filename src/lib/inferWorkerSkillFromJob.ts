@@ -8,7 +8,7 @@ const SKILL_ALIASES: Array<{ skill: (typeof WORKER_SKILLS)[number]; needles: str
   { skill: 'Driver', needles: ['driver', 'driving'] },
   { skill: 'Mason', needles: ['mason', 'bricklayer', 'tile', 'marble', 'steel fixer', 'rebar'] },
   { skill: 'Carpenter', needles: ['shuttering', 'formwork', 'carpent'] },
-  { skill: 'Helper', needles: ['construction labour', 'construction helper', 'civil helper', 'warehouse', 'supermarket', 'scaffolder', 'painter', 'helper', 'labour', 'labor'] },
+  { skill: 'Helper', needles: ['construction labour', 'construction helper', 'civil helper', 'warehouse', 'supermarket', 'scaffolder', 'painter', 'cleaner', 'housekeeping', 'helper', 'labour', 'labor'] },
 ];
 
 /** Map a job title/description/skills onto the worker Test 1 skill list. */

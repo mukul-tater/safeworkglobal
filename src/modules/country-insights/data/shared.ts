@@ -39,9 +39,9 @@ const varies: Bilingual = {
 };
 
 export const SALARY_PACKAGES: SalaryPackage[] = [
-  { trade: { en: "Electrician", hi: "बिजली मिस्त्री" } },
-  { trade: { en: "Plumber", hi: "नलसाज़" } },
-  { trade: { en: "Welder", hi: "वेल्डिंग मिस्त्री" } },
+  { trade: { en: "Electrician", hi: "इलेक्ट्रीशियन" } },
+  { trade: { en: "Plumber", hi: "प्लंबर" } },
+  { trade: { en: "Welder", hi: "वेल्डर" } },
   { trade: { en: "HVAC Technician", hi: "एसी मिस्त्री" } },
 ].map((row) => ({
   ...row,
@@ -281,17 +281,17 @@ export const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     id: "electrician",
-    label: { en: "Electrician opportunities", hi: "बिजली मिस्त्री के अवसर" },
+    label: { en: "Electrician opportunities", hi: "इलेक्ट्रीशियन के अवसर" },
     cells: {},
   },
   {
     id: "welder",
-    label: { en: "Welder opportunities", hi: "वेल्डिंग मिस्त्री के अवसर" },
+    label: { en: "Welder opportunities", hi: "वेल्डर के अवसर" },
     cells: {},
   },
   {
     id: "plumber",
-    label: { en: "Plumber opportunities", hi: "नलसाज़ के अवसर" },
+    label: { en: "Plumber opportunities", hi: "प्लंबर के अवसर" },
     cells: {},
   },
   {

@@ -30,7 +30,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/use-debounce';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, jobsBrowsePath } from '@/lib/jobsBrowse';
@@ -311,7 +311,7 @@ export default function Jobs() {
     }
     if (filters.jobCategory !== ANY_CATEGORY) {
       chips.push({
-        label: filters.jobCategory,
+        label: listedJobDisplayName(filters.jobCategory),
         clear: () => goBrowse({ country: filters.country, jobCategory: ANY_CATEGORY }, 'replace'),
       });
     }

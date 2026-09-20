@@ -2,9 +2,9 @@
 export const DESTINATION_COUNTRIES = ['UAE'] as const;
 
 export const HOME_TRADES = [
-  { en: 'Electrician', hi: 'बिजली मिस्त्री' },
-  { en: 'Plumber', hi: 'नलसाज़' },
-  { en: 'Welder', hi: 'वेल्डिंग मिस्त्री' },
+  { en: 'Electrician', hi: 'इलेक्ट्रीशियन' },
+  { en: 'Plumber', hi: 'प्लंबर' },
+  { en: 'Welder', hi: 'वेल्डर' },
   { en: 'AC/Lift Technician', hi: 'एसी मिस्त्री' },
   { en: 'Fitter', hi: 'जोड़ने-लगाने वाला' },
   { en: 'Construction', hi: 'निर्माण कार्य' },
