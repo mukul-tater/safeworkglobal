@@ -4,9 +4,7 @@ import { Menu, Search, Globe, User, Bell, X, LogOut, ChevronRight, CircleHelp } 
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import BrandLockup from "@/components/BrandLockup";
-import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 import GetStartedChoices from "@/components/GetStartedChoices";
 import { useI18n } from "@/i18n";
 import {
@@ -113,8 +111,6 @@ const Header = () => {
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-3">
               <div className={`flex items-center gap-3 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
-              <AboutLanguageToggle variant={overlaysHomeHero ? "onDark" : "default"} className="w-[9rem]" />
-              <ThemeToggle />
               {isAuthenticated ? (
                 <>
                   <Link to={role === "admin" ? "/admin/dashboard" : comingSoonPathForRole(role) ?? "/dashboard"}>
@@ -161,7 +157,6 @@ const Header = () => {
             {/* Mobile Actions */}
             <div className="flex items-center gap-1 md:hidden">
               <div className={`flex items-center gap-1 ${overlaysHomeHero ? "[&_button]:text-white [&_button:hover]:bg-white/10" : ""}`}>
-              <ThemeToggle />
             {/* Mobile Menu Toggle */}
             <Button 
               variant="ghost" 
@@ -195,9 +190,6 @@ const Header = () => {
             className="fixed top-16 left-0 right-0 bottom-0 bg-card z-50 md:hidden overflow-y-auto animate-fade-in pb-24"
           >
             <nav className="container mx-auto px-4 py-6 space-y-2">
-              <div className="px-1 pb-4 mb-2 border-b border-border">
-                <AboutLanguageToggle labeled />
-              </div>
               {navLinks.map((link) => (
                 <Link 
                   key={link.to}

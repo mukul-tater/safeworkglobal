@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Briefcase, LogIn, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import AboutLanguageToggle from '@/components/AboutLanguageToggle';
 import { useWorkerLanguage } from '../context/WorkerLanguageContext';
 
@@ -99,8 +98,6 @@ export default function RegistrationLayout({
             <Brand portalHomePath={portalHomePath} />
             <div className="flex min-w-0 items-center gap-1 overflow-x-auto sm:gap-2">
               <TopNav />
-              <div className="hidden sm:block h-6 w-px bg-border mx-1" />
-              <ThemeToggle />
             </div>
           </div>
         </header>
