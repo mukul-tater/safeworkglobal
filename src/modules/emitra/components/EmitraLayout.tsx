@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { Home, LogIn, Menu, Store, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import AboutLanguageToggle from '@/components/AboutLanguageToggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -135,9 +134,6 @@ export default function EmitraLayout({
               >
                 ← Back to SafeWork Global
               </Link>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
             </div>
           </div>
         </header>

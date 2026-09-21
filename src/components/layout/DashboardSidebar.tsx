@@ -1,8 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
-import { LucideIcon, ChevronDown, Sun, Moon, Monitor } from "lucide-react";
+import { LucideIcon, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 
@@ -191,43 +190,9 @@ function NavGroupSection({ group, onNavigate }: { group: NavGroup; onNavigate: (
 }
 
 function SidebarAppearance() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
-
-  const themes = [
-    { id: "light" as const, label: "Light", icon: Sun },
-    { id: "dark" as const, label: "Dark", icon: Moon },
-    { id: "system" as const, label: "System", icon: Monitor },
-  ];
-
   return (
-    <div className="shrink-0 border-t pt-3 mt-2 space-y-3">
+    <div className="shrink-0 border-t pt-3 mt-2">
       <AboutLanguageToggle labeled />
-      <div className="space-y-1.5">
-        <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Theme</p>
-        <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/70 p-1">
-          {themes.map(({ id, label, icon: Icon }) => {
-            const active = mounted && theme === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setTheme(id)}
-                className={cn(
-                  "flex items-center justify-center gap-1 rounded-md py-1.5 text-[11px] font-medium transition-colors",
-                  active ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-                )}
-                aria-pressed={active}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
