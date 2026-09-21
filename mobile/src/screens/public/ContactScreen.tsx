@@ -7,6 +7,7 @@ import {
   RA_DISCLOSURE,
   RECRUITMENT_PARTNER,
   SAFEWORK_CONTACT,
+  SAFEWORK_SOCIAL_LINKS,
   getSafeworkMailtoUrl,
 } from '../../config/workerSupport';
 import { supabase } from '../../integrations/supabase/client';
@@ -119,6 +120,11 @@ export default function ContactScreen() {
           <Text style={styles.link}>Call {SAFEWORK_CONTACT.mobileDisplay}</Text>
         </Pressable>
         <Text style={styles.muted}>{SAFEWORK_CONTACT.officeAddress}</Text>
+        {SAFEWORK_SOCIAL_LINKS.map((item) => (
+          <Pressable key={item.label} onPress={() => openUrl(item.href)}>
+            <Text style={styles.link}>{item.label}</Text>
+          </Pressable>
+        ))}
         <Text style={[styles.muted, styles.topGap]}>
           {SAFEWORK_CONTACT.operatingCompany} · {SAFEWORK_CONTACT.founderName}, {SAFEWORK_CONTACT.founderTitle}
         </Text>

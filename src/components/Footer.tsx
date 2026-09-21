@@ -1,12 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { Mail, Facebook, Twitter, Linkedin, Instagram, MapPin, MessageCircle } from "lucide-react";
+import { Mail, Facebook, Linkedin, Instagram, MapPin, MessageCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { SAFEWORK_CONTACT } from "@/config/workerSupport";
+import { SAFEWORK_CONTACT, SAFEWORK_SOCIAL_LINKS } from "@/config/workerSupport";
 import { useI18n } from "@/i18n";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH, showEmployerChrome } from "@/lib/launchGate";
+
+const SOCIAL_ICONS = {
+  Instagram,
+  Facebook,
+  LinkedIn: Linkedin,
+} as const;
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -61,22 +67,22 @@ const Footer = () => {
               <AboutLanguageToggle labeled variant="onDark" className="max-w-xs" />
 
               <div className="flex gap-2">
-                {[
-                  { icon: Facebook, label: "Facebook" },
-                  { icon: Twitter, label: "Twitter" },
-                  { icon: Linkedin, label: "LinkedIn" },
-                  { icon: Instagram, label: "Instagram" },
-                ].map(({ icon: Icon, label }) => (
-                  <Button
-                    key={label}
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                    aria-label={label}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </Button>
-                ))}
+                {SAFEWORK_SOCIAL_LINKS.map(({ href, label }) => {
+                  const Icon = SOCIAL_ICONS[label];
+                  return (
+                    <Button
+                      key={label}
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                      asChild
+                    >
+                      <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
+                        <Icon className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  );
+                })}
               </div>
             </div>
 

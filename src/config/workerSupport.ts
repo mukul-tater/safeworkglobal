@@ -21,7 +21,16 @@ export const SAFEWORK_CONTACT = {
   mobileTel: "tel:+918320111413",
   whatsappDisplay: "+91 83201 11413",
   whatsappUrl: "https://wa.me/918320111413",
+  instagramUrl: "https://www.instagram.com/safeworkofficial",
+  facebookUrl: "https://www.facebook.com/safeworkglobal",
+  linkedinUrl: "https://www.linkedin.com/company/safeworkglobal",
 } as const;
+
+export const SAFEWORK_SOCIAL_LINKS = [
+  { label: "Instagram", href: SAFEWORK_CONTACT.instagramUrl },
+  { label: "Facebook", href: SAFEWORK_CONTACT.facebookUrl },
+  { label: "LinkedIn", href: SAFEWORK_CONTACT.linkedinUrl },
+] as const;
 
 /** Licensed overseas recruitment is conducted through this designated partner — not by SafeWork Global. */
 export const RECRUITMENT_PARTNER = {

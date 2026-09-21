@@ -238,6 +238,11 @@ export default function AboutUs() {
             founder: { "@type": "Person", name: SAFEWORK_CONTACT.founderName },
             telephone: SAFEWORK_CONTACT.mobileTel.replace("tel:", ""),
             email: SAFEWORK_CONTACT.email,
+            sameAs: [
+              SAFEWORK_CONTACT.instagramUrl,
+              SAFEWORK_CONTACT.facebookUrl,
+              SAFEWORK_CONTACT.linkedinUrl,
+            ],
           },
         }}
       />

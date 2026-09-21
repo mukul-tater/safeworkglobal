@@ -27,6 +27,9 @@ import {
   ExternalLink,
   Search,
   LifeBuoy,
+  Instagram,
+  Facebook,
+  Linkedin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,6 +40,7 @@ import {
   MADAD_PORTAL_URL,
   MEA_PBSK,
   SAFEWORK_CONTACT,
+  SAFEWORK_SOCIAL_LINKS,
   getSafeworkMailtoUrl,
 } from "@/config/workerSupport";
 
@@ -542,6 +546,30 @@ export default function ContactUs() {
                       Office Address
                     </p>
                     <p className="text-sm font-semibold text-foreground leading-relaxed">{SAFEWORK_CONTACT.officeAddress}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50 sm:col-span-2">
+                <CardContent className="p-5">
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
+                    Follow us
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {SAFEWORK_SOCIAL_LINKS.map(({ href, label }) => {
+                      const Icon = label === "Facebook" ? Facebook : label === "LinkedIn" ? Linkedin : Instagram;
+                      return (
+                        <a
+                          key={label}
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 min-h-11 rounded-xl border border-border/60 px-3 py-2 text-sm font-medium text-foreground hover:bg-muted/60 hover:border-primary/30 transition-colors"
+                        >
+                          <Icon className="h-4 w-4" />
+                          {label}
+                        </a>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
