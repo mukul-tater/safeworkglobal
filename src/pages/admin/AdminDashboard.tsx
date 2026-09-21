@@ -7,6 +7,8 @@ import {
   Users, Briefcase, AlertTriangle, CheckCircle, Building2, UserCheck, FileText, TrendingUp,
   DollarSign, Clock, Globe, Shield
 } from "lucide-react";
+import { getSiteVisitStats, type SiteVisitStats } from "@/lib/recordSiteVisit";
+import SiteTrafficCard from "@/components/admin/SiteTrafficCard";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DisputeManagementCard from "@/components/admin/DisputeManagementCard";
@@ -61,6 +63,13 @@ export default function AdminDashboard() {
     pendingDisputes: 0, resolvedDisputes: 0,
     totalPayments: 0, pendingPayments: 0
   });
+  const [traffic, setTraffic] = useState<SiteVisitStats>({
+    all_time: 0,
+    today: 0,
+    yesterday: 0,
+    last_7: 0,
+    series: [],
+  });
   const [loading, setLoading] = useState(true);
   const sections = ['overview', 'users', 'disputes', 'activity'];
 
@@ -92,7 +101,7 @@ export default function AdminDashboard() {
         offersRes, acceptedOffersRes,
         pendingDisputesRes, resolvedDisputesRes,
         paymentsRes, pendingPaymentsRes,
-        recentUsersRes, recentJobsRes
+        recentUsersRes, recentJobsRes, visitStats,
       ] = await Promise.all([
         supabase.from('disputes').select('*').order('created_at', { ascending: false }).limit(10),
         supabase.from('content_flags').select('*').order('created_at', { ascending: false }).limit(10),
@@ -117,7 +126,8 @@ export default function AdminDashboard() {
         supabase.from('payments').select('id', { count: 'exact', head: true }),
         supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('profiles').select('id, email, full_name, created_at').order('created_at', { ascending: false }).limit(5),
-        supabase.from('jobs').select('id, title, location, status, created_at, posted_by_role').order('created_at', { ascending: false }).limit(5)
+        supabase.from('jobs').select('id, title, location, status, created_at, posted_by_role').order('created_at', { ascending: false }).limit(5),
+        getSiteVisitStats(),
       ]);
 
       setDisputes(disputesRes.data || []);
@@ -152,6 +162,7 @@ export default function AdminDashboard() {
         pendingDisputes: pendingDisputesRes.count || 0, resolvedDisputes: resolvedDisputesRes.count || 0,
         totalPayments: paymentsRes.count || 0, pendingPayments: pendingPaymentsRes.count || 0
       });
+      setTraffic(visitStats);
     } catch (error) {
       console.error('Error fetching admin data:', error);
     } finally {
@@ -260,6 +271,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <SiteTrafficCard stats={traffic} />
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2"><Briefcase className="h-5 w-5" /> Jobs Overview</CardTitle>
