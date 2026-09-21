@@ -8,7 +8,9 @@ import {
   DollarSign, Clock, Globe, Shield
 } from "lucide-react";
 import { getSiteVisitStats, type SiteVisitStats } from "@/lib/recordSiteVisit";
+import { loadAdminActionInbox, type AdminActionItem } from "@/lib/adminActionInbox";
 import SiteTrafficCard from "@/components/admin/SiteTrafficCard";
+import AdminActionInbox from "@/components/admin/AdminActionInbox";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DisputeManagementCard from "@/components/admin/DisputeManagementCard";
@@ -70,8 +72,9 @@ export default function AdminDashboard() {
     last_7: 0,
     series: [],
   });
+  const [actionItems, setActionItems] = useState<AdminActionItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const sections = ['overview', 'users', 'disputes', 'activity'];
+  const sections = ['actions', 'overview', 'users', 'disputes', 'activity'];
 
   useSwipe({
     onSwipeLeft: () => {
@@ -101,7 +104,7 @@ export default function AdminDashboard() {
         offersRes, acceptedOffersRes,
         pendingDisputesRes, resolvedDisputesRes,
         paymentsRes, pendingPaymentsRes,
-        recentUsersRes, recentJobsRes, visitStats,
+        recentUsersRes, recentJobsRes, visitStats, actionInbox,
       ] = await Promise.all([
         supabase.from('disputes').select('*').order('created_at', { ascending: false }).limit(10),
         supabase.from('content_flags').select('*').order('created_at', { ascending: false }).limit(10),
@@ -128,6 +131,7 @@ export default function AdminDashboard() {
         supabase.from('profiles').select('id, email, full_name, created_at').order('created_at', { ascending: false }).limit(5),
         supabase.from('jobs').select('id, title, location, status, created_at, posted_by_role').order('created_at', { ascending: false }).limit(5),
         getSiteVisitStats(),
+        loadAdminActionInbox(),
       ]);
 
       setDisputes(disputesRes.data || []);
@@ -163,6 +167,7 @@ export default function AdminDashboard() {
         totalPayments: paymentsRes.count || 0, pendingPayments: pendingPaymentsRes.count || 0
       });
       setTraffic(visitStats);
+      setActionItems(actionInbox);
     } catch (error) {
       console.error('Error fetching admin data:', error);
     } finally {
@@ -203,7 +208,7 @@ export default function AdminDashboard() {
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Admin Dashboard</h1>
         <p className="text-muted-foreground text-sm md:text-base">
-          Complete system overview - Manage users, jobs, and platform operations
+          Approvals and reviews that need you show at the top. Open a row to take action.
         </p>
         {isMobile && (
           <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
@@ -221,6 +226,10 @@ export default function AdminDashboard() {
             ))}
           </div>
         )}
+      </div>
+
+      <div id="section-actions" className="mb-8">
+        <AdminActionInbox items={actionItems} />
       </div>
 
       <div className="mb-8">
