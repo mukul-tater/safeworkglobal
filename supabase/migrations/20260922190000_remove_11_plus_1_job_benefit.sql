@@ -7,4 +7,4 @@ SET benefits = trim(both chr(10) from regexp_replace(
   '\1',
   'gi'
 ))
-WHERE benefits ~* '(^|' || chr(10) || ')11\+1(' || chr(10) || '|$)';
+WHERE benefits ILIKE '%11+1%';
