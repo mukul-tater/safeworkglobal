@@ -5,3 +5,4 @@
 - [x] Restore production journey-step emails with a shared webhook secret, locked helpers, and a new-event test.
 - [x] Deploy production signup email OTP function and verify signup endpoint; redeploy phone account function.
 - [x] Restore the deleted production UAE public job catalog from the approved existing SQL files and verify counts/categories.
+- [ ] Restore production signup email OTP delivery, expose safe send failures, and verify send/verify behavior.
