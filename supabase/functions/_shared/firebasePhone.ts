@@ -32,7 +32,15 @@ export async function phoneFromFirebaseIdToken(idToken: string): Promise<string>
     error?: { message?: string };
   };
   if (!response.ok) {
-    throw new Error(body.error?.message || 'Invalid or expired verification. Request a new OTP.');
+    const providerCode = String(body.error?.message || 'UNKNOWN').trim();
+    console.warn('Firebase phone token verification failed', {
+      providerCode,
+      status: response.status,
+    });
+    if (/TOKEN_EXPIRED|INVALID_ID_TOKEN|USER_DISABLED|USER_NOT_FOUND/i.test(providerCode)) {
+      throw new Error('Mobile verification expired. Request a new SMS OTP.');
+    }
+    throw new Error('Mobile verification could not be confirmed. Request a new SMS OTP.');
   }
   const phoneNumber = body.users?.[0]?.phoneNumber;
   if (!phoneNumber) {
