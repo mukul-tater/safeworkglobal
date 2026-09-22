@@ -302,7 +302,7 @@ export default function QuickWorkerSignup({
     setEmailOtpReached(true);
     setEmailOtp('');
     setStep('email-otp');
-    toast.success(`Verification code sent to ${email.trim().toLowerCase()}`);
+    toast.success(`Verification code sent to ${email.trim().toLowerCase()}. Check your inbox and spam folder.`);
   };
 
   const createAccountAfterOtp = async (idToken: string, ticket = emailOtpTicket) => {
@@ -505,7 +505,7 @@ export default function QuickWorkerSignup({
     try {
       const sent = await sendSignupEmailOtp(email.trim().toLowerCase());
       setEmailOtpDev(sent.dev);
-      toast.success(`New code sent to ${email.trim().toLowerCase()}`);
+      toast.success(`New code sent to ${email.trim().toLowerCase()}. Check your inbox and spam folder.`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to resend OTP');
     } finally {
@@ -573,7 +573,7 @@ export default function QuickWorkerSignup({
                     : needsPasswordRetry
                       ? 'Your mobile and email are already verified. Set a password with letters and numbers (for example Udai9549).'
                     : step === 'email-otp'
-                      ? `Enter the 6-digit code sent to ${email.trim().toLowerCase()}`
+                      ? `Enter the 6-digit code sent to ${email.trim().toLowerCase()}. Check your spam folder if it is not in your inbox.`
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>
               </div>

@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts'
+import { EmailAPIError } from 'npm:@lovable.dev/email-js@0.1.0'
 import { allowDevOtpBypass } from '../_shared/firebasePhone.ts'
 import {
   findValidSignupEmailTicket,
@@ -160,12 +161,35 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (insertErr) throw new Error(insertErr.message)
 
       if (!bypass) {
-        const result = await sendTemplateEmail('signup-email-otp', email, {
-          templateData: { code },
-          idempotencyKey: `signup-email-otp-${email}-${Date.now()}`,
-        })
-        if (!result.sent) {
-          return json(400, { error: 'Could not send a code to this email. Try a different address.' })
+        try {
+          const result = await sendTemplateEmail('signup-email-otp', email, {
+            templateData: { code },
+            idempotencyKey: `signup-email-otp-${email}-${Date.now()}`,
+          })
+          if (!result.sent) {
+            console.warn('Signup email OTP suppressed', { recipientDomain: email.split('@')[1] })
+            return json(400, { error: 'Could not send a code to this email. Try a different address.' })
+          }
+        } catch (sendError) {
+          const code = sendError instanceof EmailAPIError ? sendError.code : 'email_send_failed'
+          const status = sendError instanceof EmailAPIError ? sendError.status : 500
+          const message = sendError instanceof Error ? sendError.message : 'Unknown email send failure'
+          console.error('Signup email OTP send failed', {
+            code,
+            status,
+            message,
+            recipientDomain: email.split('@')[1],
+          })
+          if (message === 'LOVABLE_API_KEY is not configured') {
+            return json(500, { error: 'Email verification is not configured. Please contact support.' })
+          }
+          if (code === 'domain_not_verified' || code === 'emails_disabled' || code === 'unauthorized' || code === 'lovable_api_key_not_registered') {
+            return json(503, { error: `Email sending is unavailable (${code}). Please try again later.` })
+          }
+          if (status === 429) {
+            return json(429, { error: 'Email sending is temporarily rate limited. Wait a minute and try again.' })
+          }
+          return json(500, { error: `Could not send verification email (${code}). Please try again.` })
         }
       }
 
