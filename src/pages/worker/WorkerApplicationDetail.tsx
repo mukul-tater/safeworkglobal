@@ -256,7 +256,7 @@ export default function WorkerApplicationDetail() {
                   <div>
                     <h3 className="font-medium mb-2">Benefits</h3>
                     <ul className="space-y-1">
-                      {listPublicJobBenefits().map((benefit) => (
+                      {listPublicJobBenefits(job.benefits).map((benefit) => (
                         <li key={benefit} className="text-sm text-muted-foreground">
                           {benefit}
                         </li>

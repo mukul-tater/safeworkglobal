@@ -9,7 +9,6 @@ export const STANDARD_JOB_BENEFITS = [
   'Airport pickup',
   '8-10 hours of duty + overtime (extra pay)',
   'Medical facility + Insurance in Dubai',
-  '11+1',
   'Return airfare after 2 years',
   'PBBY Insurance in India',
   'Uniform provided by company',
@@ -20,7 +19,6 @@ export const STANDARD_JOB_BENEFITS = [
 export type StandardJobBenefit = (typeof STANDARD_JOB_BENEFITS)[number];
 
 export const JOB_BENEFIT_INFO: Partial<Record<StandardJobBenefit, string>> = {
-  '11+1': '11 month work and 1 month paid salary extra.',
   'PBBY Insurance in India': 'Pravasi Bharatiya Bima Yojana (PBBY) cover in India.',
   '6-day work week': '8–10 hours per day, 6 days a week.',
   '2-year contract': 'Standard employment period of 2 years.',
@@ -55,7 +53,7 @@ const BENEFIT_ALIASES: Record<string, StandardJobBenefit> = {
 };
 
 function isDroppedBenefit(value: string): boolean {
-  return /attendance\s+bonus/i.test(value);
+  return /attendance\s+bonus/i.test(value) || /11\s*\+\s*1/i.test(value);
 }
 
 function resolveStandardBenefit(value: string): StandardJobBenefit | undefined {
@@ -98,13 +96,15 @@ export function serializeJobBenefits(parsed: ParsedJobBenefits): string {
   const extraParts = parsed.additional
     .split(/[,;\n]+/)
     .map((s) => s.trim())
-    .filter(Boolean);
+    .filter((s) => s && !isDroppedBenefit(s));
 
   lines.push(...extraParts);
   return lines.join('\n');
 }
 
-export function listPublicJobBenefits(): string[] {
+export function listPublicJobBenefits(raw?: string | null): string[] {
+  const fromJob = listJobBenefits(raw);
+  if (fromJob.length > 0) return fromJob;
   return [...STANDARD_JOB_BENEFITS];
 }
 

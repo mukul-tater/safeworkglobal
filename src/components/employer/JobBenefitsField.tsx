@@ -66,7 +66,7 @@ export default function JobBenefitsField({ value, onChange, error }: JobBenefits
       <div>
         <Label>Benefits</Label>
         <p className="text-xs text-muted-foreground mt-1">
-          Workers see this same standard package on every job listing.
+          Saved benefits are what workers see on this job page.
         </p>
       </div>
 

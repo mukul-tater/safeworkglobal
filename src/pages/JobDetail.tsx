@@ -512,7 +512,7 @@ export default function JobDetail() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {listPublicJobBenefits().map((benefit) => {
+                    {listPublicJobBenefits(job.benefits).map((benefit) => {
                       const info = jobBenefitInfo(benefit);
                       return (
                         <li key={benefit} className="flex items-start gap-2 text-muted-foreground">
