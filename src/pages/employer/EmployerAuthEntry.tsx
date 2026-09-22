@@ -182,7 +182,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
       setEmailOtpDev(sent.dev);
       setOtp('');
       setStep('otp');
-      toast.success(`Verification code sent to ${validation.data.email.trim()}`);
+      toast.success(`Verification code sent to ${validation.data.email.trim()}. Check your inbox and spam folder.`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Could not send verification code';
       if (/already registered/i.test(message)) {
@@ -248,7 +248,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
     try {
       const sent = await sendSignupEmailOtp(email.trim());
       setEmailOtpDev(sent.dev);
-      toast.success(`New code sent to ${email.trim()}`);
+      toast.success(`New code sent to ${email.trim()}. Check your inbox and spam folder.`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to resend OTP';
       setError(message);
@@ -276,7 +276,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
             : step === 'signup'
               ? 'We’ll keep the email you entered and only ask for remaining details.'
               : step === 'otp'
-                ? `Enter the 6-digit code sent to ${email.trim()}.`
+                ? `Enter the 6-digit code sent to ${email.trim()}. Check your spam folder if it is not in your inbox.`
                 : 'Enter your work email or mobile. We’ll take you to the next step.'}
         </p>
       </div>
