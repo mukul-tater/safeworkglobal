@@ -13,6 +13,7 @@ import {
   EDUCATION_LEVELS,
   JOURNEY_STEPS,
   MEDICAL_TEST_SCREENING_NOTE,
+  WORKER_GENDER_OPTIONS,
   acceptTerms,
   getOrCreateVerification,
   saveEssentials,
@@ -30,6 +31,7 @@ import { typography } from '../../theme/typography';
 import ScreenLayout from '../../components/layout/ScreenLayout';
 import { Badge, Button, Card, Input, LoadingView, SectionTitle } from '../../components/ui';
 import IndiaLocationFields from '../../components/IndiaLocationFields';
+import { findIndiaDistrict } from '../../lib/indiaLocations';
 import {
   isValidPassportNumber,
   normalizePassportNumber,
@@ -52,6 +54,7 @@ export default function WorkerVerificationScreen() {
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
   const [stateName, setStateName] = useState('');
+  const [gender, setGender] = useState('');
   const [education, setEducation] = useState<string>(EDUCATION_LEVELS[2]);
   const [tenthPass, setTenthPass] = useState<boolean | null>(null);
   const [pan, setPan] = useState('');
@@ -86,6 +89,8 @@ export default function WorkerVerificationScreen() {
       setEmail(data.email || profile?.email || '');
       setCity(data.city || '');
       setStateName(data.state || '');
+      setDistrict(data.district || findIndiaDistrict(data.state || '', data.city || ''));
+      setGender(data.gender || '');
       setEducation(data.education_level || EDUCATION_LEVELS[2]);
       if (data.education_level === 'Below 10th') setTenthPass(false);
       else if (data.education_level) setTenthPass(true);
@@ -125,12 +130,22 @@ export default function WorkerVerificationScreen() {
       Alert.alert('Required', 'Select whether you have passed Class 10.');
       return;
     }
+    if (!gender) {
+      Alert.alert('Required', 'Select gender.');
+      return;
+    }
+    if (!stateName || !district || !city.trim()) {
+      Alert.alert('Required', 'Select state, district, and city.');
+      return;
+    }
     setSaving(true);
     try {
       const updated = await saveEssentials(user.id, {
         email,
         city,
+        district,
         state: stateName,
+        gender,
         education_level: education,
         tenth_pass: tenthPass,
       });
@@ -273,7 +288,7 @@ export default function WorkerVerificationScreen() {
             <Input label="Contact email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
             <IndiaLocationFields
               showPincode={false}
-              cityLabel="City"
+              cityLabel="Village / Town / City"
               value={{ state: stateName, district, city, pincode: '' }}
               onChange={(loc) => {
                 setStateName(loc.state);
@@ -281,6 +296,20 @@ export default function WorkerVerificationScreen() {
                 setCity(loc.city);
               }}
             />
+            <Text style={styles.chipLabel}>Gender</Text>
+            <View style={styles.chips}>
+              {WORKER_GENDER_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.value}
+                  onPress={() => setGender(option.value)}
+                  style={[styles.chip, gender === option.value && styles.chipActive]}
+                >
+                  <Text style={[styles.chipText, gender === option.value && styles.chipTextActive]}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
             <Text style={styles.chipLabel}>Have you passed Class 10 (matric)?</Text>
             <View style={styles.chips}>
               {(

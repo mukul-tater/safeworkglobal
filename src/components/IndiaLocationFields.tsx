@@ -85,6 +85,7 @@ export default function IndiaLocationFields({
           value={value.state}
           onChange={(state) => patch({ state, district: '', city: '', pincode: '' })}
           options={states}
+          title="State"
           placeholder="Select state"
           searchPlaceholder="Search state"
         />
@@ -98,6 +99,7 @@ export default function IndiaLocationFields({
             options={districts}
             placeholder={value.state ? 'Select district' : 'Select state first'}
             searchPlaceholder="Search district"
+            title="District"
             disabled={!value.state}
             emptyText="Select a state first"
           />
@@ -120,6 +122,7 @@ export default function IndiaLocationFields({
                   : 'Select state first'
             }
             searchPlaceholder="Search city / town"
+            title={cityLabel}
             disabled={showDistrict ? !value.district : !value.state}
             emptyText={
               (showDistrict ? value.district : value.state)
@@ -148,6 +151,7 @@ export default function IndiaLocationFields({
                 : 'Select location first'
             }
             searchPlaceholder="Search PIN code"
+            title="PIN Code"
             disabled={showDistrict ? !value.district : !value.state}
             emptyText="No PIN codes for this location"
             allowCustom

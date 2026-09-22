@@ -28,6 +28,18 @@ export function getIndiaCities(state: string, district: string): string[] {
   return [...(TREE[state]?.[district]?.cities ?? [])].sort((a, b) => a.localeCompare(b));
 }
 
+/** Resolve district from a saved city when district was not persisted. */
+export function findIndiaDistrict(state: string, city: string): string {
+  if (!state || !city) return '';
+  const districts = TREE[state];
+  if (!districts) return '';
+  const needle = city.trim().toLowerCase();
+  for (const [district, node] of Object.entries(districts)) {
+    if ((node.cities ?? []).some((name) => name.toLowerCase() === needle)) return district;
+  }
+  return '';
+}
+
 /** All cities in a state (used when district is not collected). */
 export function getIndiaCitiesInState(state: string): string[] {
   const districts = TREE[state];

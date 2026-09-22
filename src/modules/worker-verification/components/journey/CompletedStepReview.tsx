@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { displayableEmail } from '@/lib/workerAuthEmail';
+import { appliedJobSkillLabel } from '@/lib/inferWorkerSkillFromJob';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
 import type { AssessmentRow } from '@/modules/trade-test/types';
 import {
@@ -64,6 +65,8 @@ interface Props {
   ecrCategory?: string | null;
   tenthPass?: boolean | null;
   tradeAssessment?: AssessmentRow | null;
+  appliedJobTitle?: string | null;
+  appliedJobDescription?: string | null;
   onGoToCurrent: () => void;
   /** Extra interactive block, e.g. add-more-media uploader. */
   children?: ReactNode;
@@ -259,9 +262,16 @@ export default function CompletedStepReview({
   ecrCategory,
   tenthPass,
   tradeAssessment,
+  appliedJobTitle,
+  appliedJobDescription,
   onGoToCurrent,
   children,
 }: Props) {
+  const appliedSkill = appliedJobSkillLabel(
+    row.primary_skill,
+    appliedJobTitle,
+    appliedJobDescription,
+  );
   const kycTone: Tone =
     kycStatus === 'verified' ? 'success' : kycStatus === 'rejected' ? 'error' : 'pending';
   const kycLabel =
@@ -324,7 +334,7 @@ export default function CompletedStepReview({
 
         {stepId === 'find_jobs' && (
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-            <Detail label="Applied job skill" value={row.primary_skill || '—'} />
+            <Detail label="Applied job" value={appliedSkill} />
             <Detail label="Journey job" value={row.journey_job_id ? 'Linked' : 'Not applied yet'} />
           </dl>
         )}
@@ -334,7 +344,19 @@ export default function CompletedStepReview({
             <Detail label="Email" value={displayableEmail(row.email) || '—'} />
             <Detail
               label="Location"
-              value={[row.city, row.state].filter(Boolean).join(', ') || '—'}
+              value={[row.city, row.district, row.state].filter(Boolean).join(', ') || '—'}
+            />
+            <Detail
+              label="Gender"
+              value={
+                row.gender === 'male'
+                  ? 'Male'
+                  : row.gender === 'female'
+                    ? 'Female'
+                    : row.gender === 'other'
+                      ? 'Other'
+                      : '—'
+              }
             />
             <Detail label="Education" value={row.education_level || '—'} />
             <Detail
@@ -381,7 +403,7 @@ export default function CompletedStepReview({
                   row.quiz_score == null ? '—' : describeQuizResult(row.quiz_score).bandEn
                 }
               />
-              <Detail label="Skill tested" value={row.primary_skill || '—'} />
+              <Detail label="Skill tested" value={appliedSkill} />
               <Detail label="Completed on" value={formatDate(row.quiz_completed_at)} />
             </dl>
           </div>

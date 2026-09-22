@@ -6,6 +6,45 @@ export interface SkillMediaItem {
   id: string;
   media_type: 'photo' | 'video';
   url: string;
+  file_path?: string;
+}
+
+export interface WorkerSkillMediaFile extends SkillMediaItem {
+  file_path: string;
+}
+
+export async function resolveSkillMediaUrl(filePath: string, expiresIn = 3600): Promise<string> {
+  const { data } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(filePath, expiresIn);
+  return data?.signedUrl ?? '';
+}
+
+/** All skill-proof photos/videos for a worker, with signed URLs for display. */
+export async function loadWorkerSkillMediaItems(workerId: string): Promise<WorkerSkillMediaFile[]> {
+  if (!workerId) return [];
+
+  const { data, error } = await supabase
+    .from('worker_skill_media')
+    .select('id, media_type, file_path')
+    .eq('worker_id', workerId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+
+  return Promise.all(
+    (data ?? []).map(async (m) => {
+      let url = '';
+      try {
+        url = await resolveSkillMediaUrl(m.file_path);
+      } catch {
+        url = '';
+      }
+      return {
+        id: m.id,
+        media_type: m.media_type as 'photo' | 'video',
+        file_path: m.file_path,
+        url,
+      };
+    }),
+  );
 }
 
 export interface WorkerSkillWithMedia {
@@ -43,16 +82,15 @@ export async function loadWorkersSkillsWithMedia(
   if (mediaData?.length) {
     const resolved = await Promise.all(
       mediaData.map(async (m) => {
-        const { data: signed } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .createSignedUrl(m.file_path, 3600);
+        const signedUrl = await resolveSkillMediaUrl(m.file_path);
 
         return {
           skill_id: m.skill_id,
           item: {
             id: m.id,
             media_type: m.media_type as 'photo' | 'video',
-            url: signed?.signedUrl ?? '',
+            url: signedUrl,
+            file_path: m.file_path,
           },
         };
       }),

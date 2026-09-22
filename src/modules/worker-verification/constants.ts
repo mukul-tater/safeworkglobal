@@ -70,6 +70,18 @@ export const EDUCATION_LEVELS = [
   'Other',
 ] as const;
 
+export const WORKER_GENDER_OPTIONS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+export type WorkerGender = (typeof WORKER_GENDER_OPTIONS)[number]['value'];
+
+export function isWorkerGender(value: string | null | undefined): value is WorkerGender {
+  return WORKER_GENDER_OPTIONS.some((option) => option.value === value);
+}
+
 /** Indian workers who passed Class 10 are ECNR; below 10th are ECR. */
 export function ecrFromTenthPass(tenthPass: boolean): {
   tenth_pass_confirmed: boolean;
@@ -101,15 +113,25 @@ export const INTERVIEW_TRADE_TEST_THRESHOLD = 70;
 
 /**
  * Physical trade test is mandatory for hands-on technical trades.
- * Driver / Helper / Other skip trade test and go to medical after payment.
+ * Driver / Helper / Cleaner / Painter / Scaffolder skip trade test and go to medical after payment.
  */
 export const TRADE_TEST_REQUIRED_SKILLS = [
   'Electrician',
   'Welder',
+  'MIG Welder',
+  'TIG Welder',
   'Plumber',
+  'Pipe Fitter',
   'Mason',
+  'Mason (tiles/marble)',
+  'Mason (bricks/plaster)',
+  'Steel Fixer',
   'Carpenter',
+  'Shuttering Carpenter',
+  'Furniture Carpenter - Finishing, All Rounder',
   'HVAC Technician',
+  'AC Technician',
+  'Aluminium Fixer/Fabricator',
 ] as const;
 
 export function skillRequiresTradeTest(skill: string | null | undefined): boolean {

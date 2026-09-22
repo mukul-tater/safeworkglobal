@@ -19,6 +19,8 @@ import {
   MapPin, Phone, ExternalLink, Search,
 } from 'lucide-react';
 import IndiaLocationFields from '@/components/IndiaLocationFields';
+import SearchSelect from '@/components/SearchSelect';
+import { findIndiaDistrict } from '@/lib/indiaLocations';
 import { displayableEmail, isValidContactEmail } from '@/lib/workerAuthEmail';
 import {
   ASSESSMENT_FEE_INR,
@@ -27,7 +29,9 @@ import {
   gccJourneyNavSteps,
   DEPLOYMENT_CHECKLIST,
   VERIFICATION_STAGE_LABELS,
+  WORKER_GENDER_OPTIONS,
   isJourneyResetEnabled,
+  isWorkerGender,
   navStepForStage,
   normalizeVerificationStage,
   panAndPassportRequiredAfterSkillTest,
@@ -36,6 +40,7 @@ import {
   youtubeEmbedUrl,
   type GccNavStepId,
   type VerificationStage,
+  type WorkerGender,
 } from '@/modules/worker-verification/constants';
 import type { BondTemplate, SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
 import { isMcqQuizItem } from '@/modules/worker-verification/types';
@@ -43,6 +48,7 @@ import { describeQuizResult } from '@/modules/worker-verification/quiz-data/quiz
 import {
   completeMediaStep,
   completeIdentityKyc,
+  ensureWorkerSkillRow,
   getOrCreateVerification,
   loadActiveBondTemplate,
   loadQuizItemsForWorker,
@@ -84,6 +90,12 @@ import EmitraWorkerOnboardingNoticeDialog from '@/modules/emitra/components/Emit
 import { hasAckedEmitraOnboardingNotice } from '@/modules/emitra/lib/emitraWorkerOnboarding';
 import WorkerDeclarationsSummary from '@/modules/worker-verification/components/journey/WorkerDeclarationsSummary';
 import JourneyJobPicker from '@/modules/worker-verification/components/journey/JourneyJobPicker';
+import { appliedJobSkillLabel } from '@/lib/inferWorkerSkillFromJob';
+import SkillMediaGallery, { type SkillMediaGalleryItem } from '@/components/worker/SkillMediaGallery';
+import {
+  loadWorkerSkillMediaItems,
+  type WorkerSkillMediaFile,
+} from '@/lib/workerSkillMedia';
 import { canChangeJourneyJob } from '@/modules/worker-verification/services/jobJourneyService';
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
@@ -111,6 +123,9 @@ const KYC_DOC_TYPES = [
   'certificate',
   'id_proof',
 ];
+
+const INTERVIEW_MOBILE_CALL_NOTE =
+  'You will receive a call from us on your registered mobile number for the interview.';
 
 function hasKycDoc(docs: KycDocument[], types: string[]): boolean {
   return docs.some((d) => types.includes(d.document_type));
@@ -249,6 +264,33 @@ const PHOTO_TARGET_MAX = 10;
 const VIDEO_TARGET_MIN = 4;
 const VIDEO_TARGET_MAX = 5;
 
+function SkillProofGallery({
+  items,
+  kind,
+  onDelete,
+  deleteDisabled,
+}: {
+  items: WorkerSkillMediaFile[];
+  kind: 'photo' | 'video';
+  onDelete?: (item: SkillMediaGalleryItem) => void;
+  deleteDisabled?: boolean;
+}) {
+  const visible = items.filter((m) => m.media_type === kind && m.url);
+  if (!visible.length) return null;
+  return (
+    <div className="mt-3 text-left">
+      <SkillMediaGallery
+        items={visible}
+        label={kind === 'photo' ? 'Work photos' : 'Work videos'}
+        onDelete={onDelete}
+        deleteDisabled={deleteDisabled}
+        thumbnailPhotoClassName="h-20 w-20"
+        thumbnailVideoClassName="h-20 w-28"
+      />
+    </div>
+  );
+}
+
 /** Short, phase-oriented line shown under the hero heading. */
 const HERO_SUBHEADINGS: Record<string, string> = {
   profile: 'Build a strong profile so employers pick you first.',
@@ -316,11 +358,14 @@ export default function WorkerVerificationPage({
   const [saving, setSaving] = useState(false);
   const [row, setRow] = useState<WorkerVerification | null>(null);
   const [assessmentFee, setAssessmentFee] = useState(ASSESSMENT_FEE_INR);
+  const [journeyJobTitle, setJourneyJobTitle] = useState<string | null>(null);
+  const [journeyJobDescription, setJourneyJobDescription] = useState<string | null>(null);
 
   const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
   const [district, setDistrict] = useState('');
   const [state, setState] = useState('');
+  const [gender, setGender] = useState<WorkerGender | ''>('');
   const [education, setEducation] = useState('');
   const [tenthPass, setTenthPass] = useState<boolean | null>(null);
   const [ecrCategory, setEcrCategory] = useState<string | null>(null);
@@ -333,6 +378,7 @@ export default function WorkerVerificationPage({
 
   const [photoCount, setPhotoCount] = useState(0);
   const [videoCount, setVideoCount] = useState(0);
+  const [skillMedia, setSkillMedia] = useState<WorkerSkillMediaFile[]>([]);
   const [skillId, setSkillId] = useState<string | null>(null);
   const [uploadingKind, setUploadingKind] = useState<'photo' | 'video' | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
@@ -377,6 +423,46 @@ export default function WorkerVerificationPage({
   const loadGen = useRef(0);
   const completedDeclRef = useRef<WorkerPreJourneyDeclaration | null>(null);
   const initialLoadDone = useRef(false);
+
+  const applySkillMedia = useCallback((items: WorkerSkillMediaFile[]) => {
+    setSkillMedia((prev) => {
+      const prevByPath = new Map(prev.map((m) => [m.file_path, m]));
+      const next = items.map((item) => {
+        if (item.url) return item;
+        const old = prevByPath.get(item.file_path);
+        return old?.url ? { ...item, id: item.id || old.id, url: old.url } : item;
+      });
+      const nextPaths = new Set(next.map((m) => m.file_path));
+      const pending = prev.filter(
+        (m) => m.url.startsWith('blob:') && !nextPaths.has(m.file_path),
+      );
+      const merged = [...next, ...pending];
+      for (const old of prev) {
+        if (old.url.startsWith('blob:') && !merged.some((n) => n.url === old.url)) {
+          URL.revokeObjectURL(old.url);
+        }
+      }
+      return merged;
+    });
+    setPhotoCount(items.filter((m) => m.media_type === 'photo').length);
+    setVideoCount(items.filter((m) => m.media_type === 'video').length);
+  }, []);
+
+  const hydrateSkillMedia = useCallback(
+    async (workerId: string, skillName?: string | null) => {
+      if (skillName) {
+        try {
+          const id = await ensureWorkerSkillRow(workerId, skillName);
+          if (id) setSkillId(id);
+        } catch {
+          /* still load whatever media already exists */
+        }
+      }
+      const items = await loadWorkerSkillMediaItems(workerId);
+      applySkillMedia(items);
+    },
+    [applySkillMedia],
+  );
 
   const load = useCallback(async () => {
     if (!subjectId) return;
@@ -431,6 +517,8 @@ export default function WorkerVerificationPage({
       setEmail(displayableEmail(v.email) || displayableEmail(subj?.email) || displayableEmail(profile?.email) || '');
       setCity(v.city || '');
       setState(v.state || '');
+      setDistrict(v.district || findIndiaDistrict(v.state || '', v.city || ''));
+      setGender(isWorkerGender(v.gender) ? v.gender : '');
       setEducation(v.education_level || '');
       const centersForState = getTradeTestCentersForState(v.state);
       setSelectedTradeCenterId(
@@ -557,22 +645,10 @@ export default function WorkerVerificationPage({
         setQuizItems(items);
       }
 
-      if (v.primary_skill) {
-        const { data: skill } = await supabase
-          .from('worker_skills')
-          .select('id')
-          .eq('worker_id', subjectId)
-          .eq('skill_name', v.primary_skill)
-          .maybeSingle();
-        if (skill?.id) {
-          setSkillId(skill.id);
-          const { data: media } = await supabase
-            .from('worker_skill_media')
-            .select('media_type')
-            .eq('skill_id', skill.id);
-          setPhotoCount((media || []).filter((m) => m.media_type === 'photo').length);
-          setVideoCount((media || []).filter((m) => m.media_type === 'video').length);
-        }
+      try {
+        await hydrateSkillMedia(subjectId, v.primary_skill);
+      } catch {
+        /* journey still loads; worker can re-upload if previews fail */
       }
     } catch (e) {
       if (gen !== loadGen.current) return;
@@ -586,7 +662,7 @@ export default function WorkerVerificationPage({
         setLoading(false);
       }
     }
-  }, [subjectId, profile?.email, partnerKiosk]);
+  }, [subjectId, profile?.email, partnerKiosk, hydrateSkillMedia]);
 
   const displayProfile = subjectProfile || profile;
 
@@ -599,6 +675,8 @@ export default function WorkerVerificationPage({
     const jobId = row?.journey_job_id;
     if (!jobId) {
       setAssessmentFee(ASSESSMENT_FEE_INR);
+      setJourneyJobTitle(null);
+      setJourneyJobDescription(null);
       return;
     }
     void getServiceChargeForJob(jobId)
@@ -607,6 +685,16 @@ export default function WorkerVerificationPage({
       })
       .catch(() => {
         if (!cancelled) setAssessmentFee(ASSESSMENT_FEE_INR);
+      });
+    void supabase
+      .from('jobs')
+      .select('title, description')
+      .eq('id', jobId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        setJourneyJobTitle((data as { title?: string } | null)?.title ?? null);
+        setJourneyJobDescription((data as { description?: string } | null)?.description ?? null);
       });
     return () => {
       cancelled = true;
@@ -824,7 +912,7 @@ export default function WorkerVerificationPage({
       toast.error('Enter a real email address before continuing');
       return;
     }
-    if (!city.trim() || !state || !education) {
+    if (!city.trim() || !district.trim() || !state || !education || !gender) {
       toast.error('Fill all essentials fields');
       return;
     }
@@ -837,7 +925,9 @@ export default function WorkerVerificationPage({
       const next = await saveEssentials(subjectId, {
         email: trimmedEmail,
         city: city.trim(),
+        district: district.trim(),
         state,
+        gender,
         education_level: education,
         tenth_pass: tenthPass,
       });
@@ -915,36 +1005,7 @@ export default function WorkerVerificationPage({
           vRaw.trade_test_required,
         );
         setRow({ ...vRaw, stage: vStage });
-        if (vRaw.primary_skill) {
-          const { data: skill } = await supabase
-            .from('worker_skills')
-            .select('id')
-            .eq('worker_id', subjectId)
-            .eq('skill_name', vRaw.primary_skill)
-            .maybeSingle();
-          if (skill?.id) {
-            setSkillId(skill.id);
-            const { data: media } = await supabase
-              .from('worker_skill_media')
-              .select('media_type')
-              .eq('skill_id', skill.id);
-            setPhotoCount((media || []).filter((m) => m.media_type === 'photo').length);
-            setVideoCount((media || []).filter((m) => m.media_type === 'video').length);
-          } else {
-            // Apply should have created this — create now so uploads work.
-            const { data: inserted } = await supabase
-              .from('worker_skills')
-              .insert({
-                worker_id: subjectId,
-                skill_name: vRaw.primary_skill,
-                proficiency_level: 'intermediate',
-                years_of_experience: 0,
-              } as any)
-              .select('id')
-              .maybeSingle();
-            if (inserted?.id) setSkillId(inserted.id);
-          }
-        }
+        await hydrateSkillMedia(subjectId, vRaw.primary_skill);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch {
         /* row already set from submit */
@@ -1013,14 +1074,26 @@ export default function WorkerVerificationPage({
           .from(STORAGE_BUCKET)
           .upload(filePath, file, { upsert: false });
         if (uploadError) throw uploadError;
-        const { error: insertError } = await supabase.from('worker_skill_media').insert({
-          skill_id: skillId,
-          worker_id: subjectId,
-          media_type: type,
-          file_path: filePath,
-        });
+        const { data: inserted, error: insertError } = await supabase
+          .from('worker_skill_media')
+          .insert({
+            skill_id: skillId,
+            worker_id: subjectId,
+            media_type: type,
+            file_path: filePath,
+          })
+          .select('id')
+          .single();
         if (insertError) throw insertError;
         ok += 1;
+        const previewUrl = URL.createObjectURL(file);
+        const saved: WorkerSkillMediaFile = {
+          id: inserted?.id || crypto.randomUUID(),
+          media_type: type,
+          file_path: filePath,
+          url: previewUrl,
+        };
+        setSkillMedia((prev) => [...prev, saved]);
         if (type === 'photo') setPhotoCount((c) => c + 1);
         else setVideoCount((c) => c + 1);
       }
@@ -1029,6 +1102,11 @@ export default function WorkerVerificationPage({
           ? `${ok} photo${ok === 1 ? '' : 's'} uploaded`
           : `${ok} video${ok === 1 ? '' : 's'} uploaded`,
       );
+      try {
+        await hydrateSkillMedia(subjectId, row?.primary_skill);
+      } catch {
+        /* keep the local previews already shown */
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Upload failed');
     } finally {
@@ -1036,6 +1114,23 @@ export default function WorkerVerificationPage({
       setUploadProgress(null);
       if (type === 'photo' && photoRef.current) photoRef.current.value = '';
       if (type === 'video' && videoRef.current) videoRef.current.value = '';
+    }
+  };
+
+  const handleDeleteSkillMedia = async (item: SkillMediaGalleryItem) => {
+    const full = skillMedia.find((m) => m.id === item.id);
+    if (!full) return;
+    try {
+      await supabase.storage.from(STORAGE_BUCKET).remove([full.file_path]);
+      const { error } = await supabase.from('worker_skill_media').delete().eq('id', full.id);
+      if (error) throw error;
+      if (full.url.startsWith('blob:')) URL.revokeObjectURL(full.url);
+      setSkillMedia((prev) => prev.filter((m) => m.id !== full.id));
+      if (full.media_type === 'photo') setPhotoCount((c) => Math.max(0, c - 1));
+      else setVideoCount((c) => Math.max(0, c - 1));
+      toast.success(full.media_type === 'photo' ? 'Photo removed' : 'Video removed');
+    } catch {
+      toast.error('Failed to remove file');
     }
   };
 
@@ -1091,6 +1186,12 @@ export default function WorkerVerificationPage({
     );
   }
 
+  const appliedSkillLabel = appliedJobSkillLabel(
+    row.primary_skill,
+    journeyJobTitle,
+    journeyJobDescription,
+  );
+
   if (rawStage === 'gcc_ready' && !forceIdentity) {
     return (
       <JourneyShell embedded={embedded}>
@@ -1105,7 +1206,7 @@ export default function WorkerVerificationPage({
             }
             stats={[
               { label: 'Ready since', value: gccReadyDate(row.gcc_ready_at) },
-              { label: 'Skill', value: row.primary_skill || '—' },
+              { label: 'Skill', value: appliedSkillLabel },
               { label: 'Status', value: 'Verified' },
             ]}
           >
@@ -1193,6 +1294,8 @@ export default function WorkerVerificationPage({
             stepLabel={viewingStepMeta.label}
             currentStepLabel={VERIFICATION_STAGE_LABELS[stage]}
             row={row}
+            appliedJobTitle={journeyJobTitle}
+            appliedJobDescription={journeyJobDescription}
             photoCount={photoCount}
             videoCount={videoCount}
             kycStatus={kycStatusValue}
@@ -1205,6 +1308,27 @@ export default function WorkerVerificationPage({
             onGoToCurrent={clearJourneyQuery}
           >
             {viewingJourney === 'skill_proof' && (
+              <div className="space-y-4">
+                {(skillMedia.some((m) => m.media_type === 'photo' && m.url) ||
+                  skillMedia.some((m) => m.media_type === 'video' && m.url)) && (
+                  <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Your uploaded work
+                    </p>
+                    <SkillProofGallery
+                      items={skillMedia}
+                      kind="photo"
+                      onDelete={handleDeleteSkillMedia}
+                      deleteDisabled={!!uploadingKind}
+                    />
+                    <SkillProofGallery
+                      items={skillMedia}
+                      kind="video"
+                      onDelete={handleDeleteSkillMedia}
+                      deleteDisabled={!!uploadingKind}
+                    />
+                  </div>
+                )}
               <div className="rounded-xl border border-dashed border-border p-4">
                 <p className="text-sm font-medium">Add more work proof</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -1265,6 +1389,7 @@ export default function WorkerVerificationPage({
                   )}
                 </div>
               </div>
+              </div>
             )}
           </CompletedStepReview>
         )}
@@ -1275,8 +1400,8 @@ export default function WorkerVerificationPage({
             title={partnerKiosk ? 'Worker details' : 'Your major details'}
             description={
               partnerKiosk
-                ? 'Name and mobile are already saved. Fill email, Class 10 status, location, and education for this worker.'
-                : 'Name and mobile are already saved. Confirm your email, then add Class 10 status, location, and education.'
+                ? 'Name and mobile are already saved. Fill email, gender, Class 10 status, location, and education for this worker.'
+                : 'Name and mobile are already saved. Confirm your email, then add gender, Class 10 status, location, and education.'
             }
             timeEstimate="Takes 2–3 minutes"
             footer={
@@ -1318,13 +1443,13 @@ export default function WorkerVerificationPage({
                       if (!passed) setEducation('Below 10th');
                       else if (education === 'Below 10th') setEducation('');
                     }}
-                    className="flex flex-wrap gap-6 pt-1"
+                    className="flex flex-wrap gap-3 pt-1"
                   >
-                    <label className="flex items-center gap-2 text-sm font-medium">
+                    <label className="flex min-h-11 items-center gap-2 text-sm font-medium">
                       <RadioGroupItem value="yes" id="tenth-pass-yes" />
                       Yes — 10th pass
                     </label>
-                    <label className="flex items-center gap-2 text-sm font-medium">
+                    <label className="flex min-h-11 items-center gap-2 text-sm font-medium">
                       <RadioGroupItem value="no" id="tenth-pass-no" />
                       No — below 10th
                     </label>
@@ -1341,10 +1466,35 @@ export default function WorkerVerificationPage({
                     </p>
                   )}
                 </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Gender *</Label>
+                  <RadioGroup
+                    value={gender}
+                    onValueChange={(v) => {
+                      if (isWorkerGender(v)) setGender(v);
+                    }}
+                    className="grid grid-cols-1 gap-2 sm:grid-cols-3"
+                  >
+                    {WORKER_GENDER_OPTIONS.map((option) => (
+                      <label
+                        key={option.value}
+                        className={cn(
+                          'flex min-h-11 items-center gap-2 rounded-lg border px-3 text-sm font-medium',
+                          gender === option.value
+                            ? 'border-primary bg-primary/5'
+                            : 'border-input bg-background',
+                        )}
+                      >
+                        <RadioGroupItem value={option.value} id={`gender-${option.value}`} />
+                        {option.label}
+                      </label>
+                    ))}
+                  </RadioGroup>
+                </div>
                 <IndiaLocationFields
-                  className="contents"
+                  className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4"
                   showPincode={false}
-                  cityLabel="City"
+                  cityLabel="Village / Town / City"
                   value={{ state, district, city, pincode: '' }}
                   onChange={(loc) => {
                     setState(loc.state);
@@ -1352,20 +1502,18 @@ export default function WorkerVerificationPage({
                     setCity(loc.city);
                   }}
                 />
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label>Education *</Label>
-                  <Select
+                  <SearchSelect
                     value={education}
-                    onValueChange={setEducation}
-                    disabled={tenthPass === false}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {educationOptionsForTenthPass(tenthPass).map((e) => (
-                        <SelectItem key={e} value={e}>{e}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={setEducation}
+                    options={[...educationOptionsForTenthPass(tenthPass)]}
+                    title="Education"
+                    placeholder={tenthPass === null ? 'Select Class 10 status first' : 'Select education'}
+                    searchPlaceholder="Search education"
+                    disabled={tenthPass === null || tenthPass === false}
+                    emptyText="Select Class 10 status first"
+                  />
                 </div>
               </div>
           </StageActionShell>
@@ -1441,7 +1589,7 @@ export default function WorkerVerificationPage({
             description={
               <>
                 Answer 10 bilingual questions for{' '}
-                <span className="font-medium text-foreground">{row.primary_skill || 'your trade'}</span>
+                <span className="font-medium text-foreground">{appliedSkillLabel === '—' ? 'your trade' : appliedSkillLabel}</span>
                 {row.journey_job_id ? ' (from the job you applied to)' : ''}. This is a screening test, not a
                 trade certificate. Question {quizIndex + 1} of {quizItems.length}.
                 <span className="mt-2 block" lang="hi">
@@ -1577,7 +1725,7 @@ export default function WorkerVerificationPage({
             description={
               <>
                 Upload photos and short videos of your work as{' '}
-                <span className="font-medium text-foreground">{row.primary_skill}</span> before Test 2 (video
+                <span className="font-medium text-foreground">{appliedSkillLabel === '—' ? 'your trade' : appliedSkillLabel}</span> before Test 2 (video
                 interview).
                 <span className="mt-2 block text-foreground" lang="hi">
                   अपने काम करते हुए <span className="font-medium">8 से 10 photos</span> और{' '}
@@ -1648,6 +1796,12 @@ export default function WorkerVerificationPage({
                     )}
                     {uploadingKind === 'photo' ? 'Uploading…' : 'Select photos'}
                   </Button>
+                  <SkillProofGallery
+                    items={skillMedia}
+                    kind="photo"
+                    onDelete={handleDeleteSkillMedia}
+                    deleteDisabled={!!uploadingKind}
+                  />
                 </div>
                 <div
                   className={cn(
@@ -1686,6 +1840,12 @@ export default function WorkerVerificationPage({
                     )}
                     {uploadingKind === 'video' ? 'Uploading…' : 'Select videos'}
                   </Button>
+                  <SkillProofGallery
+                    items={skillMedia}
+                    kind="video"
+                    onDelete={handleDeleteSkillMedia}
+                    deleteDisabled={!!uploadingKind}
+                  />
                 </div>
               </div>
           </StageActionShell>
@@ -1940,13 +2100,30 @@ export default function WorkerVerificationPage({
             icon={Calendar}
             title="Test 2 — Video interview"
             body={
-              row.interview_scheduled_at
-                ? `Join on time from a quiet place with a good network.${
-                    row.interviewer_name ? ` ${row.interviewer_name} will interview you.` : ''
-                  }`
-                : row.interview_status === 'rejected'
-                  ? 'Your last interview was not approved. SafeWork will reschedule a new interview — the new date will appear here.'
-                  : 'SafeWork will schedule your video interview and assign an interviewer. The date, time and joining link appear here.'
+              row.interview_scheduled_at ? (
+                <>
+                  <p>
+                    {`Join on time from a quiet place with a good network.${
+                      row.interviewer_name ? ` ${row.interviewer_name} will interview you.` : ''
+                    }`}
+                  </p>
+                  <p className="mt-2 font-medium text-foreground">{INTERVIEW_MOBILE_CALL_NOTE}</p>
+                </>
+              ) : row.interview_status === 'rejected' ? (
+                <>
+                  <p>
+                    Your last interview was not approved. SafeWork will reschedule a new interview — the new date will appear here.
+                  </p>
+                  <p className="mt-2 font-medium text-foreground">{INTERVIEW_MOBILE_CALL_NOTE}</p>
+                </>
+              ) : (
+                <>
+                  <p>
+                    SafeWork will schedule your video interview and assign an interviewer. The date, time and joining link appear here.
+                  </p>
+                  <p className="mt-2 font-medium text-foreground">{INTERVIEW_MOBILE_CALL_NOTE}</p>
+                </>
+              )
             }
             expected={row.interview_scheduled_at ? undefined : 'Usually scheduled within 1–2 days'}
             notifyNote="You'll get an app notification when your interview is approved and you can proceed to the next step."
@@ -2050,7 +2227,7 @@ export default function WorkerVerificationPage({
                 <div>
                   <h2 className="font-semibold">Test 3 — Physical trade test</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Required for <span className="font-medium text-foreground">{row.primary_skill}</span>.
+                    Required for <span className="font-medium text-foreground">{appliedSkillLabel === '—' ? 'your trade' : appliedSkillLabel}</span>.
                     SafeWork assigns you to a trade test centre. Bring your physical Aadhaar card on the day.
                   </p>
                 </div>

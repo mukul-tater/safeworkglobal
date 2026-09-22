@@ -5,7 +5,7 @@ import StageTimeline, { type TimelineNode } from './StageTimeline';
 interface Props {
   icon: ComponentType<{ className?: string }>;
   title: string;
-  body: string;
+  body: ReactNode;
   /** What happened / what's next. Rendered as a vertical timeline. */
   timeline?: TimelineNode[];
   /** When the worker can expect movement, e.g. "Usually within a few hours". */
@@ -38,7 +38,7 @@ export default function StageWaitingShell({
             <Icon className="h-7 w-7 text-warning" />
           </span>
           <h2 className="mt-3 text-lg font-semibold font-heading text-foreground">{title}</h2>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">{body}</p>
+          <div className="mt-1 max-w-sm text-sm text-muted-foreground">{body}</div>
           {expected ? (
             <p className="mt-2 text-xs font-medium text-warning">{expected}</p>
           ) : null}

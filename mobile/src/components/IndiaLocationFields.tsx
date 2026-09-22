@@ -31,7 +31,7 @@ export default function IndiaLocationFields({
   showCity = true,
   showDistrict = true,
   showPincode = true,
-  cityLabel = 'City',
+  cityLabel = 'Village / Town / City',
   cityHint = 'If your village is not listed, select the nearest city.',
 }: Props) {
   const patch = (partial: Partial<Value>) => onChange({ ...value, ...partial });

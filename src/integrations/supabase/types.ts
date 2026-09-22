@@ -4558,6 +4558,7 @@ export type Database = {
           expected_wage_amount: number | null
           expected_wage_type: string | null
           experience_range: string | null
+          gender: string | null
           has_passport: boolean | null
           has_visa: boolean | null
           languages: string[] | null
@@ -4590,6 +4591,7 @@ export type Database = {
           expected_wage_amount?: number | null
           expected_wage_type?: string | null
           experience_range?: string | null
+          gender?: string | null
           has_passport?: boolean | null
           has_visa?: boolean | null
           languages?: string[] | null
@@ -4622,6 +4624,7 @@ export type Database = {
           expected_wage_amount?: number | null
           expected_wage_type?: string | null
           experience_range?: string | null
+          gender?: string | null
           has_passport?: boolean | null
           has_visa?: boolean | null
           languages?: string[] | null
@@ -4638,6 +4641,39 @@ export type Database = {
           visa_countries?: string[] | null
           work_preference?: string | null
           years_of_experience?: number | null
+        }
+        Relationships: []
+      }
+      worker_profile_shares: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          recipient_id: string
+          recipient_type: string
+          revoked_at: string | null
+          share_token: string
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          recipient_id: string
+          recipient_type: string
+          revoked_at?: string | null
+          share_token?: string
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          recipient_id?: string
+          recipient_type?: string
+          revoked_at?: string | null
+          share_token?: string
+          worker_id?: string
         }
         Relationships: []
       }
@@ -4660,6 +4696,7 @@ export type Database = {
           expected_wage_amount: number | null
           expected_wage_type: string | null
           experience_range: string | null
+          gender: string | null
           has_passport: boolean | null
           has_visa: boolean | null
           id: string
@@ -4711,6 +4748,7 @@ export type Database = {
           expected_wage_amount?: number | null
           expected_wage_type?: string | null
           experience_range?: string | null
+          gender?: string | null
           has_passport?: boolean | null
           has_visa?: boolean | null
           id?: string
@@ -4762,6 +4800,7 @@ export type Database = {
           expected_wage_amount?: number | null
           expected_wage_type?: string | null
           experience_range?: string | null
+          gender?: string | null
           has_passport?: boolean | null
           has_visa?: boolean | null
           id?: string
@@ -5037,6 +5076,7 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
+          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -5047,6 +5087,7 @@ export type Database = {
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
+          gender: string | null
           gcc_ready_at: string | null
           id: string
           interview_attempts: number
@@ -5112,6 +5153,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           deploy_contract_status?: string
+          district?: string | null
           deploy_emigration_status?: string
           deploy_insurance_status?: string
           deploy_offer_status?: string
@@ -5122,6 +5164,7 @@ export type Database = {
           education_level?: string | null
           email?: string | null
           essentials_completed_at?: string | null
+          gender?: string | null
           gcc_ready_at?: string | null
           id?: string
           interview_attempts?: number
@@ -5187,6 +5230,7 @@ export type Database = {
           city?: string | null
           created_at?: string
           deploy_contract_status?: string
+          district?: string | null
           deploy_emigration_status?: string
           deploy_insurance_status?: string
           deploy_offer_status?: string
@@ -5197,6 +5241,7 @@ export type Database = {
           education_level?: string | null
           email?: string | null
           essentials_completed_at?: string | null
+          gender?: string | null
           gcc_ready_at?: string | null
           id?: string
           interview_attempts?: number
@@ -5430,6 +5475,19 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_create_worker_share: {
+        Args: {
+          p_recipient_id: string
+          p_recipient_type: string
+          p_worker_id: string
+        }
+        Returns: {
+          recipient_id: string
+          recipient_type: string
+          share_id: string
+          share_token: string
+        }[]
+      }
       admin_delete_job: { Args: { p_job_id: string }; Returns: undefined }
       admin_delete_user: { Args: { p_user_id: string }; Returns: undefined }
       admin_employer_org_workers: {
@@ -5452,6 +5510,28 @@ export type Database = {
           owner_email: string
           owner_user_id: string
           rules: number
+        }[]
+      }
+      admin_list_share_recipients: {
+        Args: { p_query?: string }
+        Returns: {
+          detail: string
+          name: string
+          recipient_id: string
+          recipient_type: string
+        }[]
+      }
+      admin_list_worker_shares: {
+        Args: { p_worker_id: string }
+        Returns: {
+          created_at: string
+          recipient_detail: string
+          recipient_id: string
+          recipient_name: string
+          recipient_type: string
+          revoked_at: string | null
+          share_id: string
+          share_token: string
         }[]
       }
       admin_mark_bond_received: {
@@ -5489,6 +5569,7 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
+          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -5499,6 +5580,7 @@ export type Database = {
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
+          gender: string | null
           gcc_ready_at: string | null
           id: string
           interview_attempts: number
@@ -5566,6 +5648,10 @@ export type Database = {
       }
       admin_revoke_worker_assignment: {
         Args: { p_org: string; p_worker_user_id: string }
+        Returns: undefined
+      }
+      admin_revoke_worker_share: {
+        Args: { p_share_id: string }
         Returns: undefined
       }
       admin_rotate_lsp_secret: { Args: { p_lsp_id: string }; Returns: Json }
@@ -5694,6 +5780,7 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
+          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -5704,6 +5791,7 @@ export type Database = {
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
+          gender: string | null
           gcc_ready_at: string | null
           id: string
           interview_attempts: number
@@ -5778,6 +5866,7 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
+          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -5788,6 +5877,7 @@ export type Database = {
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
+          gender: string | null
           gcc_ready_at: string | null
           id: string
           interview_attempts: number
@@ -5858,6 +5948,14 @@ export type Database = {
         Returns: undefined
       }
       consume_lsp_launch_token: { Args: { p_token: string }; Returns: Json }
+      create_email_verified_employer_account: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_password: string
+        }
+        Returns: string
+      }
       create_phone_verified_partner_account: {
         Args: {
           p_email: string
@@ -6100,6 +6198,17 @@ export type Database = {
           youtube_url: string
         }[]
       }
+      get_worker_share_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          recipient_id: string
+          recipient_name: string
+          recipient_type: string
+          share_id: string
+          worker_id: string
+          worker_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -6107,6 +6216,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_shared_worker_access: { Args: { p_worker_id: string }; Returns: boolean }
       interviewer_list_assignments: {
         Args: never
         Returns: {
@@ -6151,6 +6261,19 @@ export type Database = {
         Returns: Json
       }
       journey_email_webhook_secret: { Args: never; Returns: string }
+      list_my_shared_workers: {
+        Args: never
+        Returns: {
+          created_at: string
+          current_location: string
+          full_name: string
+          phone: string
+          primary_work_type: string
+          share_id: string
+          share_token: string
+          worker_id: string
+        }[]
+      }
       list_public_workers: {
         Args: { p_limit?: number }
         Returns: {
@@ -6324,6 +6447,7 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
+          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -6334,6 +6458,7 @@ export type Database = {
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
+          gender: string | null
           gcc_ready_at: string | null
           id: string
           interview_attempts: number
@@ -6408,6 +6533,7 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
+          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -6418,6 +6544,7 @@ export type Database = {
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
+          gender: string | null
           gcc_ready_at: string | null
           id: string
           interview_attempts: number

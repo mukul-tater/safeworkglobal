@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName } from '@/lib/uaeListedJobs';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import {
   clearPendingJourneyJob,
@@ -170,11 +170,14 @@ export default function JourneyJobPicker({
     let cancelled = false;
     void supabase
       .from('jobs')
-      .select('title')
+      .select('title, description')
       .eq('id', journeyJobId)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled) setCurrentTitle((data as { title?: string } | null)?.title ?? null);
+        if (cancelled) return;
+        const title = (data as { title?: string } | null)?.title;
+        const description = (data as { description?: string } | null)?.description ?? '';
+        setCurrentTitle(title ? getPublicJobTitle(title, description) : null);
       });
     return () => {
       cancelled = true;
@@ -219,7 +222,7 @@ export default function JourneyJobPicker({
       const skill = inferWorkerSkillFromJob(job.title, job.description, job.skills);
       toast.success(
         skill !== 'Other'
-          ? `Applied. Test 1 will check ${skill} work.`
+          ? `Applied. Test 1 will check ${listedJobDisplayName(skill)} work.`
           : 'Application submitted. Continue to Test 1.',
       );
       if (verification) onAdvanced(verification);

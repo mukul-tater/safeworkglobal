@@ -9,6 +9,7 @@ import {
   MEDICAL_TEST_INTRO,
 } from '@/modules/worker-verification/constants';
 import type { MedicalReport, WorkerVerification } from '@/modules/worker-verification/types';
+import { appliedJobSkillLabel } from '@/lib/inferWorkerSkillFromJob';
 import {
   listMedicalReports,
   medicalTestDocumentsComplete,
@@ -184,7 +185,9 @@ export default function MedicalTestStage({
                 <>
                   {' '}
                   Physical trade test is not required for{' '}
-                  <span className="font-medium text-foreground">{row.primary_skill}</span>.
+                  <span className="font-medium text-foreground">
+                    {appliedJobSkillLabel(row.primary_skill)}
+                  </span>.
                 </>
               )}
             </p>

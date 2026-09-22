@@ -23,7 +23,9 @@ export type WorkerVerification = {
   stage: VerificationStage;
   email?: string | null;
   city?: string | null;
+  district?: string | null;
   state?: string | null;
+  gender?: string | null;
   education_level?: string | null;
   primary_skill?: string | null;
   terms_accepted_at?: string | null;
@@ -59,6 +61,12 @@ export const EDUCATION_LEVELS = [
   'Graduate',
   'Post Graduate',
   'Other',
+] as const;
+
+export const WORKER_GENDER_OPTIONS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
 ] as const;
 
 function ecrFromTenthPass(tenthPass: boolean) {
@@ -114,7 +122,9 @@ export async function saveEssentials(
   input: {
     email: string;
     city: string;
+    district: string;
     state: string;
+    gender: string;
     education_level: string;
     tenth_pass: boolean;
   },
@@ -131,11 +141,12 @@ export async function saveEssentials(
     {
       user_id: userId,
       current_city: input.city,
-      current_location: [input.city, input.state].filter(Boolean).join(', '),
+      current_location: [input.city, input.district, input.state].filter(Boolean).join(', '),
       experience_range: input.education_level,
       tenth_pass_confirmed: ecr.tenth_pass_confirmed,
       ecr_category: ecr.ecr_category,
       ecr_status: ecr.ecr_status,
+      gender: input.gender,
     },
     { onConflict: 'user_id' },
   );
@@ -149,7 +160,9 @@ export async function saveEssentials(
     .update({
       email,
       city: input.city,
+      district: input.district,
       state: input.state,
+      gender: input.gender,
       education_level: input.education_level,
       stage: nextStage,
       updated_at: new Date().toISOString(),

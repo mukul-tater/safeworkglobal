@@ -30,7 +30,9 @@ export interface WorkerVerification {
   terms_version: string | null;
   email: string | null;
   city: string | null;
+  district: string | null;
   state: string | null;
+  gender: string | null;
   education_level: string | null;
   primary_skill: string | null;
   journey_job_id?: string | null;

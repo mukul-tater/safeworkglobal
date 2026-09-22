@@ -131,7 +131,9 @@ export async function saveEssentials(
   input: {
     email: string;
     city: string;
+    district: string;
     state: string;
+    gender: string;
     education_level: string;
     tenth_pass: boolean;
   },
@@ -147,11 +149,12 @@ export async function saveEssentials(
   const profilePayload = {
     user_id: userId,
     current_city: input.city,
-    current_location: [input.city, input.state].filter(Boolean).join(', '),
+    current_location: [input.city, input.district, input.state].filter(Boolean).join(', '),
     experience_range: input.education_level,
     tenth_pass_confirmed: ecr.tenth_pass_confirmed,
     ecr_category: ecr.ecr_category,
     ecr_status: ecr.ecr_status,
+    gender: input.gender,
   };
 
   // Partners cannot INSERT a new worker_profiles row (RLS requires an already
@@ -184,7 +187,9 @@ export async function saveEssentials(
     .update({
       email,
       city: input.city,
+      district: input.district,
       state: input.state,
+      gender: input.gender,
       education_level: input.education_level,
       essentials_completed_at: new Date().toISOString(),
       stage: 'find_jobs',
