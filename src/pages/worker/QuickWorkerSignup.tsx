@@ -27,6 +27,7 @@ import {
 import { getFirebaseAuth, redirectToPhoneAuthHost } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
+import { sendSignupEmailOtp, verifySignupEmailOtp } from '@/lib/signupEmailOtp';
 import { AUTH_CONTINUE_MESSAGES, continueAuth } from '@/lib/authContinue';
 import { GET_STARTED_PATHS } from '@/lib/getStarted';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
@@ -52,7 +53,7 @@ import {
   suggestEmitraWorkerPassword,
 } from '@/modules/emitra/lib/emitraWorkerOnboarding';
 
-type Step = 'form' | 'otp';
+type Step = 'form' | 'otp' | 'email-otp';
 
 type Props = {
   /** Partner is registering a worker; same form and journey as independent signup. */
@@ -68,8 +69,8 @@ type Props = {
 };
 
 /**
- * Worker signup — Name + Email + Mobile (Firebase SMS OTP) + Password + T&C.
- * Independent workers continue to /worker/journey.
+ * Worker signup — Name + Email OTP + Mobile SMS OTP + Password + T&C.
+ * Independent workers verify email by OTP, then continue to /worker/journey.
  * Partners stay signed in and fill the worker GCC journey as a kiosk service.
  */
 export default function QuickWorkerSignup({
@@ -107,6 +108,11 @@ export default function QuickWorkerSignup({
   const [otp, setOtp] = useState('');
   const [phoneOtpVerified, setPhoneOtpVerified] = useState(false);
   const [firebaseIdToken, setFirebaseIdToken] = useState('');
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailOtpTicket, setEmailOtpTicket] = useState('');
+  const [emailOtpVerified, setEmailOtpVerified] = useState(false);
+  const [emailOtpReached, setEmailOtpReached] = useState(false);
+  const [emailOtpDev, setEmailOtpDev] = useState(false);
   const [needsPasswordRetry, setNeedsPasswordRetry] = useState(false);
   const [emitraNoticeOpen, setEmitraNoticeOpen] = useState(false);
   const isEmitraAssisted = partnerAssisted && partnerCtx?.source.type === 'emitra';
@@ -209,6 +215,11 @@ export default function QuickWorkerSignup({
     if (n === 2 && otpReached) {
       setError('');
       setStep('otp');
+      return;
+    }
+    if (n === 3 && emailOtpReached) {
+      setError('');
+      setStep('email-otp');
     }
   };
 
@@ -256,6 +267,10 @@ export default function QuickWorkerSignup({
 
       if (phoneOtpVerified) {
         setNeedsPasswordRetry(false);
+        if (!partnerAssisted && !emailOtpVerified) {
+          await sendEmailOtpAndAdvance();
+          return;
+        }
         await createAccountAfterOtp(firebaseIdToken);
         return;
       }
@@ -281,7 +296,16 @@ export default function QuickWorkerSignup({
     }
   };
 
-  const createAccountAfterOtp = async (idToken: string) => {
+  const sendEmailOtpAndAdvance = async () => {
+    const sent = await sendSignupEmailOtp(email.trim().toLowerCase());
+    setEmailOtpDev(sent.dev);
+    setEmailOtpReached(true);
+    setEmailOtp('');
+    setStep('email-otp');
+    toast.success(`Verification code sent to ${email.trim().toLowerCase()}`);
+  };
+
+  const createAccountAfterOtp = async (idToken: string, ticket = emailOtpTicket) => {
     const created = await createVerifiedWorkerAccount({
       fullName: name.trim(),
       email: email.trim().toLowerCase(),
@@ -289,6 +313,7 @@ export default function QuickWorkerSignup({
       password,
       country,
       idToken,
+      emailOtpTicket: partnerAssisted ? undefined : ticket,
       source: partnerAssisted ? (partnerCtx?.source ?? { type: 'partner' }) : { type: 'organic' },
       ...(partnerAssisted
         ? {
@@ -339,10 +364,9 @@ export default function QuickWorkerSignup({
 
   const handlePasswordRetryFailure = (message: string) => {
     setNeedsPasswordRetry(true);
-    setStep('otp');
     setOtpReached(true);
     setError(isWeakPasswordAuthError(message) ? COMMON_PASSWORD_MESSAGE : message);
-    toast.error('Mobile is verified. Choose a different password to finish creating the account.');
+    toast.error('Choose a different password to finish creating the account.');
   };
 
   const handleVerifyAndCreate = async (e: React.FormEvent) => {
@@ -366,8 +390,9 @@ export default function QuickWorkerSignup({
 
     setFormLoading(true);
     try {
+      let idToken = firebaseIdToken;
       if (!phoneOtpVerified) {
-        const idToken = await firebaseOtp.verifyOtp(otp);
+        idToken = await firebaseOtp.verifyOtp(otp);
         setFirebaseIdToken(idToken);
         setPhoneOtpVerified(true);
         try {
@@ -375,10 +400,12 @@ export default function QuickWorkerSignup({
         } catch {
           /* ignore */
         }
-        await createAccountAfterOtp(idToken);
-      } else {
-        await createAccountAfterOtp(firebaseIdToken);
       }
+      if (!partnerAssisted && !emailOtpVerified) {
+        await sendEmailOtpAndAdvance();
+        return;
+      }
+      await createAccountAfterOtp(idToken);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       if (isWeakPasswordAuthError(message)) {
@@ -431,6 +458,61 @@ export default function QuickWorkerSignup({
     }
   };
 
+  const handleVerifyEmailOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!emailOtpVerified && emailOtp.length !== 6) {
+      setError('Enter the 6-digit verification code');
+      return;
+    }
+    if (needsPasswordRetry) {
+      const passwordIssue = passwordSignupIssue(password);
+      if (passwordIssue) {
+        setError(passwordIssue);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+    }
+
+    setFormLoading(true);
+    try {
+      let ticket = emailOtpTicket;
+      if (!emailOtpVerified) {
+        ticket = await verifySignupEmailOtp(email.trim().toLowerCase(), emailOtp);
+        setEmailOtpTicket(ticket);
+        setEmailOtpVerified(true);
+      }
+      await createAccountAfterOtp(firebaseIdToken, ticket);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      if (isWeakPasswordAuthError(message)) {
+        handlePasswordRetryFailure(message);
+      } else {
+        setError(message);
+      }
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleResendEmailOtp = async () => {
+    setError('');
+    setEmailOtp('');
+    setFormLoading(true);
+    try {
+      const sent = await sendSignupEmailOtp(email.trim().toLowerCase());
+      setEmailOtpDev(sent.dev);
+      toast.success(`New code sent to ${email.trim().toLowerCase()}`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to resend OTP');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   return (
     <div className={embedded ? 'w-full' : 'min-h-dvh bg-muted/40 has-mobile-nav md:h-dvh md:overflow-hidden md:pb-0'}>
       <SEOHead
@@ -456,9 +538,9 @@ export default function QuickWorkerSignup({
               <div className="mb-5">
                 {!partnerAssisted && (
                   <FormStepPills
-                    current={step === 'form' ? 1 : 2}
-                    total={2}
-                    maxReachable={otpReached ? 2 : 1}
+                    current={step === 'form' ? 1 : step === 'otp' ? 2 : 3}
+                    total={3}
+                    maxReachable={emailOtpReached ? 3 : otpReached ? 2 : 1}
                     onSelect={goToSignupStep}
                   />
                 )}
@@ -477,6 +559,8 @@ export default function QuickWorkerSignup({
                       : 'Let’s create your account'
                     : needsPasswordRetry
                       ? 'Choose a different password'
+                    : step === 'email-otp'
+                      ? 'Enter the OTP sent to your email'
                     : partnerAssisted
                       ? 'Verify worker mobile'
                       : 'Enter the OTP sent to your mobile'}
@@ -487,7 +571,9 @@ export default function QuickWorkerSignup({
                       ? 'Add the worker’s name, email, mobile, and a password. You stay signed in. They can sign in later with this mobile and password.'
                       : 'We’ll use the details you already entered and only ask for what’s still needed.'
                     : needsPasswordRetry
-                      ? 'Your mobile is already verified. Set a password with letters and numbers (for example Udai9549).'
+                      ? 'Your mobile and email are already verified. Set a password with letters and numbers (for example Udai9549).'
+                    : step === 'email-otp'
+                      ? `Enter the 6-digit code sent to ${email.trim().toLowerCase()}`
                     : `Enter the 6-digit SMS code sent to +91 ${mobile}`}
                 </p>
               </div>
@@ -805,7 +891,7 @@ export default function QuickWorkerSignup({
                       ? 'Create account'
                       : partnerAssisted
                         ? 'Verify & add worker'
-                        : 'Verify & create account'}
+                        : 'Verify mobile'}
                   </Button>
 
                   <button
@@ -815,6 +901,122 @@ export default function QuickWorkerSignup({
                     className="w-full text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
                     ← Change details
+                  </button>
+                </form>
+              )}
+
+              {step === 'email-otp' && (
+                <form onSubmit={handleVerifyEmailOtp} className="space-y-5">
+                  {!needsPasswordRetry && <DevOtpHint channel="email" force={emailOtpDev} />}
+                  {!needsPasswordRetry && (
+                    <div className="flex justify-center py-1">
+                      <InputOTP
+                        maxLength={6}
+                        value={emailOtp}
+                        onChange={setEmailOtp}
+                        disabled={formLoading || emailOtpVerified}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  )}
+
+                  {needsPasswordRetry && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="email-otp-password">Password</Label>
+                        <div className="relative">
+                          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            id="email-otp-password"
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder={PASSWORD_HINT}
+                            value={password}
+                            onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
+                            required
+                            minLength={PASSWORD_MIN_LENGTH}
+                            className="h-11 pl-10 pr-9"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            data-inline
+                            onClick={() => setShowPassword((v) => !v)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="email-otp-confirmPassword">Confirm</Label>
+                        <div className="relative">
+                          <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            id="email-otp-confirmPassword"
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            placeholder="Re-enter"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
+                            required
+                            minLength={PASSWORD_MIN_LENGTH}
+                            className="h-11 pl-10 pr-9"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            data-inline
+                            onClick={() => setShowConfirmPassword((v) => !v)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <p className="col-span-2 text-xs text-muted-foreground">{PASSWORD_HINT}.</p>
+                    </div>
+                  )}
+
+                  {!needsPasswordRetry && (
+                    <p className="text-center text-sm text-muted-foreground">
+                      Didn&apos;t get the code?{' '}
+                      <button
+                        type="button"
+                        data-inline
+                        onClick={() => void handleResendEmailOtp()}
+                        disabled={formLoading || emailOtpVerified}
+                        className="font-medium text-primary hover:underline disabled:opacity-50"
+                      >
+                        Resend email
+                      </button>
+                    </p>
+                  )}
+
+                  <Button
+                    type="submit"
+                    className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+                    disabled={formLoading || (!emailOtpVerified && emailOtp.length !== 6)}
+                  >
+                    {formLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {needsPasswordRetry ? 'Create account' : 'Verify email & create account'}
+                  </Button>
+
+                  <button
+                    type="button"
+                    data-inline
+                    onClick={() => goToSignupStep(2)}
+                    className="w-full text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    ← Back to mobile OTP
                   </button>
                 </form>
               )}

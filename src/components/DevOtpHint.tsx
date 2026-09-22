@@ -1,7 +1,21 @@
 import { isDevOtpBypassEnabled, DEV_OTP_CODE } from '@/lib/otpConfig';
 
+type Props = {
+  channel?: 'sms' | 'email';
+  /** Server said email OTP is in bypass mode. */
+  force?: boolean;
+};
+
 /** Banner for OTP screens in local development. */
-export default function DevOtpHint() {
+export default function DevOtpHint({ channel = 'sms', force = false }: Props) {
+  if (channel === 'email') {
+    if (!force && !isDevOtpBypassEnabled()) return null;
+    return (
+      <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        Dev mode: email is skipped. Use <span className="font-semibold">{DEV_OTP_CODE}</span>.
+      </p>
+    );
+  }
   if (!isDevOtpBypassEnabled()) return null;
   return (
     <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">

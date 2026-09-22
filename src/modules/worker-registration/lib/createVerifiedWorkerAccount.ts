@@ -33,6 +33,8 @@ export type CreateVerifiedWorkerInput = {
   country?: string;
   /** Firebase ID token from the SMS OTP that just succeeded. Required. */
   idToken: string;
+  /** Email OTP ticket from signup-email-otp. Required for organic (real-email) signup. */
+  emailOtpTicket?: string;
   source?: WorkerSource;
   /** Optional seed fields on worker_profiles (skill/location from emitra kiosk). */
   profileSeed?: {
@@ -109,6 +111,9 @@ export async function createVerifiedWorkerAccount(
   if (!String(input.idToken || '').trim()) {
     throw new Error('Verification is required. Request a new OTP.');
   }
+  if (!partnerSourced && !String(input.emailOtpTicket || '').trim()) {
+    throw new Error('Verify your email with the OTP we sent, then try again.');
+  }
 
   try {
     const created = await createPhoneVerifiedWorkerAccount({
@@ -117,6 +122,7 @@ export async function createVerifiedWorkerAccount(
       fullName: input.fullName.trim(),
       mobile: digits,
       idToken: input.idToken,
+      emailOtpTicket: input.emailOtpTicket,
     });
     if (!created.userId) throw new Error('Could not create account. Please try again.');
 

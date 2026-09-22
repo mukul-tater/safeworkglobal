@@ -1,6 +1,11 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { verifiedMobileFromIdToken } from '../_shared/firebasePhone.ts'
+import {
+  findValidSignupEmailTicket,
+  isSyntheticAuthEmail,
+  markSignupEmailTicketConsumed,
+} from '../_shared/signupEmailTicket.ts'
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
@@ -30,6 +35,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     email?: unknown
     password?: unknown
     fullName?: unknown
+    emailOtpTicket?: unknown
   }
   try {
     payload = await req.json()
@@ -99,6 +105,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const email = String(payload.email || '').trim().toLowerCase()
     const password = String(payload.password || '')
     const fullName = String(payload.fullName || '').trim()
+    let emailTicketId: string | null = null
+    if (action === 'create_worker' && !isSyntheticAuthEmail(email)) {
+      emailTicketId = await findValidSignupEmailTicket(
+        admin,
+        email,
+        String(payload.emailOtpTicket || ''),
+      )
+      if (!emailTicketId) {
+        return json(400, { error: 'Verify your email with the OTP we sent, then try again.' })
+      }
+    }
     const rpcName =
       action === 'create_partner'
         ? 'create_phone_verified_partner_account'
@@ -118,6 +135,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return json(400, { error: msg })
     }
     if (!userId) return json(500, { error: 'Could not create account. Please try again.' })
+    if (emailTicketId) {
+      await markSignupEmailTicketConsumed(admin, emailTicketId)
+    }
 
     return json(200, { user_id: userId, mobile })
   } catch (err) {

@@ -54,6 +54,7 @@ export async function createPhoneVerifiedWorkerAccount(input: {
   fullName: string;
   mobile: string;
   idToken: string;
+  emailOtpTicket?: string;
 }): Promise<PhoneVerifiedAccountResult> {
   return invokePhoneVerifiedAccount({
     action: 'create_worker',
@@ -62,6 +63,7 @@ export async function createPhoneVerifiedWorkerAccount(input: {
     fullName: input.fullName,
     mobile: input.mobile,
     idToken: input.idToken,
+    emailOtpTicket: input.emailOtpTicket,
   });
 }
 
