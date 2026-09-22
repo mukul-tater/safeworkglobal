@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,7 +56,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
   const [conflictMessage, setConflictMessage] = useState('');
   const [wrongPortal, setWrongPortal] = useState<'worker' | 'employer' | 'partner' | null>(null);
 
-  const afterLoginPath = () => {
+  const afterLoginPath = useCallback(() => {
     const next = searchParams.get('next') || peekShareReturnPath() || '';
     if (next.startsWith('/') && !next.startsWith('//')) {
       if (!isMobileVerified) return '/employer/bind-mobile';
@@ -64,14 +64,14 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
       return next;
     }
     return isMobileVerified ? '/employer/dashboard' : '/employer/bind-mobile';
-  };
+  }, [searchParams, isMobileVerified]);
 
   useEffect(() => {
     if (authLoading || profileLoading) return;
     if (isAuthenticated && role === 'employer') {
       navigate(afterLoginPath(), { replace: true });
     }
-  }, [isAuthenticated, role, isMobileVerified, navigate, authLoading, profileLoading]);
+  }, [isAuthenticated, role, isMobileVerified, navigate, authLoading, profileLoading, afterLoginPath]);
 
   if (authLoading || (isAuthenticated && (profileLoading || role === 'employer'))) {
     return (

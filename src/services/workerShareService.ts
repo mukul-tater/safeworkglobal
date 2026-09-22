@@ -238,8 +238,8 @@ export async function loadWorkerDossier(workerId: string): Promise<WorkerDossier
 
   const assessments = (assessmentsRes.data ?? []) as unknown as AssessmentRow[];
   const assessmentIds = assessments.map((a) => a.id);
-  let scoresByAssessment = new Map<string, AssessmentScoresRow>();
-  let mediaByAssessment = new Map<string, AssessmentMediaRow[]>();
+  const scoresByAssessment = new Map<string, AssessmentScoresRow>();
+  const mediaByAssessment = new Map<string, AssessmentMediaRow[]>();
 
   if (assessmentIds.length > 0) {
     const [scoresRes, mediaRes] = await Promise.all([

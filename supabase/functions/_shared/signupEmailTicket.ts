@@ -14,7 +14,15 @@ export function isSyntheticAuthEmail(email: string): boolean {
   )
 }
 
-type AdminFrom = { from: (table: string) => any }
+type AdminQuery = {
+  select: (columns: string) => AdminQuery
+  update: (values: Record<string, string>) => AdminQuery
+  eq: (column: string, value: string) => AdminQuery
+  is: (column: string, value: null) => AdminQuery
+  maybeSingle: () => Promise<{ data: { id: string; verified_at: string | null; consumed_at: string | null; expires_at: string } | null; error: { message: string } | null }>
+}
+
+type AdminFrom = { from: (table: string) => AdminQuery }
 
 export async function findValidSignupEmailTicket(
   admin: AdminFrom,
