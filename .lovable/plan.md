@@ -1,11 +1,11 @@
-# Restore Production Signup Verification
+# Restore Production Email OTP Delivery
 
 ## Changes
-- Confirm whether the existing signup email OTP migration is already active; apply it only if missing.
-- Deploy the existing `signup-email-otp` function without changing its code or frontend behavior.
-- Redeploy the existing `phone-verified-account` function unchanged.
-- Verify the signup function answers preflight with 200 and POST requests no longer return `NOT_FOUND`.
+- Confirm the sender domain, recipient suppression state, managed API key, and live delivery logs.
+- Preserve the OTP security contract while returning clear, safe email-delivery errors and logging detailed failures server-side.
+- Keep the existing worker and employer signup steps, adding only successful-send guidance to check spam.
+- Redeploy the signup function and verify preflight, real sending, wrong-code rejection, and successful ticket creation.
 
 ## Guardrails
-- No signup UI, copy, Firebase SMS, frontend request headers, or environment configuration changes.
-- Keep JWT verification disabled as already configured.
+- No signup redesign, Firebase SMS changes, provider replacement, production bypass, job changes, or OTP contract changes.
+- Keep JWT verification disabled and preserve ticket requirements for worker and employer account creation.
