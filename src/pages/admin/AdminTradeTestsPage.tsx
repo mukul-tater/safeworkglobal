@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
-import { listAdminAssessments } from '@/modules/trade-test/services/assessmentService';
+import { listAdminAssessments, assessmentWorkerLabel } from '@/modules/trade-test/services/assessmentService';
 import type { AssessmentRow } from '@/modules/trade-test/types';
 
 type Filter = 'inbox' | 'today' | 'active' | 'history';
@@ -110,8 +110,9 @@ export default function AdminTradeTestsPage() {
             {rows.map((a) => (
               <Card key={a.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="font-medium">{a.worker_name || `Worker ${a.worker_id.slice(0, 8)}`}</div>
+                  <div className="font-medium">{assessmentWorkerLabel(a)}</div>
                   <div className="text-sm text-muted-foreground">
+                    {a.primary_skill ? `${a.primary_skill} · ` : ''}
                     {a.appointment_date ||
                       (a.scheduled_at ? new Date(a.scheduled_at).toLocaleDateString() : 'Unscheduled')}
                     {a.reporting_window ? ` · ${a.reporting_window}` : ''}

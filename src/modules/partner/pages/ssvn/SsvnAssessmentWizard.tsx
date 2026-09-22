@@ -28,6 +28,7 @@ import WorkerIdentityDocsPanel from '../../components/ssvn/WorkerIdentityDocsPan
 import {
   acceptAssessment,
   addAssessmentMedia,
+  assessmentWorkerLabel,
   getAssessment,
   getAssessmentScores,
   getWorkerIdentityPack,
@@ -264,7 +265,7 @@ export default function SsvnAssessmentWizard() {
               </Link>
             </Button>
             <h1 className="text-2xl font-bold font-heading">
-              {row.worker_name || `Worker ${row.worker_id.slice(0, 8)}`}
+              {assessmentWorkerLabel(row)}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               {row.center_name || 'Trade test centre'}

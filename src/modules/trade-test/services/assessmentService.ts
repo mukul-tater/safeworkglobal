@@ -30,6 +30,60 @@ function asVideoKycLog(value: unknown): VideoKycLogEntry[] {
   return Array.isArray(value) ? (value as VideoKycLogEntry[]) : [];
 }
 
+export function assessmentWorkerLabel(row: {
+  worker_name?: string | null;
+  worker_phone?: string | null;
+  worker_email?: string | null;
+}): string {
+  const name = (row.worker_name || '').trim();
+  if (name) return name;
+  const phone = (row.worker_phone || '').trim();
+  if (phone) return phone;
+  const email = (row.worker_email || '').trim();
+  if (email) return email;
+  return 'Unnamed worker';
+}
+
+type WorkerDirectoryRow = {
+  user_id: string;
+  full_name: string | null;
+  phone: string | null;
+  email: string | null;
+};
+
+async function loadWorkerDirectory(workerIds: string[]): Promise<Map<string, WorkerDirectoryRow>> {
+  const ids = [...new Set(workerIds.filter(Boolean))];
+  const map = new Map<string, WorkerDirectoryRow>();
+  if (!ids.length) return map;
+
+  const { data: rpcRows, error: rpcError } = await supabase.rpc('assessment_worker_directory', {
+    p_worker_ids: ids,
+  });
+  if (!rpcError && Array.isArray(rpcRows)) {
+    for (const row of rpcRows as WorkerDirectoryRow[]) {
+      if (row?.user_id) map.set(row.user_id, row);
+    }
+  }
+
+  const missing = ids.filter((id) => !map.has(id));
+  if (missing.length) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, phone, email')
+      .in('id', missing);
+    for (const p of profiles || []) {
+      map.set(p.id, {
+        user_id: p.id,
+        full_name: p.full_name,
+        phone: p.phone,
+        email: p.email,
+      });
+    }
+  }
+
+  return map;
+}
+
 function normalizeAssessment(row: AssessmentRow): AssessmentRow {
   return {
     ...row,
@@ -68,8 +122,8 @@ async function enrichAssessments(rows: AssessmentRow[]): Promise<AssessmentRow[]
   const centerIds = [...new Set(rows.map((r) => r.trade_test_center_id).filter(Boolean))] as string[];
   const verIds = [...new Set(rows.map((r) => r.worker_verification_id).filter(Boolean))] as string[];
 
-  const [{ data: profiles }, { data: centers }, { data: vers }] = await Promise.all([
-    supabase.from('profiles').select('id, full_name, phone, email').in('id', workerIds),
+  const [directory, { data: centers }, { data: vers }] = await Promise.all([
+    loadWorkerDirectory(workerIds),
     centerIds.length
       ? supabase
           .from('trade_test_centers')
@@ -83,12 +137,11 @@ async function enrichAssessments(rows: AssessmentRow[]): Promise<AssessmentRow[]
       : Promise.resolve({ data: [] }),
   ]);
 
-  const pmap = new Map((profiles || []).map((p: any) => [p.id, p]));
   const cmap = new Map((centers || []).map((c: any) => [c.id, c]));
   const vmap = new Map((vers || []).map((v: any) => [v.id, v]));
 
   return rows.map((r) => {
-    const p = pmap.get(r.worker_id) as any;
+    const p = directory.get(r.worker_id);
     const c = r.trade_test_center_id ? cmap.get(r.trade_test_center_id) : null;
     const v = r.worker_verification_id ? vmap.get(r.worker_verification_id) : null;
     return normalizeAssessment({
@@ -206,15 +259,10 @@ export async function listWorkersNeedingAllocation(): Promise<
   });
 
   if (!need.length) return [];
-  const ids = need.map((r) => r.user_id);
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, full_name, phone')
-    .in('id', ids);
-  const pmap = new Map((profiles || []).map((p: any) => [p.id, p]));
+  const directory = await loadWorkerDirectory(need.map((r) => r.user_id));
 
   return need.map((r) => {
-    const p = pmap.get(r.user_id) as any;
+    const p = directory.get(r.user_id);
     return {
       verification_id: r.id,
       user_id: r.user_id,

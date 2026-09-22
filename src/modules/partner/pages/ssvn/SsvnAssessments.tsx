@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCurrentPartner } from '../../hooks/useCurrentPartner';
-import { listPartnerAssessments } from '@/modules/trade-test/services/assessmentService';
+import { listPartnerAssessments, assessmentWorkerLabel } from '@/modules/trade-test/services/assessmentService';
 import type { AssessmentRow } from '@/modules/trade-test/types';
 
 export default function SsvnAssessments({
@@ -51,7 +51,7 @@ export default function SsvnAssessments({
               <Card key={a.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="font-medium">
-                    {a.worker_name || `Worker ${a.worker_id.slice(0, 8)}`}
+                    {assessmentWorkerLabel(a)}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {a.appointment_date ||

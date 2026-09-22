@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { TRADE_TEST_REPORTING_WINDOW } from '@/data/tradeTestCenters';
 import {
   allocateAssessment,
+  assessmentWorkerLabel,
   getAssessmentScores,
   listAssessmentMedia,
   listAssessmentsForQualityReview,
@@ -390,7 +391,7 @@ export default function AdminTradeTestAllocations() {
                   <CardContent className="p-4 space-y-3">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <p className="font-medium">{w.full_name || w.user_id.slice(0, 8)}</p>
+                        <p className="font-medium">{w.full_name || w.phone || 'Unnamed worker'}</p>
                         <p className="text-xs text-muted-foreground">
                           {w.primary_skill || 'Skill TBD'}
                           {w.state ? ` · ${w.state}` : ''}
@@ -508,7 +509,7 @@ export default function AdminTradeTestAllocations() {
                   <CardContent className="p-4 space-y-3">
                     <div className="flex flex-wrap justify-between gap-2">
                       <div>
-                        <p className="font-medium">{a.worker_name || a.worker_id.slice(0, 8)}</p>
+                        <p className="font-medium">{assessmentWorkerLabel(a)}</p>
                         <p className="text-xs text-muted-foreground">
                           {a.center_name || a.trade_test_center_id}
                           {a.primary_skill ? ` · ${a.primary_skill}` : ''}

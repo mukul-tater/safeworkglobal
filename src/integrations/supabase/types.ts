@@ -5738,6 +5738,15 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: number
       }
+      assessment_worker_directory: {
+        Args: { p_worker_ids: string[] }
+        Returns: {
+          email: string
+          full_name: string
+          phone: string
+          user_id: string
+        }[]
+      }
       assign_employer_requirement_ref: {
         Args: { p_user_id: string }
         Returns: string
