@@ -3634,6 +3634,60 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_email_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          ticket_hash: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          ticket_hash?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          ticket_hash?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      site_visits_daily: {
+        Row: {
+          updated_at: string
+          visit_count: number
+          visit_date: string
+        }
+        Insert: {
+          updated_at?: string
+          visit_count?: number
+          visit_date: string
+        }
+        Update: {
+          updated_at?: string
+          visit_count?: number
+          visit_date?: string
+        }
+        Relationships: []
+      }
       skill_quiz_configs: {
         Row: {
           active: boolean
@@ -4558,7 +4612,6 @@ export type Database = {
           expected_wage_amount: number | null
           expected_wage_type: string | null
           experience_range: string | null
-          gender: string | null
           has_passport: boolean | null
           has_visa: boolean | null
           languages: string[] | null
@@ -4591,7 +4644,6 @@ export type Database = {
           expected_wage_amount?: number | null
           expected_wage_type?: string | null
           experience_range?: string | null
-          gender?: string | null
           has_passport?: boolean | null
           has_visa?: boolean | null
           languages?: string[] | null
@@ -4624,7 +4676,6 @@ export type Database = {
           expected_wage_amount?: number | null
           expected_wage_type?: string | null
           experience_range?: string | null
-          gender?: string | null
           has_passport?: boolean | null
           has_visa?: boolean | null
           languages?: string[] | null
@@ -5076,7 +5127,6 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
-          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -5084,11 +5134,12 @@ export type Database = {
           deploy_visa_status: string
           deployed_at: string | null
           deployment_notes: string | null
+          district: string | null
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
-          gender: string | null
           gcc_ready_at: string | null
+          gender: string | null
           id: string
           interview_attempts: number
           interview_meeting_url: string | null
@@ -5153,7 +5204,6 @@ export type Database = {
           city?: string | null
           created_at?: string
           deploy_contract_status?: string
-          district?: string | null
           deploy_emigration_status?: string
           deploy_insurance_status?: string
           deploy_offer_status?: string
@@ -5161,11 +5211,12 @@ export type Database = {
           deploy_visa_status?: string
           deployed_at?: string | null
           deployment_notes?: string | null
+          district?: string | null
           education_level?: string | null
           email?: string | null
           essentials_completed_at?: string | null
-          gender?: string | null
           gcc_ready_at?: string | null
+          gender?: string | null
           id?: string
           interview_attempts?: number
           interview_meeting_url?: string | null
@@ -5230,7 +5281,6 @@ export type Database = {
           city?: string | null
           created_at?: string
           deploy_contract_status?: string
-          district?: string | null
           deploy_emigration_status?: string
           deploy_insurance_status?: string
           deploy_offer_status?: string
@@ -5238,11 +5288,12 @@ export type Database = {
           deploy_visa_status?: string
           deployed_at?: string | null
           deployment_notes?: string | null
+          district?: string | null
           education_level?: string | null
           email?: string | null
           essentials_completed_at?: string | null
-          gender?: string | null
           gcc_ready_at?: string | null
+          gender?: string | null
           id?: string
           interview_attempts?: number
           interview_meeting_url?: string | null
@@ -5529,7 +5580,7 @@ export type Database = {
           recipient_id: string
           recipient_name: string
           recipient_type: string
-          revoked_at: string | null
+          revoked_at: string
           share_id: string
           share_token: string
         }[]
@@ -5569,7 +5620,6 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
-          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -5577,11 +5627,12 @@ export type Database = {
           deploy_visa_status: string
           deployed_at: string | null
           deployment_notes: string | null
+          district: string | null
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
-          gender: string | null
           gcc_ready_at: string | null
+          gender: string | null
           id: string
           interview_attempts: number
           interview_meeting_url: string | null
@@ -5789,7 +5840,6 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
-          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -5797,11 +5847,12 @@ export type Database = {
           deploy_visa_status: string
           deployed_at: string | null
           deployment_notes: string | null
+          district: string | null
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
-          gender: string | null
           gcc_ready_at: string | null
+          gender: string | null
           id: string
           interview_attempts: number
           interview_meeting_url: string | null
@@ -5875,7 +5926,6 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
-          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -5883,11 +5933,12 @@ export type Database = {
           deploy_visa_status: string
           deployed_at: string | null
           deployment_notes: string | null
+          district: string | null
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
-          gender: string | null
           gcc_ready_at: string | null
+          gender: string | null
           id: string
           interview_attempts: number
           interview_meeting_url: string | null
@@ -5958,11 +6009,7 @@ export type Database = {
       }
       consume_lsp_launch_token: { Args: { p_token: string }; Returns: Json }
       create_email_verified_employer_account: {
-        Args: {
-          p_email: string
-          p_full_name: string
-          p_password: string
-        }
+        Args: { p_email: string; p_full_name: string; p_password: string }
         Returns: string
       }
       create_phone_verified_partner_account: {
@@ -6164,6 +6211,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_site_visit_stats: { Args: never; Returns: Json }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -6225,7 +6273,10 @@ export type Database = {
         }
         Returns: boolean
       }
-      has_shared_worker_access: { Args: { p_worker_id: string }; Returns: boolean }
+      has_shared_worker_access: {
+        Args: { p_worker_id: string }
+        Returns: boolean
+      }
       interviewer_list_assignments: {
         Args: never
         Returns: {
@@ -6372,6 +6423,7 @@ export type Database = {
         Args: { _new: Database["public"]["Tables"]["partners"]["Row"] }
         Returns: boolean
       }
+      record_site_visit: { Args: never; Returns: undefined }
       request_journey_step_email: {
         Args: { p_notification_id: string }
         Returns: undefined
@@ -6456,7 +6508,6 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
-          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -6464,11 +6515,12 @@ export type Database = {
           deploy_visa_status: string
           deployed_at: string | null
           deployment_notes: string | null
+          district: string | null
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
-          gender: string | null
           gcc_ready_at: string | null
+          gender: string | null
           id: string
           interview_attempts: number
           interview_meeting_url: string | null
@@ -6542,7 +6594,6 @@ export type Database = {
           city: string | null
           created_at: string
           deploy_contract_status: string
-          district: string | null
           deploy_emigration_status: string
           deploy_insurance_status: string
           deploy_offer_status: string
@@ -6550,11 +6601,12 @@ export type Database = {
           deploy_visa_status: string
           deployed_at: string | null
           deployment_notes: string | null
+          district: string | null
           education_level: string | null
           email: string | null
           essentials_completed_at: string | null
-          gender: string | null
           gcc_ready_at: string | null
+          gender: string | null
           id: string
           interview_attempts: number
           interview_meeting_url: string | null
