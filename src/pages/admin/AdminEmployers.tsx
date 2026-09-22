@@ -1,15 +1,18 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { adminNavGroups, adminProfileMenu } from "@/config/adminNav";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Eye, Building2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Search, Eye, Building2, Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
+import { adminCreateEmployer } from "@/services/AdminService";
+import { passwordSignupIssue, PASSWORD_HINT, sanitizePasswordInput } from "@/lib/validations/password";
 
 interface EmployerRow {
   id: string;
@@ -31,6 +34,15 @@ export default function AdminEmployers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [viewEmployer, setViewEmployer] = useState<EmployerRow | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    companyName: "",
+    phone: "",
+  });
 
   useEffect(() => { fetchEmployers(); }, []);
 
@@ -83,6 +95,48 @@ export default function AdminEmployers() {
     }
   };
 
+  const resetCreateForm = () => {
+    setForm({ fullName: "", email: "", password: "", companyName: "", phone: "" });
+  };
+
+  const handleCreateEmployer = async (e: FormEvent) => {
+    e.preventDefault();
+    const fullName = form.fullName.trim();
+    const email = form.email.trim().toLowerCase();
+    const password = form.password;
+    if (!fullName) {
+      toast.error("Contact name is required");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+    const passwordIssue = passwordSignupIssue(password);
+    if (passwordIssue) {
+      toast.error(passwordIssue);
+      return;
+    }
+
+    setCreating(true);
+    const result = await adminCreateEmployer({
+      fullName,
+      email,
+      password,
+      companyName: form.companyName.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+    });
+    setCreating(false);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success(`Employer created. They can sign in at /employer/login with ${result.data?.email}.`);
+    resetCreateForm();
+    setCreateOpen(false);
+    fetchEmployers();
+  };
+
   const filtered = employers.filter((e) => {
     const q = search.toLowerCase();
     return (
@@ -96,10 +150,17 @@ export default function AdminEmployers() {
 
   return (
     <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
-      <h1 className="text-2xl md:text-3xl font-bold mb-2">Employers</h1>
-      <p className="text-muted-foreground text-sm mb-6">
-        All employer accounts, companies, and job postings — {employers.length} total
-      </p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Employers</h1>
+          <p className="text-muted-foreground text-sm">
+            All employer accounts, companies, and job postings — {employers.length} total
+          </p>
+        </div>
+        <Button className="shrink-0" onClick={() => setCreateOpen(true)}>
+          <Plus className="h-4 w-4 mr-1" /> Create employer
+        </Button>
+      </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
@@ -165,6 +226,85 @@ export default function AdminEmployers() {
           ))}
         </div>
       )}
+
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) resetCreateForm();
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create employer</DialogTitle>
+            <DialogDescription>
+              Creates a login they can use at /employer/login. They still complete company onboarding after sign-in.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateEmployer} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="employer-name">Contact name *</Label>
+              <Input
+                id="employer-name"
+                value={form.fullName}
+                onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                placeholder="Person who will log in"
+                autoComplete="name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="employer-email">Email *</Label>
+              <Input
+                id="employer-email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                placeholder="name@company.com"
+                autoComplete="email"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="employer-password">Temporary password *</Label>
+              <Input
+                id="employer-password"
+                type="text"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: sanitizePasswordInput(e.target.value) }))}
+                placeholder={PASSWORD_HINT}
+                autoComplete="new-password"
+              />
+              <p className="text-xs text-muted-foreground">{PASSWORD_HINT}. Share this with the employer.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="employer-company">Company name</Label>
+              <Input
+                id="employer-company"
+                value={form.companyName}
+                onChange={(e) => setForm((f) => ({ ...f, companyName: e.target.value }))}
+                placeholder="Optional"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="employer-phone">Phone</Label>
+              <Input
+                id="employer-phone"
+                value={form.phone}
+                onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                placeholder="Optional"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={creating}>
+                {creating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+                Create employer
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!viewEmployer} onOpenChange={() => setViewEmployer(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">

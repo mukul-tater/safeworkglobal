@@ -148,3 +148,34 @@ export async function adminCreateJob(
 
   return { data: job.id, error: null };
 }
+
+export async function adminCreateEmployer(input: {
+  email: string;
+  password: string;
+  fullName: string;
+  companyName?: string;
+  phone?: string;
+}): Promise<{ data: { user_id: string; email: string } | null; error: string | null }> {
+  const { data, error } = await supabase.rpc("admin_create_employer", {
+    p_email: input.email,
+    p_password: input.password,
+    p_full_name: input.fullName,
+    p_company_name: input.companyName || null,
+    p_phone: input.phone || null,
+  });
+  if (error) {
+    const message = formatError(error, "Failed to create employer");
+    if (/already registered/i.test(message)) {
+      return { data: null, error: "This email is already registered." };
+    }
+    if (/admin only/i.test(message)) {
+      return { data: null, error: "Only admins can create employer accounts." };
+    }
+    return { data: null, error: message };
+  }
+  const row = data as { user_id?: unknown; email?: unknown } | null;
+  const userId = String(row?.user_id || "");
+  const email = String(row?.email || input.email);
+  if (!userId) return { data: null, error: "Employer was not created." };
+  return { data: { user_id: userId, email }, error: null };
+}

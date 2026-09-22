@@ -5463,6 +5463,16 @@ export type Database = {
         Args: { p_employer_id: string; p_patch: Json; p_skills?: string[] }
         Returns: string
       }
+      admin_create_employer: {
+        Args: {
+          p_company_name?: string
+          p_email: string
+          p_full_name: string
+          p_password: string
+          p_phone?: string
+        }
+        Returns: Json
+      }
       admin_create_lsp: {
         Args: {
           p_code: string
