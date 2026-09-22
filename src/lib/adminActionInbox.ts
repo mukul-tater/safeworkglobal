@@ -64,7 +64,7 @@ export async function loadAdminActionInbox(): Promise<AdminActionItem[]> {
     countRows('jobs', (q) => q.eq('status', 'PENDING')),
   ]);
 
-  return [
+  const items: AdminActionItem[] = [
     {
       id: 'kyc',
       title: 'KYC to review',
@@ -177,5 +177,6 @@ export async function loadAdminActionInbox(): Promise<AdminActionItem[]> {
       href: '/admin/contact-submissions',
       tone: 'default',
     },
-  ].filter((item) => item.count > 0);
+  ];
+  return items.filter((item) => item.count > 0);
 }
