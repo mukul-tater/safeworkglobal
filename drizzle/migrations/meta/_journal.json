@@ -29,6 +29,13 @@
       "when": 1790081101766,
       "tag": "0003_temporary_catalog_restore_access",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790081144404,
+      "tag": "0004_remove_temporary_catalog_restore_access",
+      "breakpoints": true
     }
   ]
 }
