@@ -12,6 +12,15 @@ export function bindMobilePath(role: AppRole | null | undefined): string {
 }
 
 export function afterMobileVerifiedPath(role: AppRole | null | undefined): string {
+  try {
+    const next = sessionStorage.getItem('swg_share_return');
+    if (next && next.startsWith('/') && !next.startsWith('//')) {
+      sessionStorage.removeItem('swg_share_return');
+      return next;
+    }
+  } catch {
+    /* ignore */
+  }
   if (USERS_ONLY_LAUNCH) {
     if (role === 'employer') return COMING_SOON_PATHS.employer;
     if (role === 'partner') return COMING_SOON_PATHS.partner;

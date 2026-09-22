@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Eye, MapPin, Briefcase } from "lucide-react";
+import { Search, Eye, MapPin, Briefcase, Share2 } from "lucide-react";
+import WorkerShareDialog from "@/components/admin/WorkerShareDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatSalaryINR } from "@/lib/utils";
@@ -37,6 +38,7 @@ export default function AdminWorkers() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewWorker, setViewWorker] = useState<WorkerRow | null>(null);
+  const [shareWorker, setShareWorker] = useState<WorkerRow | null>(null);
 
   useEffect(() => { fetchWorkers(); }, []);
 
@@ -182,6 +184,9 @@ export default function AdminWorkers() {
                   )}
                 </div>
                 <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={() => setShareWorker(w)}>
+                    <Share2 className="h-4 w-4 mr-1" /> Share
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => setViewWorker(w)}>
                     <Eye className="h-4 w-4 mr-1" /> View
                   </Button>
@@ -200,6 +205,13 @@ export default function AdminWorkers() {
           ))}
         </div>
       )}
+
+      <WorkerShareDialog
+        open={!!shareWorker}
+        onOpenChange={(next) => { if (!next) setShareWorker(null); }}
+        workerId={shareWorker?.id || ''}
+        workerName={shareWorker?.full_name || shareWorker?.phone || 'this worker'}
+      />
 
       <Dialog open={!!viewWorker} onOpenChange={() => setViewWorker(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
@@ -223,7 +235,17 @@ export default function AdminWorkers() {
                   {JSON.stringify(viewWorker.profile, null, 2)}
                 </pre>
               )}
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShareWorker(viewWorker);
+                    setViewWorker(null);
+                  }}
+                >
+                  <Share2 className="h-4 w-4 mr-1" /> Share
+                </Button>
                 <AdminDeleteUserButton
                   userId={viewWorker.id}
                   userRole="worker"

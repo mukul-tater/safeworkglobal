@@ -1,4 +1,4 @@
-import { LayoutDashboard, User, Building2, PlusCircle, Briefcase, Users, Bookmark, UserCheck, Star, Calendar, FileSignature, FileCheck, History, BarChart3, MessageSquare } from "lucide-react";
+import { LayoutDashboard, User, Building2, PlusCircle, Briefcase, Users, Bookmark, UserCheck, Star, Calendar, FileSignature, FileCheck, History, BarChart3, MessageSquare, Share2 } from "lucide-react";
 import type { NavGroup } from "@/components/layout/DashboardSidebar";
 
 export const employerNavGroups: NavGroup[] = [
@@ -19,6 +19,7 @@ export const employerNavGroups: NavGroup[] = [
       { path: "/employer/post-job", icon: PlusCircle, label: "Post a Job" },
       { path: "/employer/manage-jobs", icon: Briefcase, label: "Manage Jobs" },
       { path: "/employer/search-workers", icon: Users, label: "Search Workers" },
+      { path: "/employer/shared-workers", icon: Share2, label: "Shared workers" },
       { path: "/employer/saved-searches", icon: Bookmark, label: "Saved Searches" },
     ],
   },

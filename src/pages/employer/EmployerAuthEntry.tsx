@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,9 +16,15 @@ import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAut
 import MobileBottomNav from '@/components/MobileBottomNav';
 import AuthContinueIdentifier from '@/components/auth/AuthContinueIdentifier';
 import AuthConflictPanel from '@/components/auth/AuthConflictPanel';
+import DevOtpHint from '@/components/DevOtpHint';
 import { validateSchema } from '@/lib/validations/common';
 import { quickEmployerSignupSchema } from '@/lib/validations/onboarding';
 import { sanitizePasswordInput, PASSWORD_HINT, PASSWORD_MIN_LENGTH } from '@/lib/validations/password';
+import {
+  createEmailVerifiedEmployerAccount,
+  sendSignupEmailOtp,
+  verifySignupEmailOtp,
+} from '@/lib/signupEmailOtp';
 import {
   AUTH_CONTINUE_MESSAGES,
   buildAuthContinueRequest,
@@ -26,11 +33,13 @@ import {
   type AuthIdentifierMethod,
 } from '@/lib/authContinue';
 import { GET_STARTED_PATHS } from '@/lib/getStarted';
+import { consumeShareReturnPath, peekShareReturnPath } from '@/services/workerShareService';
 
-type Step = 'identifier' | 'login' | 'signup' | 'conflict';
+type Step = 'identifier' | 'login' | 'signup' | 'otp' | 'conflict';
 
 export default function EmployerAuthEntry({ embedded = false }: { embedded?: boolean }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, isAuthenticated, role, isMobileVerified, loading: authLoading, profileLoading } = useAuth();
   const [step, setStep] = useState<Step>('identifier');
   const [method, setMethod] = useState<AuthIdentifierMethod>('email');
@@ -40,15 +49,27 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [emailOtpDev, setEmailOtpDev] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [conflictMessage, setConflictMessage] = useState('');
   const [wrongPortal, setWrongPortal] = useState<'worker' | 'employer' | 'partner' | null>(null);
 
+  const afterLoginPath = () => {
+    const next = searchParams.get('next') || peekShareReturnPath() || '';
+    if (next.startsWith('/') && !next.startsWith('//')) {
+      if (!isMobileVerified) return '/employer/bind-mobile';
+      consumeShareReturnPath();
+      return next;
+    }
+    return isMobileVerified ? '/employer/dashboard' : '/employer/bind-mobile';
+  };
+
   useEffect(() => {
     if (authLoading || profileLoading) return;
     if (isAuthenticated && role === 'employer') {
-      navigate(isMobileVerified ? '/employer/dashboard' : '/employer/bind-mobile', { replace: true });
+      navigate(afterLoginPath(), { replace: true });
     }
   }, [isAuthenticated, role, isMobileVerified, navigate, authLoading, profileLoading]);
 
@@ -120,7 +141,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
       }
     }
     toast.success('Welcome back!');
-    navigate('/employer/dashboard', { replace: true });
+    navigate(afterLoginPath(), { replace: true });
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -157,47 +178,79 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
         return;
       }
 
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: validation.data.email.trim(),
-        password: validation.data.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/employer/quick-signup`,
-          data: { full_name: validation.data.fullName.trim(), role: 'employer' },
-        },
-      });
-      if (signUpError) {
-        if (/already registered|already exists/i.test(signUpError.message)) {
-          toast.error('This email is already registered. Continue with your password.');
-          setStep('login');
-          return;
-        }
-        throw signUpError;
+      const sent = await sendSignupEmailOtp(validation.data.email.trim());
+      setEmailOtpDev(sent.dev);
+      setOtp('');
+      setStep('otp');
+      toast.success(`Verification code sent to ${validation.data.email.trim()}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Could not send verification code';
+      if (/already registered/i.test(message)) {
+        toast.error('This email is already registered. Continue with your password.');
+        setStep('login');
+        return;
       }
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (otp.length !== 6) {
+      setError('Enter the 6-digit verification code');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const ticket = await verifySignupEmailOtp(email.trim(), otp);
+      await createEmailVerifiedEmployerAccount({
+        email: email.trim(),
+        password,
+        fullName: fullName.trim(),
+        ticket,
+      });
 
       const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       if (signInErr) {
-        toast.success('Check your email to verify your account');
-        navigate('/verify-email');
+        toast.success('Account created. Continue with your password.');
+        setStep('login');
         return;
-      }
-
-      const { data: { user: created } } = await supabase.auth.getUser();
-      if (created) {
-        const { data: roleRow } = await supabase.from('user_roles').select('role').eq('user_id', created.id).maybeSingle();
-        if (roleRow && roleRow.role !== 'employer') {
-          await supabase.auth.signOut();
-          toast.error(`This account is already registered as a ${roleRow.role}. Please continue from the correct portal.`);
-          return;
-        }
       }
 
       toast.success('Account created. Verify your mobile number to continue.');
       navigate('/employer/bind-mobile', { replace: true });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Could not create account';
+      if (/already registered/i.test(message)) {
+        toast.error('This email is already registered. Continue with your password.');
+        setStep('login');
+        return;
+      }
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendEmailOtp = async () => {
+    setError('');
+    setOtp('');
+    setLoading(true);
+    try {
+      const sent = await sendSignupEmailOtp(email.trim());
+      setEmailOtpDev(sent.dev);
+      toast.success(`New code sent to ${email.trim()}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to resend OTP';
       setError(message);
       toast.error(message);
     } finally {
@@ -213,14 +266,18 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
             ? 'Enter your password'
             : step === 'signup'
               ? 'Let’s create your account'
-              : 'Continue as an employer'}
+              : step === 'otp'
+                ? 'Enter the OTP sent to your email'
+                : 'Continue as an employer'}
         </h2>
         <p className="mt-1 min-w-0 break-words text-sm text-muted-foreground">
           {step === 'login'
             ? `Welcome back. Enter the password for ${email.trim()}.`
             : step === 'signup'
               ? 'We’ll keep the email you entered and only ask for remaining details.'
-              : 'Enter your work email or mobile. We’ll take you to the next step.'}
+              : step === 'otp'
+                ? `Enter the 6-digit code sent to ${email.trim()}.`
+                : 'Enter your work email or mobile. We’ll take you to the next step.'}
         </p>
       </div>
 
@@ -390,7 +447,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
           <p className="text-xs text-muted-foreground">{PASSWORD_HINT}.</p>
           <Button type="submit" className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Continue
+            Send email code
           </Button>
           <button
             type="button"
@@ -402,6 +459,56 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
             className="w-full text-sm text-muted-foreground hover:text-foreground"
           >
             ← Use a different email or mobile
+          </button>
+        </form>
+      )}
+
+      {step === 'otp' && (
+        <form onSubmit={handleVerifyEmailOtp} className="space-y-5">
+          <DevOtpHint channel="email" force={emailOtpDev} />
+          <div className="flex justify-center py-1">
+            <InputOTP maxLength={6} value={otp} onChange={setOtp} disabled={loading}>
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+          <p className="text-center text-sm text-muted-foreground">
+            Didn&apos;t get the code?{' '}
+            <button
+              type="button"
+              data-inline
+              onClick={() => void handleResendEmailOtp()}
+              disabled={loading}
+              className="font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              Resend email
+            </button>
+          </p>
+          <Button
+            type="submit"
+            className="h-11 w-full bg-gradient-to-r from-primary to-info font-semibold text-white hover:opacity-95"
+            disabled={loading || otp.length !== 6}
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Verify email & create account
+          </Button>
+          <button
+            type="button"
+            data-inline
+            onClick={() => {
+              setStep('signup');
+              setOtp('');
+              setError('');
+            }}
+            className="w-full text-sm text-muted-foreground hover:text-foreground"
+          >
+            ← Change details
           </button>
         </form>
       )}

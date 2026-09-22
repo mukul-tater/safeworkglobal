@@ -49,6 +49,7 @@ import PartnerPayouts from "./modules/partner/pages/shared/PartnerPayouts";
 import PartnerTickets from "./modules/partner/pages/shared/PartnerTickets";
 import SrnDashboard from "./modules/partner/pages/srn/SrnDashboard";
 import SrnWorkers from "./modules/partner/pages/srn/SrnWorkers";
+import SrnSharedWorkers from "./modules/partner/pages/srn/SrnSharedWorkers";
 import SrnStageManager from "./modules/partner/pages/srn/SrnStageManager";
 import SenGlobalDashboard from "./modules/partner/pages/senGlobal/SenGlobalDashboard";
 import SenGlobalLeads from "./modules/partner/pages/senGlobal/SenGlobalLeads";
@@ -81,6 +82,7 @@ import DisputeResolution from "./pages/admin/DisputeResolution";
 import ContactSubmissions from "./pages/admin/ContactSubmissions";
 import AdminPartnerRewards from "./pages/admin/AdminPartnerRewards";
 import AdminWorkers from "./pages/admin/AdminWorkers";
+import SharedWorkerPage from "./pages/shared/SharedWorkerPage";
 import AdminEmployers from "./pages/admin/AdminEmployers";
 import EmployerAccessControl from "./pages/admin/EmployerAccessControl";
 import AdminApplications from "./pages/admin/AdminApplications";
@@ -173,6 +175,7 @@ function AppShell() {
           <Route path="/benefits-for-employers" element={<BenefitsForEmployers />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/shared-worker/:token" element={<SharedWorkerPage />} />
 
           {/* Public pages used by employer hiring flow + marketing footer */}
           {legacyPublicRoutes}
@@ -383,6 +386,7 @@ function AppShell() {
           {/* SRN — Recruitment Network */}
           <Route path="/partner/srn/dashboard" element={<ProtectedRoute allowedRoles={["partner"]}><SrnDashboard /></ProtectedRoute>} />
           <Route path="/partner/srn/workers" element={<ProtectedRoute allowedRoles={["partner"]}><SrnWorkers /></ProtectedRoute>} />
+          <Route path="/partner/srn/shared-workers" element={<ProtectedRoute allowedRoles={["partner"]}><SrnSharedWorkers /></ProtectedRoute>} />
           <Route path="/partner/srn/medical" element={<ProtectedRoute allowedRoles={["partner"]}><SrnStageManager stage="medical" title="Medical" /></ProtectedRoute>} />
           <Route path="/partner/srn/visa" element={<ProtectedRoute allowedRoles={["partner"]}><SrnStageManager stage="visa" title="Visa" /></ProtectedRoute>} />
           <Route path="/partner/srn/travel" element={<ProtectedRoute allowedRoles={["partner"]}><SrnStageManager stage="travel" title="Travel" /></ProtectedRoute>} />

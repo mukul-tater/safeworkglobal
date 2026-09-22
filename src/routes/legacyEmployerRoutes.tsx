@@ -15,6 +15,7 @@ import PostJob from '@/pages/employer/PostJob';
 import ManageJobs from '@/pages/employer/ManageJobs';
 import EmployerEditJob from '@/pages/employer/EditJob';
 import SearchWorkers from '@/pages/employer/SearchWorkers';
+import SharedWorkers from '@/pages/employer/SharedWorkers';
 import EmployerInterviews from '@/pages/employer/InterviewScheduling';
 import EmployerOffers from '@/pages/employer/OfferManagement';
 import EmployerCompliance from '@/pages/employer/ComplianceReports';
@@ -66,6 +67,7 @@ export const legacyEmployerRoutes = (
     {employerRoute('/employer/manage-jobs', <ManageJobs />)}
     {employerRoute('/employer/edit-job/:jobId', <EmployerEditJob />)}
     {employerRoute('/employer/search-workers', <SearchWorkers />)}
+    {employerRoute('/employer/shared-workers', <SharedWorkers />)}
     {employerRoute('/employer/interviews', <EmployerInterviews />)}
     {employerRoute('/employer/offers', <EmployerOffers />)}
     <Route path="/employer/escrow" element={<Navigate to="/employer/dashboard" replace />} />
