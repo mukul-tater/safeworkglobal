@@ -6,3 +6,4 @@
 - [x] Deploy production signup email OTP function and verify signup endpoint; redeploy phone account function.
 - [x] Restore the deleted production UAE public job catalog from the approved existing SQL files and verify counts/categories.
 - [ ] Confirm inbox receipt and successful ticket verification for signup email OTP. Blocked: the requested Gmail address hard-bounced and is globally suppressed until 2026-10-22; a working recipient must supply the received code.
+- [ ] Fix expired Firebase SMS token reuse after the email OTP step and verify worker account creation reaches validation with a fresh token.

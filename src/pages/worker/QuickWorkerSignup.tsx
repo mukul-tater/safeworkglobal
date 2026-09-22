@@ -306,13 +306,24 @@ export default function QuickWorkerSignup({
   };
 
   const createAccountAfterOtp = async (idToken: string, ticket = emailOtpTicket) => {
+    // Email verification happens after SMS verification and can take long enough
+    // for the original Firebase ID token to expire. Refresh it immediately before
+    // the edge-function call while the verified Firebase user is still signed in.
+    let currentIdToken = idToken;
+    if (!firebaseOtp.devBypass) {
+      const firebaseUser = getFirebaseAuth().currentUser;
+      if (!firebaseUser) {
+        throw new Error('Mobile verification expired. Request a new SMS OTP.');
+      }
+      currentIdToken = await firebaseUser.getIdToken(true);
+    }
     const created = await createVerifiedWorkerAccount({
       fullName: name.trim(),
       email: email.trim().toLowerCase(),
       mobile,
       password,
       country,
-      idToken,
+      idToken: currentIdToken,
       emailOtpTicket: partnerAssisted ? undefined : ticket,
       source: partnerAssisted ? (partnerCtx?.source ?? { type: 'partner' }) : { type: 'organic' },
       ...(partnerAssisted
@@ -323,6 +334,13 @@ export default function QuickWorkerSignup({
           }
         : {}),
     });
+    if (!firebaseOtp.devBypass) {
+      try {
+        await firebaseSignOut(getFirebaseAuth());
+      } catch {
+        /* account was created; Firebase cleanup is non-fatal */
+      }
+    }
     if (partnerAssisted) {
       try {
         const { attachDraftDeclarationsToWorker } = await import(
@@ -395,11 +413,6 @@ export default function QuickWorkerSignup({
         idToken = await firebaseOtp.verifyOtp(otp);
         setFirebaseIdToken(idToken);
         setPhoneOtpVerified(true);
-        try {
-          await firebaseSignOut(getFirebaseAuth());
-        } catch {
-          /* ignore */
-        }
       }
       if (!partnerAssisted && !emailOtpVerified) {
         await sendEmailOtpAndAdvance();
