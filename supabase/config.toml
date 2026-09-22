@@ -1,40 +1,31 @@
 project_id = "etpiadoqryvtlpmiuxia"
 
-[functions.send-notification]
-verify_jwt = false
-
-[functions.send-push-notification]
-verify_jwt = false
-
-[functions.upload]
-verify_jwt = false
-
-[functions.contract-expiry-reminder]
-verify_jwt = false
-
-[functions.worker-portal]
-verify_jwt = false
-
-[functions.contact-enquiry]
-verify_jwt = false
-
-[functions.preview-transactional-email]
-verify_jwt = false
-
-[functions.worker-otp-login]
-verify_jwt = false
-
-[functions.phone-verified-account]
-verify_jwt = false
-
-[functions.purge-storage]
-verify_jwt = false
-
-[functions.email-journey-step-cleared]
-verify_jwt = false
-
-[functions.razorpay-webhook]
-verify_jwt = false
-
-[functions.signup-email-otp]
-verify_jwt = false
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.contact-enquiry]
+    verify_jwt = false
+  [functions.contract-expiry-reminder]
+    verify_jwt = false
+  [functions.email-journey-step-cleared]
+    verify_jwt = false
+  [functions.phone-verified-account]
+    verify_jwt = false
+  [functions.preview-transactional-email]
+    verify_jwt = false
+  [functions.purge-storage]
+    verify_jwt = false
+  [functions.razorpay-webhook]
+    verify_jwt = false
+  [functions.send-notification]
+    verify_jwt = false
+  [functions.send-push-notification]
+    verify_jwt = false
+  [functions.signup-email-otp]
+    verify_jwt = false
+  [functions.upload]
+    verify_jwt = false
+  [functions.worker-otp-login]
+    verify_jwt = false
+  [functions.worker-portal]
+    verify_jwt = false
