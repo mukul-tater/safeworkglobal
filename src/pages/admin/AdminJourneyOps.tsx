@@ -442,7 +442,7 @@ export default function AdminJourneyOps() {
             value={field(r.user_id, 'reason')}
             onChange={(e) => setField(r.user_id, 'reason', e.target.value)}
           />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               disabled={busy}
@@ -454,15 +454,20 @@ export default function AdminJourneyOps() {
               size="sm"
               variant="outline"
               disabled={busy}
-              onClick={() =>
+              onClick={() => {
+                const reason = field(r.user_id, 'reason').trim();
+                if (!reason) {
+                  toast.error('Enter a reason so the worker knows what to re-upload');
+                  return;
+                }
                 void run(
                   r.user_id,
-                  () => reviewWorkerKyc(r.user_id, false, field(r.user_id, 'reason')),
-                  'KYC rejected',
-                )
-              }
+                  () => reviewWorkerKyc(r.user_id, false, reason),
+                  'Worker asked to re-upload KYC',
+                );
+              }}
             >
-              Reject
+              Reject & ask to re-upload
             </Button>
           </div>
         </div>

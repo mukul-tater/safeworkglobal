@@ -594,6 +594,7 @@ export async function completeIdentityKyc(
     .from('worker_verification')
     .update({
       kyc_status: alreadyVerified ? row.kyc_status : 'submitted',
+      kyc_rejection_reason: alreadyVerified ? row.kyc_rejection_reason : null,
       stage: row.stage === 'identity' ? 'identity' : row.stage,
       updated_at: now,
     })
@@ -732,7 +733,7 @@ export async function loadAdminKycPacks(userIds: string[]): Promise<Map<string, 
   return packs;
 }
 
-/** Admin — approve or reject KYC. Approving unlocks interview scheduling. */
+/** Admin — approve or reject KYC. Reject sends the worker back to re-upload. Approving unlocks interview scheduling. */
 export async function reviewWorkerKyc(
   userId: string,
   approved: boolean,

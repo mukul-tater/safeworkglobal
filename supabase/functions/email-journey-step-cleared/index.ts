@@ -115,7 +115,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .maybeSingle()
 
     if (nErr) throw nErr
-    if (!notification || notification.type !== 'journey_step_cleared') {
+    const isReupload = notification?.type === 'kyc_reupload_required'
+    if (!notification || (notification.type !== 'journey_step_cleared' && !isReupload)) {
       return new Response(JSON.stringify({ skipped: true, reason: 'not_journey_notification' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -158,7 +159,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       title: notification.title,
       message: notification.message,
       journeyUrl: JOURNEY_URL,
-      isTerminal,
+      isTerminal: isReupload ? false : isTerminal,
+      isReupload,
     }
     const opsTemplateData = {
       workerName,
@@ -206,14 +208,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     let opsEmailed = false
-    try {
-      const opsResult = await sendTemplateEmail('journey-step-cleared-ops', MUKUL_EMAIL, {
-        templateData: opsTemplateData,
-        idempotencyKey: `journey-step-ops-${notification.id}`,
-      })
-      opsEmailed = opsResult.sent
-    } catch (opsErr) {
-      console.error('journey ops email to Mukul failed', opsErr)
+    if (!isReupload) {
+      try {
+        const opsResult = await sendTemplateEmail('journey-step-cleared-ops', MUKUL_EMAIL, {
+          templateData: opsTemplateData,
+          idempotencyKey: `journey-step-ops-${notification.id}`,
+        })
+        opsEmailed = opsResult.sent
+      } catch (opsErr) {
+        console.error('journey ops email to Mukul failed', opsErr)
+      }
     }
 
     return new Response(JSON.stringify({

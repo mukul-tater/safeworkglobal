@@ -549,7 +549,9 @@ export default function WorkerVerificationPage({
       if (!partnerKiosk && emitraSourced && hasParkedPartnerSession() && !hasAckedEmitraOnboardingNotice()) {
         setEmitraNoticeOpen(true);
       }
-      const kycStatus = String((wp as any)?.kyc_status || 'not_started');
+      const profileKyc = String((wp as any)?.kyc_status || 'not_started');
+      const kycRejected = profileKyc === 'rejected' || String(v.kyc_status || '') === 'rejected';
+      const kycStatus = kycRejected ? 'rejected' : profileKyc;
       const savedPan = String((wp as any)?.pan_number || '');
       const savedPassport = String((wp as any)?.passport_number || '');
       const savedExpiry = toDateInputValueFromIso((wp as any)?.passport_expiry);
@@ -557,7 +559,7 @@ export default function WorkerVerificationPage({
       setPassportExpiry(savedExpiry);
       const panOk = validatePAN(savedPan);
       const passportOk = isValidPassportNumber(savedPassport) && !passportExpiryIssue(savedExpiry);
-      const kycSubmitted = kycStatus === 'verified' || kycStatus === 'submitted';
+      const kycSubmitted = !kycRejected && (kycStatus === 'verified' || kycStatus === 'submitted');
       const kycOk = kycSubmitted;
       const normalizedStage = normalizeVerificationStage(v.stage, v.trade_test_required);
       const strictDocs = panAndPassportRequiredAfterSkillTest(normalizedStage);
@@ -632,7 +634,9 @@ export default function WorkerVerificationPage({
         v.stage !== 'quiz' &&
         v.stage !== 'media';
       const missingLaterDocs = strictDocs && (!panOk || !passportOk);
-      setForceIdentity((!kycOk && pastMedia && v.stage !== 'identity') || missingLaterDocs);
+      setForceIdentity(
+        kycRejected || (!kycOk && pastMedia && v.stage !== 'identity') || missingLaterDocs,
+      );
 
       const shouldLoadQuiz =
         v.stage === 'quiz' ||
@@ -1305,7 +1309,13 @@ export default function WorkerVerificationPage({
             ecrCategory={ecrCategory}
             tenthPass={tenthPass}
             tradeAssessment={tradeAssessment}
-            onGoToCurrent={clearJourneyQuery}
+            onGoToCurrent={() => {
+              if (kycStatusValue === 'rejected' || row.kyc_status === 'rejected') {
+                setForceIdentity(true);
+                setKycDone(false);
+              }
+              clearJourneyQuery();
+            }}
           >
             {viewingJourney === 'skill_proof' && (
               <div className="space-y-4">
