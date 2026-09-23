@@ -224,7 +224,6 @@ export default function FeaturedJobs() {
                       description={job.description}
                       primaryClassName="text-lg font-bold text-primary"
                     />
-                    <p className="text-xs text-muted-foreground">per month (approx.)</p>
                     <div className="mt-2">
                       <JobServiceFee amount={job.service_charge} />
                     </div>

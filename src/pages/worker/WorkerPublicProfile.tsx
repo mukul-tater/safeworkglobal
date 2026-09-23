@@ -505,7 +505,7 @@ export default function WorkerPublicProfile() {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">Expected Salary:</span>
                     <span className="text-primary font-semibold">
-                      {formatExpectedSalary(workerProfile.expected_salary_min, workerProfile.expected_salary_max, workerProfile.currency)} /month
+                      {formatExpectedSalary(workerProfile.expected_salary_min, workerProfile.expected_salary_max, workerProfile.currency)}
                     </span>
                   </div>
                 </>

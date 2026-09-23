@@ -174,9 +174,9 @@ export default function ManageJobs() {
     const symbol = symbols[currency] || currency;
 
     if (!min && !max) return "Salary not specified";
-    if (min && max) return `${symbol}${min.toLocaleString()} - ${symbol}${max.toLocaleString()}`;
-    if (min) return `From ${symbol}${min.toLocaleString()}`;
-    return `Up to ${symbol}${max!.toLocaleString()}`;
+    if (min && max) return `${symbol}${min.toLocaleString()} - ${symbol}${max.toLocaleString()} per month`;
+    if (min) return `From ${symbol}${min.toLocaleString()} per month`;
+    return `Up to ${symbol}${max!.toLocaleString()} per month`;
   };
 
   if (loading) {

@@ -199,11 +199,11 @@ export default function QuickPostJob() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Min salary (INR/mo)</Label>
+                <Label>Min salary (INR per month)</Label>
                 <Input type="number" value={salaryMin} onChange={(e) => setSalaryMin(e.target.value)} placeholder="25000" />
               </div>
               <div>
-                <Label>Max salary (INR/mo)</Label>
+                <Label>Max salary (INR per month)</Label>
                 <Input type="number" value={salaryMax} onChange={(e) => setSalaryMax(e.target.value)} placeholder="40000" />
               </div>
             </div>

@@ -10,12 +10,12 @@ const JobCategories = () => {
   const navigate = useNavigate();
 
   const categories = [
-    { icon: constructionIcon, title: "Construction", jobs: "74", avgSalary: "₹35,000 - ₹65,000/mo", description: "Infrastructure projects, residential and commercial building", demand: "High", countries: ["Japan", "Germany", "UAE", "Saudi Arabia", "Qatar"] },
-    { icon: electricianIcon, title: "Electrical", jobs: "103", avgSalary: "₹40,000 - ₹80,000/mo", description: "Industrial electrical work, renewable energy projects", demand: "Very High", countries: ["Norway", "Australia", "Canada", "Singapore", "UK"] },
-    { icon: welderIcon, title: "Welding", jobs: "77", avgSalary: "₹45,000 - ₹90,000/mo", description: "Pipeline, shipbuilding, and heavy industry welding", demand: "High", countries: ["Qatar", "South Korea", "Kuwait", "Bahrain", "Malaysia"] },
-    { icon: "🔧", title: "Plumbing", jobs: "73", avgSalary: "₹30,000 - ₹60,000/mo", description: "Residential and commercial plumbing systems", demand: "Medium", countries: ["UK", "Ireland", "New Zealand", "Australia", "Canada"] },
-    { icon: "🚚", title: "Delivery & Logistics", jobs: "79", avgSalary: "₹25,000 - ₹50,000/mo", description: "Package delivery, freight, and supply chain", demand: "Very High", countries: ["Netherlands", "Belgium", "Denmark", "Germany", "France"] },
-    { icon: "🏭", title: "Manufacturing", jobs: "103", avgSalary: "₹28,000 - ₹55,000/mo", description: "Assembly line, quality control, machine operation", demand: "High", countries: ["Czech Republic", "Poland", "Malaysia", "Vietnam", "Thailand"] }
+    { icon: constructionIcon, title: "Construction", jobs: "74", avgSalary: "₹35,000 - ₹65,000 per month", description: "Infrastructure projects, residential and commercial building", demand: "High", countries: ["Japan", "Germany", "UAE", "Saudi Arabia", "Qatar"] },
+    { icon: electricianIcon, title: "Electrical", jobs: "103", avgSalary: "₹40,000 - ₹80,000 per month", description: "Industrial electrical work, renewable energy projects", demand: "Very High", countries: ["Norway", "Australia", "Canada", "Singapore", "UK"] },
+    { icon: welderIcon, title: "Welding", jobs: "77", avgSalary: "₹45,000 - ₹90,000 per month", description: "Pipeline, shipbuilding, and heavy industry welding", demand: "High", countries: ["Qatar", "South Korea", "Kuwait", "Bahrain", "Malaysia"] },
+    { icon: "🔧", title: "Plumbing", jobs: "73", avgSalary: "₹30,000 - ₹60,000 per month", description: "Residential and commercial plumbing systems", demand: "Medium", countries: ["UK", "Ireland", "New Zealand", "Australia", "Canada"] },
+    { icon: "🚚", title: "Delivery & Logistics", jobs: "79", avgSalary: "₹25,000 - ₹50,000 per month", description: "Package delivery, freight, and supply chain", demand: "Very High", countries: ["Netherlands", "Belgium", "Denmark", "Germany", "France"] },
+    { icon: "🏭", title: "Manufacturing", jobs: "103", avgSalary: "₹28,000 - ₹55,000 per month", description: "Assembly line, quality control, machine operation", demand: "High", countries: ["Czech Republic", "Poland", "Malaysia", "Vietnam", "Thailand"] }
   ];
 
   const getDemandColor = (demand: string) => {

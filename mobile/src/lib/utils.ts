@@ -7,10 +7,10 @@ export function formatSalaryINR(
 
   if (min == null && max == null) return 'Salary not specified';
   if (min != null && max != null) {
-    return `₹${toINR(min).toLocaleString('en-IN')} - ₹${toINR(max).toLocaleString('en-IN')}`;
+    return `₹${toINR(min).toLocaleString('en-IN')} - ₹${toINR(max).toLocaleString('en-IN')} per month`;
   }
-  if (min != null) return `From ₹${toINR(min).toLocaleString('en-IN')}`;
-  return `Up to ₹${toINR(max!).toLocaleString('en-IN')}`;
+  if (min != null) return `From ₹${toINR(min).toLocaleString('en-IN')} per month`;
+  return `Up to ₹${toINR(max!).toLocaleString('en-IN')} per month`;
 }
 
 export function formatSalaryLakh(
@@ -32,10 +32,10 @@ export function formatSalaryLakh(
 
   if (min == null && max == null) return 'Not disclosed';
   if (min != null && max != null) {
-    return `${toLakhLabel(toINR(min))} - ${toLakhLabel(toINR(max))}`;
+    return `${toLakhLabel(toINR(min))} - ${toLakhLabel(toINR(max))} per month`;
   }
-  if (min != null) return `From ${toLakhLabel(toINR(min))}`;
-  return `Up to ${toLakhLabel(toINR(max!))}`;
+  if (min != null) return `From ${toLakhLabel(toINR(min))} per month`;
+  return `Up to ${toLakhLabel(toINR(max!))} per month`;
 }
 
 export function formatRelativeDate(date: string | Date): string {

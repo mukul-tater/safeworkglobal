@@ -195,7 +195,7 @@ export default function AdminPartnerWorkers() {
               <p><span className="font-medium">E-Mitra ID:</span> {viewWorker.emitra_id || "—"}</p>
               <p><span className="font-medium">Location:</span> {[viewWorker.district, viewWorker.state].filter(Boolean).join(", ") || "—"}</p>
               <p><span className="font-medium">Preferred Country:</span> {viewWorker.preferred_country || "—"}</p>
-              <p><span className="font-medium">Expected Salary:</span> {viewWorker.expected_salary ? `₹${viewWorker.expected_salary.toLocaleString("en-IN")}` : "—"}</p>
+              <p><span className="font-medium">Expected Salary:</span> {viewWorker.expected_salary ? `₹${viewWorker.expected_salary.toLocaleString("en-IN")} per month` : "—"}</p>
               <p><span className="font-medium">Migration Readiness:</span> {viewWorker.migration_category || "—"}</p>
               <p><span className="font-medium">Status:</span> {viewWorker.status}</p>
             </div>

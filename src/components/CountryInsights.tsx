@@ -12,7 +12,7 @@ const CountryInsights = () => {
       name: "Japan", flag: "🇯🇵", status: "High Demand",
       statusColor: "bg-destructive text-destructive-foreground",
       reason: "Aging workforce & infrastructure renewal",
-      avgSalary: "₹45,000 - ₹85,000/mo", visaProcess: "Work visa (3-6 months)",
+      avgSalary: "₹45,000 - ₹85,000 per month", visaProcess: "Work visa (3-6 months)",
       languages: ["Japanese", "English"],
       topJobs: ["Construction", "Manufacturing", "Elderly Care"]
     },
@@ -20,7 +20,7 @@ const CountryInsights = () => {
       name: "Germany", flag: "🇩🇪", status: "Very High",
       statusColor: "bg-destructive text-destructive-foreground",
       reason: "Green energy transition & skilled labor shortage",
-      avgSalary: "₹50,000 - ₹95,000/mo", visaProcess: "EU Blue Card (2-4 months)",
+      avgSalary: "₹50,000 - ₹95,000 per month", visaProcess: "EU Blue Card (2-4 months)",
       languages: ["German", "English"],
       topJobs: ["Renewable Energy", "Engineering", "Construction"]
     },
@@ -28,7 +28,7 @@ const CountryInsights = () => {
       name: "UAE", flag: "🇦🇪", status: "High Demand",
       statusColor: "bg-warning text-warning-foreground",
       reason: "Expo legacy projects & Vision 2071 development",
-      avgSalary: "₹30,000 - ₹70,000/mo", visaProcess: "Employer sponsored (1-3 months)",
+      avgSalary: "₹30,000 - ₹70,000 per month", visaProcess: "Employer sponsored (1-3 months)",
       languages: ["Arabic", "English"],
       topJobs: ["Construction", "Hospitality", "Transportation"]
     },
@@ -36,7 +36,7 @@ const CountryInsights = () => {
       name: "Saudi Arabia", flag: "🇸🇦", status: "Very High",
       statusColor: "bg-destructive text-destructive-foreground",
       reason: "Vision 2030 mega projects & NEOM development",
-      avgSalary: "₹28,000 - ₹65,000/mo", visaProcess: "Work visa (2-4 months)",
+      avgSalary: "₹28,000 - ₹65,000 per month", visaProcess: "Work visa (2-4 months)",
       languages: ["Arabic", "English"],
       topJobs: ["Construction", "Oil & Gas", "Hospitality"]
     },
@@ -44,7 +44,7 @@ const CountryInsights = () => {
       name: "Singapore", flag: "🇸🇬", status: "High Demand",
       statusColor: "bg-warning text-warning-foreground",
       reason: "Tech hub expansion & skilled trades shortage",
-      avgSalary: "₹55,000 - ₹1,00,000/mo", visaProcess: "S Pass (2-4 weeks)",
+      avgSalary: "₹55,000 - ₹1,00,000 per month", visaProcess: "S Pass (2-4 weeks)",
       languages: ["English", "Mandarin", "Malay"],
       topJobs: ["Construction", "Manufacturing", "IT"]
     },
@@ -52,7 +52,7 @@ const CountryInsights = () => {
       name: "Australia", flag: "🇦🇺", status: "High Demand",
       statusColor: "bg-warning text-warning-foreground",
       reason: "Mining boom & construction skills gap",
-      avgSalary: "₹60,000 - ₹1,20,000/mo", visaProcess: "Skilled Worker Visa (3-6 months)",
+      avgSalary: "₹60,000 - ₹1,20,000 per month", visaProcess: "Skilled Worker Visa (3-6 months)",
       languages: ["English"],
       topJobs: ["Mining", "Construction", "Healthcare"]
     }

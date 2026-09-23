@@ -21,7 +21,8 @@ export function formatSalaryINR(
   currency: string = 'INR'
 ): string {
   const { primary, inrLine } = getJobSalaryDisplay(min, max, currency, 'Salary not specified');
-  return inrLine ? `${primary} (${inrLine})` : primary;
+  const line = inrLine ? `${primary} (${inrLine})` : primary;
+  return line === 'Salary not specified' ? line : `${line} per month`;
 }
 
 /**
@@ -34,9 +35,13 @@ export function formatExpectedSalary(
 ): string {
   if (min == null && max == null) return 'Not specified';
   const sym = currency || 'USD';
-  if (min != null && max != null) return `${sym} ${min.toLocaleString()} - ${max.toLocaleString()}`;
-  if (min != null) return `From ${sym} ${min.toLocaleString()}`;
-  return `Up to ${sym} ${max!.toLocaleString()}`;
+  const range =
+    min != null && max != null
+      ? `${sym} ${min.toLocaleString()} - ${max.toLocaleString()}`
+      : min != null
+        ? `From ${sym} ${min.toLocaleString()}`
+        : `Up to ${sym} ${max!.toLocaleString()}`;
+  return `${range} per month`;
 }
 
 /** Formats monthly salary in lakh/crore notation for job listings (INR, converts foreign currency). */
@@ -46,7 +51,8 @@ export function formatSalaryLakh(
   currency: string = 'INR'
 ): string {
   const { primary, inrLine } = getJobSalaryDisplay(min, max, currency);
-  return inrLine ? `${primary}\n${inrLine}` : primary;
+  const line = inrLine ? `${primary}\n${inrLine}` : primary;
+  return line === 'Salary on application' ? line : `${line} per month`;
 }
 
 export function debounce<T extends (...args: any[]) => void>(

@@ -187,7 +187,7 @@ export default function RecommendedWorkers() {
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <Wallet className="h-3 w-3" />
                             ₹{(w.expected_salary_min ?? 0).toLocaleString("en-IN")}–
-                            ₹{(w.expected_salary_max ?? 0).toLocaleString("en-IN")}
+                            ₹{(w.expected_salary_max ?? 0).toLocaleString("en-IN")} per month
                           </div>
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <MapPin className="h-3 w-3" />

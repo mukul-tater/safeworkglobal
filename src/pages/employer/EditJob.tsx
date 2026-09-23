@@ -349,11 +349,11 @@ export default function EmployerEditJob() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="salary_min">Min Salary</Label>
+                  <Label htmlFor="salary_min">Min Salary (per month)</Label>
                   <Input id="salary_min" type="number" {...register("salary_min", { valueAsNumber: true })} />
                 </div>
                 <div>
-                  <Label htmlFor="salary_max">Max Salary</Label>
+                  <Label htmlFor="salary_max">Max Salary (per month)</Label>
                   <Input id="salary_max" type="number" {...register("salary_max", { valueAsNumber: true })} />
                 </div>
               </div>

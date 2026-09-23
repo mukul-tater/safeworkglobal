@@ -104,8 +104,8 @@ export default function EmployerPostJobScreen() {
             </Pressable>
           ))}
         </View>
-        <Input label={`Min Salary (${currency})`} value={salaryMin} onChangeText={setSalaryMin} keyboardType="numeric" />
-        <Input label={`Max Salary (${currency})`} value={salaryMax} onChangeText={setSalaryMax} keyboardType="numeric" />
+        <Input label={`Min Salary (${currency} per month)`} value={salaryMin} onChangeText={setSalaryMin} keyboardType="numeric" />
+        <Input label={`Max Salary (${currency} per month)`} value={salaryMax} onChangeText={setSalaryMax} keyboardType="numeric" />
         <Input
           label="Skills (comma separated)"
           value={skills}

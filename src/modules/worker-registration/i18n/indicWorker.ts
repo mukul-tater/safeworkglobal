@@ -38,7 +38,7 @@ export const indicWorkerOverlays: Record<
     "jobs.lockBrowseSub": "অনবোর্ডিং শেষ করুন — তারপর যাচাইকৃত বিদেশি চাকরি দেখুন।",
     "jobs.empty": "নতুন চাকরি শিগগির আসছে। WhatsApp-এ কথা বলুন।",
     "jobs.browseAll": "সব চাকরি দেখুন",
-    "jobs.perMonth": "/ মাস",
+    "jobs.perMonth": "প্রতি মাস",
     "jobs.verified": "যাচাইকৃত",
     "checklist.remaining": "{{count}} আইটেম বাকি",
     "checklist.allDone": "সব হয়ে গেছে!",

@@ -520,7 +520,7 @@ export default function PostJob() {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="salary_min">Min Salary</Label>
+                    <Label htmlFor="salary_min">Min Salary (per month)</Label>
                     <Input
                       id="salary_min"
                       type="number"
@@ -532,7 +532,7 @@ export default function PostJob() {
                     )}
                   </div>
                   <div>
-                    <Label htmlFor="salary_max">Max Salary</Label>
+                    <Label htmlFor="salary_max">Max Salary (per month)</Label>
                     <Input
                       id="salary_max"
                       type="number"

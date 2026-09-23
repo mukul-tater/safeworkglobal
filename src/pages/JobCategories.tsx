@@ -61,17 +61,17 @@ const categoryDetails: CategoryDetail[] = [
     description: "Building the future with infrastructure and residential projects",
     longDescription: "Construction professionals are in high demand globally as countries invest in infrastructure development, residential housing, and commercial buildings. This sector offers diverse opportunities from hands-on labor to project management roles.",
     totalJobs: "74",
-    avgSalary: "₹50,000/month",
-    salaryRange: "₹35,000 - ₹85,000",
+    avgSalary: "₹50,000 per month",
+    salaryRange: "₹35,000 - ₹85,000 per month",
     demand: "High",
     growth: "+15% annually",
     topCountries: ["Japan", "Germany", "UAE", "Singapore", "Australia"],
     skills: ["Masonry", "Concrete Work", "Blueprint Reading", "Safety Management", "Heavy Equipment"],
     subcategories: [
-      { name: "Masonry & Bricklaying", count: 22, avgSalary: "₹42,000/mo", growth: "+12%" },
-      { name: "Concrete Workers", count: 18, avgSalary: "₹45,000/mo", growth: "+18%" },
-      { name: "Construction Managers", count: 20, avgSalary: "₹65,000/mo", growth: "+20%" },
-      { name: "Site Supervisors", count: 14, avgSalary: "₹58,000/mo", growth: "+16%" }
+      { name: "Masonry & Bricklaying", count: 22, avgSalary: "₹42,000 per month", growth: "+12%" },
+      { name: "Concrete Workers", count: 18, avgSalary: "₹45,000 per month", growth: "+18%" },
+      { name: "Construction Managers", count: 20, avgSalary: "₹65,000 per month", growth: "+20%" },
+      { name: "Site Supervisors", count: 14, avgSalary: "₹58,000 per month", growth: "+16%" }
     ],
     requirements: [
       "Physical fitness and stamina",
@@ -93,17 +93,17 @@ const categoryDetails: CategoryDetail[] = [
     description: "Powering industries with expertise in electrical systems",
     longDescription: "Electrical workers are essential for industrial operations, renewable energy projects, and smart infrastructure development. The transition to renewable energy has created unprecedented opportunities in this field.",
     totalJobs: "103",
-    avgSalary: "₹60,000/month",
-    salaryRange: "₹40,000 - ₹95,000",
+    avgSalary: "₹60,000 per month",
+    salaryRange: "₹40,000 - ₹95,000 per month",
     demand: "Very High",
     growth: "+22% annually",
     topCountries: ["Norway", "Australia", "Canada", "Germany", "Netherlands"],
     skills: ["Electrical Wiring", "Panel Installation", "Troubleshooting", "Solar Systems", "Industrial Controls"],
     subcategories: [
-      { name: "Industrial Electrician", count: 35, avgSalary: "₹65,000/mo", growth: "+24%" },
-      { name: "Solar Panel Installer", count: 28, avgSalary: "₹58,000/mo", growth: "+30%" },
-      { name: "Electrical Engineer", count: 24, avgSalary: "₹80,000/mo", growth: "+25%" },
-      { name: "Maintenance Electrician", count: 16, avgSalary: "₹52,000/mo", growth: "+15%" }
+      { name: "Industrial Electrician", count: 35, avgSalary: "₹65,000 per month", growth: "+24%" },
+      { name: "Solar Panel Installer", count: 28, avgSalary: "₹58,000 per month", growth: "+30%" },
+      { name: "Electrical Engineer", count: 24, avgSalary: "₹80,000 per month", growth: "+25%" },
+      { name: "Maintenance Electrician", count: 16, avgSalary: "₹52,000 per month", growth: "+15%" }
     ],
     requirements: [
       "Licensed electrician certification",
@@ -125,17 +125,17 @@ const categoryDetails: CategoryDetail[] = [
     description: "Precision metalwork for industries worldwide",
     longDescription: "Welders are in critical demand across shipbuilding, pipeline construction, and heavy industry. Specialized welding certifications command premium salaries, especially in oil & gas and maritime sectors.",
     totalJobs: "77",
-    avgSalary: "₹65,000/month",
-    salaryRange: "₹45,000 - ₹1,00,000",
+    avgSalary: "₹65,000 per month",
+    salaryRange: "₹45,000 - ₹1,00,000 per month",
     demand: "High",
     growth: "+18% annually",
     topCountries: ["Qatar", "Russia", "South Korea", "UAE", "Singapore"],
     skills: ["MIG Welding", "TIG Welding", "Arc Welding", "Underwater Welding", "Pipeline Welding"],
     subcategories: [
-      { name: "Pipeline Welders", count: 25, avgSalary: "₹82,000/mo", growth: "+22%" },
-      { name: "Structural Welders", count: 22, avgSalary: "₹58,000/mo", growth: "+15%" },
-      { name: "Underwater Welders", count: 12, avgSalary: "₹1,00,000/mo", growth: "+25%" },
-      { name: "Fabrication Welders", count: 18, avgSalary: "₹54,000/mo", growth: "+12%" }
+      { name: "Pipeline Welders", count: 25, avgSalary: "₹82,000 per month", growth: "+22%" },
+      { name: "Structural Welders", count: 22, avgSalary: "₹58,000 per month", growth: "+15%" },
+      { name: "Underwater Welders", count: 12, avgSalary: "₹1,00,000 per month", growth: "+25%" },
+      { name: "Fabrication Welders", count: 18, avgSalary: "₹54,000 per month", growth: "+12%" }
     ],
     requirements: [
       "Welding certification (AWS or equivalent)",
@@ -157,17 +157,17 @@ const categoryDetails: CategoryDetail[] = [
     description: "Essential services for residential and commercial systems",
     longDescription: "Plumbing professionals are needed for new construction, maintenance, and HVAC systems. The growing focus on water conservation and sustainable building practices has expanded opportunities in this traditional trade.",
     totalJobs: "73",
-    avgSalary: "₹45,000/month",
-    salaryRange: "₹30,000 - ₹70,000",
+    avgSalary: "₹45,000 per month",
+    salaryRange: "₹30,000 - ₹70,000 per month",
     demand: "Medium",
     growth: "+12% annually",
     topCountries: ["UK", "Ireland", "New Zealand", "Canada", "Australia"],
     skills: ["Pipe Fitting", "Drainage Systems", "HVAC", "Water Systems", "Gas Lines"],
     subcategories: [
-      { name: "Master Plumbers", count: 22, avgSalary: "₹65,000/mo", growth: "+15%" },
-      { name: "HVAC Technicians", count: 20, avgSalary: "₹52,000/mo", growth: "+18%" },
-      { name: "Commercial Plumbers", count: 18, avgSalary: "₹48,000/mo", growth: "+10%" },
-      { name: "Residential Plumbers", count: 13, avgSalary: "₹38,000/mo", growth: "+8%" }
+      { name: "Master Plumbers", count: 22, avgSalary: "₹65,000 per month", growth: "+15%" },
+      { name: "HVAC Technicians", count: 20, avgSalary: "₹52,000 per month", growth: "+18%" },
+      { name: "Commercial Plumbers", count: 18, avgSalary: "₹48,000 per month", growth: "+10%" },
+      { name: "Residential Plumbers", count: 13, avgSalary: "₹38,000 per month", growth: "+8%" }
     ],
     requirements: [
       "Plumbing license or apprenticeship completion",
@@ -189,17 +189,17 @@ const categoryDetails: CategoryDetail[] = [
     description: "Fast-growing sector for supply chain and last-mile delivery",
     longDescription: "The e-commerce boom has created massive demand for delivery drivers, warehouse workers, and logistics coordinators. This sector offers flexible schedules and rapid employment opportunities.",
     totalJobs: "79",
-    avgSalary: "₹38,000/month",
-    salaryRange: "₹25,000 - ₹55,000",
+    avgSalary: "₹38,000 per month",
+    salaryRange: "₹25,000 - ₹55,000 per month",
     demand: "Very High",
     growth: "+28% annually",
     topCountries: ["Netherlands", "Belgium", "Denmark", "USA", "Germany"],
     skills: ["Driving License", "Route Planning", "Package Handling", "Customer Service", "Warehouse Operations"],
     subcategories: [
-      { name: "Delivery Drivers", count: 28, avgSalary: "₹35,000/mo", growth: "+30%" },
-      { name: "Warehouse Operators", count: 22, avgSalary: "₹37,000/mo", growth: "+25%" },
-      { name: "Logistics Coordinators", count: 18, avgSalary: "₹50,000/mo", growth: "+28%" },
-      { name: "Forklift Operators", count: 11, avgSalary: "₹40,000/mo", growth: "+22%" }
+      { name: "Delivery Drivers", count: 28, avgSalary: "₹35,000 per month", growth: "+30%" },
+      { name: "Warehouse Operators", count: 22, avgSalary: "₹37,000 per month", growth: "+25%" },
+      { name: "Logistics Coordinators", count: 18, avgSalary: "₹50,000 per month", growth: "+28%" },
+      { name: "Forklift Operators", count: 11, avgSalary: "₹40,000 per month", growth: "+22%" }
     ],
     requirements: [
       "Valid driving license (for driver roles)",
@@ -221,17 +221,17 @@ const categoryDetails: CategoryDetail[] = [
     description: "Modern production facilities with automated systems",
     longDescription: "Manufacturing roles span from traditional assembly work to operating sophisticated CNC machines and robotics. Industry 4.0 has created demand for tech-savvy workers in smart factories.",
     totalJobs: "103",
-    avgSalary: "₹48,000/month",
-    salaryRange: "₹28,000 - ₹78,000",
+    avgSalary: "₹48,000 per month",
+    salaryRange: "₹28,000 - ₹78,000 per month",
     demand: "High",
     growth: "+14% annually",
     topCountries: ["Czech Republic", "Poland", "Slovakia", "Germany", "Japan"],
     skills: ["Machine Operation", "Quality Control", "Assembly", "CNC Programming", "Safety Protocols"],
     subcategories: [
-      { name: "CNC Operators", count: 32, avgSalary: "₹60,000/mo", growth: "+18%" },
-      { name: "Assembly Workers", count: 30, avgSalary: "₹38,000/mo", growth: "+12%" },
-      { name: "Quality Inspectors", count: 24, avgSalary: "₹50,000/mo", growth: "+15%" },
-      { name: "Production Supervisors", count: 17, avgSalary: "₹65,000/mo", growth: "+16%" }
+      { name: "CNC Operators", count: 32, avgSalary: "₹60,000 per month", growth: "+18%" },
+      { name: "Assembly Workers", count: 30, avgSalary: "₹38,000 per month", growth: "+12%" },
+      { name: "Quality Inspectors", count: 24, avgSalary: "₹50,000 per month", growth: "+15%" },
+      { name: "Production Supervisors", count: 17, avgSalary: "₹65,000 per month", growth: "+16%" }
     ],
     requirements: [
       "High school diploma or equivalent",

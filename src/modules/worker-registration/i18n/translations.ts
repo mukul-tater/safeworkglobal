@@ -43,7 +43,7 @@ const en = {
   "jobs.lockBrowseSub": "Finish onboarding — then browse verified overseas jobs.",
   "jobs.empty": "New jobs coming soon. Chat with us on WhatsApp.",
   "jobs.browseAll": "Browse all jobs",
-  "jobs.perMonth": "/ month",
+  "jobs.perMonth": "per month",
   "jobs.verified": "Verified",
 
   "checklist.remaining": "{{count}} item(s) left",
@@ -143,7 +143,7 @@ const hi: Record<TranslationKey, string> = {
   "jobs.lockBrowseSub": "ऑनबोर्डिंग पूरी करें — फिर वेरिफाइड विदेशी नौकरियां देखें।",
   "jobs.empty": "नई नौकरियां जल्द आएंगी। WhatsApp पर बात करें।",
   "jobs.browseAll": "सारी नौकरियां देखें",
-  "jobs.perMonth": "/ महीना",
+  "jobs.perMonth": "प्रति माह",
   "jobs.verified": "वेरिफाइड",
 
   "checklist.remaining": "{{count}} चीज़ें बाकी",

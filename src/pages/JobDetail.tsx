@@ -695,7 +695,7 @@ export default function JobDetail() {
     </>,
     <SEOHead
       title={`${displayTitle} | SafeWork Global`}
-      description={`Apply for ${displayTitle} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(salaryMin, salaryMax, salaryCurrency)}/month.`}
+      description={`Apply for ${displayTitle} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(salaryMin, salaryMax, salaryCurrency)}.`}
       keywords={`${displayTitle}, ${job.location} jobs, ${job.country} jobs, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
       canonicalUrl={`${job.slug ? `https://www.safeworkglobal.com/jobs/${job.slug}` : "https://www.safeworkglobal.com/jobs"}`}
       ogType="article"

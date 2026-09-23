@@ -108,7 +108,7 @@ export default function EmitraWorkerDetailPage() {
             <Row k="Preferred Country" v={worker.preferred_country} />
             <Row k="Passport" v={worker.passport_available ? 'Yes' : 'No'} />
             <Row k="Migration Score" v={`${worker.migration_readiness_score}/100`} />
-            <Row k="Expected Salary" v={worker.expected_salary ? `₹${worker.expected_salary}` : '—'} />
+            <Row k="Expected Salary" v={worker.expected_salary ? `₹${worker.expected_salary} per month` : '—'} />
           </CardContent>
         </Card>
 

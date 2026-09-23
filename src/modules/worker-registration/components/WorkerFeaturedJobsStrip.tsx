@@ -182,13 +182,11 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                           max={job.salary_max}
                           currency={job.currency}
                           title={job.title}
+                          periodLabel={t("jobs.perMonth")}
                           primaryClassName="text-lg font-bold text-primary"
                           inrClassName="text-xs font-normal"
                           className="gap-0.5"
                         />
-                        <span className="text-xs font-normal text-muted-foreground">
-                          {t("jobs.perMonth")}
-                        </span>
                       </div>
                     )}
                     <div className="mt-2">
