@@ -5510,10 +5510,6 @@ export type Database = {
         Args: { p_note?: string; p_org: string; p_worker_ids: string[] }
         Returns: number
       }
-      admin_create_job: {
-        Args: { p_employer_id: string; p_patch: Json; p_skills?: string[] }
-        Returns: string
-      }
       admin_create_employer: {
         Args: {
           p_company_name?: string
@@ -5523,6 +5519,10 @@ export type Database = {
           p_phone?: string
         }
         Returns: Json
+      }
+      admin_create_job: {
+        Args: { p_employer_id: string; p_patch: Json; p_skills?: string[] }
+        Returns: string
       }
       admin_create_lsp: {
         Args: {
