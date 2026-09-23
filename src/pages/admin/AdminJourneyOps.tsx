@@ -62,6 +62,7 @@ import {
 import type { BondTemplate } from '@/modules/worker-verification/types';
 import AdminBondSecurityReview from '@/pages/admin/AdminBondSecurityReview';
 import AdminBankTransferReview from '@/pages/admin/AdminBankTransferReview';
+import AdminJobSwitchPanel from '@/pages/admin/AdminJobSwitchPanel';
 
 type OpsTab = 'kyc' | 'interview' | 'payment' | 'trade_test' | 'medical' | 'bond' | 'pdot' | 'deployment';
 
@@ -915,6 +916,7 @@ export default function AdminJourneyOps() {
       <p className="text-sm text-muted-foreground mb-4">
         GCC journey in stage order: KYC → interview → payment → trade test → medical → bond → PDOT → deployment.
       </p>
+      <AdminJobSwitchPanel />
 
       {tab === 'interview' && (
         <p className="text-sm text-muted-foreground mb-4">

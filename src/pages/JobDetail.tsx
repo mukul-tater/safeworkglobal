@@ -29,6 +29,7 @@ import { withRetry } from '@/lib/retry';
 import PostedByBadge from '@/components/jobs/PostedByBadge';
 import JobRoleVideo from '@/components/jobs/JobRoleVideo';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
+import JobChangeFeeDialog from '@/modules/worker-verification/components/journey/JobChangeFeeDialog';
 import {
   setPendingJourneyJob,
 } from '@/modules/worker-verification/lib/pendingJourneyJob';
@@ -36,6 +37,7 @@ import {
   applyToJobForJourney,
   canChangeJourneyJob,
   changeJourneyJob,
+  getJobSwitchPolicy,
 } from '@/modules/worker-verification/services/jobJourneyService';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
@@ -84,6 +86,8 @@ export default function JobDetail() {
   const [saving, setSaving] = useState(false);
   const [journeyRow, setJourneyRow] = useState<WorkerVerification | null>(null);
   const [changeOpen, setChangeOpen] = useState(false);
+  const [feeOpen, setFeeOpen] = useState(false);
+  const [feeDue, setFeeDue] = useState(0);
   useEffect(() => {
     let cancelled = false;
     // Safety net: never let the page sit in "loading" forever.
@@ -165,7 +169,7 @@ export default function JobDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, user?.id]);
 
-  const handleApplyClick = () => {
+  const handleApplyClick = async () => {
     if (!job) return;
     if (!isLoggedIn) {
       setPendingJourneyJob({ jobId: job.id, slug: job.slug || slug || job.id, title: job.title });
@@ -198,6 +202,31 @@ export default function JobDetail() {
           variant: 'destructive',
         });
         return;
+      }
+      if (user) {
+        try {
+          const policy = await getJobSwitchPolicy(user.id);
+          if (!policy.enabled || policy.blocked) {
+            toast({
+              title: 'Job change is unavailable',
+              description: policy.reason || 'Job changes are turned off',
+              variant: 'destructive',
+            });
+            return;
+          }
+          if (policy.feeDue > 0 && !policy.feePaid) {
+            setFeeDue(policy.feeDue);
+            setFeeOpen(true);
+            return;
+          }
+        } catch (err) {
+          toast({
+            title: 'Job change is unavailable',
+            description: err instanceof Error ? err.message : 'Could not check job switch',
+            variant: 'destructive',
+          });
+          return;
+        }
       }
       setChangeOpen(true);
       return;
@@ -692,6 +721,18 @@ export default function JobDetail() {
             onOpenChange={setChangeOpen}
             onConfirm={() => void handleApply(true)}
           />
+          {user && (
+            <JobChangeFeeDialog
+              open={feeOpen}
+              amount={feeDue}
+              workerUserId={user.id}
+              onOpenChange={setFeeOpen}
+              onPaid={() => {
+                setFeeOpen(false);
+                setChangeOpen(true);
+              }}
+            />
+          )}
     </>,
     <SEOHead
       title={`${displayTitle} | SafeWork Global`}

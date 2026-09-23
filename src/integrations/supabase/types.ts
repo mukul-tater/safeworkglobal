@@ -1318,7 +1318,7 @@ export type Database = {
         Row: {
           applied_at: string | null
           cover_letter: string | null
-          employer_id: string
+          employer_id: string | null
           id: string
           job_id: string
           notes: string | null
@@ -1330,7 +1330,7 @@ export type Database = {
         Insert: {
           applied_at?: string | null
           cover_letter?: string | null
-          employer_id: string
+          employer_id?: string | null
           id?: string
           job_id: string
           notes?: string | null
@@ -1342,7 +1342,7 @@ export type Database = {
         Update: {
           applied_at?: string | null
           cover_letter?: string | null
-          employer_id?: string
+          employer_id?: string | null
           id?: string
           job_id?: string
           notes?: string | null
@@ -4907,6 +4907,7 @@ export type Database = {
           created_at: string | null
           file_path: string
           id: string
+          journey_job_id: string | null
           media_type: string
           skill_id: string
           worker_id: string
@@ -4915,6 +4916,7 @@ export type Database = {
           created_at?: string | null
           file_path: string
           id?: string
+          journey_job_id?: string | null
           media_type: string
           skill_id: string
           worker_id: string
@@ -4923,6 +4925,7 @@ export type Database = {
           created_at?: string | null
           file_path?: string
           id?: string
+          journey_job_id?: string | null
           media_type?: string
           skill_id?: string
           worker_id?: string
@@ -5829,7 +5832,57 @@ export type Database = {
         Returns: Json
       }
       change_journey_job: {
-        Args: { p_job_id: string; p_user_id?: string }
+        Args: {
+          p_job_id: string
+          p_primary_skill?: string
+          p_trade_test_required?: boolean
+          p_user_id?: string
+        }
+        Returns: string
+      }
+      admin_job_switch_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      admin_review_job_change_payment: {
+        Args: { p_action: string; p_payment_id: string }
+        Returns: undefined
+      }
+      admin_set_job_change_fee: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: number
+      }
+      admin_set_job_switch_enabled: {
+        Args: { p_enabled: boolean }
+        Returns: boolean
+      }
+      admin_set_worker_job_switch_blocked: {
+        Args: { p_blocked: boolean; p_user_id: string }
+        Returns: boolean
+      }
+      complete_job_change_fee_razorpay: {
+        Args: {
+          p_amount: number
+          p_order_id: string
+          p_payment_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      job_switch_policy: {
+        Args: { p_user_id?: string }
+        Returns: Json
+      }
+      submit_job_change_bank_transfer: {
+        Args: {
+          p_amount: number
+          p_method: string
+          p_proof_file_name: string
+          p_proof_path: string
+          p_provider_ref: string
+          p_transferred_on: string
+          p_worker_user_id?: string
+        }
         Returns: string
       }
       complete_assessment_payment_razorpay: {

@@ -467,7 +467,7 @@ export default function WorkerVerificationPage({
   }, []);
 
   const hydrateSkillMedia = useCallback(
-    async (workerId: string, skillName?: string | null) => {
+    async (workerId: string, skillName?: string | null, journeyJobId?: string | null) => {
       if (skillName) {
         try {
           const id = await ensureWorkerSkillRow(workerId, skillName);
@@ -476,7 +476,7 @@ export default function WorkerVerificationPage({
           /* still load whatever media already exists */
         }
       }
-      const items = await loadWorkerSkillMediaItems(workerId);
+      const items = await loadWorkerSkillMediaItems(workerId, journeyJobId);
       applySkillMedia(items);
     },
     [applySkillMedia],
@@ -668,7 +668,7 @@ export default function WorkerVerificationPage({
       }
 
       try {
-        await hydrateSkillMedia(subjectId, v.primary_skill);
+        await hydrateSkillMedia(subjectId, v.primary_skill, v.journey_job_id);
       } catch {
         /* journey still loads; worker can re-upload if previews fail */
       }
@@ -1027,7 +1027,7 @@ export default function WorkerVerificationPage({
           vRaw.trade_test_required,
         );
         setRow({ ...vRaw, stage: vStage });
-        await hydrateSkillMedia(subjectId, vRaw.primary_skill);
+        await hydrateSkillMedia(subjectId, vRaw.primary_skill, vRaw.journey_job_id);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } catch {
         /* row already set from submit */
@@ -1103,6 +1103,7 @@ export default function WorkerVerificationPage({
             worker_id: subjectId,
             media_type: type,
             file_path: filePath,
+            journey_job_id: row?.journey_job_id ?? null,
           })
           .select('id')
           .single();
@@ -1125,7 +1126,7 @@ export default function WorkerVerificationPage({
           : `${ok} video${ok === 1 ? '' : 's'} uploaded`,
       );
       try {
-        await hydrateSkillMedia(subjectId, row?.primary_skill);
+        await hydrateSkillMedia(subjectId, row?.primary_skill, row?.journey_job_id);
       } catch {
         /* keep the local previews already shown */
       }

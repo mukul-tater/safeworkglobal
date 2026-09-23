@@ -1100,6 +1100,49 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
   }
 }
 
+/** Extra amount an admin set for the next job change. Does not touch the assessment fee. */
+export async function payJobChangeFeeWithRazorpay(opts: {
+  workerUserId: string;
+  name?: string | null;
+  email?: string | null;
+  contact?: string | null;
+}): Promise<void> {
+  const { openRazorpayCheckout } = await import('../lib/razorpayCheckout');
+  const orderData = await callRazorpayFn({
+    action: 'create_job_change_order',
+    worker_user_id: opts.workerUserId,
+  });
+  if (orderData.already_paid) return;
+
+  const orderId = String(orderData.order_id || '');
+  const amountInr = Number(orderData.amount_inr || 0);
+  const keyId = String(orderData.key_id || '');
+  if (!orderId) throw new Error('Razorpay order was not created');
+  if (!keyId.startsWith('rzp_')) {
+    throw new Error(
+      'Razorpay key missing from server. Set RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET on the razorpay-assessment edge function (not VITE_).',
+    );
+  }
+
+  const checkout = await openRazorpayCheckout({
+    amountInr,
+    description: 'SafeWork Global job change fee',
+    name: opts.name || undefined,
+    email: opts.email || undefined,
+    contact: opts.contact || undefined,
+    orderId,
+    keyId,
+  });
+
+  await callRazorpayFn({
+    action: 'verify_job_change_payment',
+    razorpay_payment_id: checkout.razorpay_payment_id,
+    razorpay_order_id: checkout.razorpay_order_id || orderId,
+    razorpay_signature: checkout.razorpay_signature,
+    worker_user_id: opts.workerUserId,
+  });
+}
+
 const PAYMENT_PROOF_BUCKET = 'worker-documents';
 const PAYMENT_PROOF_MAX_BYTES = 10 * 1024 * 1024;
 const PAYMENT_PROOF_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'pdf']);

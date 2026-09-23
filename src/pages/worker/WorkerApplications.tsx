@@ -98,6 +98,7 @@ export default function WorkerApplications() {
   };
 
   const getStatusLabel = (status: string) => {
+    if (status === 'SUPERSEDED') return 'Changed job';
     return status.charAt(0) + status.slice(1).toLowerCase().replace("_", " ");
   };
 

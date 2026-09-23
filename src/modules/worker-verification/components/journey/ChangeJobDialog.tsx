@@ -32,33 +32,28 @@ export default function ChangeJobDialog({
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>
-                You can only follow one job in your GCC journey at a time.
+                You follow one job at a time.
                 {currentJobTitle ? (
                   <>
                     {' '}
-                    You are currently on <span className="font-medium text-foreground">{currentJobTitle}</span>.
+                    <span className="font-medium text-foreground">{currentJobTitle}</span> will be closed and kept
+                    on file.
                   </>
                 ) : null}
                 {nextJobTitle ? (
                   <>
                     {' '}
-                    Switching to <span className="font-medium text-foreground">{nextJobTitle}</span> will restart
-                    skill checks for that job.
+                    <span className="font-medium text-foreground">{nextJobTitle}</span> becomes your only active job.
+                    Coming back to a previous job reopens that same application.
                   </>
                 ) : (
-                  <> Picking a different job will restart skill checks for the new job.</>
+                  <> The job you pick becomes your only active job. A previous job stays closed until you return to it.</>
                 )}
               </p>
-              <p className="font-medium text-foreground">You will need to do these again:</p>
-              <ul className="list-disc space-y-1 pl-5">
-                <li>Test 1 — work quiz</li>
-                <li>Skill proof (photos and videos)</li>
-                <li>Test 2 — video interview</li>
-                <li>Test 3 — physical trade test (if the new job needs it)</li>
-              </ul>
               <p>
-                Identity, payment, medical, bond, and earlier job applications stay on file. Previous applications
-                are not deleted.
+                Test 1, skill proof, interview, and trade test are saved on the job you leave and restored if you
+                come back. Your trade, the employer, and whether a trade test is required update to the active job.
+                Identity, payment, medical, and the agreement stay with you.
               </p>
             </div>
           </AlertDialogDescription>

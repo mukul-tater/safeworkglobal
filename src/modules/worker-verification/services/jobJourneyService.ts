@@ -2,13 +2,41 @@ import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { skillRequiresTradeTest } from '../constants';
 import type { WorkerVerification } from '../types';
-import { ensureWorkerSkillRow, getOrCreateVerification } from './verificationService';
+import {
+  ensureWorkerSkillRow,
+  getOrCreateVerification,
+  payJobChangeFeeWithRazorpay,
+  uploadBankTransferProof,
+} from './verificationService';
 
 const supabase: any = supabaseTyped;
 
 export function canChangeJourneyJob(row: Pick<WorkerVerification, 'stage' | 'gcc_ready_at'>): boolean {
   if (row.gcc_ready_at) return false;
   return row.stage !== 'gcc_ready' && row.stage !== 'deployment';
+}
+
+export type JobSwitchPolicy = {
+  enabled: boolean;
+  blocked: boolean;
+  feeDue: number;
+  feePaid: boolean;
+  canSwitch: boolean;
+  reason: string | null;
+};
+
+export async function getJobSwitchPolicy(workerUserId: string): Promise<JobSwitchPolicy> {
+  const { data, error } = await supabase.rpc('job_switch_policy', { p_user_id: workerUserId });
+  if (error) throw new Error(error.message);
+  const row = (data || {}) as Record<string, unknown>;
+  return {
+    enabled: row.enabled !== false,
+    blocked: Boolean(row.blocked),
+    feeDue: Number(row.fee_due || 0),
+    feePaid: Boolean(row.fee_paid),
+    canSwitch: Boolean(row.can_switch),
+    reason: typeof row.reason === 'string' ? row.reason : null,
+  };
 }
 
 async function syncSkillFromJob(
@@ -99,19 +127,61 @@ export async function changeJourneyJob(opts: {
     throw new Error('This job cannot be changed after GCC ready');
   }
 
+  const skill = inferWorkerSkillFromJob(opts.title || '', opts.description || '', opts.skills || []);
   const { data, error } = await supabase.rpc('change_journey_job', {
     p_job_id: opts.jobId,
     p_user_id: opts.workerUserId,
+    p_primary_skill: skill,
+    p_trade_test_required: skillRequiresTradeTest(skill),
   });
   if (error) throw new Error(error.message);
 
   const row = await getOrCreateVerification(opts.workerUserId);
-  const updated = await syncSkillFromJob(row, opts);
+  if (row.primary_skill) {
+    await ensureWorkerSkillRow(row.user_id, row.primary_skill);
+    await supabase
+      .from('worker_profiles')
+      .update({
+        primary_skill: row.primary_skill,
+        primary_work_type: row.primary_skill,
+      })
+      .eq('user_id', row.user_id);
+  }
 
   return {
     applicationId: String(data),
-    verification: updated,
+    verification: row,
   };
+}
+
+export async function payJobChangeFee(opts: {
+  workerUserId: string;
+  name?: string | null;
+  email?: string | null;
+  contact?: string | null;
+}): Promise<void> {
+  await payJobChangeFeeWithRazorpay(opts);
+}
+
+export async function submitJobChangeBankTransfer(opts: {
+  workerUserId: string;
+  method: 'upi' | 'imps' | 'neft' | 'rtgs';
+  providerRef: string;
+  amount: number;
+  transferredOn: string;
+  file: File;
+}): Promise<void> {
+  const proof = await uploadBankTransferProof(opts.workerUserId, opts.file);
+  const { error } = await supabase.rpc('submit_job_change_bank_transfer', {
+    p_method: opts.method,
+    p_provider_ref: opts.providerRef,
+    p_proof_path: proof.path,
+    p_proof_file_name: proof.fileName,
+    p_amount: opts.amount,
+    p_transferred_on: opts.transferredOn,
+    p_worker_user_id: opts.workerUserId,
+  });
+  if (error) throw new Error(error.message);
 }
 
 export async function toggleFavouriteJob(opts: {

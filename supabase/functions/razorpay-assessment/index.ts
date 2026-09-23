@@ -185,6 +185,105 @@ serve(async (req) => {
   }
 
   try {
+    if (action === "create_job_change_order" || action === "verify_job_change_payment") {
+      const payerId = await resolvePayerUserId(body.worker_user_id);
+      const { data: feeRow, error: feeErr } = await admin
+        .from("worker_verification")
+        .select("job_change_fee_due, job_change_fee_paid_at")
+        .eq("user_id", payerId)
+        .maybeSingle();
+      if (feeErr) throw new Error(feeErr.message);
+      const due = Math.round(Number(feeRow?.job_change_fee_due || 0));
+      if (due < 1) return json(400, { error: "No extra amount is due" });
+      if (feeRow?.job_change_fee_paid_at) {
+        return json(200, { already_paid: true, amount_inr: due });
+      }
+
+      if (action === "create_job_change_order") {
+        const { base, fee, charged } = withGatewayFee(due);
+        const amountPaise = charged * 100;
+        const receipt = `jchg_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`.slice(0, 40);
+        const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
+          method: "POST",
+          headers: {
+            Authorization: razorpayAuthHeader(keyId, keySecret),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: amountPaise,
+            currency: "INR",
+            receipt,
+            notes: {
+              user_id: payerId,
+              purpose: "job_change_fee",
+              base_fee_inr: String(base),
+              charged_inr: String(charged),
+            },
+          }),
+        });
+        const orderJson = await orderRes.json();
+        if (!orderRes.ok) {
+          return json(502, {
+            error: orderJson?.error?.description || "Could not create Razorpay order",
+          });
+        }
+        const { error: insErr } = await admin.from("worker_job_change_payments").insert({
+          user_id: payerId,
+          amount: base,
+          charged_amount: charged,
+          status: "pending",
+          provider: "razorpay",
+          razorpay_order_id: orderJson.id,
+        });
+        if (insErr) throw new Error(insErr.message);
+        return json(200, {
+          order_id: orderJson.id,
+          amount_inr: charged,
+          amount_paise: amountPaise,
+          base_fee_inr: base,
+          gateway_fee_inr: fee,
+          currency: "INR",
+          key_id: keyId,
+        });
+      }
+
+      const paymentId = String(body.razorpay_payment_id || "").trim();
+      const orderId = String(body.razorpay_order_id || "").trim();
+      if (!paymentId || !orderId) {
+        return json(400, { error: "Missing payment verification fields" });
+      }
+      const { data: pendingPay, error: pendingErr } = await admin
+        .from("worker_job_change_payments")
+        .select("id, charged_amount, razorpay_order_id")
+        .eq("user_id", payerId)
+        .eq("razorpay_order_id", orderId)
+        .eq("status", "pending")
+        .maybeSingle();
+      if (pendingErr) throw new Error(pendingErr.message);
+      if (!pendingPay) return json(400, { error: "No job-change order matches this payment" });
+
+      const expectedPaise = Math.round(Number(pendingPay.charged_amount || due)) * 100;
+      const expectedSig = await hmacSha256Hex(keySecret, `${orderId}|${paymentId}`);
+      const signature = String(body.razorpay_signature || "").trim();
+      if (!signature || !timingSafeEqual(expectedSig, signature)) {
+        const { ok, json: payment } = await rzpGet(`/payments/${paymentId}`);
+        if (!ok || !isSettled(payment?.status) || String(payment?.order_id || "") !== orderId) {
+          return json(400, { error: "Payment could not be confirmed" });
+        }
+        if (Number(payment?.amount) !== expectedPaise) {
+          return json(400, { error: "Payment amount does not match this job change" });
+        }
+      }
+      const { error: doneErr } = await admin.rpc("complete_job_change_fee_razorpay", {
+        p_user_id: payerId,
+        p_payment_id: paymentId,
+        p_order_id: orderId,
+        p_amount: Number(pendingPay.charged_amount || due),
+      });
+      if (doneErr) throw new Error(doneErr.message);
+      return json(200, { already_paid: true, amount_inr: due });
+    }
+
     const payerId = await resolvePayerUserId(body.worker_user_id);
     const assessmentFee = await resolveAssessmentFee(payerId);
 

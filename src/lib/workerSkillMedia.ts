@@ -19,14 +19,21 @@ export async function resolveSkillMediaUrl(filePath: string, expiresIn = 3600): 
 }
 
 /** All skill-proof photos/videos for a worker, with signed URLs for display. */
-export async function loadWorkerSkillMediaItems(workerId: string): Promise<WorkerSkillMediaFile[]> {
+export async function loadWorkerSkillMediaItems(
+  workerId: string,
+  journeyJobId?: string | null,
+): Promise<WorkerSkillMediaFile[]> {
   if (!workerId) return [];
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('worker_skill_media')
     .select('id, media_type, file_path')
     .eq('worker_id', workerId)
     .order('created_at', { ascending: true });
+  if (journeyJobId) {
+    query = query.or(`journey_job_id.eq.${journeyJobId},journey_job_id.is.null`);
+  }
+  const { data, error } = await query;
   if (error) throw error;
 
   return Promise.all(

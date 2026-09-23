@@ -13,6 +13,7 @@ import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName } from '@/lib/uaeListedJobs';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
+import JobChangeFeeDialog from '@/modules/worker-verification/components/journey/JobChangeFeeDialog';
 import {
   clearPendingJourneyJob,
   getPendingJourneyJob,
@@ -20,9 +21,11 @@ import {
 import {
   applyToJobForJourney,
   changeJourneyJob,
+  getJobSwitchPolicy,
   listAppliedJobIds,
   listFavouriteJobIds,
   toggleFavouriteJob,
+  type JobSwitchPolicy,
 } from '@/modules/worker-verification/services/jobJourneyService';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
 
@@ -123,7 +126,16 @@ export default function JourneyJobPicker({
   const [currentTitle, setCurrentTitle] = useState<string | null>(null);
   const [pickingReplacement, setPickingReplacement] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
+  const [feeOpen, setFeeOpen] = useState(false);
   const [pendingTarget, setPendingTarget] = useState<JobListItem | null>(null);
+  const [policy, setPolicy] = useState<JobSwitchPolicy>({
+    enabled: true,
+    blocked: false,
+    feeDue: 0,
+    feePaid: false,
+    canSwitch: true,
+    reason: null,
+  });
   const autoApplyDone = useRef(false);
 
   const reloadMeta = useCallback(async () => {
@@ -133,6 +145,11 @@ export default function JourneyJobPicker({
     ]);
     setSavedIds(saved);
     setAppliedIds(applied);
+    try {
+      setPolicy(await getJobSwitchPolicy(workerUserId));
+    } catch {
+      // The switch RPC explains itself when the worker actually changes job.
+    }
   }, [workerUserId]);
 
   useEffect(() => {
@@ -219,6 +236,7 @@ export default function JourneyJobPicker({
       setAppliedIds((prev) => new Set(prev).add(job.id));
       clearPendingJourneyJob();
       setPickingReplacement(false);
+      void reloadMeta();
       const skill = inferWorkerSkillFromJob(job.title, job.description, job.skills);
       toast.success(
         skill !== 'Other'
@@ -257,15 +275,29 @@ export default function JourneyJobPicker({
     }
   };
 
+  const switchAllowed = canChangeJob && policy.enabled && !policy.blocked;
+
+  const needsFee = policy.feeDue > 0 && !policy.feePaid;
+
   const requestApply = (job: JobListItem) => {
     if (journeyJobId && job.id === journeyJobId) {
       toast.info('This is already your current job.');
       return;
     }
-    if (journeyJobId && job.id !== journeyJobId && !pickingReplacement) {
+    if (journeyJobId && job.id !== journeyJobId) {
+      if (!switchAllowed) {
+        toast.error(policy.reason || 'Job changes are turned off');
+        return;
+      }
       setPendingTarget(job);
-      setChangeOpen(true);
-      return;
+      if (needsFee) {
+        setFeeOpen(true);
+        return;
+      }
+      if (!pickingReplacement) {
+        setChangeOpen(true);
+        return;
+      }
     }
     void applyJob(job, Boolean(journeyJobId && job.id !== journeyJobId));
   };
@@ -327,7 +359,7 @@ export default function JourneyJobPicker({
             <p className="text-sm font-medium">Current job</p>
             <p className="text-sm text-muted-foreground">{currentTitle || 'Applied job is linked to your journey.'}</p>
           </div>
-          {canChangeJob && (
+          {switchAllowed && (
             <Button
               type="button"
               variant="outline"
@@ -344,7 +376,7 @@ export default function JourneyJobPicker({
 
       {pickingReplacement && (
         <p className="text-sm text-muted-foreground">
-          Pick a new job and tap Apply. Test 1, skill proof, interview, and trade test will restart for that job.
+          Pick a new job and tap Apply. This job is saved. The new job becomes the only active one.
         </p>
       )}
 
@@ -446,8 +478,13 @@ export default function JourneyJobPicker({
         nextJobTitle={pendingTarget?.title}
         onOpenChange={setChangeOpen}
         onConfirm={() => {
-          if (!canChangeJob) {
-            toast.error('This job cannot be changed after GCC ready');
+          if (!switchAllowed) {
+            toast.error(policy.reason || 'This job cannot be changed');
+            return;
+          }
+          if (needsFee) {
+            setChangeOpen(false);
+            setFeeOpen(true);
             return;
           }
           if (pendingTarget) {
@@ -456,6 +493,20 @@ export default function JourneyJobPicker({
             return;
           }
           setPickingReplacement(true);
+        }}
+      />
+      <JobChangeFeeDialog
+        open={feeOpen}
+        amount={policy.feeDue}
+        workerUserId={workerUserId}
+        onOpenChange={setFeeOpen}
+        onPaid={() => {
+          setFeeOpen(false);
+          setPolicy((prev) => ({ ...prev, feePaid: true, canSwitch: true, reason: null }));
+          if (pendingTarget) {
+            void applyJob(pendingTarget, true);
+            setPendingTarget(null);
+          }
         }}
       />
     </div>
