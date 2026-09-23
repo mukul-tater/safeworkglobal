@@ -1,4 +1,4 @@
-import { inferUaeListedJob, listedJobDisplayName } from '@/lib/uaeListedJobs';
+import { inferUaeListedJob, listedJobDisplayName, UAE_LISTED_JOB_WORK } from '@/lib/uaeListedJobs';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 
 const SKILL_ALIASES: Array<{ skill: (typeof WORKER_SKILLS)[number]; needles: string[] }> = [
@@ -59,4 +59,20 @@ export function appliedJobSkillLabel(
   const listedFromSkill = inferUaeListedJob(skill);
   if (listedFromSkill) return listedJobDisplayName(listedFromSkill);
   return skill;
+}
+
+/** Activity shown in the skill-proof line (“welding”, “painting”). Falls back to “your work”. */
+export function appliedJobWorkPhrase(
+  primarySkill?: string | null,
+  jobTitle?: string | null,
+  jobDescription?: string | null,
+): string {
+  const listedFromJob = inferUaeListedJob(jobTitle || '', jobDescription || '');
+  if (listedFromJob) return UAE_LISTED_JOB_WORK[listedFromJob];
+
+  const skill = (primarySkill || '').trim();
+  const listedFromSkill = skill ? inferUaeListedJob(skill) : null;
+  if (listedFromSkill) return UAE_LISTED_JOB_WORK[listedFromSkill];
+
+  return 'your work';
 }

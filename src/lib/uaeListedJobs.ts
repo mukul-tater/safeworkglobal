@@ -49,6 +49,32 @@ export const UAE_LISTED_JOB_LABELS: Record<UaeListedJob, { en: string; hi: strin
   'Aluminium Fixer/Fabricator': { en: 'Aluminium Fixer', hi: 'एल्युमिनियम फिक्सर' },
 };
 
+/**
+ * Work the worker should be shown doing in skill-proof photos/videos.
+ * Fits “doing {phrase}” / “{phrase} करते हुए” — welding for a welder, painting for a painter.
+ */
+export const UAE_LISTED_JOB_WORK: Record<UaeListedJob, string> = {
+  Electrician: 'electrical work',
+  Welder: 'welding',
+  'MIG Welder': 'MIG welding',
+  'TIG Welder': 'TIG welding',
+  Plumber: 'plumbing',
+  'Shuttering Carpenter': 'shuttering',
+  'Mason (tiles/marble)': 'tile and marble work',
+  'Mason (bricks/plaster)': 'brick and plaster work',
+  'Construction Labour/Helper': 'construction work',
+  'Pipe Fitter': 'pipe fitting',
+  'Furniture Carpenter - Finishing, All Rounder': 'furniture work',
+  'Steel Fixer': 'steel fixing',
+  'AC Technician': 'AC work',
+  'Warehouse Helper': 'warehouse work',
+  'Cleaner (Male)': 'cleaning',
+  'Cleaner (Female)': 'cleaning',
+  Scaffolder: 'scaffolding',
+  Painter: 'painting',
+  'Aluminium Fixer/Fabricator': 'aluminium fitting',
+};
+
 const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'Aluminium Fixer/Fabricator', needles: ['aluminium fixer', 'aluminum fixer', 'aluminium fabricator', 'aluminum fabricator', 'glazing fabricator'] },
   { job: 'Shuttering Carpenter', needles: ['shuttering carpenter', 'shuttering', 'formwork carpenter', 's. carpenter'] },

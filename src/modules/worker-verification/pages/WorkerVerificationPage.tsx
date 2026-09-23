@@ -90,7 +90,7 @@ import EmitraWorkerOnboardingNoticeDialog from '@/modules/emitra/components/Emit
 import { hasAckedEmitraOnboardingNotice } from '@/modules/emitra/lib/emitraWorkerOnboarding';
 import WorkerDeclarationsSummary from '@/modules/worker-verification/components/journey/WorkerDeclarationsSummary';
 import JourneyJobPicker from '@/modules/worker-verification/components/journey/JourneyJobPicker';
-import { appliedJobSkillLabel } from '@/lib/inferWorkerSkillFromJob';
+import { appliedJobSkillLabel, appliedJobWorkPhrase } from '@/lib/inferWorkerSkillFromJob';
 import SkillMediaGallery, { type SkillMediaGalleryItem } from '@/components/worker/SkillMediaGallery';
 import {
   loadWorkerSkillMediaItems,
@@ -263,6 +263,24 @@ const PHOTO_TARGET_MIN = 8;
 const PHOTO_TARGET_MAX = 10;
 const VIDEO_TARGET_MIN = 4;
 const VIDEO_TARGET_MAX = 5;
+
+/** Face + the actual trade must both be clear. Phrase follows the applied job. */
+function SkillProofClarityLine({ phrase }: { phrase: string }) {
+  const work = phrase === 'your work' ? null : phrase;
+  return (
+    <>
+      <span className="mt-2 block">
+        Upload a clear photo and video of yourself doing{' '}
+        {work ? <span className="font-medium text-foreground">{work}</span> : 'your work'}, with
+        your face clearly visible and the work you are doing clearly visible.
+      </span>
+      <span className="mt-2 block text-foreground" lang="hi">
+        अपना {work ? <span className="font-medium">{work}</span> : 'काम'} करते हुए clear photo और
+        video upload करें, जिसमें आपका चेहरा साफ दिखे और आप जो काम कर रहे हैं वो भी साफ दिखे।
+      </span>
+    </>
+  );
+}
 
 function SkillProofGallery({
   items,
@@ -1195,6 +1213,11 @@ export default function WorkerVerificationPage({
     journeyJobTitle,
     journeyJobDescription,
   );
+  const workPhrase = appliedJobWorkPhrase(
+    row.primary_skill,
+    journeyJobTitle,
+    journeyJobDescription,
+  );
 
   if (rawStage === 'gcc_ready' && !forceIdentity) {
     return (
@@ -1345,6 +1368,9 @@ export default function WorkerVerificationPage({
                   Stronger portfolios get picked faster. You can keep adding photos and videos any
                   time — employers see the latest.
                 </p>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  <SkillProofClarityLine phrase={workPhrase} />
+                </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <input
                     ref={photoRef}
@@ -1741,6 +1767,7 @@ export default function WorkerVerificationPage({
                   अपने काम करते हुए <span className="font-medium">8 से 10 photos</span> और{' '}
                   <span className="font-medium">4–5 videos</span> डालिए, जिनमें आप साफ दिखें — काम करते हुए।
                 </span>
+                <SkillProofClarityLine phrase={workPhrase} />
               </>
             }
             timeEstimate="Takes 5–10 minutes"
