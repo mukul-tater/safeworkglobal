@@ -72,7 +72,7 @@ export async function sendTemplateEmail(
     await sendLovableEmail(
       {
         to: recipient,
-        from: options.from || `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+        from: options.from || "SafeWorkGlobal <noreply@safeworkglobal.com>",
         sender_domain: SENDER_DOMAIN,
         subject,
         html,
