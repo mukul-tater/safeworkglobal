@@ -15,7 +15,7 @@ const corsHeaders = {
 }
 
 // Configuration
-const SITE_NAME = "Safeworkglobal"
+const SITE_NAME = "SafeWorkGlobal"
 const SENDER_DOMAIN = "notify.safeworkglobal.com"
 const ROOT_DOMAIN = "safeworkglobal.com"
 const FROM_DOMAIN = "safeworkglobal.com"
