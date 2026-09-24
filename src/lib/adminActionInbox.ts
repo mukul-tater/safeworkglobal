@@ -115,8 +115,8 @@ export async function loadAdminActionInbox(): Promise<AdminActionItem[]> {
     },
     {
       id: 'partners',
-      title: 'Partner applications',
-      detail: 'e-Mitra partners waiting for approval',
+      title: 'E-Mitra centres not yet active',
+      detail: 'Older applications that are not active yet',
       count: partners,
       href: '/admin/partners',
       tone: 'urgent',

@@ -110,7 +110,7 @@ export default function EmitraDashboardPage() {
             )}
           </div>
         </div>
-        {row.status !== 'rejected' && row.status !== 'suspended' && (
+        {operational && (
           <Button asChild>
             <Link to="/partner/add-worker"><UserPlus className="h-4 w-4 mr-1" /> Add Worker</Link>
           </Button>

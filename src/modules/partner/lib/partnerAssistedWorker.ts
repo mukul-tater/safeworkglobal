@@ -70,7 +70,7 @@ export type PartnerAddWorkerContext = {
 
 const BLOCKED_ADD_WORKER_STATUSES = new Set(["rejected", "suspended"]);
 
-/** Partners may add workers before admin approval. Rejected/suspended accounts cannot. */
+/** Org partners may add workers before approval. Rejected or suspended accounts cannot. */
 export function partnerCanAddWorkers(status: string | null | undefined): boolean {
   if (!status) return true;
   return !BLOCKED_ADD_WORKER_STATUSES.has(status);
@@ -210,7 +210,7 @@ function landingForPartnerType(code: string | null | undefined): string | null {
   return partnerTypeConfig[code]?.landing ?? null;
 }
 
-/** Any signed-in partner (except rejected/suspended) can add workers, including before admin approval. */
+/** E-Mitra centres add workers only while active. Other partners follow partnerCanAddWorkers. */
 export async function resolvePartnerAddWorkerContext(
   userId: string,
 ): Promise<PartnerAddWorkerContext> {
@@ -224,7 +224,8 @@ export async function resolvePartnerAddWorkerContext(
   ]);
 
   const org = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
-  const status = (org?.status as string | undefined) ?? emitra?.status ?? null;
+  const emitraStatus = emitra?.status as string | undefined;
+  const status = (org?.status as string | undefined) ?? emitraStatus ?? null;
   const emitraProfile = !!emitra?.id;
   const partnerTypeCode = (org?.partner_type_code as string | undefined) || (emitraProfile ? "SEN" : null);
 
@@ -237,7 +238,9 @@ export async function resolvePartnerAddWorkerContext(
     : { type: "partner", orgId: org?.id };
 
   return {
-    allowed: partnerCanAddWorkers(status),
+    allowed: emitraProfile
+      ? emitraStatus === "approved" || emitraStatus === "active"
+      : partnerCanAddWorkers(status),
     returnTo,
     myWorkersPath: emitraProfile ? "/emitra/my-workers" : "/partner/my-workers",
     source,

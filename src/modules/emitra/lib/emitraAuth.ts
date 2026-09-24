@@ -58,7 +58,7 @@ export async function ensureEmitraPartnerAccess(): Promise<
       return { ok: false, error: 'Your partner application was rejected. Contact SafeWork support.' };
     }
     if (profile?.status === 'suspended') {
-      return { ok: false, error: 'Your partner account is suspended. Contact SafeWork support.' };
+      return { ok: false, error: 'Your centre is disabled. Contact SafeWork support to turn it back on.' };
     }
     return {
       ok: false,

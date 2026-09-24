@@ -12,18 +12,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { CheckCircle, XCircle, Eye, Search, ShieldOff, ShieldCheck, Store, Loader2 } from "lucide-react";
+import { Eye, Search, ShieldOff, ShieldCheck, Store, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PartnerApprovalFlow from "@/components/admin/PartnerApprovalFlow";
 
 type Partner = any;
 
 const STATUS_TABS = [
-  { key: "pending", label: "Pending", statuses: ["applied", "under_review"] },
-  { key: "approved", label: "Approved", statuses: ["approved"] },
-  { key: "active", label: "Active", statuses: ["active"] },
-  { key: "suspended", label: "Suspended", statuses: ["suspended"] },
-  { key: "rejected", label: "Rejected", statuses: ["rejected"] },
+  { key: "active", label: "Active", statuses: ["approved", "active"] },
+  { key: "disabled", label: "Disabled", statuses: ["suspended"] },
+  { key: "other", label: "Not active", statuses: ["applied", "under_review", "rejected"] },
 ] as const;
 
 const BUCKET = "partner-documents";
@@ -32,11 +30,11 @@ export default function PartnerApprovals() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<(typeof STATUS_TABS)[number]["key"]>("pending");
+  const [tab, setTab] = useState<(typeof STATUS_TABS)[number]["key"]>("active");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Partner | null>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
-  const [actionDialog, setActionDialog] = useState<null | { action: "approve" | "reject" | "suspend" | "reactivate" | "request_info"; partner: Partner }>(null);
+  const [actionDialog, setActionDialog] = useState<null | { action: "disable" | "enable"; partner: Partner }>(null);
   const [reason, setReason] = useState("");
   const [acting, setActing] = useState(false);
 
@@ -80,25 +78,21 @@ export default function PartnerApprovals() {
   const submitAction = async () => {
     if (!actionDialog || !user) return;
     const { action, partner } = actionDialog;
-    if ((action === "reject" || action === "suspend" || action === "request_info") && !reason.trim()) {
-      toast.error("Please provide a reason or message");
+    if (action === "disable" && !reason.trim()) {
+      toast.error("Please provide a reason");
       return;
     }
     setActing(true);
     try {
       const patch: Record<string, any> = { reviewed_by: user.id, reviewed_at: new Date().toISOString() };
-      if (action === "approve") {
-        patch.status = "approved";
+      if (action === "disable") {
+        patch.status = "suspended";
+        patch.rejection_reason = reason;
+      } else {
+        patch.status = "active";
+        patch.rejection_reason = null;
         patch.approved_by = user.id;
         patch.approved_at = new Date().toISOString();
-        patch.approval_notes = reason || null;
-      }
-      else if (action === "reject") { patch.status = "rejected"; patch.rejection_reason = reason; }
-      else if (action === "suspend") { patch.status = "suspended"; patch.rejection_reason = reason; }
-      else if (action === "reactivate") { patch.status = "active"; patch.rejection_reason = null; }
-      else if (action === "request_info") {
-        patch.status = "under_review";
-        patch.info_request_message = reason;
       }
 
       const { error } = await supabase.from("partner_profiles").update(patch as never).eq("id", partner.id);
@@ -117,14 +111,10 @@ export default function PartnerApprovals() {
       await supabase.from("notifications").insert({
         user_id: partner.user_id,
         type: "partner_status",
-        title: action === "approve" ? "Partner application approved" :
-               action === "reject" ? "Partner application rejected" :
-               action === "suspend" ? "Partner account suspended" :
-               action === "request_info" ? "Additional information requested" :
-               "Partner account reactivated",
-        message: action === "approve" ? `Welcome aboard! Your Partner ID will be assigned. Login at /emitra/login` :
-                 action === "request_info" ? reason :
-                 reason || `Your partner account status was changed to ${patch.status}.`,
+        title: action === "disable" ? "Centre disabled" : "Centre enabled",
+        message: action === "disable"
+          ? (reason || "Your centre has been turned off. Contact SafeWork support.")
+          : "Your centre is active again. Sign in at /emitra/login.",
         is_read: false,
       });
 
@@ -142,8 +132,8 @@ export default function PartnerApprovals() {
 
   return (
     <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
-      <h1 className="text-2xl md:text-3xl font-bold mb-2">Partner Approvals</h1>
-      <p className="text-muted-foreground text-sm mb-4">Review e-Mitra partner applications and manage their account status.</p>
+      <h1 className="text-2xl md:text-3xl font-bold mb-2">E-Mitra centres</h1>
+      <p className="text-muted-foreground text-sm mb-4">Turn a centre off or back on. New centres are active as soon as they finish signup.</p>
 
       <div className="mb-6">
         <PartnerApprovalFlow compact />
@@ -278,27 +268,13 @@ export default function PartnerApprovals() {
               </div>
 
               <DialogFooter className="flex flex-wrap gap-2 pt-4 border-t mt-4">
-                {(selected.status === "applied" || selected.status === "under_review") && (
-                  <>
-                    <Button variant="outline" onClick={() => setActionDialog({ action: "request_info", partner: selected })}>
-                      Request Info
-                    </Button>
-                    <Button variant="destructive" onClick={() => setActionDialog({ action: "reject", partner: selected })}>
-                      <XCircle className="h-4 w-4 mr-1" /> Reject
-                    </Button>
-                    <Button onClick={() => setActionDialog({ action: "approve", partner: selected })}>
-                      <CheckCircle className="h-4 w-4 mr-1" /> Approve
-                    </Button>
-                  </>
-                )}
-                {(selected.status === "approved" || selected.status === "active") && (
-                  <Button variant="destructive" onClick={() => setActionDialog({ action: "suspend", partner: selected })}>
-                    <ShieldOff className="h-4 w-4 mr-1" /> Suspend
+                {(selected.status === "approved" || selected.status === "active") ? (
+                  <Button variant="destructive" onClick={() => setActionDialog({ action: "disable", partner: selected })}>
+                    <ShieldOff className="h-4 w-4 mr-1" /> Disable
                   </Button>
-                )}
-                {selected.status === "suspended" && (
-                  <Button onClick={() => setActionDialog({ action: "reactivate", partner: selected })}>
-                    <ShieldCheck className="h-4 w-4 mr-1" /> Reactivate
+                ) : (
+                  <Button onClick={() => setActionDialog({ action: "enable", partner: selected })}>
+                    <ShieldCheck className="h-4 w-4 mr-1" /> Enable
                   </Button>
                 )}
               </DialogFooter>
@@ -313,27 +289,25 @@ export default function PartnerApprovals() {
           {actionDialog && (
             <>
               <DialogHeader>
-                <DialogTitle className="capitalize">{actionDialog.action} partner</DialogTitle>
+                <DialogTitle>{actionDialog.action === "disable" ? "Disable centre" : "Enable centre"}</DialogTitle>
                 <DialogDescription>
-                  {actionDialog.action === "approve" && "Approving generates a Partner ID (SWP-XXXXX) and grants full worker registration access."}
-                  {actionDialog.action === "reject" && "Rejecting will block this partner from operational features. They will see your reason."}
-                  {actionDialog.action === "suspend" && "Suspension immediately revokes operational access. The partner will see your reason."}
-                  {actionDialog.action === "request_info" && "The partner will be notified to provide additional information."}
-                  {actionDialog.action === "reactivate" && "Reactivation restores full partner access."}
+                  {actionDialog.action === "disable"
+                    ? "The centre cannot log in or add workers. Workers already created stay in SafeWork."
+                    : "The centre can log in again and add workers. They keep the same account."}
                 </DialogDescription>
               </DialogHeader>
-              {(actionDialog.action === "reject" || actionDialog.action === "suspend" || actionDialog.action === "request_info") && (
+              {actionDialog.action === "disable" && (
                 <div className="space-y-1.5 mt-2">
                   <label className="text-sm font-medium">
-                    {actionDialog.action === "request_info" ? "Message" : "Reason"} <span className="text-destructive">*</span>
+                    Reason <span className="text-destructive">*</span>
                   </label>
                   <Textarea rows={3} value={reason} onChange={e => setReason(e.target.value)}
-                    placeholder={actionDialog.action === "request_info" ? "What additional information is needed?" : "Explain why…"} />
+                    placeholder="Explain why this centre is being turned off…" />
                 </div>
               )}
               <DialogFooter className="mt-4">
                 <Button variant="outline" onClick={() => { setActionDialog(null); setReason(""); }}>Cancel</Button>
-                <Button onClick={submitAction} disabled={acting} variant={actionDialog.action === "reject" || actionDialog.action === "suspend" ? "destructive" : "default"}>
+                <Button onClick={submitAction} disabled={acting} variant={actionDialog.action === "disable" ? "destructive" : "default"}>
                   {acting && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
                   Confirm
                 </Button>

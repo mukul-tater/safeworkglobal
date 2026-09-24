@@ -59,14 +59,14 @@ export default function ApprovedPartnerGate({ children }: { children: ReactNode 
         ) : status === 'suspended' ? (
           <>
             <ShieldAlert className="h-12 w-12 text-warning mx-auto mb-3" />
-            <h2 className="text-xl font-bold mb-2">Account Suspended</h2>
-            <p className="text-sm text-muted-foreground">Your partner account is currently suspended. Contact support for reinstatement.</p>
+            <h2 className="text-xl font-bold mb-2">Centre disabled</h2>
+            <p className="text-sm text-muted-foreground">SafeWork has turned this centre off. Contact support to turn it back on.</p>
           </>
         ) : (
           <>
             <ShieldCheck className="h-12 w-12 text-primary mx-auto mb-3" />
-            <h2 className="text-xl font-bold mb-2">Pending Admin Approval</h2>
-            <p className="text-sm text-muted-foreground">Your partner application is under review. You'll be notified once approved and can then onboard workers.</p>
+            <h2 className="text-xl font-bold mb-2">Centre not active</h2>
+            <p className="text-sm text-muted-foreground">This centre cannot add workers yet. Finish signup, or ask SafeWork to enable the centre.</p>
           </>
         )}
       </Card>

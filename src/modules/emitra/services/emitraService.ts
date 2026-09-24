@@ -257,6 +257,12 @@ export function isPartnerOperational(profile: PartnerProfile | null): boolean {
   return !!profile && (profile.status === 'approved' || profile.status === 'active');
 }
 
+/** Finish signup: centre becomes active and receives a partner code. */
+export async function completeEmitraPartnerRegistration(): Promise<void> {
+  const { error } = await supabase.rpc('complete_emitra_partner_registration');
+  if (error) throw error;
+}
+
 export async function getDashboardStats(partnerProfileId: string): Promise<DashboardStats> {
   // Same source as My Workers (`partner_list_my_workers` → worker_profiles).
   // Do not count `partner_workers` — that is the old kiosk table and is not

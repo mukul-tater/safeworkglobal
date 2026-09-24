@@ -1,41 +1,30 @@
-import { ArrowRight, CheckCircle2, Circle, ShieldCheck, Store, UserPlus } from 'lucide-react';
+import { ArrowRight, ShieldOff, Store, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STEPS = [
   {
     icon: Store,
-    title: 'Partner applies',
-    detail: 'Submits E-Mitra application',
-  },
-  {
-    icon: Circle,
-    title: 'Under review',
-    detail: 'Status set to under_review',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Admin notified',
-    detail: 'Review at Partner Approvals',
-  },
-  {
-    icon: CheckCircle2,
-    title: 'Admin approves',
-    detail: 'Account becomes active',
+    title: 'Centre signs up',
+    detail: 'Account is active immediately',
   },
   {
     icon: UserPlus,
-    title: 'Partner operates',
+    title: 'Centre works',
     detail: 'Login and register workers',
+  },
+  {
+    icon: ShieldOff,
+    title: 'Admin can disable',
+    detail: 'Turn the centre off or back on',
   },
 ] as const;
 
 export default function PartnerApprovalFlow({ compact = false }: { compact?: boolean }) {
   return (
     <div className={cn('rounded-xl border border-border bg-muted/20', compact ? 'p-4' : 'p-5 md:p-6')}>
-      <p className="text-sm font-semibold text-foreground mb-1">Partner approval workflow</p>
+      <p className="text-sm font-semibold text-foreground mb-1">E-Mitra centre access</p>
       <p className="text-xs text-muted-foreground mb-4">
-        Partners can add workers while their application is under review. Rejected or suspended
-        accounts cannot.
+        A new centre can use the portal as soon as they finish signup. Disable a centre to block login and adding workers. Enable it again on the same login.
       </p>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch lg:gap-2">
         {STEPS.map((step, index) => {

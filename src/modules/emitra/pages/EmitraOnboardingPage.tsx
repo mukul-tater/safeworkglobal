@@ -36,7 +36,7 @@ import {
   PARTNER_DECLARATION_ITEMS,
   PARTNER_DECLARATION_TEXT,
 } from '../validations/emitraOnboardingV2';
-import { getPartnerProfile, savePartnerApplication } from '../services/emitraService';
+import { completeEmitraPartnerRegistration, getPartnerProfile, savePartnerApplication } from '../services/emitraService';
 import { createPhoneVerifiedPartnerAccount } from '@/lib/phoneVerifiedAccount';
 import { getLspSession } from '@/modules/lsp/services/lspSession';
 import type { AuthContinueLocationState } from '@/lib/authContinue';
@@ -593,13 +593,13 @@ export default function EmitraOnboardingPage() {
     setSaving(true);
     try {
       const uid = await persistProgress({
-        status: 'under_review',
         submitted_at: new Date().toISOString(),
         current_step: STEPS.length,
       });
       if (!uid) return;
-      toast.success('Application submitted! Our team will review it shortly.');
-      navigate('/emitra/login');
+      await completeEmitraPartnerRegistration();
+      toast.success('Your centre is active. You can add workers now.');
+      navigate('/emitra/dashboard');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Submission failed');
     } finally {

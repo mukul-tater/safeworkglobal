@@ -6705,6 +6705,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      complete_emitra_partner_registration: { Args: never; Returns: undefined }
       partner_list_my_workers: {
         Args: never
         Returns: {
