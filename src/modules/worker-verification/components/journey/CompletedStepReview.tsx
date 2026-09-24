@@ -64,6 +64,7 @@ interface Props {
   identity: { pan: string; aadhaarLast4: string; passport: string; passportExpiry?: string | null };
   ecrCategory?: string | null;
   tenthPass?: boolean | null;
+  languages?: string[];
   tradeAssessment?: AssessmentRow | null;
   appliedJobTitle?: string | null;
   appliedJobDescription?: string | null;
@@ -263,6 +264,7 @@ export default function CompletedStepReview({
   identity,
   ecrCategory,
   tenthPass,
+  languages,
   tradeAssessment,
   appliedJobTitle,
   appliedJobDescription,
@@ -369,6 +371,7 @@ export default function CompletedStepReview({
               }
             />
             <Detail label="Education" value={row.education_level || '—'} />
+            <Detail label="Languages" value={languages?.length ? languages.join(', ') : '—'} />
             <Detail
               label="Class 10"
               value={tenthPass === true ? 'Passed' : tenthPass === false ? 'Not passed' : '—'}

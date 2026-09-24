@@ -136,6 +136,7 @@ export async function saveEssentials(
     gender: string;
     education_level: string;
     tenth_pass: boolean;
+    languages: string[];
   },
 ): Promise<WorkerVerification> {
   const email = input.email.trim().toLowerCase();
@@ -155,6 +156,7 @@ export async function saveEssentials(
     ecr_category: ecr.ecr_category,
     ecr_status: ecr.ecr_status,
     gender: input.gender,
+    languages: input.languages,
   };
 
   // Partners cannot INSERT a new worker_profiles row (RLS requires an already
@@ -631,6 +633,7 @@ const KYC_REVIEW_DOC_TYPES = [
   'passport_last',
   'tenth_marksheet',
   'certificate',
+  'selfie',
   'id_proof',
   'id_card',
   'national_id',

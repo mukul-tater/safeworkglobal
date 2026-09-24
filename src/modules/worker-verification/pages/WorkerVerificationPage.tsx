@@ -21,6 +21,7 @@ import {
 import IndiaLocationFields from '@/components/IndiaLocationFields';
 import SearchSelect from '@/components/SearchSelect';
 import { findIndiaDistrict } from '@/lib/indiaLocations';
+import { WORKER_LANGUAGES } from '@/lib/constants';
 import { displayableEmail, isValidContactEmail } from '@/lib/workerAuthEmail';
 import {
   ASSESSMENT_FEE_INR,
@@ -122,6 +123,7 @@ const KYC_DOC_TYPES = [
   'tenth_marksheet',
   'certificate',
   'id_proof',
+  'selfie',
 ];
 
 const INTERVIEW_MOBILE_CALL_NOTE =
@@ -138,6 +140,7 @@ function kycTypeFallbacks(docType: string): string[] {
   if (docType === 'passport_front') return ['passport_front', 'passport', 'id_proof'];
   if (docType === 'passport_last') return ['passport_last', 'passport', 'id_proof'];
   if (docType === 'tenth_marksheet') return ['tenth_marksheet', 'certificate'];
+  if (docType === 'selfie') return ['selfie'];
   if (docType === 'aadhaar' || docType === 'passport') return [docType, 'id_proof'];
   return [docType];
 }
@@ -417,6 +420,9 @@ export default function WorkerVerificationPage({
   const [passportFrontFile, setPassportFrontFile] = useState<File | null>(null);
   const [passportLastFile, setPassportLastFile] = useState<File | null>(null);
   const [tenthMarksheetFile, setTenthMarksheetFile] = useState<File | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [languages, setLanguages] = useState<string[]>(['Hindi']);
+  const [savedLanguages, setSavedLanguages] = useState<string[]>([]);
   const [kycConsent, setKycConsent] = useState(false);
   const [strictIdentityDocs, setStrictIdentityDocs] = useState(false);
   const [forceIdentity, setForceIdentity] = useState(false);
@@ -553,7 +559,7 @@ export default function WorkerVerificationPage({
 
       const { data: wp, error: wpErr } = await supabase
         .from('worker_profiles')
-        .select('kyc_status, pan_number, aadhaar_number, aadhaar_last4, passport_number, passport_expiry, has_passport, ecr_status, ecr_category, source_type, source_partner_id')
+        .select('kyc_status, pan_number, aadhaar_number, aadhaar_last4, passport_number, passport_expiry, has_passport, ecr_status, ecr_category, source_type, source_partner_id, languages')
         .eq('user_id', subjectId)
         .maybeSingle();
       if (wpErr) {
@@ -568,6 +574,11 @@ export default function WorkerVerificationPage({
       if (!partnerKiosk && emitraSourced && hasParkedPartnerSession() && !hasAckedEmitraOnboardingNotice()) {
         setEmitraNoticeOpen(true);
       }
+      const savedLanguages = Array.isArray((wp as any)?.languages)
+        ? ((wp as any).languages as string[]).filter(Boolean)
+        : [];
+      setSavedLanguages(savedLanguages);
+      setLanguages(savedLanguages.length ? savedLanguages : ['Hindi']);
       const profileKyc = String((wp as any)?.kyc_status || 'not_started');
       const kycRejected = profileKyc === 'rejected' || String(v.kyc_status || '') === 'rejected';
       const kycStatus = kycRejected ? 'rejected' : profileKyc;
@@ -828,12 +839,8 @@ export default function WorkerVerificationPage({
         return;
       }
     }
-    if (
-      needsTenthMarksheet &&
-      !tenthMarksheetFile &&
-      !hasKycDoc(kycDocs, ['tenth_marksheet', 'certificate'])
-    ) {
-      toast.error('Upload a Class 10 or higher education certificate photo');
+    if (!selfieFile && !hasKycDoc(kycDocs, ['selfie'])) {
+      toast.error('Upload a clear photo of your face');
       return;
     }
     if (!kycConsent) {
@@ -899,7 +906,8 @@ export default function WorkerVerificationPage({
       if (aadhaarBackFile) await uploadDoc(aadhaarBackFile, 'aadhaar_back', 'Aadhaar Card Back');
       if (passportFrontFile) await uploadDoc(passportFrontFile, 'passport_front', 'Passport First Page');
       if (passportLastFile) await uploadDoc(passportLastFile, 'passport_last', 'Passport Last Page');
-      if (needsTenthMarksheet && tenthMarksheetFile) {
+      if (selfieFile) await uploadDoc(selfieFile, 'selfie', 'Face selfie');
+      if (tenthMarksheetFile) {
         await uploadDoc(tenthMarksheetFile, 'tenth_marksheet', '10th or higher education certificate');
       }
 
@@ -917,6 +925,7 @@ export default function WorkerVerificationPage({
       setAadhaarBackFile(null);
       setPassportFrontFile(null);
       setPassportLastFile(null);
+      setSelfieFile(null);
       setTenthMarksheetFile(null);
       notifyVerificationUpdated();
       toast.success('Identity submitted — SafeWork will verify your documents before the video interview');
@@ -943,6 +952,10 @@ export default function WorkerVerificationPage({
       toast.error('Select whether you have passed Class 10');
       return;
     }
+    if (languages.length === 0) {
+      toast.error('Select at least one language you can speak');
+      return;
+    }
     setSaving(true);
     try {
       const next = await saveEssentials(subjectId, {
@@ -953,8 +966,10 @@ export default function WorkerVerificationPage({
         gender,
         education_level: education,
         tenth_pass: tenthPass,
+        languages,
       });
       setRow(next);
+      setSavedLanguages(languages);
       setEcrCategory(ecrFromTenthPass(tenthPass).ecr_category);
       notifyVerificationUpdated();
       await refreshProfile();
@@ -1367,6 +1382,7 @@ export default function WorkerVerificationPage({
             identity={{ pan: panNumber, aadhaarLast4: aadhaarOnFile, passport: passportNumber, passportExpiry }}
             ecrCategory={ecrCategory}
             tenthPass={tenthPass}
+            languages={savedLanguages}
             tradeAssessment={tradeAssessment}
             onGoToCurrent={() => {
               if (kycStatusValue === 'rejected' || row.kyc_status === 'rejected') {
@@ -1591,6 +1607,34 @@ export default function WorkerVerificationPage({
                     disabled={tenthPass === null || tenthPass === false}
                     emptyText="Select Class 10 status first"
                   />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Languages you can speak *</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {WORKER_LANGUAGES.map((lang) => {
+                      const selected = languages.includes(lang);
+                      return (
+                        <button
+                          key={lang}
+                          type="button"
+                          className={`rounded-full border px-3 py-1.5 text-sm ${
+                            selected
+                              ? 'border-primary bg-primary/10 text-foreground'
+                              : 'border-input text-muted-foreground'
+                          }`}
+                          onClick={() =>
+                            setLanguages((current) =>
+                              current.includes(lang)
+                                ? current.filter((item) => item !== lang)
+                                : [...current, lang],
+                            )
+                          }
+                        >
+                          {lang}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
           </StageActionShell>
@@ -1939,9 +1983,7 @@ export default function WorkerVerificationPage({
             timeline={[
               {
                 label: 'Identity documents submitted',
-                detail: needsTenthMarksheet
-                  ? 'Aadhaar and 10th or higher education certificate uploaded'
-                  : 'Aadhaar uploaded. PAN and passport can be added after your skill test.',
+                detail: 'Aadhaar and face photo uploaded. A 10th certificate is optional.',
                 status: 'done',
               },
               { label: 'SafeWork verifying your documents', status: 'current' },
@@ -1975,12 +2017,8 @@ export default function WorkerVerificationPage({
             title={strictIdentityDocs ? 'Complete required identity documents' : 'Identity (KYC)'}
             description={
               strictIdentityDocs
-                ? needsTenthMarksheet
-                  ? 'Your skill test is complete. Upload PAN, Aadhaar, a passport valid for at least 6 months, and your 10th or higher education certificate to continue.'
-                  : 'Your skill test is complete. Upload PAN, Aadhaar, and a passport that is valid for at least 6 months to continue.'
-                : needsTenthMarksheet
-                  ? 'Aadhaar is required. PAN and passport can be added after your skill test. Upload your 10th or any higher education certificate if you confirmed 10th pass.'
-                  : 'Aadhaar is required. PAN and passport can be added after your skill test — add them now if you have them.'
+                ? 'Your skill test is complete. Upload a face photo, PAN, Aadhaar, and a passport that is valid for at least 6 months. A 10th certificate is optional.'
+                : 'Aadhaar and a face photo are required. PAN, passport, and a 10th certificate can be added now or later.'
             }
             timeEstimate="Takes 5–7 minutes"
             footer={
@@ -2085,6 +2123,17 @@ export default function WorkerVerificationPage({
                     onChange={setAadhaarBackFile}
                   />
                 </div>
+                <KycPhotoField
+                  label="Face selfie"
+                  required
+                  file={selfieFile}
+                  disabled={saving}
+                  onChange={setSelfieFile}
+                />
+                <p className="text-xs text-muted-foreground">
+                  One clear photo of your face, looking at the camera. This is not a work photo.
+                  {hasKycDoc(kycDocs, ['selfie']) ? ' A selfie is already on file.' : ''}
+                </p>
               </div>
 
               <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
@@ -2145,16 +2194,15 @@ export default function WorkerVerificationPage({
               </div>
               {needsTenthMarksheet && (
                 <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
-                  <p className="text-sm font-medium text-foreground">10th or any higher education *</p>
+                  <p className="text-sm font-medium text-foreground">10th or any higher education (optional)</p>
                   <KycPhotoField
                     label="10th or higher education certificate photo"
-                    required
                     file={tenthMarksheetFile}
                     disabled={saving}
                     onChange={setTenthMarksheetFile}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Upload a clear photo of your Class 10 marksheet, or any higher certificate (12th, ITI, diploma, degree). Required because you confirmed Class 10 pass (ECNR).
+                    Optional. You can upload a Class 10 marksheet, or any higher certificate (12th, ITI, diploma, degree).
                   </p>
                 </div>
               )}
