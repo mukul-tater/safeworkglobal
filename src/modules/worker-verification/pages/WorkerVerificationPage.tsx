@@ -430,6 +430,7 @@ export default function WorkerVerificationPage({
   const [tradeAssessment, setTradeAssessment] = useState<AssessmentRow | null>(null);
   const [declaration, setDeclaration] = useState<WorkerPreJourneyDeclaration | null>(null);
   const [showDeclarationModal, setShowDeclarationModal] = useState(false);
+  const [changingJob, setChangingJob] = useState(false);
   const [createdByPartner, setCreatedByPartner] = useState(false);
   const [createdByEmitra, setCreatedByEmitra] = useState(false);
   const [emitraNoticeOpen, setEmitraNoticeOpen] = useState(false);
@@ -1316,6 +1317,40 @@ export default function WorkerVerificationPage({
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
           <div className="min-w-0 space-y-5">
+        {row.journey_job_id && canChangeJourneyJob(row) && subjectId && (
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium">Current job</p>
+              <p className="text-sm text-muted-foreground">
+                {journeyJobTitle || appliedJobSkillLabel(row.primary_skill, journeyJobTitle, journeyJobDescription)}
+              </p>
+            </div>
+            <Button type="button" variant="outline" onClick={() => setChangingJob((open) => !open)}>
+              {changingJob ? 'Close job list' : 'Change job'}
+            </Button>
+          </div>
+        )}
+        {changingJob && row.journey_job_id && canChangeJourneyJob(row) && subjectId && (
+          <JourneyJobPicker
+            workerUserId={subjectId}
+            journeyJobId={row.journey_job_id}
+            canChangeJob={canChangeJourneyJob(row)}
+            onAdvanced={async (next) => {
+              setChangingJob(false);
+              setRow(next);
+              notifyVerificationUpdated();
+              clearJourneyQuery();
+              if (next.stage === 'quiz') {
+                const items = await loadQuizItemsForWorker(next);
+                setQuizItems(items);
+                setQuizIndex(0);
+                setQuizAnswers({});
+                setQuizNeedsRetake(false);
+                setQuizFailScore(null);
+              }
+            }}
+          />
+        )}
         {viewingCompletedStep && viewingStepMeta && (
           <CompletedStepReview
             stepId={viewingJourney}
@@ -1340,6 +1375,11 @@ export default function WorkerVerificationPage({
               }
               clearJourneyQuery();
             }}
+            onChangeJob={
+              row.journey_job_id && canChangeJourneyJob(row)
+                ? () => setChangingJob(true)
+                : undefined
+            }
           >
             {viewingJourney === 'skill_proof' && (
               <div className="space-y-4">

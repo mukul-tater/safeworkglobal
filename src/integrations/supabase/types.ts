@@ -5004,6 +5004,7 @@ export type Database = {
           created_at: string
           id: string
           is_correct: boolean
+          journey_job_id: string | null
           quiz_item_id: string
           selected_option: string | null
           user_id: string
@@ -5013,6 +5014,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_correct: boolean
+          journey_job_id?: string | null
           quiz_item_id: string
           selected_option?: string | null
           user_id: string
@@ -5022,6 +5024,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_correct?: boolean
+          journey_job_id?: string | null
           quiz_item_id?: string
           selected_option?: string | null
           user_id?: string

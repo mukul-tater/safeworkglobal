@@ -68,6 +68,8 @@ interface Props {
   appliedJobTitle?: string | null;
   appliedJobDescription?: string | null;
   onGoToCurrent: () => void;
+  /** Shown on the finished Find jobs card so a worker can switch after leaving that step. */
+  onChangeJob?: () => void;
   /** Extra interactive block, e.g. add-more-media uploader. */
   children?: ReactNode;
 }
@@ -265,6 +267,7 @@ export default function CompletedStepReview({
   appliedJobTitle,
   appliedJobDescription,
   onGoToCurrent,
+  onChangeJob,
   children,
 }: Props) {
   const appliedSkill = appliedJobSkillLabel(
@@ -333,10 +336,17 @@ export default function CompletedStepReview({
         )}
 
         {stepId === 'find_jobs' && (
-          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-            <Detail label="Applied job" value={appliedSkill} />
-            <Detail label="Journey job" value={row.journey_job_id ? 'Linked' : 'Not applied yet'} />
-          </dl>
+          <div className="space-y-3">
+            <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              <Detail label="Applied job" value={appliedSkill} />
+              <Detail label="Journey job" value={row.journey_job_id ? 'Linked' : 'Not applied yet'} />
+            </dl>
+            {onChangeJob && row.journey_job_id && (
+              <Button type="button" variant="outline" onClick={onChangeJob}>
+                Change job
+              </Button>
+            )}
+          </div>
         )}
 
         {stepId === 'essentials' && (
