@@ -3,12 +3,10 @@ import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH } from '@/lib/launchGate';
 export const GET_STARTED_PATHS = {
   worker: '/worker/login',
   employer: USERS_ONLY_LAUNCH ? COMING_SOON_PATHS.employer : '/employer/login',
-  partner: USERS_ONLY_LAUNCH ? COMING_SOON_PATHS.partner : '/partner/register',
+  partner: '/emitra/register',
 } as const;
 
-export const PARTNER_EXISTING_ACCOUNT_PATH = USERS_ONLY_LAUNCH
-  ? COMING_SOON_PATHS.partner
-  : '/partner/login';
+export const PARTNER_EXISTING_ACCOUNT_PATH = '/emitra/login';
 
 const PUBLIC_AUTH_PATHS = [
   '/auth',

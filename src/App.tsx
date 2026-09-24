@@ -201,6 +201,8 @@ function AppShell() {
           <Route path="/lsp/entry" element={<LspEntryPage />} />
           <Route path="/lsp/verify" element={<LspVerifyPage />} />
           <Route path="/lsp/denied" element={<LspDeniedPage />} />
+          </>
+          )}
 
           {/* E-Mitra partner — canonical register/login; legacy URLs redirect */}
           <Route path="/emitra/register" element={<EmitraOnboardingPage />} />
@@ -398,8 +400,6 @@ function AppShell() {
           <Route path="/partner/sen-global/revenue" element={<ProtectedRoute allowedRoles={["partner"]}><SenGlobalRevenue /></ProtectedRoute>} />
 
           <Route path="/partner/legacy-dashboard" element={<Navigate to="/partner/dashboard" replace />} />
-          </>
-          )}
 
           {/* Admin portal */}
           <Route path="/admin/login" element={<AdminLoginPage />} />

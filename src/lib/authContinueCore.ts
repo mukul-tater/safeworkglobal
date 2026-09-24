@@ -151,10 +151,7 @@ export function mapAuthContinuePayload(raw: unknown): AuthContinueResult {
 }
 
 export function portalAuthPath(role: AuthPortalRole): string {
-  if (USERS_ONLY_LAUNCH) {
-    if (role === 'employer') return COMING_SOON_PATHS.employer;
-    if (role === 'partner') return COMING_SOON_PATHS.partner;
-  }
+  if (USERS_ONLY_LAUNCH && role === 'employer') return COMING_SOON_PATHS.employer;
   if (role === 'employer') return '/employer/login';
   if (role === 'partner') return '/partner/login';
   return '/worker/login';

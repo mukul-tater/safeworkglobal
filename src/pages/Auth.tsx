@@ -37,7 +37,7 @@ const roles: { value: AppRole; label: string; description: string; icon: React.R
 ];
 
 const selectableRoles = USERS_ONLY_LAUNCH
-  ? roles.filter((r) => r.value === 'worker')
+  ? roles.filter((r) => r.value !== 'employer')
   : roles;
 
 export default function Auth() {
@@ -435,7 +435,7 @@ export default function Auth() {
             {view === 'login' && 'Choose Worker, Employer, or Partner. We’ll take you to the next step.'}
             {view === 'role-select' && (needsRoleSelection
               ? USERS_ONLY_LAUNCH
-                ? `Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! Worker signup is live. Employer and partner portals are coming soon.`
+                ? `Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! Worker and E-Mitra partner signup are live. The employer portal is coming soon.`
                 : `Welcome${profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! Choose how you want to use SafeWorkGlobal.`
               : 'Choose how you want to use the platform')}
             {view === 'signup' && `Continuing as ${roles.find(r => r.value === signupRole)?.label}`}

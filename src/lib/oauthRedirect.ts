@@ -130,8 +130,6 @@ export function resolvePostOAuthPath(path: string | null, pendingRole?: string |
     const pathname = (path || '').split('?')[0];
     if (
       pathname.startsWith('/employer') ||
-      pathname.startsWith('/partner') ||
-      pathname.startsWith('/emitra') ||
       pathname.startsWith('/interviewer') ||
       pathname.startsWith('/lsp')
     ) {

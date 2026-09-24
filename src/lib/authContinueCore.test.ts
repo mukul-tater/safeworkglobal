@@ -98,5 +98,5 @@ test('mapAuthContinuePayload: rate limit and invalid payload', () => {
 test('portalAuthPath', () => {
   assert.equal(portalAuthPath('worker'), '/worker/login');
   assert.equal(portalAuthPath('employer'), '/coming-soon/employers');
-  assert.equal(portalAuthPath('partner'), '/coming-soon/partners');
+  assert.equal(portalAuthPath('partner'), '/partner/login');
 });

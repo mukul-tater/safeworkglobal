@@ -64,9 +64,6 @@ export default function GetStartedChoices({ onChosen }: Props) {
         <div>
           <div className="font-semibold text-sm flex items-center gap-2">
             {t('header.partner')}
-            {USERS_ONLY_LAUNCH && (
-              <span className="text-[10px] font-medium uppercase tracking-wide text-warning">Coming soon</span>
-            )}
           </div>
           <div className="text-xs text-muted-foreground">{t('header.partnerSub')}</div>
         </div>

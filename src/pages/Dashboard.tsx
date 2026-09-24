@@ -46,10 +46,6 @@ export default function Dashboard() {
         go("/admin/dashboard");
         break;
       case 'partner':
-        if (USERS_ONLY_LAUNCH) {
-          go(COMING_SOON_PATHS.partner);
-          break;
-        }
         (async () => {
           try {
             const { data } = await supabase
