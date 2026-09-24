@@ -1629,6 +1629,27 @@ export type Database = {
           },
         ]
       }
+      journey_job_settings: {
+        Row: {
+          id: number
+          job_switch_enabled: boolean
+          max_job_choices: number
+          updated_at: string
+        }
+        Insert: {
+          id: number
+          job_switch_enabled?: boolean
+          max_job_choices?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          job_switch_enabled?: boolean
+          max_job_choices?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lsp_launch_logs: {
         Row: {
           created_at: string
@@ -4560,6 +4581,218 @@ export type Database = {
           },
         ]
       }
+      worker_job_change_payments: {
+        Row: {
+          amount: number
+          charged_amount: number | null
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          proof_file_name: string | null
+          proof_path: string | null
+          provider: string | null
+          provider_ref: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          transfer_method: string | null
+          transferred_on: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          charged_amount?: number | null
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          proof_file_name?: string | null
+          proof_path?: string | null
+          provider?: string | null
+          provider_ref?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transfer_method?: string | null
+          transferred_on?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          charged_amount?: number | null
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          proof_file_name?: string | null
+          proof_path?: string | null
+          provider?: string | null
+          provider_ref?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transfer_method?: string | null
+          transferred_on?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      worker_journey_job_changes: {
+        Row: {
+          change_number: number
+          created_at: string
+          created_by: string | null
+          from_job_id: string | null
+          id: string
+          to_job_id: string | null
+          worker_id: string
+        }
+        Insert: {
+          change_number: number
+          created_at?: string
+          created_by?: string | null
+          from_job_id?: string | null
+          id?: string
+          to_job_id?: string | null
+          worker_id: string
+        }
+        Update: {
+          change_number?: number
+          created_at?: string
+          created_by?: string | null
+          from_job_id?: string | null
+          id?: string
+          to_job_id?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_journey_job_changes_from_job_id_fkey"
+            columns: ["from_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_journey_job_changes_to_job_id_fkey"
+            columns: ["to_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worker_journey_job_snapshots: {
+        Row: {
+          application_status: string | null
+          interview_attempts: number | null
+          interview_meeting_url: string | null
+          interview_notes: string | null
+          interview_rated_at: string | null
+          interview_scheduled_at: string | null
+          interview_score: number | null
+          interview_status: string | null
+          interviewer_name: string | null
+          interviewer_user_id: string | null
+          job_id: string
+          media_submitted_at: string | null
+          primary_skill: string | null
+          quiz_completed_at: string | null
+          quiz_score: number | null
+          saved_at: string
+          stage: string
+          trade_test_booked_at: string | null
+          trade_test_center_id: string | null
+          trade_test_center_name: string | null
+          trade_test_instructions: string | null
+          trade_test_place: string | null
+          trade_test_reporting_window: string | null
+          trade_test_required: boolean | null
+          trade_test_result_url: string | null
+          trade_test_scheduled_at: string | null
+          trade_test_status: string | null
+          worker_id: string
+        }
+        Insert: {
+          application_status?: string | null
+          interview_attempts?: number | null
+          interview_meeting_url?: string | null
+          interview_notes?: string | null
+          interview_rated_at?: string | null
+          interview_scheduled_at?: string | null
+          interview_score?: number | null
+          interview_status?: string | null
+          interviewer_name?: string | null
+          interviewer_user_id?: string | null
+          job_id: string
+          media_submitted_at?: string | null
+          primary_skill?: string | null
+          quiz_completed_at?: string | null
+          quiz_score?: number | null
+          saved_at?: string
+          stage: string
+          trade_test_booked_at?: string | null
+          trade_test_center_id?: string | null
+          trade_test_center_name?: string | null
+          trade_test_instructions?: string | null
+          trade_test_place?: string | null
+          trade_test_reporting_window?: string | null
+          trade_test_required?: boolean | null
+          trade_test_result_url?: string | null
+          trade_test_scheduled_at?: string | null
+          trade_test_status?: string | null
+          worker_id: string
+        }
+        Update: {
+          application_status?: string | null
+          interview_attempts?: number | null
+          interview_meeting_url?: string | null
+          interview_notes?: string | null
+          interview_rated_at?: string | null
+          interview_scheduled_at?: string | null
+          interview_score?: number | null
+          interview_status?: string | null
+          interviewer_name?: string | null
+          interviewer_user_id?: string | null
+          job_id?: string
+          media_submitted_at?: string | null
+          primary_skill?: string | null
+          quiz_completed_at?: string | null
+          quiz_score?: number | null
+          saved_at?: string
+          stage?: string
+          trade_test_booked_at?: string | null
+          trade_test_center_id?: string | null
+          trade_test_center_name?: string | null
+          trade_test_instructions?: string | null
+          trade_test_place?: string | null
+          trade_test_reporting_window?: string | null
+          trade_test_required?: boolean | null
+          trade_test_result_url?: string | null
+          trade_test_scheduled_at?: string | null
+          trade_test_status?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_journey_job_snapshots_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worker_pre_journey_declarations: {
         Row: {
           acknowledgements: Json
@@ -4932,6 +5165,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "worker_skill_media_journey_job_id_fkey"
+            columns: ["journey_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "worker_skill_media_skill_id_fkey"
             columns: ["skill_id"]
             isOneToOne: false
@@ -5030,6 +5270,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "worker_skill_quiz_responses_journey_job_id_fkey"
+            columns: ["journey_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "worker_skill_quiz_responses_quiz_item_id_fkey"
             columns: ["quiz_item_id"]
@@ -5156,6 +5403,9 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          job_change_fee_due: number | null
+          job_change_fee_paid_at: string | null
+          job_switch_blocked: boolean
           journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
@@ -5233,6 +5483,9 @@ export type Database = {
           interview_status?: string
           interviewer_name?: string | null
           interviewer_user_id?: string | null
+          job_change_fee_due?: number | null
+          job_change_fee_paid_at?: string | null
+          job_switch_blocked?: boolean
           journey_job_id?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: string
@@ -5310,6 +5563,9 @@ export type Database = {
           interview_status?: string
           interviewer_name?: string | null
           interviewer_user_id?: string | null
+          job_change_fee_due?: number | null
+          job_change_fee_paid_at?: string | null
+          job_switch_blocked?: boolean
           journey_job_id?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: string
@@ -5568,6 +5824,7 @@ export type Database = {
           worker_user_id: string
         }[]
       }
+      admin_job_switch_overview: { Args: never; Returns: Json }
       admin_list_employer_orgs: {
         Args: never
         Returns: {
@@ -5659,6 +5916,9 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          job_change_fee_due: number | null
+          job_change_fee_paid_at: string | null
+          job_switch_blocked: boolean
           journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
@@ -5713,6 +5973,10 @@ export type Database = {
         Args: { p_action: string; p_reason?: string; p_user_id: string }
         Returns: undefined
       }
+      admin_review_job_change_payment: {
+        Args: { p_action: string; p_payment_id: string }
+        Returns: undefined
+      }
       admin_revoke_worker_assignment: {
         Args: { p_org: string; p_worker_user_id: string }
         Returns: undefined
@@ -5746,6 +6010,14 @@ export type Database = {
         Args: { p_field_key: string; p_org: string; p_visible: boolean }
         Returns: undefined
       }
+      admin_set_job_change_fee: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: number
+      }
+      admin_set_job_switch_enabled: {
+        Args: { p_enabled: boolean }
+        Returns: boolean
+      }
       admin_set_lsp_status: {
         Args: { p_lsp_id: string; p_status: string }
         Returns: undefined
@@ -5774,6 +6046,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      admin_set_worker_job_switch_blocked: {
+        Args: { p_blocked: boolean; p_user_id: string }
+        Returns: boolean
       }
       admin_update_deployment_checklist: {
         Args: {
@@ -5843,51 +6119,6 @@ export type Database = {
         }
         Returns: string
       }
-      admin_job_switch_overview: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      admin_review_job_change_payment: {
-        Args: { p_action: string; p_payment_id: string }
-        Returns: undefined
-      }
-      admin_set_job_change_fee: {
-        Args: { p_amount: number; p_user_id: string }
-        Returns: number
-      }
-      admin_set_job_switch_enabled: {
-        Args: { p_enabled: boolean }
-        Returns: boolean
-      }
-      admin_set_worker_job_switch_blocked: {
-        Args: { p_blocked: boolean; p_user_id: string }
-        Returns: boolean
-      }
-      complete_job_change_fee_razorpay: {
-        Args: {
-          p_amount: number
-          p_order_id: string
-          p_payment_id: string
-          p_user_id: string
-        }
-        Returns: undefined
-      }
-      job_switch_policy: {
-        Args: { p_user_id?: string }
-        Returns: Json
-      }
-      submit_job_change_bank_transfer: {
-        Args: {
-          p_amount: number
-          p_method: string
-          p_proof_file_name: string
-          p_proof_path: string
-          p_provider_ref: string
-          p_transferred_on: string
-          p_worker_user_id?: string
-        }
-        Returns: string
-      }
       complete_assessment_payment_razorpay: {
         Args: {
           p_amount?: number
@@ -5929,6 +6160,9 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          job_change_fee_due: number | null
+          job_change_fee_paid_at: string | null
+          job_switch_blocked: boolean
           journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
@@ -6015,6 +6249,9 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          job_change_fee_due: number | null
+          job_change_fee_paid_at: string | null
+          job_switch_blocked: boolean
           journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
@@ -6064,6 +6301,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      complete_job_change_fee_razorpay: {
+        Args: {
+          p_amount: number
+          p_order_id: string
+          p_payment_id: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
       compute_partner_tier: {
         Args: { p_placements: number }
@@ -6386,6 +6632,7 @@ export type Database = {
         }
         Returns: Json
       }
+      job_switch_policy: { Args: { p_user_id?: string }; Returns: Json }
       journey_email_webhook_secret: { Args: never; Returns: string }
       list_my_shared_workers: {
         Args: never
@@ -6538,6 +6785,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      submit_job_change_bank_transfer: {
+        Args: {
+          p_amount: number
+          p_method: string
+          p_proof_file_name: string
+          p_proof_path: string
+          p_provider_ref: string
+          p_transferred_on: string
+          p_worker_user_id?: string
+        }
+        Returns: string
+      }
       submit_worker_quiz: {
         Args: { p_answers: Json; p_user_id?: string }
         Returns: {
@@ -6597,6 +6856,9 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          job_change_fee_due: number | null
+          job_change_fee_paid_at: string | null
+          job_switch_blocked: boolean
           journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
@@ -6683,6 +6945,9 @@ export type Database = {
           interview_status: string
           interviewer_name: string | null
           interviewer_user_id: string | null
+          job_change_fee_due: number | null
+          job_change_fee_paid_at: string | null
+          job_switch_blocked: boolean
           journey_job_id: string | null
           kyc_rejection_reason: string | null
           kyc_status: string
