@@ -9,24 +9,11 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   QAR: 'QAR',
 };
 
-/**
- * Approximate INR rates for worker-facing salary display and filters.
- * 1 AED ≈ ₹23 (typical 2026 GCC band). Exact live FX is not wired yet.
- */
-const INR_RATES: Record<string, number> = {
-  INR: 1,
-  AED: 23,
-  SAR: 23,
-  QAR: 23.5,
-  USD: 84,
-  EUR: 98,
-  GBP: 112,
-};
-
-/** Converts a native salary amount to INR for display and filters. */
-export function convertSalaryToINR(amount: number, currency: string): number {
-  const rate = INR_RATES[currency] ?? 1;
-  return Math.round(amount * rate);
+/** Converts with a verified rate supplied by fx_rates; never guesses. */
+export function convertSalaryToINR(amount: number, currency: string, inrPerUnit?: number | null): number | null {
+  if (currency === 'INR') return Math.round(amount);
+  if (inrPerUnit == null || !Number.isFinite(inrPerUnit) || inrPerUnit <= 0) return null;
+  return Math.round(amount * inrPerUnit);
 }
 
 function formatNativeAmount(amount: number, currency: string): string {
@@ -67,7 +54,7 @@ function formatInrPrimaryLine(
   return `Up to ${formatInrAmountLabel(max!)}`;
 }
 
-/** Primary salary line — always displayed in ₹ (INR). */
+/** Primary salary line in the job's native currency. */
 export function getJobSalaryDisplay(
   min: number | null | undefined,
   max: number | null | undefined,
@@ -78,11 +65,8 @@ export function getJobSalaryDisplay(
     return { primary: emptyLabel, inrLine: null };
   }
 
-  const inrMin = min == null ? null : convertSalaryToINR(min, currency);
-  const inrMax = max == null ? null : convertSalaryToINR(max, currency);
-
   return {
-    primary: formatInrPrimaryLine(inrMin, inrMax, emptyLabel),
+    primary: formatJobSalaryNative(min, max, currency, emptyLabel),
     inrLine: null,
   };
 }

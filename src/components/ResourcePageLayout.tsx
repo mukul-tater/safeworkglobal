@@ -11,6 +11,8 @@ interface ResourcePageLayoutProps {
   heading: string;
   intro: string;
   children: ReactNode;
+  canonicalPath?: string;
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 export default function ResourcePageLayout({
@@ -20,10 +22,12 @@ export default function ResourcePageLayout({
   heading,
   intro,
   children,
+  canonicalPath,
+  structuredData,
 }: ResourcePageLayoutProps) {
   return (
     <div className="min-h-screen bg-background has-mobile-nav overflow-x-hidden">
-      <SEOHead title={title} description={description} />
+      <SEOHead title={title} description={description} canonicalUrl={canonicalPath} structuredData={structuredData} />
       <Header />
 
       <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-muted/40 to-background">

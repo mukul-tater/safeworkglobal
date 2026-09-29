@@ -6,6 +6,7 @@ import {
   SITE_NAME,
   SITE_ORIGIN,
   canonicalUrl as toCanonical,
+  type JsonLd,
 } from '@/lib/seo';
 
 const BRAND = SITE_NAME;
@@ -34,7 +35,8 @@ interface SEOHeadProps {
   canonicalUrl?: string;
   ogType?: string;
   ogImage?: string;
-  structuredData?: object;
+  structuredData?: JsonLd | JsonLd[];
+  robots?: string;
 }
 
 export default function SEOHead({
@@ -47,6 +49,7 @@ export default function SEOHead({
   ogType = 'website',
   ogImage = DEFAULT_OG_IMAGE,
   structuredData,
+  robots = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1',
 }: SEOHeadProps) {
   useEffect(() => {
     const documentTitle = formatDocumentTitle(title);
@@ -74,6 +77,7 @@ export default function SEOHead({
     };
 
     updateMeta('description', description);
+    updateMeta('robots', robots);
     if (keywords) updateMeta('keywords', keywords);
 
     updateMeta('og:title', documentTitle, true);
@@ -99,22 +103,21 @@ export default function SEOHead({
     }
     link.setAttribute('href', resolvedCanonical);
 
-    if (structuredData) {
-      let script = document.querySelector('script[data-seo-jsonld="page"]');
-      if (!script) {
-        script = document.createElement('script');
-        script.setAttribute('type', 'application/ld+json');
-        script.setAttribute('data-seo-jsonld', 'page');
-        document.head.appendChild(script);
-      }
-      script.textContent = JSON.stringify(structuredData);
-    }
+    document.querySelectorAll('script[data-seo-jsonld="page"]').forEach((node) => node.remove());
+    const blocks = structuredData ? (Array.isArray(structuredData) ? structuredData : [structuredData]) : [];
+    blocks.forEach((block, index) => {
+      const script = document.createElement('script');
+      script.setAttribute('type', 'application/ld+json');
+      script.setAttribute('data-seo-jsonld', 'page');
+      script.setAttribute('data-seo-jsonld-index', String(index));
+      script.textContent = JSON.stringify(block);
+      document.head.appendChild(script);
+    });
 
     return () => {
-      const ldScript = document.querySelector('script[data-seo-jsonld="page"]');
-      if (ldScript) ldScript.remove();
+      document.querySelectorAll('script[data-seo-jsonld="page"]').forEach((node) => node.remove());
     };
-  }, [title, description, ogDescription, twitterDescription, keywords, canonicalUrl, ogType, ogImage, structuredData]);
+  }, [title, description, ogDescription, twitterDescription, keywords, canonicalUrl, ogType, ogImage, structuredData, robots]);
 
   return null;
 }

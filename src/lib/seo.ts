@@ -1,5 +1,5 @@
 /** Production origin used for canonical URLs, Open Graph, and structured data. */
-export const SITE_ORIGIN = 'https://www.safeworkglobal.com';
+export const SITE_ORIGIN = 'https://safeworkglobal.com';
 
 export const SITE_NAME = 'SafeWork Global';
 
@@ -21,11 +21,38 @@ export const DEFAULT_OG_IMAGE_HEIGHT = '630';
 export const LOGO_URL = `${SITE_ORIGIN}/safework-global-logo.png`;
 
 export function canonicalUrl(path = '/'): string {
-  const normalized = path.startsWith('http')
-    ? new URL(path).pathname
-    : path;
+  const normalized = path.startsWith('http') ? new URL(path).pathname : path.split('?')[0].split('#')[0];
   const clean = (normalized.replace(/\/+$/, '') || '/') as string;
   return clean === '/' ? `${SITE_ORIGIN}/` : `${SITE_ORIGIN}${clean}`;
+}
+
+export type JsonLd = Record<string, unknown>;
+
+export function breadcrumbJsonLd(items: Array<{ name: string; path: string }>): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: canonicalUrl(item.path),
+    })),
+  };
+}
+
+export function websiteJsonLd(): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_NAME,
+    url: `${SITE_ORIGIN}/`,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${SITE_ORIGIN}/jobs?keyword={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  };
 }
 
 export const ORGANIZATION_JSON_LD = {

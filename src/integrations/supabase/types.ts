@@ -978,6 +978,7 @@ export type Database = {
           id_number: string | null
           id_type: string | null
           industry: string | null
+          is_public: boolean
           job_type: string | null
           linkedin_url: string | null
           office_address: string | null
@@ -988,6 +989,9 @@ export type Database = {
           preferred_communication: string | null
           preferred_countries: string[] | null
           provides_ppe: string | null
+          public_description: string | null
+          public_slug: string | null
+          public_verified: boolean
           requirement_reference_id: string | null
           requirement_submitted_at: string | null
           salary_amount: number | null
@@ -1037,6 +1041,7 @@ export type Database = {
           id_number?: string | null
           id_type?: string | null
           industry?: string | null
+          is_public?: boolean
           job_type?: string | null
           linkedin_url?: string | null
           office_address?: string | null
@@ -1047,6 +1052,9 @@ export type Database = {
           preferred_communication?: string | null
           preferred_countries?: string[] | null
           provides_ppe?: string | null
+          public_description?: string | null
+          public_slug?: string | null
+          public_verified?: boolean
           requirement_reference_id?: string | null
           requirement_submitted_at?: string | null
           salary_amount?: number | null
@@ -1096,6 +1104,7 @@ export type Database = {
           id_number?: string | null
           id_type?: string | null
           industry?: string | null
+          is_public?: boolean
           job_type?: string | null
           linkedin_url?: string | null
           office_address?: string | null
@@ -1106,6 +1115,9 @@ export type Database = {
           preferred_communication?: string | null
           preferred_countries?: string[] | null
           provides_ppe?: string | null
+          public_description?: string | null
+          public_slug?: string | null
+          public_verified?: boolean
           requirement_reference_id?: string | null
           requirement_submitted_at?: string | null
           salary_amount?: number | null
@@ -1564,9 +1576,44 @@ export type Database = {
           },
         ]
       }
+      job_slug_redirects: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          new_slug: string
+          old_slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          new_slug: string
+          old_slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          new_slug?: string
+          old_slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_slug_redirects_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           benefits: string | null
+          canonical_url: string | null
+          category: string | null
+          city: string | null
           country: string
           created_at: string | null
           created_by: string | null
@@ -1575,9 +1622,12 @@ export type Database = {
           employer_id: string
           experience_level: string
           expires_at: string | null
+          first_published_at: string | null
           id: string
+          indexable: boolean
           job_type: string
           location: string
+          noindex_reason: string | null
           openings: number
           posted_at: string | null
           posted_by_role: string
@@ -1587,6 +1637,8 @@ export type Database = {
           salary_display: string | null
           salary_max: number | null
           salary_min: number | null
+          seo_description: string | null
+          seo_title: string | null
           service_charge: number
           slug: string | null
           status: string
@@ -1596,6 +1648,9 @@ export type Database = {
         }
         Insert: {
           benefits?: string | null
+          canonical_url?: string | null
+          category?: string | null
+          city?: string | null
           country: string
           created_at?: string | null
           created_by?: string | null
@@ -1604,9 +1659,12 @@ export type Database = {
           employer_id: string
           experience_level: string
           expires_at?: string | null
+          first_published_at?: string | null
           id?: string
+          indexable?: boolean
           job_type: string
           location: string
+          noindex_reason?: string | null
           openings?: number
           posted_at?: string | null
           posted_by_role?: string
@@ -1616,6 +1674,8 @@ export type Database = {
           salary_display?: string | null
           salary_max?: number | null
           salary_min?: number | null
+          seo_description?: string | null
+          seo_title?: string | null
           service_charge?: number
           slug?: string | null
           status?: string
@@ -1625,6 +1685,9 @@ export type Database = {
         }
         Update: {
           benefits?: string | null
+          canonical_url?: string | null
+          category?: string | null
+          city?: string | null
           country?: string
           created_at?: string | null
           created_by?: string | null
@@ -1633,9 +1696,12 @@ export type Database = {
           employer_id?: string
           experience_level?: string
           expires_at?: string | null
+          first_published_at?: string | null
           id?: string
+          indexable?: boolean
           job_type?: string
           location?: string
+          noindex_reason?: string | null
           openings?: number
           posted_at?: string | null
           posted_by_role?: string
@@ -1645,6 +1711,8 @@ export type Database = {
           salary_display?: string | null
           salary_max?: number | null
           salary_min?: number | null
+          seo_description?: string | null
+          seo_title?: string | null
           service_charge?: number
           slug?: string | null
           status?: string
@@ -3658,6 +3726,113 @@ export type Database = {
           },
         ]
       }
+      seo_events: {
+        Row: {
+          category: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          event_type: string
+          id: number
+          job_id: string | null
+          path: string
+          referrer_host: string | null
+          session_id: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          category?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          event_type: string
+          id?: number
+          job_id?: string | null
+          path: string
+          referrer_host?: string | null
+          session_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          category?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          event_type?: string
+          id?: number
+          job_id?: string | null
+          path?: string
+          referrer_host?: string | null
+          session_id?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seo_events_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seo_pages: {
+        Row: {
+          canonical_url: string | null
+          city: string | null
+          content: string | null
+          country: string | null
+          created_at: string
+          description: string
+          id: string
+          indexable: boolean
+          job_category: string | null
+          noindex_reason: string | null
+          page_type: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          canonical_url?: string | null
+          city?: string | null
+          content?: string | null
+          country?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          indexable?: boolean
+          job_category?: string | null
+          noindex_reason?: string | null
+          page_type: string
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          canonical_url?: string | null
+          city?: string | null
+          content?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          indexable?: boolean
+          job_category?: string | null
+          noindex_reason?: string | null
+          page_type?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shortlisted_workers: {
         Row: {
           created_at: string | null
@@ -4596,6 +4771,45 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      worker_change_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_kind: string
+          area: string
+          created_at: string
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          worker_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_kind: string
+          area: string
+          created_at?: string
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          worker_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_kind?: string
+          area?: string
+          created_at?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          worker_id?: string
+        }
+        Relationships: []
       }
       worker_documents: {
         Row: {
@@ -6591,6 +6805,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      expire_public_jobs: { Args: never; Returns: number }
       generate_employer_requirement_ref: { Args: never; Returns: string }
       generate_partner_code: { Args: never; Returns: string }
       get_employer_company_names: {
@@ -6655,9 +6870,6 @@ export type Database = {
           worker_name: string
         }[]
       }
-      india_find_district: { Args: { p_city: string; p_state: string }; Returns: string }
-      india_localities: { Args: { p_district: string; p_state: string }; Returns: Json }
-      india_locality_search: { Args: { p_query: string; p_state: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -6828,6 +7040,9 @@ export type Database = {
         Args: { _new: Database["public"]["Tables"]["partners"]["Row"] }
         Returns: boolean
       }
+      public_employer_by_slug: { Args: { p_slug: string }; Returns: Json }
+      public_job_by_slug: { Args: { p_slug: string }; Returns: Json }
+      public_seo_snapshot: { Args: never; Returns: Json }
       record_site_visit: { Args: never; Returns: undefined }
       request_journey_step_email: {
         Args: { p_notification_id: string }
@@ -6841,6 +7056,7 @@ export type Database = {
       resolve_worker_quiz_item_id: { Args: { p_raw: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
+      seo_health_summary: { Args: never; Returns: Json }
       submit_bank_transfer_payment: {
         Args: {
           p_amount: number
@@ -7159,6 +7375,39 @@ export type Database = {
       worker_can_apply_to_jobs: {
         Args: { p_user_id: string }
         Returns: boolean
+      }
+      worker_change_bool: { Args: { p_value: boolean }; Returns: string }
+      worker_change_clip: { Args: { p_value: string }; Returns: string }
+      worker_change_doc_label: { Args: { p_type: string }; Returns: string }
+      worker_change_file_name: { Args: { p_path: string }; Returns: string }
+      worker_change_job_title: { Args: { p_job_id: string }; Returns: string }
+      worker_change_list: { Args: { p_value: string[] }; Returns: string }
+      worker_change_log_diff: {
+        Args: {
+          p_area: string
+          p_field: string
+          p_new: string
+          p_old: string
+          p_worker_id: string
+        }
+        Returns: undefined
+      }
+      worker_change_log_write: {
+        Args: {
+          p_action: string
+          p_area: string
+          p_field: string
+          p_new: string
+          p_old: string
+          p_worker_id: string
+        }
+        Returns: undefined
+      }
+      worker_change_mask: { Args: { p_value: string }; Returns: string }
+      worker_change_num: { Args: { p_value: number }; Returns: string }
+      worker_change_salary: {
+        Args: { p_currency: string; p_max: number; p_min: number }
+        Returns: string
       }
       worker_confirm_guarantor_otp: {
         Args: { p_mobile: string }
