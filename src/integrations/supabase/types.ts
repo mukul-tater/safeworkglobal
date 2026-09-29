@@ -3167,6 +3167,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          can_add_workers: boolean
           city: string | null
           created_at: string
           district: string | null
@@ -3185,6 +3186,7 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          can_add_workers?: boolean
           city?: string | null
           created_at?: string
           district?: string | null
@@ -3203,6 +3205,7 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          can_add_workers?: boolean
           city?: string | null
           created_at?: string
           district?: string | null
@@ -4593,6 +4596,45 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      worker_change_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_kind: string
+          area: string
+          created_at: string
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          worker_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_kind: string
+          area: string
+          created_at?: string
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          worker_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_kind?: string
+          area?: string
+          created_at?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          worker_id?: string
+        }
+        Relationships: []
       }
       worker_documents: {
         Row: {
@@ -6082,6 +6124,10 @@ export type Database = {
         Args: { p_lsp_id: string; p_status: string }
         Returns: undefined
       }
+      admin_set_partner_can_add_workers: {
+        Args: { p_enabled: boolean; p_partner_id: string }
+        Returns: undefined
+      }
       admin_set_partner_status: {
         Args: {
           p_partner_id: string
@@ -6415,6 +6461,7 @@ export type Database = {
       current_partner: {
         Args: never
         Returns: {
+          can_add_workers: boolean
           city: string
           company_name: string
           district: string
@@ -6647,9 +6694,6 @@ export type Database = {
           worker_name: string
         }[]
       }
-      india_find_district: { Args: { p_city: string; p_state: string }; Returns: string }
-      india_localities: { Args: { p_district: string; p_state: string }; Returns: Json }
-      india_locality_search: { Args: { p_query: string; p_state: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -7151,6 +7195,39 @@ export type Database = {
       worker_can_apply_to_jobs: {
         Args: { p_user_id: string }
         Returns: boolean
+      }
+      worker_change_bool: { Args: { p_value: boolean }; Returns: string }
+      worker_change_clip: { Args: { p_value: string }; Returns: string }
+      worker_change_doc_label: { Args: { p_type: string }; Returns: string }
+      worker_change_file_name: { Args: { p_path: string }; Returns: string }
+      worker_change_job_title: { Args: { p_job_id: string }; Returns: string }
+      worker_change_list: { Args: { p_value: string[] }; Returns: string }
+      worker_change_log_diff: {
+        Args: {
+          p_area: string
+          p_field: string
+          p_new: string
+          p_old: string
+          p_worker_id: string
+        }
+        Returns: undefined
+      }
+      worker_change_log_write: {
+        Args: {
+          p_action: string
+          p_area: string
+          p_field: string
+          p_new: string
+          p_old: string
+          p_worker_id: string
+        }
+        Returns: undefined
+      }
+      worker_change_mask: { Args: { p_value: string }; Returns: string }
+      worker_change_num: { Args: { p_value: number }; Returns: string }
+      worker_change_salary: {
+        Args: { p_currency: string; p_max: number; p_min: number }
+        Returns: string
       }
       worker_confirm_guarantor_otp: {
         Args: { p_mobile: string }
