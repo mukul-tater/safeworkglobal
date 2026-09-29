@@ -345,69 +345,6 @@ export default function PartnerRegisterLegacy() {
           </div>
         )}
 
-        {!isAuthenticated && (
-          <section className="space-y-3 rounded-xl border border-border/60 bg-muted/30 p-4">
-            <div>
-              <h3 className="text-sm font-semibold">Create login</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Set a password now. After approval, sign in at{" "}
-                <Link to={loginPath} className="font-medium text-primary hover:underline">
-                  {signInLabel}
-                </Link>
-                .
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Password *</Label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={form.password}
-                    onChange={(e) => set("password", sanitizePasswordInput(e.target.value))}
-                    className="h-11 pl-10 pr-9"
-                    placeholder={PASSWORD_HINT}
-                  />
-                  <button
-                    type="button"
-                    data-inline
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Confirm *</Label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type={showConfirmPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={form.confirmPassword}
-                    onChange={(e) => set("confirmPassword", sanitizePasswordInput(e.target.value))}
-                    className="h-11 pl-10 pr-9"
-                    placeholder="Re-enter"
-                  />
-                  <button
-                    type="button"
-                    data-inline
-                    onClick={() => setShowConfirmPassword((v) => !v)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
         <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
             <Label>{portal?.orgNameLabel ?? "Company / Center Name *"}</Label>
@@ -479,6 +416,69 @@ export default function PartnerRegisterLegacy() {
             />
           </div>
         </section>
+
+        {!isAuthenticated && (
+          <section className="space-y-3 rounded-xl border border-border/60 bg-muted/30 p-4">
+            <div>
+              <h3 className="text-sm font-semibold">Create login</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Set a password for this account. After approval, sign in at{" "}
+                <Link to={loginPath} className="font-medium text-primary hover:underline">
+                  {signInLabel}
+                </Link>
+                .
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Password *</Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={form.password}
+                    onChange={(e) => set("password", sanitizePasswordInput(e.target.value))}
+                    className="h-11 pl-10 pr-9"
+                    placeholder={PASSWORD_HINT}
+                  />
+                  <button
+                    type="button"
+                    data-inline
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Confirm *</Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={form.confirmPassword}
+                    onChange={(e) => set("confirmPassword", sanitizePasswordInput(e.target.value))}
+                    className="h-11 pl-10 pr-9"
+                    placeholder="Re-enter"
+                  />
+                  <button
+                    type="button"
+                    data-inline
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           <IndiaLocationFields
