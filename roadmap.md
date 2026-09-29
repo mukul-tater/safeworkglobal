@@ -20,4 +20,4 @@
 - [x] Fix only the six named permissive RLS findings and two named storage owner-binding findings; mark only those findings resolved.
 
 ## Admin Firebase Account Cleanup
-- [ ] Review the uploaded deletion brief and release a user's Firebase phone identity before admin account deletion.
+- [ ] Release a user's Firebase phone identity before admin account deletion. Implementation complete; deployment awaits Firebase Admin credentials.
