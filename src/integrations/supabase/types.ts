@@ -211,6 +211,7 @@ export type Database = {
           arrival_photo_taken_by_name: string | null
           assessor_name: string | null
           attendance_confirmed: boolean
+          booking_reference: string | null
           centre_submitted_at: string | null
           created_at: string
           created_by: string | null
@@ -247,6 +248,7 @@ export type Database = {
           scheduled_at: string | null
           scorecard_uploaded_at: string | null
           scores: Json
+          slip_issued_at: string | null
           start_time: string | null
           status: Database["public"]["Enums"]["assessment_status"]
           test_evidence_completed_at: string | null
@@ -270,6 +272,7 @@ export type Database = {
           arrival_photo_taken_by_name?: string | null
           assessor_name?: string | null
           attendance_confirmed?: boolean
+          booking_reference?: string | null
           centre_submitted_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -306,6 +309,7 @@ export type Database = {
           scheduled_at?: string | null
           scorecard_uploaded_at?: string | null
           scores?: Json
+          slip_issued_at?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["assessment_status"]
           test_evidence_completed_at?: string | null
@@ -329,6 +333,7 @@ export type Database = {
           arrival_photo_taken_by_name?: string | null
           assessor_name?: string | null
           attendance_confirmed?: boolean
+          booking_reference?: string | null
           centre_submitted_at?: string | null
           created_at?: string
           created_by?: string | null
@@ -365,6 +370,7 @@ export type Database = {
           scheduled_at?: string | null
           scorecard_uploaded_at?: string | null
           scores?: Json
+          slip_issued_at?: string | null
           start_time?: string | null
           status?: Database["public"]["Enums"]["assessment_status"]
           test_evidence_completed_at?: string | null
@@ -1246,6 +1252,33 @@ export type Database = {
           inr_per_unit?: number
           source?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      india_post_offices: {
+        Row: {
+          district: string
+          id: number
+          office_name: string
+          office_type: string
+          pincode: string
+          state: string
+        }
+        Insert: {
+          district: string
+          id?: never
+          office_name: string
+          office_type: string
+          pincode: string
+          state: string
+        }
+        Update: {
+          district?: string
+          id?: never
+          office_name?: string
+          office_type?: string
+          pincode?: string
+          state?: string
         }
         Relationships: []
       }
@@ -3901,12 +3934,15 @@ export type Database = {
           id: string
           instructions: string | null
           is_active: boolean
+          latitude: number | null
+          longitude: number | null
           maps_url: string | null
           name: string
           partner_id: string | null
           pincode: string | null
           reporting_window: string
           state: string
+          trades: string[]
           updated_at: string
         }
         Insert: {
@@ -3918,12 +3954,15 @@ export type Database = {
           id: string
           instructions?: string | null
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           maps_url?: string | null
           name: string
           partner_id?: string | null
           pincode?: string | null
           reporting_window?: string
           state: string
+          trades?: string[]
           updated_at?: string
         }
         Update: {
@@ -3935,12 +3974,15 @@ export type Database = {
           id?: string
           instructions?: string | null
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           maps_url?: string | null
           name?: string
           partner_id?: string | null
           pincode?: string | null
           reporting_window?: string
           state?: string
+          trades?: string[]
           updated_at?: string
         }
         Relationships: [
@@ -3952,6 +3994,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trade_test_settings: {
+        Row: {
+          assignment_mode: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          assignment_mode?: string
+          id: number
+          updated_at?: string
+        }
+        Update: {
+          assignment_mode?: string
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       trades: {
         Row: {
@@ -6040,6 +6100,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_set_trade_test_assignment_mode: {
+        Args: { p_mode: string }
+        Returns: string
+      }
       admin_set_user_role: {
         Args: {
           p_role: Database["public"]["Enums"]["app_role"]
@@ -6109,6 +6173,10 @@ export type Database = {
       bind_partner_to_lsp: {
         Args: { p_emitra_id?: string; p_lsp_id: string }
         Returns: Json
+      }
+      book_worker_trade_test: {
+        Args: { p_appointment_date: string; p_center_id: string }
+        Returns: string
       }
       change_journey_job: {
         Args: {
@@ -6593,6 +6661,18 @@ export type Database = {
         Args: { p_worker_id: string }
         Returns: boolean
       }
+      india_find_district: {
+        Args: { p_city: string; p_state: string }
+        Returns: string
+      }
+      india_localities: {
+        Args: { p_district: string; p_state: string }
+        Returns: Json
+      }
+      india_locality_search: {
+        Args: { p_query: string; p_state: string }
+        Returns: Json
+      }
       interviewer_list_assignments: {
         Args: never
         Returns: {
@@ -6709,7 +6789,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      complete_emitra_partner_registration: { Args: never; Returns: undefined }
       partner_list_my_workers: {
         Args: never
         Returns: {
@@ -6814,6 +6893,7 @@ export type Database = {
         Args: { p_job_id: string; p_user_id?: string }
         Returns: boolean
       }
+      trade_test_assignment_mode: { Args: never; Returns: string }
       verify_lsp_launch: {
         Args: {
           p_emitra_id?: string
