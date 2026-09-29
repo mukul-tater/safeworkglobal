@@ -7,6 +7,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -15,6 +24,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+
+interface BankDetails {
+  holder?: string | null;
+  account?: string | null;
+  ifsc?: string | null;
+}
+
+interface PartnerExt {
+  company_name: string;
+  owner_name: string | null;
+  mobile: string | null;
+  email: string | null;
+  address: string | null;
+  pincode: string | null;
+  pan: string | null;
+  gst: string | null;
+  bank: BankDetails | null;
+  upi: string | null;
+}
 
 interface PartnerRow {
   id: string;
@@ -22,13 +51,35 @@ interface PartnerRow {
   status: string;
   verification_status: string;
   can_add_workers: boolean;
+  rejection_reason: string | null;
   state: string | null;
   district: string | null;
   city: string | null;
   rating: number | null;
   created_at: string;
   partner_types: { code: string; name: string } | null;
-  partner_profiles_ext: { company_name: string; owner_name: string | null; mobile: string | null; email: string | null } | null;
+  partner_profiles_ext: PartnerExt | null;
+}
+
+const EXT_COLUMNS =
+  "company_name, owner_name, mobile, email, address, pincode, pan, gst, bank, upi";
+
+function oneExt(value: PartnerExt | PartnerExt[] | null | undefined): PartnerExt | null {
+  if (!value) return null;
+  return Array.isArray(value) ? value[0] ?? null : value;
+}
+
+function maskAccount(account: string | null | undefined): string {
+  const digits = (account || "").replace(/\s/g, "");
+  if (!digits) return "—";
+  if (digits.length <= 4) return digits;
+  return `••••${digits.slice(-4)}`;
+}
+
+function statusClass(status: string): string {
+  if (status === "approved") return "bg-green-500/10 text-green-700 border-green-200";
+  if (status === "pending") return "bg-amber-500/10 text-amber-700 border-amber-200";
+  return "bg-red-500/10 text-red-700 border-red-200";
 }
 
 export default function AdminPartnersV2() {
@@ -39,36 +90,45 @@ export default function AdminPartnersV2() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>(
+    typeCode?.toUpperCase() === "SSVN" ? "pending" : "all",
+  );
   const [canToggleAddWorker, setCanToggleAddWorker] = useState(true);
+  const [selected, setSelected] = useState<PartnerRow | null>(null);
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState("");
+  const [acting, setActing] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    let query = (supabase as any)
-      .from("partners")
-      .select(`id, partner_code, status, verification_status, can_add_workers, state, district, city, rating, created_at,
+    const columns = `id, partner_code, status, verification_status, can_add_workers, rejection_reason, state, district, city, rating, created_at,
                partner_types:partner_type_id(code, name),
-               partner_profiles_ext(company_name, owner_name, mobile, email)`)
-      .order("created_at", { ascending: false });
-    if (typeFilter !== "all") query = query.eq("partner_type_id", typeFilter);
-    if (statusFilter !== "all") query = query.eq("status", statusFilter);
-    const first = await query;
-    if (first.error && /can_add_workers/i.test(first.error.message || "")) {
-      setCanToggleAddWorker(false);
-      let fallback = (supabase as any)
-        .from("partners")
-        .select(`id, partner_code, status, verification_status, state, district, city, rating, created_at,
+               partner_profiles_ext(${EXT_COLUMNS})`;
+    const withoutFlag = `id, partner_code, status, verification_status, rejection_reason, state, district, city, rating, created_at,
                partner_types:partner_type_id(code, name),
-               partner_profiles_ext(company_name, owner_name, mobile, email)`)
-        .order("created_at", { ascending: false });
-      if (typeFilter !== "all") fallback = fallback.eq("partner_type_id", typeFilter);
-      if (statusFilter !== "all") fallback = fallback.eq("status", statusFilter);
-      const second = await fallback;
-      setRows((second.data ?? []) as any);
-    } else {
-      setCanToggleAddWorker(true);
-      setRows((first.data ?? []) as any);
-    }
+               partner_profiles_ext(${EXT_COLUMNS})`;
+
+    const run = (select: string) => {
+      let query = (supabase as any).from("partners").select(select).order("created_at", { ascending: false });
+      if (typeFilter !== "all") query = query.eq("partner_type_id", typeFilter);
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      return query;
+    };
+
+    const first = await run(columns);
+    const missingFlag = first.error && /can_add_workers/i.test(first.error.message || "");
+    const result = missingFlag ? await run(withoutFlag) : first;
+    setCanToggleAddWorker(!missingFlag);
+    const list = ((result.data ?? []) as PartnerRow[]).map((row) => ({
+      ...row,
+      can_add_workers: row.can_add_workers === true,
+      partner_profiles_ext: oneExt(row.partner_profiles_ext),
+    }));
+    setRows(list);
+    setSelected((current) => {
+      if (!current) return current;
+      return list.find((row) => row.id === current.id) ?? current;
+    });
     setLoading(false);
   };
 
@@ -98,15 +158,27 @@ export default function AdminPartnersV2() {
     }
   };
 
-  const setStatus = async (id: string, status: "approved" | "rejected" | "suspended", reason?: string) => {
+  const setStatus = async (id: string, status: "approved" | "rejected" | "suspended", note?: string) => {
+    setActing(true);
     const { error } = await (supabase as any).rpc("admin_set_partner_status", {
-      p_partner_id: id, p_status: status, p_reason: reason ?? null,
+      p_partner_id: id, p_status: status, p_reason: note ?? null,
     });
-    if (error) toast.error(error.message);
-    else {
-      toast.success(`Partner ${status}`);
-      load();
+    setActing(false);
+    if (error) {
+      toast.error(error.message);
+      return;
     }
+    toast.success(
+      status === "approved"
+        ? "Centre approved. They can sign in now."
+        : status === "rejected"
+          ? "Application rejected."
+          : "Centre suspended.",
+    );
+    setRejecting(false);
+    setReason("");
+    setSelected(null);
+    load();
   };
 
   const onTypeChange = (id: string) => {
@@ -119,8 +191,15 @@ export default function AdminPartnersV2() {
     if (code) setSearchParams({ type: code }, { replace: true });
   };
 
+  const closeReview = () => {
+    setSelected(null);
+    setRejecting(false);
+    setReason("");
+  };
+
   const selectedType = types.find((t) => t.id === typeFilter);
-  const heading = selectedType?.code === "SSVN"
+  const isTradeTestQueue = selectedType?.code === "SSVN" || typeCode?.toUpperCase() === "SSVN";
+  const heading = isTradeTestQueue
     ? "Trade test partners"
     : selectedType
       ? selectedType.name
@@ -139,13 +218,18 @@ export default function AdminPartnersV2() {
     return hay.includes(q.toLowerCase());
   });
 
+  const ext = selected?.partner_profiles_ext;
+  const bank = ext?.bank && typeof ext.bank === "object" ? ext.bank : null;
+
   return (
     <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">{heading}</h1>
           <p className="text-sm text-muted-foreground">
-            Approve SSVN trade test centres (and other partner types). After approval, assign workers under Assign trade test.
+            {isTradeTestQueue
+              ? "Open a pending centre, check the application, then approve it so they can sign in."
+              : "Review partner applications. After approval, the centre can sign in."}
           </p>
         </div>
 
@@ -182,7 +266,11 @@ export default function AdminPartnersV2() {
         {loading ? (
           <div>Loading...</div>
         ) : filtered.length === 0 ? (
-          <Card className="p-12 text-center text-muted-foreground">No partners found.</Card>
+          <Card className="p-12 text-center text-muted-foreground">
+            {statusFilter === "pending" && isTradeTestQueue
+              ? "No trade test centres are waiting for approval."
+              : "No partners found."}
+          </Card>
         ) : (
           <div className="space-y-2">
             {filtered.map((r) => (
@@ -194,16 +282,7 @@ export default function AdminPartnersV2() {
                         {r.partner_profiles_ext?.company_name ?? "—"}
                       </div>
                       <Badge variant="outline">{r.partner_types?.name}</Badge>
-                      <Badge
-                        className={
-                          r.status === "approved"
-                            ? "bg-green-500/10 text-green-700 border-green-200"
-                            : r.status === "pending"
-                              ? "bg-amber-500/10 text-amber-700 border-amber-200"
-                              : "bg-red-500/10 text-red-700 border-red-200"
-                        }
-                        variant="outline"
-                      >
+                      <Badge className={statusClass(r.status)} variant="outline">
                         {r.status}
                       </Badge>
                     </div>
@@ -217,7 +296,10 @@ export default function AdminPartnersV2() {
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
-                    {canToggleAddWorker && (
+                    <Button size="sm" onClick={() => { setRejecting(false); setReason(""); setSelected(r); }}>
+                      {r.status === "pending" ? "Review application" : "View"}
+                    </Button>
+                    {canToggleAddWorker && r.status === "approved" && (
                       <Button
                         size="sm"
                         variant={r.can_add_workers ? "outline" : "default"}
@@ -226,19 +308,6 @@ export default function AdminPartnersV2() {
                         {r.can_add_workers ? "Turn off add worker" : "Turn on add worker"}
                       </Button>
                     )}
-                    {r.status !== "approved" && (
-                      <Button size="sm" onClick={() => setStatus(r.id, "approved")}>Approve</Button>
-                    )}
-                    {r.status !== "rejected" && (
-                      <Button size="sm" variant="outline"
-                        onClick={() => {
-                          const reason = window.prompt("Reason for rejection?");
-                          if (reason !== null) setStatus(r.id, "rejected", reason);
-                        }}>Reject</Button>
-                    )}
-                    {r.status === "approved" && (
-                      <Button size="sm" variant="outline" onClick={() => setStatus(r.id, "suspended")}>Suspend</Button>
-                    )}
                   </div>
                 </div>
               </Card>
@@ -246,6 +315,118 @@ export default function AdminPartnersV2() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!selected} onOpenChange={(open) => { if (!open) closeReview(); }}>
+        <DialogContent className="max-w-2xl">
+          {selected && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{ext?.company_name || "Trade test centre"}</DialogTitle>
+                <DialogDescription>
+                  Applied {new Date(selected.created_at).toLocaleString()} · {selected.status}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-5">
+                <Section title="Centre">
+                  <Field label="Organisation" value={ext?.company_name} />
+                  <Field label="Owner" value={ext?.owner_name} />
+                  <Field label="Mobile" value={ext?.mobile} />
+                  <Field label="Email" value={ext?.email} />
+                  <Field label="Partner type" value={selected.partner_types?.name} />
+                  <Field label="Partner code" value={selected.partner_code} />
+                </Section>
+                <Section title="Location">
+                  <Field label="Address" value={ext?.address} />
+                  <Field label="City" value={selected.city} />
+                  <Field label="District" value={selected.district} />
+                  <Field label="State" value={selected.state} />
+                  <Field label="PIN" value={ext?.pincode} />
+                </Section>
+                <Section title="Tax and payout">
+                  <Field label="PAN" value={ext?.pan} />
+                  <Field label="GST" value={ext?.gst} />
+                  <Field label="Account holder" value={bank?.holder} />
+                  <Field label="Account" value={maskAccount(bank?.account)} />
+                  <Field label="IFSC" value={bank?.ifsc} />
+                  <Field label="UPI" value={ext?.upi} />
+                </Section>
+                {selected.rejection_reason && (
+                  <Card className="p-3 bg-destructive/5 border-destructive/30 text-sm">
+                    <p className="font-medium text-destructive mb-1">Rejection reason</p>
+                    <p>{selected.rejection_reason}</p>
+                  </Card>
+                )}
+                {rejecting && (
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Reason for rejection</label>
+                    <Textarea
+                      rows={3}
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="Tell the centre why this application was not approved."
+                    />
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="flex flex-wrap gap-2">
+                {rejecting ? (
+                  <>
+                    <Button variant="outline" onClick={() => { setRejecting(false); setReason(""); }} disabled={acting}>
+                      Back
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={acting || !reason.trim()}
+                      onClick={() => setStatus(selected.id, "rejected", reason.trim())}
+                    >
+                      {acting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                      Confirm rejection
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {selected.status === "approved" ? (
+                      <Button variant="outline" disabled={acting} onClick={() => setStatus(selected.id, "suspended")}>
+                        Suspend
+                      </Button>
+                    ) : (
+                      <Button disabled={acting} onClick={() => setStatus(selected.id, "approved")}>
+                        {acting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                        Approve
+                      </Button>
+                    )}
+                    {selected.status !== "rejected" && (
+                      <Button variant="outline" disabled={acting} onClick={() => setRejecting(true)}>
+                        Reject
+                      </Button>
+                    )}
+                  </>
+                )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <h4 className="text-sm font-semibold mb-2">{title}</h4>
+      <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div>
+      <span className="text-muted-foreground">{label}: </span>
+      <span>{value?.trim() ? value : "—"}</span>
+    </div>
   );
 }
