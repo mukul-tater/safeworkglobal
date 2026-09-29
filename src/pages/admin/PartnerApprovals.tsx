@@ -12,9 +12,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Search, ShieldOff, ShieldCheck, Store, Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Eye, Search, ShieldOff, ShieldCheck, Store, Loader2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import PartnerApprovalFlow from "@/components/admin/PartnerApprovalFlow";
+import { adminSetPartnerPassword } from "@/services/AdminService";
+import { PASSWORD_HINT, passwordSignupIssue, sanitizePasswordInput } from "@/lib/validations/password";
 
 type Partner = any;
 
@@ -37,6 +40,10 @@ export default function PartnerApprovals() {
   const [actionDialog, setActionDialog] = useState<null | { action: "disable" | "enable"; partner: Partner }>(null);
   const [reason, setReason] = useState("");
   const [acting, setActing] = useState(false);
+  const [passwordPartner, setPasswordPartner] = useState<Partner | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const fetchRows = async () => {
     setLoading(true);
@@ -130,10 +137,50 @@ export default function PartnerApprovals() {
     }
   };
 
+  const closePasswordDialog = () => {
+    setPasswordPartner(null);
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const submitPassword = async () => {
+    if (!passwordPartner) return;
+    const issue = passwordSignupIssue(newPassword);
+    if (issue) {
+      toast.error(issue);
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const result = await adminSetPartnerPassword(passwordPartner.id, newPassword);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      await supabase.from("notifications").insert({
+        user_id: passwordPartner.user_id,
+        type: "partner_status",
+        title: "Centre password changed",
+        message: "SafeWork set a new password for this centre. Sign in at /emitra/login with the password shared with you.",
+        is_read: false,
+      });
+      toast.success("Password updated. Share it with the centre. They sign in at /emitra/login.");
+      closePasswordDialog();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not change password");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   return (
     <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
       <h1 className="text-2xl md:text-3xl font-bold mb-2">E-Mitra centres</h1>
-      <p className="text-muted-foreground text-sm mb-4">Turn a centre off or back on. New centres are active as soon as they finish signup.</p>
+      <p className="text-muted-foreground text-sm mb-4">Turn a centre off or back on, or set a new login password. New centres are active as soon as they finish signup.</p>
 
       <div className="mb-6">
         <PartnerApprovalFlow compact />
@@ -179,6 +226,7 @@ export default function PartnerApprovals() {
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
                     <Button variant="outline" size="sm" onClick={() => openDetail(p)}><Eye className="h-4 w-4 mr-1" /> View</Button>
+                    <Button variant="outline" size="sm" onClick={() => setPasswordPartner(p)}><KeyRound className="h-4 w-4 mr-1" /> Password</Button>
                   </div>
                 </div>
               </Card>
@@ -268,6 +316,9 @@ export default function PartnerApprovals() {
               </div>
 
               <DialogFooter className="flex flex-wrap gap-2 pt-4 border-t mt-4">
+                <Button variant="outline" onClick={() => setPasswordPartner(selected)}>
+                  <KeyRound className="h-4 w-4 mr-1" /> Change password
+                </Button>
                 {(selected.status === "approved" || selected.status === "active") ? (
                   <Button variant="destructive" onClick={() => setActionDialog({ action: "disable", partner: selected })}>
                     <ShieldOff className="h-4 w-4 mr-1" /> Disable
@@ -277,6 +328,58 @@ export default function PartnerApprovals() {
                     <ShieldCheck className="h-4 w-4 mr-1" /> Enable
                   </Button>
                 )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!passwordPartner} onOpenChange={o => { if (!o) closePasswordDialog(); }}>
+        <DialogContent>
+          {passwordPartner && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Change password</DialogTitle>
+                <DialogDescription>
+                  Sets a new login for {passwordPartner.center_name || "this centre"}. They keep the same mobile and email. Current sessions are signed out.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  {passwordPartner.owner_name ? `${passwordPartner.owner_name} · ` : ""}
+                  {passwordPartner.mobile || "No mobile"}
+                  {passwordPartner.email ? ` · ${passwordPartner.email}` : ""}
+                </p>
+                <div className="space-y-1.5">
+                  <Label htmlFor="partner-new-password">New password</Label>
+                  <Input
+                    id="partner-new-password"
+                    type="text"
+                    value={newPassword}
+                    onChange={e => setNewPassword(sanitizePasswordInput(e.target.value))}
+                    placeholder={PASSWORD_HINT}
+                    autoComplete="new-password"
+                  />
+                  <p className="text-xs text-muted-foreground">{PASSWORD_HINT}. Share this with the centre. It is not shown again.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="partner-confirm-password">Confirm password</Label>
+                  <Input
+                    id="partner-confirm-password"
+                    type="text"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(sanitizePasswordInput(e.target.value))}
+                    placeholder="Type the password again"
+                    autoComplete="new-password"
+                  />
+                </div>
+              </div>
+              <DialogFooter className="mt-2">
+                <Button variant="outline" onClick={closePasswordDialog} disabled={savingPassword}>Cancel</Button>
+                <Button onClick={submitPassword} disabled={savingPassword}>
+                  {savingPassword && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                  Save password
+                </Button>
               </DialogFooter>
             </>
           )}

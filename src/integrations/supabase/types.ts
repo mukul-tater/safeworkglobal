@@ -6303,6 +6303,10 @@ export type Database = {
         Args: { p_enabled: boolean; p_partner_id: string }
         Returns: undefined
       }
+      admin_set_partner_password: {
+        Args: { p_partner_id: string; p_password: string }
+        Returns: undefined
+      }
       admin_set_partner_status: {
         Args: {
           p_partner_id: string

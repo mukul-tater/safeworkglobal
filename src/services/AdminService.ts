@@ -96,6 +96,25 @@ export async function adminDeleteUser(userId: string): Promise<{ error: string |
   return { error: error ? formatError(error, "Failed to delete user") : null };
 }
 
+export async function adminSetPartnerPassword(
+  partnerId: string,
+  password: string
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc("admin_set_partner_password", {
+    p_partner_id: partnerId,
+    p_password: password,
+  });
+  if (!error) return { error: null };
+  const message = formatError(error, "Failed to change password");
+  if (/admin only/i.test(message)) {
+    return { error: "Only admins can change a centre password." };
+  }
+  if (/could not find the function|schema cache/i.test(message)) {
+    return { error: "Password change is not available yet. Apply the latest database migration." };
+  }
+  return { error: message };
+}
+
 export async function adminSetUserRole(
   userId: string,
   role: AppRole
