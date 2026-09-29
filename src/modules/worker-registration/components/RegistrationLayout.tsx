@@ -93,7 +93,7 @@ export default function RegistrationLayout({
           aria-hidden
         />
 
-        <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
+        <header className="sticky top-[var(--offline-banner-offset,0px)] z-40 w-full border-b border-border/80 bg-background/80 backdrop-blur-md">
           <div className="flex h-14 items-center justify-between gap-2 px-3 md:px-6">
             <Brand portalHomePath={portalHomePath} />
             <div className="flex min-w-0 items-center gap-1 overflow-x-auto sm:gap-2">

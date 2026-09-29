@@ -70,7 +70,7 @@ const Header = () => {
   return (
     <>
       <header 
-        className={`sticky top-0 z-50 transition-all duration-300 ${
+        className={`sticky top-[var(--offline-banner-offset,0px)] z-50 transition-all duration-300 ${
           overlaysHomeHero
             ? "bg-transparent border-b border-white/10"
             : "bg-card/95 backdrop-blur-md shadow-sm border-b border-border"
@@ -188,7 +188,7 @@ const Header = () => {
           {/* Menu Content */}
           <div 
             id="mobile-menu"
-            className="fixed top-16 left-0 right-0 bottom-0 bg-card z-50 md:hidden overflow-y-auto animate-fade-in pb-24"
+            className="fixed top-[calc(4rem+var(--offline-banner-offset,0px))] left-0 right-0 bottom-0 bg-card z-50 md:hidden overflow-y-auto animate-fade-in pb-24"
           >
             <nav className="container mx-auto px-4 py-6 space-y-2">
               {navLinks.map((link) => (

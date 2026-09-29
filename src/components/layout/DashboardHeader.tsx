@@ -70,7 +70,7 @@ export default function DashboardHeader({
   const fallbackChar = displayName[0]?.toUpperCase() || "U";
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80">
+    <header className="sticky top-[var(--offline-banner-offset,0px)] z-40 w-full border-b bg-card/95 backdrop-blur-md supports-[backdrop-filter]:bg-card/80">
       <div className="flex h-14 md:h-16 items-center justify-between gap-3 px-4 md:px-6">
         <div className="flex min-w-0 items-center gap-2">
           {onOpenMenu && (

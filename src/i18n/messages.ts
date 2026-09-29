@@ -171,6 +171,11 @@ const en = {
   "contact.received": "Enquiry received",
   "contact.thanks": "Thank you. Our team will review your message and get back to you shortly.",
   "contact.another": "Send another enquiry",
+
+  "offline.message": "No internet connection. Check your network and try again.",
+  "offline.still": "Still offline. Check your Wi-Fi or mobile data.",
+  "offline.back": "You're back online.",
+  "offline.retry": "Try again",
 } as const;
 
 const hi: Record<AppMessageKey, string> = {
@@ -338,6 +343,11 @@ const hi: Record<AppMessageKey, string> = {
   "contact.received": "पूछताछ प्राप्त हुई",
   "contact.thanks": "धन्यवाद। हमारी टीम आपकी पूछताछ देखकर शीघ्र संपर्क करेगी।",
   "contact.another": "एक और पूछताछ भेजें",
+
+  "offline.message": "इंटरनेट कनेक्ट नहीं है। नेटवर्क जाँचकर फिर कोशिश करें।",
+  "offline.still": "अभी भी इंटरनेट नहीं है। Wi-Fi या मोबाइल डेटा जाँचें।",
+  "offline.back": "इंटरनेट वापस आ गया है।",
+  "offline.retry": "फिर कोशिश करें",
 };
 
 export const appMessages: Record<AppLocale, Record<AppMessageKey, string>> = {

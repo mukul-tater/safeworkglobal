@@ -64,7 +64,7 @@ export default function AdminSidebar() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
           <button 
-            className="fixed top-3 left-3 z-50 p-2.5 bg-card border border-border rounded-xl shadow-lg md:hidden hover:bg-muted transition-colors"
+            className="fixed top-[calc(0.75rem+var(--offline-banner-offset,0px))] left-3 z-50 p-2.5 bg-card border border-border rounded-xl shadow-lg md:hidden hover:bg-muted transition-colors"
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />

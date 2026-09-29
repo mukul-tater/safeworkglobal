@@ -24,7 +24,7 @@ const FREE_ITEMS = [
 function WorkerStartInfoPanel() {
   return (
     <Card className="border-2 border-primary/30 shadow-md overflow-hidden h-full">
-      <div className="bg-primary/10 px-4 py-3 flex items-center gap-2 border-b border-primary/20 sticky top-0 z-10">
+      <div className="bg-primary/10 px-4 py-3 flex items-center gap-2 border-b border-primary/20 sticky top-[var(--offline-banner-offset,0px)] z-10">
         <Info className="h-5 w-5 text-primary shrink-0" />
         <p className="font-bold text-base sm:text-lg text-foreground">
           Important — please read before signing up

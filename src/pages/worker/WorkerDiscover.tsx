@@ -85,7 +85,7 @@ export default function WorkerDiscover() {
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-30">
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-[var(--offline-banner-offset,0px)] z-30">
         <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <img src="/safework-global-logo.png" alt="SafeWorkGlobal" className="h-7 w-7" />

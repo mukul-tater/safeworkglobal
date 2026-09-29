@@ -119,6 +119,7 @@ import {
   WorkerAuthProvider,
   WorkerLanguageProvider,
 } from "./modules/worker-registration";
+import OfflineNotice from "./components/OfflineNotice";
 
 const qc = new QueryClient({
   defaultOptions: {
@@ -479,6 +480,7 @@ function App() {
           <Sonner />
           <BrowserRouter>
             <WorkerLanguageProvider>
+              <OfflineNotice />
               <WorkerAuthProvider>
                 <AuthProvider>
                   <ErrorBoundary>
