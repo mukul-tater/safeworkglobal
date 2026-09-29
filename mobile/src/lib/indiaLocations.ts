@@ -1,5 +1,6 @@
 import data from './indiaLocations.json';
 import { supabase } from '../integrations/supabase/client';
+import { loadPackedLocalities } from './localityPacks';
 
 export type IndiaLocality = {
   name: string;
@@ -104,8 +105,41 @@ function parseLocalities(payload: unknown): IndiaLocality[] {
   });
 }
 
+type LocalityPack = Record<string, [string, string[]][]>;
+
 const localityCache = new Map<string, IndiaLocality[]>();
 const localityInflight = new Map<string, Promise<IndiaLocality[]>>();
+const packCache = new Map<string, LocalityPack>();
+
+export function localityPackSlug(state: string): string {
+  return state
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function rowsFromPack(pack: LocalityPack, district: string): IndiaLocality[] {
+  return (pack[district] ?? []).map(([name, pincodes]) => ({
+    name,
+    pincodes: [...pincodes].sort(),
+  }));
+}
+
+async function loadLocalityPack(state: string): Promise<LocalityPack | null> {
+  const resolved = resolveIndiaState(state);
+  if (!resolved) return null;
+  const cached = packCache.get(resolved);
+  if (cached) return cached;
+  try {
+    const pack = (await loadPackedLocalities(localityPackSlug(resolved))) as LocalityPack;
+    packCache.set(resolved, pack);
+    return pack;
+  } catch {
+    return null;
+  }
+}
 
 export async function fetchIndiaLocalities(state: string, district: string): Promise<IndiaLocality[]> {
   const place = resolveIndiaPlace(state, district);
@@ -117,6 +151,12 @@ export async function fetchIndiaLocalities(state: string, district: string): Pro
   if (pending) return pending;
 
   const request = (async () => {
+    const pack = await loadLocalityPack(place.state);
+    const packed = pack ? rowsFromPack(pack, place.district) : [];
+    if (packed.length > 0) {
+      localityCache.set(key, packed);
+      return packed;
+    }
     const { data, error } = await supabase.rpc('india_localities', {
       p_state: place.state,
       p_district: place.district,
@@ -137,6 +177,20 @@ export async function searchIndiaLocalities(state: string, query: string): Promi
   const trimmed = query.trim();
   const placeState = resolveIndiaState(state);
   if (trimmed.length < 2 || !placeState) return [];
+  const needle = trimmed.toLowerCase();
+  const pack = await loadLocalityPack(placeState);
+  if (pack) {
+    const matches: IndiaLocality[] = [];
+    for (const rows of Object.values(pack)) {
+      for (const [name, pincodes] of rows) {
+        if (!name.toLowerCase().startsWith(needle)) continue;
+        matches.push({ name, pincodes: [...pincodes].sort() });
+      }
+    }
+    if (matches.length > 0) {
+      return matches.sort((a, b) => a.name.localeCompare(b.name)).slice(0, 50);
+    }
+  }
   const { data, error } = await supabase.rpc('india_locality_search', {
     p_state: placeState,
     p_query: trimmed,
@@ -149,6 +203,13 @@ export async function findIndiaDistrict(state: string, city: string): Promise<st
   const placeState = resolveIndiaState(state);
   const trimmed = city.trim();
   if (!placeState || !trimmed) return '';
+  const needle = trimmed.toLowerCase();
+  const pack = await loadLocalityPack(placeState);
+  if (pack) {
+    for (const [district, rows] of Object.entries(pack)) {
+      if (rows.some(([name]) => name.toLowerCase() === needle)) return district;
+    }
+  }
   const { data, error } = await supabase.rpc('india_find_district', {
     p_state: placeState,
     p_city: trimmed,
