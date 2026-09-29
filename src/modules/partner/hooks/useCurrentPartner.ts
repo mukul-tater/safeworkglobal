@@ -16,6 +16,8 @@ export interface CurrentPartner {
   company_name: string | null;
   wallet_available: number;
   wallet_pending: number;
+  /** Absent until the partners.can_add_workers column is loaded. */
+  can_add_workers?: boolean | null;
 }
 
 export function useCurrentPartner() {

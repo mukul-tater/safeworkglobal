@@ -16,11 +16,11 @@ import {
   useFirebasePhoneOtp,
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
-import { partnerAuthEmailFromMobile, displayableEmail } from '@/lib/workerAuthEmail';
+import { partnerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
 import { devPortalAuthEmail, isDevSharedMobileEnabled } from '@/lib/devSharedMobile';
+import { isProductionHost } from '@/lib/otpConfig';
 import {
   assertUserIsPartnerRole,
-  findUserIdByPartnerMobile,
   getPartnerOrgForUser,
   isSsvnPartnerApproved,
 } from '../../services/ssvnAuth';
@@ -70,7 +70,7 @@ export default function SsvnLoginPage() {
     if (!org) {
       return portal.missingOrg;
     }
-    if (isDevSharedMobileEnabled() && org.status === 'pending') {
+    if (!isProductionHost() && org.status === 'pending') {
       const { data: { user } } = await supabase.auth.getUser();
       const email = user?.email?.toLowerCase() || '';
       if (email.startsWith(`dev.${typeCode.toLowerCase()}.`)) return null;
@@ -107,6 +107,16 @@ export default function SsvnLoginPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
+  const resolveSsvnAuthEmail = async (digits: string): Promise<string | null> => {
+    if (isDevSharedMobileEnabled()) {
+      const devEmail = devPortalAuthEmail('ssvn', digits);
+      const { data } = await supabase.rpc('resolve_worker_auth_email', { p_identifier: devEmail });
+      if (typeof data === 'string' && data.toLowerCase() === devEmail) return devEmail;
+    }
+    const { data } = await supabase.rpc('resolve_worker_auth_email', { p_identifier: digits });
+    return typeof data === 'string' && data.includes('@') ? data : null;
+  };
+
   const partnerLogin = async (authEmail: string, pwd: string, mobileDigits: string) => {
     const synthetic = isDevSharedMobileEnabled()
       ? devPortalAuthEmail('ssvn', mobileDigits)
@@ -126,11 +136,6 @@ export default function SsvnLoginPage() {
       setError('Enter a valid 10-digit mobile number');
       return;
     }
-    if (!firebaseOtp.isAvailable) {
-      setError('SMS verification is not available right now. Please contact support.');
-      return;
-    }
-
     setLoading(true);
     try {
       const check = await continueAuth({ role: 'partner', mobile: digits, devPortal: 'ssvn' });
@@ -142,18 +147,21 @@ export default function SsvnLoginPage() {
         setError(check.error || AUTH_CONTINUE_MESSAGES.conflict);
         return;
       }
-      if (check.nextStep === 'SIGNUP') {
-        const state: AuthContinueLocationState = { mobile: digits, method: 'mobile' };
-        navigate(registerPath, { state });
-        return;
-      }
-
-      if (isDevSharedMobileEnabled()) {
+      if (!isProductionHost()) {
+        const authEmail = await resolveSsvnAuthEmail(digits);
+        if (!authEmail) {
+          if (check.nextStep === 'SIGNUP') {
+            const state: AuthContinueLocationState = { mobile: digits, method: 'mobile' };
+            navigate(registerPath, { state });
+            return;
+          }
+          setError('No partner account found with this mobile. Please apply first.');
+          return;
+        }
         if (password.length < 6) {
           setError(`Enter the password for this ${typeLabel} login`);
           return;
         }
-        const authEmail = devPortalAuthEmail('ssvn', digits);
         const result = await partnerLogin(authEmail, password, digits);
         if (!result.success) {
           setError(result.error || 'Wrong password. Use the password from registration.');
@@ -175,18 +183,15 @@ export default function SsvnLoginPage() {
         return;
       }
 
-      if (!isDevSharedMobileEnabled()) {
-        const userId = await findUserIdByPartnerMobile(digits);
-        if (!userId) {
-          setError('No partner account found with this mobile. Please apply first.');
-          return;
-        }
+      if (check.nextStep === 'SIGNUP') {
+        const state: AuthContinueLocationState = { mobile: digits, method: 'mobile' };
+        navigate(registerPath, { state });
+        return;
+      }
 
-        const block = await ensureSsvnAccess(userId);
-        if (block) {
-          setError(block);
-          return;
-        }
+      if (!firebaseOtp.isAvailable) {
+        setError('SMS verification is not available right now. Please contact support.');
+        return;
       }
 
       await firebaseOtp.sendOtp(digits);
@@ -224,17 +229,7 @@ export default function SsvnLoginPage() {
         /* ignore */
       }
 
-      let authEmail = partnerAuthEmailFromMobile(digits);
-      if (isDevSharedMobileEnabled()) {
-        authEmail = devPortalAuthEmail('ssvn', digits);
-      } else {
-        const { data: prof } = await supabase
-          .from('profiles')
-          .select('email, phone')
-          .eq('phone', digits)
-          .maybeSingle();
-        authEmail = displayableEmail(prof?.email)?.trim() || authEmail;
-      }
+      const authEmail = (await resolveSsvnAuthEmail(digits)) || partnerAuthEmailFromMobile(digits);
       const result = await partnerLogin(authEmail, password, digits);
       if (!result.success) {
         setError(
@@ -397,12 +392,12 @@ export default function SsvnLoginPage() {
                 onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
               />
               <p className="text-xs text-muted-foreground">
-                {isDevSharedMobileEnabled()
+                {!isProductionHost()
                   ? `Use the mobile from your ${typeLabel} registration, then the password for this login.`
                   : `Use the mobile from your ${typeLabel} registration. We'll send a 6-digit SMS code to verify your number.`}
               </p>
             </div>
-            {isDevSharedMobileEnabled() && (
+            {!isProductionHost() && (
               <div className="space-y-1.5">
                 <Label htmlFor="ssvn-dev-password">Password</Label>
                 <Input

@@ -3167,6 +3167,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          can_add_workers: boolean
           city: string | null
           created_at: string
           district: string | null
@@ -3185,6 +3186,7 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          can_add_workers?: boolean
           city?: string | null
           created_at?: string
           district?: string | null
@@ -3203,6 +3205,7 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          can_add_workers?: boolean
           city?: string | null
           created_at?: string
           district?: string | null
@@ -6082,6 +6085,10 @@ export type Database = {
         Args: { p_lsp_id: string; p_status: string }
         Returns: undefined
       }
+      admin_set_partner_can_add_workers: {
+        Args: { p_enabled: boolean; p_partner_id: string }
+        Returns: undefined
+      }
       admin_set_partner_status: {
         Args: {
           p_partner_id: string
@@ -6415,6 +6422,7 @@ export type Database = {
       current_partner: {
         Args: never
         Returns: {
+          can_add_workers: boolean
           city: string
           company_name: string
           district: string

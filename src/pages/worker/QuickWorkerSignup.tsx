@@ -433,10 +433,21 @@ export default function QuickWorkerSignup({
       <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
         <Card className="max-w-md p-8 text-center">
           <ShieldCheck className="mx-auto mb-3 h-12 w-12 text-primary" />
-          <h1 className="mb-2 text-xl font-bold">Account not active</h1>
+          <h1 className="mb-2 text-xl font-bold">
+            {partnerCtx.source.type === 'emitra' &&
+            partnerCtx.status &&
+            partnerCtx.status !== 'approved' &&
+            partnerCtx.status !== 'active'
+              ? 'Account not active'
+              : 'Add worker is off'}
+          </h1>
           <p className="mb-6 text-sm text-muted-foreground">
-            This partner account cannot add workers
-            {partnerCtx.status ? ` (status: ${partnerCtx.status})` : ''}. Contact support if you need help.
+            {partnerCtx.source.type === 'emitra' &&
+            partnerCtx.status &&
+            partnerCtx.status !== 'approved' &&
+            partnerCtx.status !== 'active'
+              ? `This centre cannot add workers until it is active (status: ${partnerCtx.status}).`
+              : 'Adding workers is turned off for this centre. SafeWork can turn it on from the admin panel.'}
           </p>
           <Button onClick={() => navigate(partnerCtx.returnTo)}>Back to partner portal</Button>
         </Card>

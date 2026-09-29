@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { PARTNER_ADD_WORKER_PATH, CREATED_BY_PARTNER_LABEL, partnerWorkerJourneyPath } from "../lib/partnerAssistedWorker";
+import { PARTNER_ADD_WORKER_PATH, CREATED_BY_PARTNER_LABEL, partnerCanAddWorkers, partnerWorkerJourneyPath } from "../lib/partnerAssistedWorker";
+import { useCurrentPartner } from "../hooks/useCurrentPartner";
 import { loadWorkerJourneyProgress, type WorkerJourneyProgress } from "../lib/workerProfileProgress";
 import WorkerProfileCompletionBar from "../components/WorkerProfileCompletionBar";
 
@@ -23,6 +24,11 @@ type WorkerRow = {
 };
 
 export default function PartnerMyWorkersPage() {
+  const { partner } = useCurrentPartner();
+  const canAdd = partnerCanAddWorkers({
+    partnerTypeCode: partner?.partner_type_code,
+    canAddWorkers: partner?.can_add_workers,
+  });
   const [rows, setRows] = useState<WorkerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -67,11 +73,13 @@ export default function PartnerMyWorkersPage() {
             They can also sign in later with the mobile and password you set.
           </p>
         </div>
-        <Button asChild>
-          <Link to={PARTNER_ADD_WORKER_PATH}>
-            <UserPlus className="mr-1 h-4 w-4" /> Add Worker
-          </Link>
-        </Button>
+        {canAdd && (
+          <Button asChild>
+            <Link to={PARTNER_ADD_WORKER_PATH}>
+              <UserPlus className="mr-1 h-4 w-4" /> Add Worker
+            </Link>
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -87,9 +95,11 @@ export default function PartnerMyWorkersPage() {
           <p className="mt-1 text-xs text-muted-foreground">
             Add a worker, then fill their GCC journey here as a partner service.
           </p>
-          <Button asChild className="mt-4">
-            <Link to={PARTNER_ADD_WORKER_PATH}>Add Worker</Link>
-          </Button>
+          {canAdd && (
+            <Button asChild className="mt-4">
+              <Link to={PARTNER_ADD_WORKER_PATH}>Add Worker</Link>
+            </Button>
+          )}
         </Card>
       ) : (
         <div className="space-y-2">

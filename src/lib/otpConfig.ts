@@ -17,7 +17,7 @@ function hostname(): string {
   return window.location.hostname.toLowerCase();
 }
 
-function isProductionHost(): boolean {
+export function isProductionHost(): boolean {
   const host = hostname();
   if (!host) return false;
   if (PROD_HOSTS.has(host)) return true;

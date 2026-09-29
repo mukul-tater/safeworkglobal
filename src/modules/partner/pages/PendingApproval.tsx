@@ -30,7 +30,10 @@ export default function PendingApproval() {
     return null;
   }
 
-  const canAdd = partnerCanAddWorkers(partner.status);
+  const canAdd = partnerCanAddWorkers({
+    partnerTypeCode: partner.partner_type_code,
+    canAddWorkers: partner.can_add_workers,
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-muted/30">
@@ -58,7 +61,7 @@ export default function PendingApproval() {
             ? "Please contact SafeWork Global support for next steps."
             : partner.status === "suspended"
               ? "Your account is suspended. Contact support for reinstatement."
-              : "Our team is reviewing your submission. You can still add workers while you wait."}
+              : "Our team is reviewing your submission."}
         </p>
         <div className="text-sm text-muted-foreground mb-4">
           <div><b>Organization:</b> {partner.company_name}</div>

@@ -68,12 +68,17 @@ export type PartnerAddWorkerContext = {
   partnerTypeCode: string | null;
 };
 
-const BLOCKED_ADD_WORKER_STATUSES = new Set(["rejected", "suspended"]);
-
-/** Org partners may add workers before approval. Rejected or suspended accounts cannot. */
-export function partnerCanAddWorkers(status: string | null | undefined): boolean {
-  if (!status) return true;
-  return !BLOCKED_ADD_WORKER_STATUSES.has(status);
+/**
+ * Add Worker is per centre. E-Mitra (SEN) is on until an admin turns it off.
+ * Every other partner type is off until an admin turns it on.
+ * A missing flag (before the column is loaded) follows that same default.
+ */
+export function partnerCanAddWorkers(input: {
+  partnerTypeCode?: string | null;
+  canAddWorkers?: boolean | null;
+}): boolean {
+  if (typeof input.canAddWorkers === "boolean") return input.canAddWorkers;
+  return (input.partnerTypeCode || "").toUpperCase() === "SEN";
 }
 
 export function parkPartnerSession(session: ParkedPartnerSession) {
@@ -225,24 +230,34 @@ export async function resolvePartnerAddWorkerContext(
 
   const org = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
   const emitraStatus = emitra?.status as string | undefined;
-  const status = (org?.status as string | undefined) ?? emitraStatus ?? null;
-  const emitraProfile = !!emitra?.id;
-  const partnerTypeCode = (org?.partner_type_code as string | undefined) || (emitraProfile ? "SEN" : null);
+  const orgType = ((org?.partner_type_code as string | undefined) || "").toUpperCase();
+  // Signup creates an empty partner_profiles row for every partner role.
+  // That row is the E-Mitra centre only for SEN, or when there is no other org.
+  const isEmitraCentre = orgType === "SEN" || (!orgType && !!emitra?.id);
+  const partnerTypeCode = orgType || (isEmitraCentre ? "SEN" : null);
+  const status = isEmitraCentre
+    ? emitraStatus ?? (org?.status as string | undefined) ?? null
+    : (org?.status as string | undefined) ?? null;
+  const canAddWorkers = partnerCanAddWorkers({
+    partnerTypeCode,
+    canAddWorkers: org?.can_add_workers as boolean | null | undefined,
+  });
 
   const returnTo =
     landingForPartnerType(partnerTypeCode) ||
-    (emitraProfile ? "/emitra/dashboard" : "/partner/dashboard");
+    (isEmitraCentre ? "/emitra/dashboard" : "/partner/dashboard");
 
-  const source: PartnerWorkerSource = emitraProfile
-    ? { type: "emitra", partnerProfileId: emitra.id, orgId: org?.id }
-    : { type: "partner", orgId: org?.id };
+  const source: PartnerWorkerSource =
+    isEmitraCentre && emitra?.id
+      ? { type: "emitra", partnerProfileId: emitra.id, orgId: org?.id }
+      : { type: "partner", orgId: org?.id };
 
   return {
-    allowed: emitraProfile
-      ? emitraStatus === "approved" || emitraStatus === "active"
-      : partnerCanAddWorkers(status),
+    allowed: isEmitraCentre
+      ? (emitraStatus === "approved" || emitraStatus === "active") && canAddWorkers
+      : canAddWorkers,
     returnTo,
-    myWorkersPath: emitraProfile ? "/emitra/my-workers" : "/partner/my-workers",
+    myWorkersPath: isEmitraCentre ? "/emitra/my-workers" : "/partner/my-workers",
     source,
     status,
     partnerTypeCode,

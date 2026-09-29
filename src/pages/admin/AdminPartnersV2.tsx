@@ -21,6 +21,7 @@ interface PartnerRow {
   partner_code: string | null;
   status: string;
   verification_status: string;
+  can_add_workers: boolean;
   state: string | null;
   district: string | null;
   city: string | null;
@@ -39,19 +40,35 @@ export default function AdminPartnersV2() {
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [canToggleAddWorker, setCanToggleAddWorker] = useState(true);
 
   const load = async () => {
     setLoading(true);
     let query = (supabase as any)
       .from("partners")
-      .select(`id, partner_code, status, verification_status, state, district, city, rating, created_at,
+      .select(`id, partner_code, status, verification_status, can_add_workers, state, district, city, rating, created_at,
                partner_types:partner_type_id(code, name),
                partner_profiles_ext(company_name, owner_name, mobile, email)`)
       .order("created_at", { ascending: false });
     if (typeFilter !== "all") query = query.eq("partner_type_id", typeFilter);
     if (statusFilter !== "all") query = query.eq("status", statusFilter);
-    const { data } = await query;
-    setRows((data ?? []) as any);
+    const first = await query;
+    if (first.error && /can_add_workers/i.test(first.error.message || "")) {
+      setCanToggleAddWorker(false);
+      let fallback = (supabase as any)
+        .from("partners")
+        .select(`id, partner_code, status, verification_status, state, district, city, rating, created_at,
+               partner_types:partner_type_id(code, name),
+               partner_profiles_ext(company_name, owner_name, mobile, email)`)
+        .order("created_at", { ascending: false });
+      if (typeFilter !== "all") fallback = fallback.eq("partner_type_id", typeFilter);
+      if (statusFilter !== "all") fallback = fallback.eq("status", statusFilter);
+      const second = await fallback;
+      setRows((second.data ?? []) as any);
+    } else {
+      setCanToggleAddWorker(true);
+      setRows((first.data ?? []) as any);
+    }
     setLoading(false);
   };
 
@@ -68,6 +85,18 @@ export default function AdminPartnersV2() {
   }, [typeCode]);
 
   useEffect(() => { load(); }, [typeFilter, statusFilter]);
+
+  const setCanAddWorkers = async (id: string, enabled: boolean) => {
+    const { error } = await (supabase as any).rpc("admin_set_partner_can_add_workers", {
+      p_partner_id: id,
+      p_enabled: enabled,
+    });
+    if (error) toast.error(error.message);
+    else {
+      toast.success(enabled ? "Add worker turned on" : "Add worker turned off");
+      load();
+    }
+  };
 
   const setStatus = async (id: string, status: "approved" | "rejected" | "suspended", reason?: string) => {
     const { error } = await (supabase as any).rpc("admin_set_partner_status", {
@@ -187,7 +216,16 @@ export default function AdminPartnersV2() {
                       {r.partner_code ?? "no code"} · joined {new Date(r.created_at).toLocaleDateString()}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    {canToggleAddWorker && (
+                      <Button
+                        size="sm"
+                        variant={r.can_add_workers ? "outline" : "default"}
+                        onClick={() => setCanAddWorkers(r.id, !r.can_add_workers)}
+                      >
+                        {r.can_add_workers ? "Turn off add worker" : "Turn on add worker"}
+                      </Button>
+                    )}
                     {r.status !== "approved" && (
                       <Button size="sm" onClick={() => setStatus(r.id, "approved")}>Approve</Button>
                     )}

@@ -75,7 +75,13 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
   }
 
   const cfg = partnerTypeConfig[partner.partner_type_code];
-  const navItems = cfg?.navItems ?? [];
+  const canAddWorkers = partnerCanAddWorkers({
+    partnerTypeCode: partner.partner_type_code,
+    canAddWorkers: partner.can_add_workers,
+  });
+  const navItems = (cfg?.navItems ?? []).filter(
+    (item) => canAddWorkers || item.to !== PARTNER_ADD_WORKER_PATH,
+  );
 
   const statusColor =
     partner.status === "approved"
@@ -152,7 +158,7 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
-            {partnerCanAddWorkers(partner.status) && (
+            {canAddWorkers && (
               <Button asChild size="sm" className="sm:h-10">
                 <Link to={PARTNER_ADD_WORKER_PATH}>
                   <UserPlus className="mr-1 h-4 w-4" /> Add Worker
@@ -173,8 +179,7 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
 
         {partner.status !== "approved" && (
           <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 md:px-6">
-            Your partner account is <b>{partner.status}</b>. You can still add workers while awaiting
-            admin approval.
+            Your partner account is <b>{partner.status}</b>.
           </div>
         )}
 
