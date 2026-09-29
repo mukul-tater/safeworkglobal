@@ -7,3 +7,11 @@
 - [x] Restore the deleted production UAE public job catalog from the approved existing SQL files and verify counts/categories.
 - [ ] Confirm inbox receipt and successful ticket verification for signup email OTP. Blocked: the requested Gmail address hard-bounced and is globally suppressed until 2026-10-22; a working recipient must supply the received code.
 - [x] Fix expired Firebase SMS token reuse after the email OTP step and verify worker account creation reaches validation with a fresh token.
+
+## SEO, Google Jobs & AI Search
+- [ ] Technical SEO foundation, stable slugs, redirects, canonical host, and crawler rules.
+- [ ] Complete public job pages with accurate structured data, status handling, and related jobs.
+- [ ] Database-backed landing pages, public employers, resources, and internal linking.
+- [ ] Dynamic sitemap architecture with accurate last-modified values.
+- [ ] Admin SEO controls, health reporting, and privacy-conscious conversion analytics.
+- [ ] Responsive, metadata, structured-data, route protection, and regression verification.
