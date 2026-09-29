@@ -129,13 +129,14 @@ const Header = () => {
                       </span>
                     </Button>
                   </Link>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
+                  <Button
+                    variant="ghost"
                     onClick={handleLogout}
-                    className="text-muted-foreground hover:text-destructive"
+                    className="gap-2 text-muted-foreground hover:text-destructive"
+                    aria-label={t("nav.logout")}
                   >
                     <LogOut className="h-4 w-4" />
+                    <span>{t("nav.logout")}</span>
                   </Button>
                 </>
               ) : (
@@ -245,7 +246,7 @@ const Header = () => {
                     onClick={handleLogout}
                   >
                     <LogOut className="h-4 w-4" />
-                    {t("header.signOut")}
+                    {t("nav.logout")}
                   </Button>
                 </div>
               )}

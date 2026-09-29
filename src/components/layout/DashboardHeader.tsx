@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import NotificationDrawer from "@/components/NotificationDrawer";
 import { displayableEmail, formatIndianMobile } from "@/lib/workerAuthEmail";
 import { getGoogleEmailFromUser } from "@/modules/worker-verification/lib/connectGoogleEmail";
+import { useI18n } from "@/i18n";
 
 interface ProfileMenuItem {
   label: string;
@@ -42,10 +43,11 @@ export default function DashboardHeader({
   const { user, profile, logout } = useAuth();
   const { worker, clearWorkerSession, isAuthenticated: isWorkerSession } = useWorkerAuth();
   const workerLang = useOptionalWorkerLanguage();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const helpLabel = showLanguageSwitcher && workerLang ? workerLang.t("header.help") : "Help & Support";
-  const signOutLabel = showLanguageSwitcher && workerLang ? workerLang.t("header.signOut") : "Sign Out";
+  const signOutLabel = t("nav.logout");
 
   const displayName = worker?.fullName || profile?.full_name || "User";
   const displaySubtext =

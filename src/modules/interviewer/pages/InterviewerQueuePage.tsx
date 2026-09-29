@@ -263,7 +263,7 @@ export default function InterviewerQueuePage() {
                 navigate('/interviewer/login', { replace: true });
               }}
             >
-              <LogOut className="h-4 w-4 mr-1" /> Sign out
+              <LogOut className="h-4 w-4 mr-1" /> Logout
             </Button>
           </div>
         </div>

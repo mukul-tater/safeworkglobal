@@ -16,7 +16,7 @@ const en = {
 
   "header.home": "Home",
   "header.help": "Help & Support",
-  "header.signOut": "Sign Out",
+  "header.signOut": "Logout",
 
   "trust.freeTitle": "Register & apply — ₹0",
   "trust.freeSub": "Account and applying are completely free",
@@ -116,7 +116,7 @@ const hi: Record<TranslationKey, string> = {
 
   "header.home": "होम",
   "header.help": "मदद और सहायता",
-  "header.signOut": "साइन आउट",
+  "header.signOut": "लॉगआउट",
 
   "trust.freeTitle": "रजिस्टर और अप्लाई — ₹0",
   "trust.freeSub": "अकाउंट और अप्लाई बिल्कुल मुफ्त",

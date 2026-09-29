@@ -26,6 +26,7 @@ import { passwordValidation } from '@/components/ValidatedInput';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import { sanitizePasswordInput, PASSWORD_HINT, PASSWORD_MIN_LENGTH } from '@/lib/validations/password';
 import { displayableEmail } from '@/lib/workerAuthEmail';
+import { isSigningOut } from '@/lib/signOut';
 import { signupIdentityError } from '@/lib/authContinue';
 import { GENERIC_RESET_SENT_MESSAGE, requestPasswordReset } from '@/lib/passwordReset';
 
@@ -405,12 +406,12 @@ export default function Auth() {
     hasOAuthCallbackInUrl() ||
     (isAuthenticated && !needsRoleSelection && (profileLoading || !!role));
 
-  if (continuing) {
+  if (isSigningOut() || continuing) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-muted-foreground">Signing you in...</p>
+          <p className="mt-4 text-muted-foreground">{isSigningOut() ? 'Signing out...' : 'Signing you in...'}</p>
         </div>
       </div>
     );

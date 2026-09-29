@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { bindMobilePath, MOBILE_OTP_ROLES } from '@/lib/mobileVerification';
 import { hasOAuthCallbackInUrl } from '@/lib/oauthRedirect';
+import { isSigningOut } from '@/lib/signOut';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -49,7 +50,7 @@ export default function ProtectedRoute({
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-muted-foreground">{isSigningOut() ? 'Signing out...' : 'Loading...'}</p>
         </div>
       </div>
     );
@@ -132,7 +133,7 @@ export default function ProtectedRoute({
                 window.location.href = '/worker/login';
               }}
             >
-              Sign out
+              Logout
             </Button>
           </CardContent>
         </Card>

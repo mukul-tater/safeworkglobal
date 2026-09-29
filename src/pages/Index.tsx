@@ -15,6 +15,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import ScrollReveal from "@/components/ScrollReveal";
 import { useAuth } from "@/contexts/AuthContext";
 import { peekPendingOAuthRedirect, peekPendingOAuthRole, hasOAuthCallbackInUrl } from "@/lib/oauthRedirect";
+import { isSigningOut } from "@/lib/signOut";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { showEmployerChrome } from "@/lib/launchGate";
 
@@ -25,16 +26,22 @@ const Index = () => {
   // Wait for role only on cold start. If role is already known, never blank
   // the page when profileLoading flickers (tab focus / token refresh).
   const waitingForRole = isAuthenticated && !role && (loading || profileLoading);
+  const signingOut = isSigningOut();
+  // Only cover the homepage while Google is actually returning. A signed-out
+  // visit (including right after Logout) must not say "Signing you in…".
   const oauthReturning =
-    (loading || !isAuthenticated || waitingForRole) &&
-    (hasOAuthCallbackInUrl() || !!peekPendingOAuthRedirect() || !!peekPendingOAuthRole());
+    !signingOut &&
+    (hasOAuthCallbackInUrl() ||
+      (isAuthenticated &&
+        (loading || waitingForRole) &&
+        (!!peekPendingOAuthRedirect() || !!peekPendingOAuthRole())));
   const isEmployer = !waitingForRole && !oauthReturning && showEmployerChrome(role);
   const showDefaultHome = !waitingForRole && !oauthReturning && !isEmployer;
 
-  if (oauthReturning) {
+  if (signingOut || oauthReturning) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <LoadingSpinner size="lg" text="Signing you in..." />
+        <LoadingSpinner size="lg" text={signingOut ? "Signing out..." : "Signing you in..."} />
       </div>
     );
   }

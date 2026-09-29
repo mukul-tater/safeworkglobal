@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ForgotPasswordControl from '@/components/ForgotPasswordControl';
+import { isSigningOut } from '@/lib/signOut';
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
@@ -28,12 +29,12 @@ export default function AdminLoginPage() {
     }
   }, [isAuthenticated, role, navigate, authLoading, profileLoading]);
 
-  if (authLoading || (isAuthenticated && (profileLoading || role === 'admin'))) {
+  if (isSigningOut() || authLoading || (isAuthenticated && (profileLoading || role === 'admin'))) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-muted-foreground">Signing you in...</p>
+          <p className="mt-4 text-muted-foreground">{isSigningOut() ? 'Signing out...' : 'Signing you in...'}</p>
         </div>
       </div>
     );

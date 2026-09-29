@@ -35,6 +35,7 @@ import {
 } from '@/lib/authContinue';
 import { GET_STARTED_PATHS } from '@/lib/getStarted';
 import { consumeShareReturnPath, peekShareReturnPath } from '@/services/workerShareService';
+import { isSigningOut } from '@/lib/signOut';
 
 type Step = 'identifier' | 'login' | 'signup' | 'otp' | 'conflict';
 
@@ -74,10 +75,10 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
     }
   }, [isAuthenticated, role, isMobileVerified, navigate, authLoading, profileLoading, afterLoginPath]);
 
-  if (authLoading || (isAuthenticated && (profileLoading || role === 'employer'))) {
+  if (isSigningOut() || authLoading || (isAuthenticated && (profileLoading || role === 'employer'))) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <LoadingSpinner size="lg" text="Signing you in..." />
+        <LoadingSpinner size="lg" text={isSigningOut() ? 'Signing out...' : 'Signing you in...'} />
       </div>
     );
   }

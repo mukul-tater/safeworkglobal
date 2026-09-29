@@ -39,6 +39,7 @@ import {
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { exchangeWorkerOtpLogin } from '@/lib/workerOtpLogin';
 import { isDevSharedMobileEnabled } from '@/lib/devSharedMobile';
+import { isSigningOut } from '@/lib/signOut';
 import { normalizeIndianMobile } from '@/lib/validations/common';
 
 type Step = 'identifier' | 'login' | 'otp' | 'signup' | 'conflict';
@@ -99,10 +100,10 @@ export default function WorkerLoginPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when entering OTP step
   }, [step]);
 
-  if (authLoading || (isAuthenticated && (profileLoading || role === 'worker'))) {
+  if (isSigningOut() || authLoading || (isAuthenticated && (profileLoading || role === 'worker'))) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/40">
-        <LoadingSpinner size="lg" text="Signing you in..." />
+        <LoadingSpinner size="lg" text={isSigningOut() ? 'Signing out...' : 'Signing you in...'} />
       </div>
     );
   }

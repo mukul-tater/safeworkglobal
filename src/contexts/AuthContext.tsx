@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { redirectToPublicHome } from '@/lib/signOut';
+import { isSigningOut, markSigningOut, redirectToPublicHome } from '@/lib/signOut';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { displayableEmail } from '@/lib/workerAuthEmail';
-import { hasOAuthCallbackInUrl } from '@/lib/oauthRedirect';
+import { clearPendingOAuthRedirect, clearPendingOAuthRole, hasOAuthCallbackInUrl } from '@/lib/oauthRedirect';
 import { passwordSignupIssue } from '@/lib/validations/password';
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner' | 'interviewer';
@@ -314,7 +314,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(null);
           setHasResolvedRole(false);
           setProfileLoading(false);
-          setLoading(false);
+          // Keep the app on a spinner while Logout finishes. Dropping loading
+          // here mounts login pages that say "Signing you in…".
+          setLoading(isSigningOut());
           return;
         }
 
@@ -476,6 +478,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    markSigningOut();
+    setLoading(true);
+    clearPendingOAuthRedirect();
+    clearPendingOAuthRole();
     const uid = user?.id || loadedUserIdRef.current;
     await supabase.auth.signOut();
     clearMobileVerifiedSession(uid);
