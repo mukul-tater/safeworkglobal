@@ -1,6 +1,8 @@
 project_id = "etpiadoqryvtlpmiuxia"
 
 [functions]
+  [functions.admin-release-firebase-phone]
+    verify_jwt = true
   [functions.auth-email-hook]
     verify_jwt = false
   [functions.contact-enquiry]

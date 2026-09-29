@@ -69,6 +69,28 @@ async function removeUserStorageFiles(userId: string): Promise<void> {
 }
 
 export async function adminDeleteUser(userId: string): Promise<{ error: string | null }> {
+  const { data: releaseData, error: releaseError } = await supabase.functions.invoke(
+    "admin-release-firebase-phone",
+    { body: { userId } }
+  );
+  if (releaseError) {
+    const context = releaseError.context as Response | undefined;
+    let message = "Could not release the mobile number. The user was not deleted.";
+    if (context) {
+      try {
+        const body = await context.clone().json() as { error?: string };
+        if (body.error) message = body.error;
+      } catch {
+        // Keep the safe fallback when the function returns a non-JSON response.
+      }
+    }
+    return { error: message };
+  }
+  const released = releaseData as { ok?: boolean } | null;
+  if (released?.ok !== true) {
+    return { error: "Could not release the mobile number. The user was not deleted." };
+  }
+
   await removeUserStorageFiles(userId);
   const { error } = await supabase.rpc("admin_delete_user", { p_user_id: userId });
   return { error: error ? formatError(error, "Failed to delete user") : null };

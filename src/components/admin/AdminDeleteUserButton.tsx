@@ -82,7 +82,8 @@ export default function AdminDeleteUserButton({
             <AlertDialogTitle>Delete user</AlertDialogTitle>
             <AlertDialogDescription>
               Permanently delete {userLabel}? This removes their account, profile, jobs,
-              applications, verification data, and uploaded files. This cannot be undone.
+              applications, verification data, and uploaded files. Their mobile number will be
+              freed so it can be registered again. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
