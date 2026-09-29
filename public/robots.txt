@@ -18,6 +18,9 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/
 Disallow: /dashboard
+Disallow: /account
+Disallow: /signup
+Disallow: /api/
 Disallow: /auth
 Disallow: /login
 Disallow: /worker/login
@@ -35,4 +38,4 @@ Disallow: /emitra/login
 Disallow: /emitra/dashboard
 Disallow: /interviewer/
 
-Sitemap: https://www.safeworkglobal.com/sitemap.xml
+Sitemap: https://safeworkglobal.com/sitemap.xml

@@ -2,6 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft } from "lucide-react";
+import SEOHead from "@/components/SEOHead";
 
 export default function NotFound() {
   const location = useLocation();
@@ -12,6 +13,12 @@ export default function NotFound() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <SEOHead
+        title="Page Not Found | SafeWork Global"
+        description="This SafeWork Global page could not be found."
+        canonicalUrl={location.pathname}
+        robots="noindex,follow"
+      />
       <div className="text-center max-w-md">
         <div className="text-8xl font-bold text-primary/20 mb-4 font-heading">404</div>
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">Page Not Found</h1>
