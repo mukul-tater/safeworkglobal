@@ -6302,6 +6302,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      complete_emitra_partner_registration: { Args: never; Returns: undefined }
       complete_job_change_fee_razorpay: {
         Args: {
           p_amount: number
