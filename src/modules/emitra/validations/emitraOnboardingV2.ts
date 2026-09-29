@@ -61,7 +61,7 @@ export const emitraV2DocumentsSchema = z.object({
     .regex(panRegex, 'PAN format: ABCDE1234F')
     .or(z.literal(''))
     .optional(),
-  aadhaar_url: z.string().min(1, 'Upload ID proof'),
+  aadhaar_url: z.string().min(1, 'Upload Aadhaar card'),
   address_proof_url: z.string().min(1, 'Upload address proof'),
   emitra_certificate_url: z.string().min(1, 'Upload E-Mitra / CSC authorization or ID proof'),
   accepted_terms: z.literal(true, {

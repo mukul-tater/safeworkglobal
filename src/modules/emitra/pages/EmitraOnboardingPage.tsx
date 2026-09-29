@@ -966,7 +966,7 @@ export default function EmitraOnboardingPage() {
                 <h3 className="text-sm font-semibold text-foreground">Upload</h3>
                 <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                   <DocField
-                    label="ID Proof"
+                    label="Aadhaar card"
                     field="id-proof"
                     value={data.aadhaar_url}
                     error={errors.aadhaar_url}
