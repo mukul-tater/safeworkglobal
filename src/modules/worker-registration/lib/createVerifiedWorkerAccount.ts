@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { isDevSharedMobileEnabled } from '@/lib/devSharedMobile';
 import { workerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
 import { passwordSignupIssue } from '@/lib/validations/password';
 import { acceptTerms } from '@/modules/worker-verification/services/verificationService';
@@ -75,6 +76,7 @@ export async function createVerifiedWorkerAccount(
   const contactEmail = (input.email || '').trim().toLowerCase();
   const source = input.source ?? { type: 'organic' as const };
   const partnerSourced = source.type === 'emitra' || source.type === 'partner';
+  const devSharedMobile = isDevSharedMobileEnabled();
 
   if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
     throw new Error('Enter a valid email address.');
@@ -84,7 +86,7 @@ export async function createVerifiedWorkerAccount(
   // the OTP-verified mobile, so Auth is the synthetic mobile address even when
   // a contact email is collected (stored on profiles, not used as the login key).
   let authEmail: string;
-  if (partnerSourced) {
+  if (partnerSourced || devSharedMobile) {
     authEmail = workerAuthEmailFromMobile(digits);
   } else if (!contactEmail) {
     throw new Error('Email is required to create a worker account.');
@@ -111,7 +113,7 @@ export async function createVerifiedWorkerAccount(
   if (!String(input.idToken || '').trim()) {
     throw new Error('Verification is required. Request a new OTP.');
   }
-  if (!partnerSourced && !String(input.emailOtpTicket || '').trim()) {
+  if (!partnerSourced && !devSharedMobile && !String(input.emailOtpTicket || '').trim()) {
     throw new Error('Verify your email with the OTP we sent, then try again.');
   }
 

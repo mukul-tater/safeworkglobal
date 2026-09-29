@@ -28,7 +28,8 @@ import { getFirebaseAuth, redirectToPhoneAuthHost } from '@/lib/firebase';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
 import { sendSignupEmailOtp, verifySignupEmailOtp } from '@/lib/signupEmailOtp';
-import { AUTH_CONTINUE_MESSAGES, continueAuth } from '@/lib/authContinue';
+import { signupIdentityError } from '@/lib/authContinue';
+import { isDevSharedMobileEnabled } from '@/lib/devSharedMobile';
 import { GET_STARTED_PATHS } from '@/lib/getStarted';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 import TermsAgreeRow from '@/components/TermsAgreeRow';
@@ -242,32 +243,20 @@ export default function QuickWorkerSignup({
 
     setFormLoading(true);
     try {
-      if (!partnerAssisted) {
-        const check = await continueAuth({
-          role: 'worker',
-          email: email.trim().toLowerCase(),
-          mobile,
-        });
-        if (check.nextStep === 'ACCOUNT_CONFLICT') {
-          setError(check.error || AUTH_CONTINUE_MESSAGES.conflict);
-          return;
-        }
-        if (check.nextStep === 'LOGIN' || check.nextStep === 'WRONG_PORTAL') {
-          setError(
-            check.error ||
-              'An account already exists for these details. Go back and continue to sign in.',
-          );
-          return;
-        }
-        if (check.nextStep === 'RATE_LIMITED' || check.nextStep === 'ERROR') {
-          setError(check.error || AUTH_CONTINUE_MESSAGES.server);
-          return;
-        }
+      const taken = await signupIdentityError({
+        role: 'worker',
+        email: email.trim().toLowerCase(),
+        mobile,
+        devPortal: 'worker',
+      });
+      if (taken) {
+        setError(taken);
+        return;
       }
 
       if (phoneOtpVerified) {
         setNeedsPasswordRetry(false);
-        if (!partnerAssisted && !emailOtpVerified) {
+        if (!partnerAssisted && !emailOtpVerified && !isDevSharedMobileEnabled()) {
           await sendEmailOtpAndAdvance();
           return;
         }

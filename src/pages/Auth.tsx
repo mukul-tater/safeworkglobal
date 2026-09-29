@@ -26,6 +26,7 @@ import { passwordValidation } from '@/components/ValidatedInput';
 import { isValidIndianMobile } from '@/lib/validations/common';
 import { sanitizePasswordInput, PASSWORD_HINT, PASSWORD_MIN_LENGTH } from '@/lib/validations/password';
 import { displayableEmail } from '@/lib/workerAuthEmail';
+import { signupIdentityError } from '@/lib/authContinue';
 import { GENERIC_RESET_SENT_MESSAGE, requestPasswordReset } from '@/lib/passwordReset';
 
 type AuthView = 'login' | 'signup' | 'forgot' | 'role-select';
@@ -247,6 +248,19 @@ export default function Auth() {
       if (pwErr) { setError(pwErr); return; }
     }
     setLoading(true);
+
+    if (signupRole === 'worker' || signupRole === 'employer' || signupRole === 'partner') {
+      const taken = await signupIdentityError({
+        role: signupRole,
+        email: signupEmail,
+        mobile: signupPhone,
+      });
+      if (taken) {
+        setError(taken);
+        setLoading(false);
+        return;
+      }
+    }
 
     const result = await signup({
       email: signupEmail,

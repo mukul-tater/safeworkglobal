@@ -150,6 +150,22 @@ export function mapAuthContinuePayload(raw: unknown): AuthContinueResult {
   };
 }
 
+export const SIGNUP_IDENTITY_MESSAGES = {
+  email: 'This email is already registered. Sign in instead, or use a different email.',
+  mobile: 'This mobile number is already registered. Sign in instead, or use a different mobile number.',
+} as const;
+
+/** One line per taken identifier. Mobile is named first when both are taken. */
+export function formatSignupIdentityError(input: {
+  emailTaken?: boolean;
+  mobileTaken?: boolean;
+}): string | null {
+  const parts: string[] = [];
+  if (input.mobileTaken) parts.push(SIGNUP_IDENTITY_MESSAGES.mobile);
+  if (input.emailTaken) parts.push(SIGNUP_IDENTITY_MESSAGES.email);
+  return parts.length ? parts.join(' ') : null;
+}
+
 export function portalAuthPath(role: AuthPortalRole): string {
   if (USERS_ONLY_LAUNCH && role === 'employer') return COMING_SOON_PATHS.employer;
   if (role === 'employer') return '/employer/login';

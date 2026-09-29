@@ -39,7 +39,13 @@ import {
 import { completeEmitraPartnerRegistration, getPartnerProfile, savePartnerApplication } from '../services/emitraService';
 import { createPhoneVerifiedPartnerAccount } from '@/lib/phoneVerifiedAccount';
 import { getLspSession } from '@/modules/lsp/services/lspSession';
-import type { AuthContinueLocationState } from '@/lib/authContinue';
+import { signupIdentityError, type AuthContinueLocationState } from '@/lib/authContinue';
+import {
+  devPortalAuthEmail,
+  devReleaseOtherPortalSession,
+  devStoredPhone,
+  isDevSharedMobileEnabled,
+} from '@/lib/devSharedMobile';
 import IndiaLocationFields from '@/components/IndiaLocationFields';
 
 const STEPS = [
@@ -88,7 +94,7 @@ export default function EmitraOnboardingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { user, markMobileVerified } = useAuth();
+  const { user, role, markMobileVerified } = useAuth();
   const lspSession = getLspSession();
   const sourceLspCode = searchParams.get('source_lsp') || lspSession?.code || null;
   const continuePrefill = (location.state || {}) as AuthContinueLocationState;
@@ -306,6 +312,16 @@ export default function EmitraOnboardingPage() {
     }
     setOtpBusy(true);
     try {
+      const taken = await signupIdentityError({
+        role: 'partner',
+        email: data.email,
+        mobile: digits,
+        devPortal: 'emitra',
+      });
+      if (taken) {
+        toast.error(taken);
+        return;
+      }
       await firebaseOtp.sendOtp(digits);
       setOtpStep(true);
       setOtp('');
@@ -404,7 +420,24 @@ export default function EmitraOnboardingPage() {
   };
 
   const ensureAccount = async (): Promise<string | null> => {
-    if (user) return user.id;
+    const digitsEarly = (data.mobile || '').replace(/\D/g, '');
+    if (isDevSharedMobileEnabled()) {
+      await devReleaseOtherPortalSession('emitra', digitsEarly);
+      const {
+        data: { user: current },
+      } = await supabase.auth.getUser();
+      if (current?.email?.toLowerCase() === devPortalAuthEmail('emitra', digitsEarly)) {
+        return current.id;
+      }
+    } else if (user) {
+      if (role && role !== 'partner') {
+        toast.error(
+          'This account is already registered. Sign out and use a different email and mobile number.',
+        );
+        return null;
+      }
+      return user.id;
+    }
     if (!mobileVerified) {
       toast.error('Verify your mobile number with SMS OTP first');
       return null;
@@ -420,7 +453,9 @@ export default function EmitraOnboardingPage() {
     }
     const digits = (data.mobile || '').replace(/\D/g, '');
     const realEmail = displayableEmail(data.email);
-    const authEmail = realEmail || partnerAuthEmailFromMobile(digits);
+    const authEmail = isDevSharedMobileEnabled()
+      ? devPortalAuthEmail('emitra', digits)
+      : realEmail || partnerAuthEmailFromMobile(digits);
 
     const fail = (message: string) => {
       toast.error(message);
@@ -465,19 +500,24 @@ export default function EmitraOnboardingPage() {
       return fail('Verify your mobile number with SMS OTP first');
     }
 
+    const taken = await signupIdentityError({
+      role: 'partner',
+      email: realEmail,
+      mobile: digits,
+      devPortal: 'emitra',
+    });
+    if (taken) return fail(taken);
+
     try {
       await createPhoneVerifiedPartnerAccount({
         email: authEmail,
         password: accountPassword,
         fullName: data.owner_name || '',
-        mobile: digits,
+        mobile: isDevSharedMobileEnabled() ? devStoredPhone('emitra', digits) : digits,
         idToken: firebaseIdToken,
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Could not create account';
-      if (/already registered|already exists|duplicate/i.test(message)) {
-        return finish(await signIn());
-      }
       return fail(message);
     }
 
@@ -488,12 +528,14 @@ export default function EmitraOnboardingPage() {
     const address = data.address_line1 || null;
     const villageCity = data.city_town || null;
     const digits = (data.mobile || '').replace(/\D/g, '');
+    const devAccount = isDevSharedMobileEnabled();
+    const storedMobile = devAccount ? devStoredPhone('emitra', digits) : data.mobile;
 
     return {
       owner_name: data.owner_name,
-      mobile: data.mobile,
-      whatsapp: digits || null,
-      email: displayableEmail(data.email),
+      mobile: storedMobile,
+      whatsapp: devAccount ? storedMobile : digits || null,
+      email: devAccount ? null : displayableEmail(data.email),
       date_of_birth: data.date_of_birth || null,
       emitra_id: data.emitra_id,
       csc_id: data.emitra_id || null,

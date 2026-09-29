@@ -65,15 +65,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
       } = await admin.auth.getUser(token)
       if (userErr || !user) return json(401, { error: 'Not authenticated' })
 
-      const { data: taken } = await admin
-        .from('profiles')
-        .select('id')
-        .neq('id', user.id)
-        .or(`phone.eq.${mobile},phone.eq.+91${mobile},phone.eq.91${mobile}`)
-        .limit(1)
-        .maybeSingle()
-      if (taken?.id) {
-        return json(409, { error: 'This mobile number is already registered.' })
+      const { data: mobileTaken, error: mobileTakenErr } = await admin.rpc('signup_mobile_taken', {
+        p_phone: mobile,
+        p_except_user_id: user.id,
+      })
+      if (mobileTakenErr) throw new Error(mobileTakenErr.message)
+      if (mobileTaken) {
+        return json(409, { error: 'mobile already registered' })
       }
 
       const { error: updErr } = await admin
@@ -129,6 +127,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
     })
     if (error) {
       const msg = error.message || 'Could not create account.'
+      if (/email already registered/i.test(msg)) {
+        return json(409, { error: 'email already registered' })
+      }
+      if (/mobile already registered/i.test(msg)) {
+        return json(409, { error: 'mobile already registered' })
+      }
       if (/already registered|already exists|duplicate/i.test(msg)) {
         return json(409, { error: 'already registered' })
       }

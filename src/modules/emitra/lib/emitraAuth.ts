@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { devPortalAuthEmail, isDevSharedMobileEnabled } from '@/lib/devSharedMobile';
 import { displayableEmail, partnerAuthEmailFromMobile } from '@/lib/workerAuthEmail';
 import { getPartnerProfile, isPartnerOperational } from '../services/emitraService';
 
@@ -25,6 +26,8 @@ export async function resolveEmitraAuthEmail(identifier: string): Promise<string
 
   const digits = raw.replace(/\D/g, '');
   if (!/^[6-9]\d{9}$/.test(digits)) return null;
+
+  if (isDevSharedMobileEnabled()) return devPortalAuthEmail('emitra', digits);
 
   const { data: prof } = await supabase
     .from('profiles')

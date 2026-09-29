@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { devPortalAuthEmail, isDevSharedMobileEnabled } from '@/lib/devSharedMobile';
 import { workerAuthEmailFromIdentifier } from '@/lib/workerAuthEmail';
 
 /**
@@ -9,6 +10,11 @@ import { workerAuthEmailFromIdentifier } from '@/lib/workerAuthEmail';
 export async function resolveWorkerAuthEmail(identifier: string): Promise<string | null> {
   const raw = identifier.trim();
   if (!raw) return null;
+
+  if (isDevSharedMobileEnabled() && !raw.includes('@')) {
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length >= 10) return devPortalAuthEmail('worker', digits);
+  }
 
   const { data, error } = await supabase.rpc('resolve_worker_auth_email', {
     p_identifier: raw,

@@ -30,6 +30,7 @@ import {
   buildAuthContinueRequest,
   continueAuth,
   portalAuthPath,
+  signupIdentityError,
   type AuthIdentifierMethod,
 } from '@/lib/authContinue';
 import { GET_STARTED_PATHS } from '@/lib/getStarted';
@@ -162,18 +163,13 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
 
     setLoading(true);
     try {
-      const bothCheck = await continueAuth({
+      const taken = await signupIdentityError({
         role: 'employer',
         email: validation.data.email.trim(),
         mobile: mobile || undefined,
       });
-      if (bothCheck.nextStep === 'ACCOUNT_CONFLICT') {
-        setError(bothCheck.error || AUTH_CONTINUE_MESSAGES.conflict);
-        setLoading(false);
-        return;
-      }
-      if (bothCheck.nextStep === 'LOGIN' || bothCheck.nextStep === 'WRONG_PORTAL') {
-        setError(bothCheck.error || 'An account already exists for these details.');
+      if (taken) {
+        setError(taken);
         setLoading(false);
         return;
       }
@@ -185,11 +181,6 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
       toast.success(`Verification code sent to ${validation.data.email.trim()}. Check your inbox and spam folder.`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Could not send verification code';
-      if (/already registered/i.test(message)) {
-        toast.error('This email is already registered. Continue with your password.');
-        setStep('login');
-        return;
-      }
       setError(message);
       toast.error(message);
     } finally {
@@ -229,11 +220,6 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
       navigate('/employer/bind-mobile', { replace: true });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Could not create account';
-      if (/already registered/i.test(message)) {
-        toast.error('This email is already registered. Continue with your password.');
-        setStep('login');
-        return;
-      }
       setError(message);
       toast.error(message);
     } finally {

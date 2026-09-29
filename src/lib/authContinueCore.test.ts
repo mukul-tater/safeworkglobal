@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   AUTH_CONTINUE_MESSAGES,
+  SIGNUP_IDENTITY_MESSAGES,
   buildAuthContinueRequest,
+  formatSignupIdentityError,
   mapAuthContinuePayload,
   parseAuthIdentifier,
   portalAuthPath,
@@ -93,6 +95,15 @@ test('mapAuthContinuePayload: rate limit and invalid payload', () => {
 
   const invalid = mapAuthContinuePayload(null);
   assert.equal(invalid.nextStep, 'ERROR');
+});
+
+test('formatSignupIdentityError names the taken identifier', () => {
+  assert.equal(formatSignupIdentityError({}), null);
+  assert.equal(formatSignupIdentityError({ emailTaken: true }), SIGNUP_IDENTITY_MESSAGES.email);
+  assert.equal(formatSignupIdentityError({ mobileTaken: true }), SIGNUP_IDENTITY_MESSAGES.mobile);
+  const both = formatSignupIdentityError({ emailTaken: true, mobileTaken: true });
+  assert.match(both || '', /mobile number is already registered/);
+  assert.match(both || '', /email is already registered/);
 });
 
 test('portalAuthPath', () => {

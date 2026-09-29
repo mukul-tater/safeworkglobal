@@ -10,8 +10,11 @@ function readError(value: unknown): string | null {
 }
 
 function alreadyRegisteredMessage(error: string): string {
-  if (/already registered/i.test(error)) {
-    return 'This email is already registered. Sign in instead.';
+  if (/mobile already registered/i.test(error)) {
+    return 'This mobile number is already registered. Sign in instead, or use a different mobile number.';
+  }
+  if (/email already registered|already registered/i.test(error)) {
+    return 'This email is already registered. Sign in instead, or use a different email.';
   }
   return error;
 }

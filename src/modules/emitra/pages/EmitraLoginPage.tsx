@@ -72,7 +72,7 @@ export default function EmitraLoginPage() {
       return;
     }
     setLoading(true);
-    const result = await continueAuth(built.request);
+    const result = await continueAuth({ ...built.request, devPortal: 'emitra' });
     setLoading(false);
     if (result.nextStep === 'RATE_LIMITED' || result.nextStep === 'ERROR') {
       setError(result.error || AUTH_CONTINUE_MESSAGES.server);

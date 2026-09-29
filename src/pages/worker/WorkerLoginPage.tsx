@@ -38,6 +38,7 @@ import {
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { exchangeWorkerOtpLogin } from '@/lib/workerOtpLogin';
+import { isDevSharedMobileEnabled } from '@/lib/devSharedMobile';
 import { normalizeIndianMobile } from '@/lib/validations/common';
 
 type Step = 'identifier' | 'login' | 'otp' | 'signup' | 'conflict';
@@ -158,7 +159,7 @@ export default function WorkerLoginPage() {
     }
 
     setLoading(true);
-    const result = await continueAuth(built.request);
+    const result = await continueAuth({ ...built.request, devPortal: 'worker' });
 
     if (result.nextStep === 'RATE_LIMITED' || result.nextStep === 'ERROR') {
       setError(result.error || AUTH_CONTINUE_MESSAGES.server);
@@ -181,6 +182,12 @@ export default function WorkerLoginPage() {
     }
     if (result.nextStep === 'SIGNUP') {
       setStep('signup');
+      setLoading(false);
+      return;
+    }
+
+    if (method === 'mobile' && isDevSharedMobileEnabled()) {
+      setStep('login');
       setLoading(false);
       return;
     }

@@ -56,24 +56,9 @@ async function emailAlreadyRegistered(
   admin: ReturnType<typeof createClient>,
   email: string,
 ): Promise<boolean> {
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('id')
-    .ilike('email', email)
-    .limit(1)
-    .maybeSingle()
-  if (profile?.id) return true
-
-  const adminAuth = admin.auth.admin as { getUserByEmail?: (email: string) => Promise<{ data: { user: { id: string } | null } }> }
-  if (typeof adminAuth.getUserByEmail === 'function') {
-    try {
-      const { data } = await adminAuth.getUserByEmail(email)
-      if (data?.user?.id) return true
-    } catch {
-      /* fall through */
-    }
-  }
-  return false
+  const { data, error } = await admin.rpc('signup_email_taken', { p_email: email })
+  if (error) throw new Error(error.message)
+  return data === true
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -121,7 +106,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     if (action === 'send') {
       if (await emailAlreadyRegistered(admin, email)) {
-        return json(409, { error: 'already registered' })
+        return json(409, { error: 'email already registered' })
       }
 
       const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
@@ -264,6 +249,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
     })
     if (error) {
       const msg = error.message || 'Could not create account.'
+      if (/email already registered/i.test(msg)) {
+        return json(409, { error: 'email already registered' })
+      }
+      if (/mobile already registered/i.test(msg)) {
+        return json(409, { error: 'mobile already registered' })
+      }
       if (/already registered|already exists|duplicate/i.test(msg)) {
         return json(409, { error: 'already registered' })
       }

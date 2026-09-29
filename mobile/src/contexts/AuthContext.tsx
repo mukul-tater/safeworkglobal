@@ -8,6 +8,7 @@ import { completeGoogleAuthFromUrl, signInWithGoogleMobile } from '../services/g
 import { displayableEmail } from '../lib/workerAuthEmail';
 import { resolveWorkerAuthEmail } from '../lib/resolveWorkerAuthEmail';
 import { passwordSignupIssue } from '../lib/password';
+import { continueAuth } from '../lib/authContinue';
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner';
 
@@ -273,6 +274,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const passwordIssue = passwordSignupIssue(data.password);
       if (passwordIssue) return { success: false, error: passwordIssue };
+
+      if (data.role === 'worker' || data.role === 'employer' || data.role === 'partner') {
+        const mobileDigits = data.phone.replace(/\D/g, '').slice(-10);
+        const email = data.email.trim().toLowerCase();
+        if (/^[6-9]\d{9}$/.test(mobileDigits)) {
+          const mobileCheck = await continueAuth({ role: data.role, mobile: mobileDigits });
+          if (
+            mobileCheck.nextStep === 'LOGIN' ||
+            mobileCheck.nextStep === 'WRONG_PORTAL' ||
+            mobileCheck.nextStep === 'ACCOUNT_CONFLICT'
+          ) {
+            return {
+              success: false,
+              error:
+                'This mobile number is already registered. Sign in instead, or use a different mobile number.',
+            };
+          }
+          if (mobileCheck.nextStep === 'ERROR' || mobileCheck.nextStep === 'RATE_LIMITED') {
+            return { success: false, error: mobileCheck.error || 'Something went wrong. Please try again.' };
+          }
+        }
+        if (email.includes('@')) {
+          const emailCheck = await continueAuth({ role: data.role, email });
+          if (
+            emailCheck.nextStep === 'LOGIN' ||
+            emailCheck.nextStep === 'WRONG_PORTAL' ||
+            emailCheck.nextStep === 'ACCOUNT_CONFLICT'
+          ) {
+            return {
+              success: false,
+              error: 'This email is already registered. Sign in instead, or use a different email.',
+            };
+          }
+          if (emailCheck.nextStep === 'ERROR' || emailCheck.nextStep === 'RATE_LIMITED') {
+            return { success: false, error: emailCheck.error || 'Something went wrong. Please try again.' };
+          }
+        }
+      }
 
       const { error } = await supabase.auth.signUp({
         email: data.email,

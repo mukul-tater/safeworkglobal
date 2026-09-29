@@ -21,6 +21,14 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import IndiaLocationFields from "@/components/IndiaLocationFields";
 import { partnerAuthEmailFromMobile, displayableEmail } from "@/lib/workerAuthEmail";
+import { signupIdentityError } from "@/lib/authContinue";
+import {
+  devPortalAuthEmail,
+  devReleaseOtherPortalSession,
+  devStoredPhone,
+  isDevSharedMobileEnabled,
+} from "@/lib/devSharedMobile";
+import { createPhoneVerifiedPartnerAccount } from "@/lib/phoneVerifiedAccount";
 import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from "@/lib/validations/password";
 import { lockedPartnerFromPath } from "@/modules/partner/config/partnerPortalRoutes";
 import { getPartnerSignupOption } from "@/modules/partner/config/partnerSignupOptions";
@@ -45,7 +53,7 @@ interface PartnerType {
 }
 
 export default function PartnerRegisterLegacy() {
-  const { user, isAuthenticated, assignRole, signup, refreshProfile, refreshRole } = useAuth();
+  const { user, isAuthenticated, role, assignRole, refreshProfile, refreshRole } = useAuth();
   const navigate = useNavigate();
   const { pathname, state: locationState } = useLocation();
   const continuePrefill = (locationState || {}) as AuthContinueLocationState;
@@ -62,6 +70,7 @@ export default function PartnerRegisterLegacy() {
   const [otp, setOtp] = useState("");
   const [otpStep, setOtpStep] = useState(false);
   const [mobileVerified, setMobileVerified] = useState(false);
+  const [firebaseIdToken, setFirebaseIdToken] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState({
@@ -121,9 +130,25 @@ export default function PartnerRegisterLegacy() {
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const ensureAuthenticated = async (): Promise<string> => {
-    if (isAuthenticated && user?.id) return user.id;
-
     const digits = form.mobile.replace(/\D/g, "");
+    const devSsvn = isDevSharedMobileEnabled() && portal?.code === "SSVN";
+    if (devSsvn) {
+      await devReleaseOtherPortalSession("ssvn", digits);
+      const {
+        data: { user: current },
+      } = await supabase.auth.getUser();
+      if (current?.email?.toLowerCase() === devPortalAuthEmail("ssvn", digits)) {
+        return current.id;
+      }
+    } else if (isAuthenticated && user?.id) {
+      if (role && role !== "partner") {
+        throw new Error(
+          "This account is already registered. Sign out and use a different email and mobile number.",
+        );
+      }
+      return user.id;
+    }
+
     if (!/^[6-9]\d{9}$/.test(digits)) {
       throw new Error("Enter a valid 10-digit mobile number");
     }
@@ -138,40 +163,65 @@ export default function PartnerRegisterLegacy() {
       throw new Error("Passwords do not match");
     }
 
-    const authEmail = form.email.trim() || partnerAuthEmailFromMobile(digits);
-    const result = await signup({
-      email: authEmail,
-      password: form.password,
-      full_name: form.owner_name || form.company_name,
-      phone: digits,
+    const taken = await signupIdentityError({
       role: "partner",
+      email: form.email,
+      mobile: digits,
+      devPortal: devSsvn ? "ssvn" : undefined,
     });
-    if (!result.success) {
-      throw new Error(result.error || "Could not create account");
+    if (taken) throw new Error(taken);
+
+    if (!firebaseIdToken) {
+      throw new Error("Verify your mobile number with SMS OTP first");
     }
 
-    // Sign-in may already be active after signup; refresh context
-    await refreshProfile();
-    await refreshRole();
-    const { data: { user: created } } = await supabase.auth.getUser();
-    if (!created?.id) {
-      // Some projects require email confirm — try password login
-      const { error } = await supabase.auth.signInWithPassword({
-        email: authEmail,
-        password: form.password,
-      });
-      if (error) {
-        throw new Error(
-          "Account created but sign-in failed. Confirm email if required, then sign in and finish registration.",
-        );
+    const authEmail = (
+      devSsvn ? devPortalAuthEmail("ssvn", digits) : form.email.trim() || partnerAuthEmailFromMobile(digits)
+    ).toLowerCase();
+    const storedPhone = devSsvn ? devStoredPhone("ssvn", digits) : digits;
+    await createPhoneVerifiedPartnerAccount({
+      email: authEmail,
+      password: form.password,
+      fullName: form.owner_name || form.company_name,
+      mobile: storedPhone,
+      idToken: firebaseIdToken,
+    });
+
+    const { data: signedIn, error: signInErr } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password: form.password,
+    });
+    if (!signedIn.session) {
+      if (signInErr && /email not confirmed/i.test(signInErr.message)) {
+        await new Promise((r) => setTimeout(r, 700));
+        const retry = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: form.password,
+        });
+        if (!retry.data.session) {
+          throw new Error(
+            "Account created but sign-in failed. Confirm email if required, then sign in and finish registration.",
+          );
+        }
+      } else if (signInErr) {
+        throw new Error(signInErr.message);
+      } else {
+        throw new Error("Account created but sign-in failed. Sign in and finish registration.");
       }
     }
+
+    await refreshProfile();
+    await refreshRole();
     const { data: { user: after } } = await supabase.auth.getUser();
     if (!after?.id) throw new Error("Authentication failed after signup");
     await assignRole("partner").catch(() => {});
     await (supabase as any)
       .from("profiles")
-      .update({ phone: digits, full_name: form.owner_name || form.company_name, mobile_verified: true })
+      .update({
+        phone: devSsvn ? devStoredPhone("ssvn", digits) : digits,
+        full_name: form.owner_name || form.company_name,
+        mobile_verified: true,
+      })
       .eq("id", after.id);
     return after.id;
   };
@@ -188,6 +238,16 @@ export default function PartnerRegisterLegacy() {
     }
     setOtpBusy(true);
     try {
+      const taken = await signupIdentityError({
+        role: "partner",
+        email: form.email,
+        mobile: digits,
+        devPortal: portal?.code === "SSVN" ? "ssvn" : undefined,
+      });
+      if (taken) {
+        toast.error(taken);
+        return;
+      }
       await firebaseOtp.sendOtp(digits);
       setOtpStep(true);
       setOtp("");
@@ -208,7 +268,8 @@ export default function PartnerRegisterLegacy() {
     }
     setOtpBusy(true);
     try {
-      await firebaseOtp.verifyOtp(otp);
+      const idToken = await firebaseOtp.verifyOtp(otp);
+      setFirebaseIdToken(idToken);
       try {
         if (!firebaseOtp.devBypass) await firebaseSignOut(getFirebaseAuth());
       } catch {
@@ -239,9 +300,11 @@ export default function PartnerRegisterLegacy() {
       await assignRole("partner").catch(() => {});
 
       const digits = form.mobile.replace(/\D/g, "");
+      const storedPhone =
+        isDevSharedMobileEnabled() && portal?.code === "SSVN" ? devStoredPhone("ssvn", digits) : digits;
       await (supabase as any)
         .from("profiles")
-        .update({ phone: digits, mobile_verified: true })
+        .update({ phone: storedPhone, mobile_verified: true })
         .eq("id", userId);
 
       const { data: partner, error } = await (supabase as any)
@@ -264,8 +327,8 @@ export default function PartnerRegisterLegacy() {
           partner_id: partner.id,
           company_name: form.company_name,
           owner_name: form.owner_name || null,
-          mobile: digits,
-          email: form.email || null,
+          mobile: storedPhone,
+          email: isDevSharedMobileEnabled() && portal?.code === "SSVN" ? null : form.email || null,
           address: form.address || null,
           pincode: form.pincode || null,
           pan: form.pan || null,

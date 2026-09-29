@@ -34,6 +34,14 @@ async function invokePhoneVerifiedAccount(
     if (userId) return { userId, mobile };
   }
   if (bodyError) {
+    if (/mobile already registered/i.test(bodyError)) {
+      throw new Error(
+        'This mobile number is already registered. Sign in instead, or use a different mobile number.',
+      );
+    }
+    if (/email already registered/i.test(bodyError)) {
+      throw new Error('This email is already registered. Sign in instead, or use a different email.');
+    }
     if (/already registered/i.test(bodyError)) {
       throw new Error('This email or mobile is already registered. Sign in instead.');
     }

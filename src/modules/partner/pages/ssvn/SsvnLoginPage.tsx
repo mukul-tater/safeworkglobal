@@ -17,6 +17,7 @@ import {
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { partnerAuthEmailFromMobile, displayableEmail } from '@/lib/workerAuthEmail';
+import { devPortalAuthEmail, isDevSharedMobileEnabled } from '@/lib/devSharedMobile';
 import {
   assertUserIsPartnerRole,
   findUserIdByPartnerMobile,
@@ -69,6 +70,11 @@ export default function SsvnLoginPage() {
     if (!org) {
       return portal.missingOrg;
     }
+    if (isDevSharedMobileEnabled() && org.status === 'pending') {
+      const { data: { user } } = await supabase.auth.getUser();
+      const email = user?.email?.toLowerCase() || '';
+      if (email.startsWith(`dev.${typeCode.toLowerCase()}.`)) return null;
+    }
     if (!isSsvnPartnerApproved(org)) {
       if (org.status === 'pending') {
         return `Your ${typeLabel} application is pending SafeWork approval.`;
@@ -102,7 +108,9 @@ export default function SsvnLoginPage() {
   }, [step]);
 
   const partnerLogin = async (authEmail: string, pwd: string, mobileDigits: string) => {
-    const synthetic = partnerAuthEmailFromMobile(mobileDigits);
+    const synthetic = isDevSharedMobileEnabled()
+      ? devPortalAuthEmail('ssvn', mobileDigits)
+      : partnerAuthEmailFromMobile(mobileDigits);
     let result = await login(authEmail, pwd);
     if (!result.success && authEmail !== synthetic) {
       result = await login(synthetic, pwd);
@@ -125,7 +133,7 @@ export default function SsvnLoginPage() {
 
     setLoading(true);
     try {
-      const check = await continueAuth({ role: 'partner', mobile: digits });
+      const check = await continueAuth({ role: 'partner', mobile: digits, devPortal: 'ssvn' });
       if (check.nextStep === 'RATE_LIMITED' || check.nextStep === 'ERROR') {
         setError(check.error || AUTH_CONTINUE_MESSAGES.server);
         return;
@@ -140,16 +148,45 @@ export default function SsvnLoginPage() {
         return;
       }
 
-      const userId = await findUserIdByPartnerMobile(digits);
-      if (!userId) {
-        setError('No partner account found with this mobile. Please apply first.');
+      if (isDevSharedMobileEnabled()) {
+        if (password.length < 6) {
+          setError(`Enter the password for this ${typeLabel} login`);
+          return;
+        }
+        const authEmail = devPortalAuthEmail('ssvn', digits);
+        const result = await partnerLogin(authEmail, password, digits);
+        if (!result.success) {
+          setError(result.error || 'Wrong password. Use the password from registration.');
+          return;
+        }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setError('Authentication failed');
+          return;
+        }
+        const block = await ensureSsvnAccess(user.id);
+        if (block) {
+          await supabase.auth.signOut();
+          setError(block);
+          return;
+        }
+        toast.success('Welcome to your trade test centre portal');
+        navigate(afterLoginPath(), { replace: true });
         return;
       }
 
-      const block = await ensureSsvnAccess(userId);
-      if (block) {
-        setError(block);
-        return;
+      if (!isDevSharedMobileEnabled()) {
+        const userId = await findUserIdByPartnerMobile(digits);
+        if (!userId) {
+          setError('No partner account found with this mobile. Please apply first.');
+          return;
+        }
+
+        const block = await ensureSsvnAccess(userId);
+        if (block) {
+          setError(block);
+          return;
+        }
       }
 
       await firebaseOtp.sendOtp(digits);
@@ -187,15 +224,17 @@ export default function SsvnLoginPage() {
         /* ignore */
       }
 
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('email, phone')
-        .eq('phone', digits)
-        .maybeSingle();
-
-      const authEmail =
-        displayableEmail(prof?.email)?.trim() ||
-        partnerAuthEmailFromMobile(digits);
+      let authEmail = partnerAuthEmailFromMobile(digits);
+      if (isDevSharedMobileEnabled()) {
+        authEmail = devPortalAuthEmail('ssvn', digits);
+      } else {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('email, phone')
+          .eq('phone', digits)
+          .maybeSingle();
+        authEmail = displayableEmail(prof?.email)?.trim() || authEmail;
+      }
       const result = await partnerLogin(authEmail, password, digits);
       if (!result.success) {
         setError(
@@ -237,7 +276,11 @@ export default function SsvnLoginPage() {
     setError('');
     setLoading(true);
 
-    const check = await continueAuth({ role: 'partner', email: email.trim().toLowerCase() });
+    const check = await continueAuth({
+      role: 'partner',
+      email: email.trim().toLowerCase(),
+      devPortal: 'ssvn',
+    });
     if (check.nextStep === 'RATE_LIMITED' || check.nextStep === 'ERROR') {
       setError(check.error || AUTH_CONTINUE_MESSAGES.server);
       setLoading(false);
@@ -354,9 +397,25 @@ export default function SsvnLoginPage() {
                 onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
               />
               <p className="text-xs text-muted-foreground">
-                Use the mobile from your {typeLabel} registration. We&apos;ll send a 6-digit SMS code to verify your number.
+                {isDevSharedMobileEnabled()
+                  ? `Use the mobile from your ${typeLabel} registration, then the password for this login.`
+                  : `Use the mobile from your ${typeLabel} registration. We'll send a 6-digit SMS code to verify your number.`}
               </p>
             </div>
+            {isDevSharedMobileEnabled() && (
+              <div className="space-y-1.5">
+                <Label htmlFor="ssvn-dev-password">Password</Label>
+                <Input
+                  id="ssvn-dev-password"
+                  type="password"
+                  autoComplete="current-password"
+                  className="h-11"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password from registration"
+                />
+              </div>
+            )}
             <Button
               id={WORKER_OTP_RECAPTCHA_BTN_ID}
               type="submit"
