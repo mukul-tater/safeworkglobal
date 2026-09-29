@@ -20,66 +20,75 @@ interface JourneyStepClearedOpsProps {
   workerPhone?: string
   trade?: string
   location?: string
-  jobTitle?: string
   clearedStep?: string
   nextStep?: string
   isTerminal?: boolean
   adminUrl?: string
 }
 
+function present(value?: string): string {
+  const trimmed = (value || '').trim()
+  if (!trimmed || trimmed === 'not specified' || trimmed === 'not provided') return ''
+  return trimmed
+}
+
 const JourneyStepClearedOpsEmail = ({
   workerName = 'Unknown worker',
-  workerEmail = 'not provided',
-  workerPhone = 'not provided',
-  trade = 'not specified',
-  location = 'not specified',
-  jobTitle = 'not specified',
+  workerEmail = '',
+  workerPhone = '',
+  trade = '',
+  location = '',
   clearedStep = 'a journey step',
   nextStep = 'the next step',
   isTerminal = false,
   adminUrl = 'https://safeworkglobal.com/admin/journey-ops',
-}: JourneyStepClearedOpsProps) => (
-  <Html lang="en" dir="ltr">
-    <Head />
-    <Preview>{`${workerName} completed ${clearedStep}`}</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Worker journey step completed</Heading>
-        <Text style={lead}>
-          {workerName} has completed {clearedStep}.
-          {isTerminal
-            ? ' They are now GCC ready.'
-            : ` They should now proceed to ${nextStep}.`}
-        </Text>
-        <Section>
-          <Text style={meta}><strong>Worker:</strong> {workerName}</Text>
-          <Text style={meta}><strong>Email:</strong> {workerEmail}</Text>
-          <Text style={meta}><strong>Mobile:</strong> {workerPhone}</Text>
-          <Text style={meta}><strong>Trade:</strong> {trade}</Text>
-          <Text style={meta}><strong>Location:</strong> {location}</Text>
-          <Text style={meta}><strong>Journey job:</strong> {jobTitle}</Text>
-          <Text style={meta}><strong>Cleared:</strong> {clearedStep}</Text>
-          <Text style={meta}>
-            <strong>{isTerminal ? 'Status:' : 'Next step:'}</strong>{' '}
-            {isTerminal ? 'GCC ready' : nextStep}
+}: JourneyStepClearedOpsProps) => {
+  const emailLine = present(workerEmail)
+  const phoneLine = present(workerPhone)
+  const tradeLine = present(trade)
+  const locationLine = present(location)
+  const stepName = clearedStep.trim() || 'a journey step'
+
+  return (
+    <Html lang="en" dir="ltr">
+      <Head />
+      <Preview>{`${workerName} completed ${stepName}`}</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Heading style={h1}>{stepName} completed</Heading>
+          <Text style={lead}>
+            {workerName} has completed {stepName}.
+            {isTerminal
+              ? ' They are now GCC ready.'
+              : ` Next step is ${nextStep}.`}
           </Text>
-        </Section>
-        <Button href={adminUrl} style={button}>
-          Open Journey Ops
-        </Button>
-        <Hr style={hr} />
-        <Text style={footer}>
-          SafeWork Global internal notification — sent when a worker clears a journey step.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
-)
+          <Section>
+            <Text style={meta}><strong>Worker:</strong> {workerName}</Text>
+            {emailLine ? <Text style={meta}><strong>Email:</strong> {emailLine}</Text> : null}
+            {phoneLine ? <Text style={meta}><strong>Mobile:</strong> {phoneLine}</Text> : null}
+            {tradeLine ? <Text style={meta}><strong>Trade:</strong> {tradeLine}</Text> : null}
+            {locationLine ? <Text style={meta}><strong>Location:</strong> {locationLine}</Text> : null}
+            <Text style={meta}><strong>Cleared:</strong> {stepName}</Text>
+            <Text style={meta}>
+              <strong>{isTerminal ? 'Status:' : 'Next step:'}</strong>{' '}
+              {isTerminal ? 'GCC ready' : nextStep}
+            </Text>
+          </Section>
+          <Button href={adminUrl} style={button}>
+            Open in admin
+          </Button>
+          <Hr style={hr} />
+          <Text style={footer}>SafeWork Global</Text>
+        </Container>
+      </Body>
+    </Html>
+  )
+}
 
 export const template = {
   component: JourneyStepClearedOpsEmail,
   subject: (data: Record<string, any>) =>
-    `Worker step cleared: ${data?.workerName || 'Worker'} — ${data?.clearedStep || 'journey step'}`,
+    `${data?.clearedStep || 'Journey step'} completed — ${data?.workerName || 'Worker'}`,
   displayName: 'Journey step cleared (ops)',
   to: 'mukultater@safeworkglobal.com',
   previewData: {
@@ -88,7 +97,6 @@ export const template = {
     workerPhone: '9876543210',
     trade: 'Welder',
     location: 'Jaipur, Rajasthan',
-    jobTitle: 'GCC Welder',
     clearedStep: 'Test 1 — Basic trade knowledge',
     nextStep: 'Skill proof upload',
     isTerminal: false,

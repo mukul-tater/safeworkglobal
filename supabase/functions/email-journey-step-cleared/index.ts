@@ -435,13 +435,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
       isTerminal: isReupload ? false : isTerminal,
       isReupload,
     }
+    const trade = [verification?.primary_skill, jobTitle]
+      .map((value) => value?.trim() ?? '')
+      .find((value) => value.length > 0) || ''
     const opsTemplateData = {
       workerName,
-      workerEmail: workerEmail || 'not provided',
-      workerPhone: displayText(profile?.phone),
-      trade: displayText(verification?.primary_skill, 'not specified'),
-      location: displayText(location, 'not specified'),
-      jobTitle: displayText(jobTitle, 'not specified'),
+      workerEmail: workerEmail || '',
+      workerPhone: profile?.phone?.trim() || '',
+      trade,
+      location,
       clearedStep: stageLabel(clearedStage),
       nextStep: stageLabel(nextStage || (isTerminal ? 'gcc_ready' : null)),
       isTerminal,
