@@ -6,15 +6,6 @@ const pincodeRegex = /^[1-9]\d{5}$/;
 const panRegex = /^[A-Z]{5}\d{4}[A-Z]$/;
 const aadhaarRegex = /^\d{12}$/;
 
-function isAdult(iso: string): boolean {
-  if (!iso) return false;
-  const born = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(born.getTime())) return false;
-  const cutoff = new Date();
-  cutoff.setFullYear(cutoff.getFullYear() - 18);
-  return born <= cutoff;
-}
-
 const mapsLocationSchema = z
   .string()
   .trim()
@@ -50,10 +41,6 @@ export const emitraV2BasicSchema = z.object({
     errorMap: () => ({ message: 'Verify your mobile with the SMS OTP' }),
   }),
   email: z.string().trim().email('Enter a valid email').max(255),
-  date_of_birth: z
-    .string()
-    .min(1, 'Date of birth is required')
-    .refine(isAdult, 'You must be at least 18 years old'),
 }).superRefine((data, ctx) => {
   if (data.state && isIndiaState(data.state) && !isIndiaDistrict(data.state, data.district)) {
     ctx.addIssue({ code: 'custom', path: ['district'], message: 'Select a district in the chosen state' });

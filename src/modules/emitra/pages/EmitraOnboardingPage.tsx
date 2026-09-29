@@ -757,13 +757,6 @@ export default function EmitraOnboardingPage() {
                       onChange={(e) => update({ owner_name: e.target.value })}
                     />
                   </Field>
-                  <Field label="Centre Address" error={errors.address_line1} required className="sm:col-span-2">
-                    <Textarea
-                      value={data.address_line1 || ''}
-                      onChange={(e) => update({ address_line1: e.target.value })}
-                      className="min-h-[80px]"
-                    />
-                  </Field>
                   <IndiaLocationFields
                     className="contents"
                     value={{
@@ -782,6 +775,13 @@ export default function EmitraOnboardingPage() {
                     cityLabel="Village / Town / City"
                     cityAllowCustom
                   />
+                  <Field label="Centre Address" error={errors.address_line1} required className="sm:col-span-2">
+                    <Textarea
+                      value={data.address_line1 || ''}
+                      onChange={(e) => update({ address_line1: e.target.value })}
+                      className="min-h-[80px]"
+                    />
+                  </Field>
                   <Field label="Google Maps Location" error={errors.google_maps_url} required className="sm:col-span-2">
                     <Input
                       value={data.google_maps_url || ''}
@@ -813,13 +813,6 @@ export default function EmitraOnboardingPage() {
               <section className="space-y-4">
                 <h3 className="text-sm font-semibold text-foreground">Owner Details</h3>
                 <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
-                  <Field label="Date of Birth" error={errors.date_of_birth} required>
-                    <Input
-                      type="date"
-                      value={data.date_of_birth || ''}
-                      onChange={(e) => update({ date_of_birth: e.target.value })}
-                    />
-                  </Field>
                   <Field label="Email" error={errors.email} required>
                     <Input
                       type="email"
