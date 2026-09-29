@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Modal,
@@ -21,6 +21,12 @@ type Props = {
   disabled?: boolean;
   allowCustom?: boolean;
   hint?: string;
+  /** Paint at most this many matches. Search still covers the full list. */
+  maxVisible?: number;
+  loading?: boolean;
+  emptyText?: string;
+  /** Replaces the local list. Called after two characters, debounced. */
+  remoteSearch?: (query: string) => Promise<string[]>;
 };
 
 export default function SearchableSelect({
@@ -32,26 +38,85 @@ export default function SearchableSelect({
   disabled,
   allowCustom,
   hint,
+  maxVisible,
+  loading = false,
+  emptyText = 'No matches',
+  remoteSearch,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [remoteOptions, setRemoteOptions] = useState<string[]>([]);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteFailed, setRemoteFailed] = useState(false);
 
-  const filtered = useMemo(() => {
+  const localFiltered = useMemo(() => {
+    if (remoteSearch) return [];
     const q = query.trim().toLowerCase();
     if (!q) return options;
     return options.filter((option) => option.toLowerCase().includes(q));
-  }, [options, query]);
+  }, [options, query, remoteSearch]);
 
+  useEffect(() => {
+    if (!remoteSearch || !open) return;
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setRemoteOptions([]);
+      setRemoteLoading(false);
+      setRemoteFailed(false);
+      return;
+    }
+    let cancel = false;
+    setRemoteLoading(true);
+    const timer = setTimeout(() => {
+      remoteSearch(trimmed)
+        .then((rows) => {
+          if (cancel) return;
+          setRemoteOptions(rows);
+          setRemoteFailed(false);
+        })
+        .catch(() => {
+          if (cancel) return;
+          setRemoteOptions([]);
+          setRemoteFailed(true);
+        })
+        .finally(() => {
+          if (!cancel) setRemoteLoading(false);
+        });
+    }, 250);
+    return () => {
+      cancel = true;
+      clearTimeout(timer);
+    };
+  }, [open, query, remoteSearch]);
+
+  const filtered = remoteSearch ? remoteOptions : localFiltered;
+  const visible = maxVisible ? filtered.slice(0, maxVisible) : filtered;
+  const hiddenCount = filtered.length - visible.length;
+  const busy = loading || remoteLoading;
+  const trimmed = query.trim();
   const showCustom =
     allowCustom &&
-    query.trim().length > 0 &&
-    !options.some((option) => option.toLowerCase() === query.trim().toLowerCase());
+    trimmed.length > 0 &&
+    !filtered.some((option) => option.toLowerCase() === trimmed.toLowerCase()) &&
+    !options.some((option) => option.toLowerCase() === trimmed.toLowerCase());
+
+  const statusText = busy
+    ? 'Loading…'
+    : remoteSearch && trimmed.length < 2
+      ? 'Type at least 2 letters'
+      : remoteFailed
+        ? 'Could not load matches. Type the name to use it.'
+        : visible.length === 0
+          ? emptyText
+          : '';
 
   const select = (next: string) => {
     onChange(next);
     setOpen(false);
     setQuery('');
   };
+
+  const rows = showCustom ? [trimmed, ...visible] : visible;
 
   return (
     <View style={styles.wrap}>
@@ -83,7 +148,7 @@ export default function SearchableSelect({
             autoFocus
           />
           <FlatList
-            data={showCustom ? [query.trim(), ...filtered] : filtered}
+            data={rows}
             keyExtractor={(item, index) => `${item}-${index}`}
             keyboardShouldPersistTaps="handled"
             renderItem={({ item, index }) => (
@@ -92,11 +157,20 @@ export default function SearchableSelect({
                 style={[styles.row, item === value && styles.rowActive]}
               >
                 <Text style={styles.rowText}>
-                  {showCustom && index === 0 && !options.includes(item) ? `Use “${item}”` : item}
+                  {showCustom && index === 0 && item === trimmed && !filtered.includes(item)
+                    ? `Use “${item}”`
+                    : item}
                 </Text>
               </Pressable>
             )}
-            ListEmptyComponent={<Text style={styles.empty}>No matches</Text>}
+            ListEmptyComponent={statusText ? <Text style={styles.empty}>{statusText}</Text> : null}
+            ListFooterComponent={
+              hiddenCount > 0 ? (
+                <Text style={styles.more}>
+                  Showing {visible.length} of {filtered.length}. Keep typing to narrow the list.
+                </Text>
+              ) : null
+            }
           />
         </View>
       </Modal>
@@ -146,4 +220,5 @@ const styles = StyleSheet.create({
   rowActive: { backgroundColor: colors.muted },
   rowText: { fontSize: 16, color: colors.text },
   empty: { padding: spacing.lg, color: colors.mutedForeground },
+  more: { padding: spacing.lg, textAlign: 'center', color: colors.mutedForeground, fontSize: 13 },
 });

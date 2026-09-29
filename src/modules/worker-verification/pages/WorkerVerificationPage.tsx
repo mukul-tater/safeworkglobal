@@ -14,9 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
-  Calendar, ShieldCheck, Wrench,
+  Calendar, ShieldCheck,
   GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList,
-  MapPin, Phone, ExternalLink, Search,
+  Search,
 } from 'lucide-react';
 import IndiaLocationFields from '@/components/IndiaLocationFields';
 import SearchSelect from '@/components/SearchSelect';
@@ -56,19 +56,13 @@ import {
   saveEssentials,
   saveContactEmail,
   submitQuiz,
-  bookTradeTestCenter,
-  submitTradeTestResult,
   waiveAssessmentInterviewPilot,
   getServiceChargeForJob,
 } from '@/modules/worker-verification/services/verificationService';
 import BondSecurityStage from '@/modules/worker-verification/components/bond-security/BondSecurityStage';
 import PaymentStage from '@/modules/worker-verification/components/payment/PaymentStage';
-import {
-  TRADE_TEST_REPORTING_WINDOW,
-  TRADE_TEST_REPORTING_WINDOW_HINT,
-  getTradeTestCentersForState,
-} from '@/data/tradeTestCenters';
 import { getWorkerActiveAssessment } from '@/modules/trade-test/services/assessmentService';
+import WorkerTradeTestStage from '@/modules/trade-test/components/WorkerTradeTestStage';
 import type { AssessmentRow } from '@/modules/trade-test/types';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -220,27 +214,6 @@ function KycPhotoField({
       )}
     </div>
   );
-}
-
-function tradeTestAssignmentLabel(a: AssessmentRow): string {
-  if (a.status === 'completed') {
-    if (a.outcome === 'pass') return 'Passed — SafeWork quality reviewed';
-    if (a.outcome === 'conditional_pass') return 'Conditional pass — SafeWork quality reviewed';
-    if (a.outcome === 'fail') return 'Failed — you may be re-allocated for a retest';
-    return 'Assessment completed';
-  }
-  if (a.status === 'allocated') return 'Waiting for centre to accept your assignment';
-  if (a.status === 'centre_rejected') return 'Centre declined — SafeWork will reassign you';
-  if (a.status === 'accepted' || a.status === 'scheduled') {
-    return 'Appointment confirmed — report to the centre in the morning window';
-  }
-  if (a.status === 'checked_in' || a.status === 'kyc_done' || a.status === 'running') {
-    return 'Assessment in progress at the centre';
-  }
-  if (a.status === 'centre_submitted' || a.status === 'under_review') {
-    return 'Under SafeWork quality review';
-  }
-  return `Status: ${a.status}`;
 }
 
 const STORAGE_BUCKET = 'worker-videos';
@@ -431,8 +404,6 @@ export default function WorkerVerificationPage({
   const [kycDocs, setKycDocs] = useState<KycDocument[]>([]);
   const [paymentRecord, setPaymentRecord] = useState<AssessmentPaymentRecord | null>(null);
   const [kycUploading, setKycUploading] = useState(false);
-  const [tradeResultFile, setTradeResultFile] = useState<File | null>(null);
-  const [selectedTradeCenterId, setSelectedTradeCenterId] = useState('');
   const [tradeAssessment, setTradeAssessment] = useState<AssessmentRow | null>(null);
   const [declaration, setDeclaration] = useState<WorkerPreJourneyDeclaration | null>(null);
   const [showDeclarationModal, setShowDeclarationModal] = useState(false);
@@ -444,6 +415,7 @@ export default function WorkerVerificationPage({
     full_name: string | null;
     phone: string | null;
     email: string | null;
+    avatar_url: string | null;
   } | null>(null);
   const loadGen = useRef(0);
   const completedDeclRef = useRef<WorkerPreJourneyDeclaration | null>(null);
@@ -515,7 +487,7 @@ export default function WorkerVerificationPage({
       }
       const { data: subj } = await supabase
         .from('profiles')
-        .select('full_name, phone, email')
+        .select('full_name, phone, email, avatar_url')
         .eq('id', subjectId)
         .maybeSingle();
       if (gen !== loadGen.current) return;
@@ -524,6 +496,7 @@ export default function WorkerVerificationPage({
           full_name: subj.full_name,
           phone: subj.phone,
           email: subj.email,
+          avatar_url: subj.avatar_url,
         });
       }
       const decl = await getWorkerDeclarations(subjectId);
@@ -542,14 +515,9 @@ export default function WorkerVerificationPage({
       setEmail(displayableEmail(v.email) || displayableEmail(subj?.email) || displayableEmail(profile?.email) || '');
       setCity(v.city || '');
       setState(v.state || '');
-      setDistrict(v.district || findIndiaDistrict(v.state || '', v.city || ''));
+      setDistrict(v.district || (await findIndiaDistrict(v.state || '', v.city || '')));
       setGender(isWorkerGender(v.gender) ? v.gender : '');
       setEducation(v.education_level || '');
-      const centersForState = getTradeTestCentersForState(v.state);
-      setSelectedTradeCenterId(
-        v.trade_test_center_id
-        || (centersForState.length === 1 ? centersForState[0].id : centersForState[0]?.id || ''),
-      );
       try {
         const assessment = await getWorkerActiveAssessment(subjectId);
         setTradeAssessment(assessment);
@@ -2337,289 +2305,19 @@ export default function WorkerVerificationPage({
           />
         )}
 
-        {!viewingCompletedStep && (stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && (() => {
-          const centers = getTradeTestCentersForState(row.state);
-          const centerConfirmed = Boolean(row.trade_test_center_id);
-          const hasPartnerAssignment =
-            Boolean(tradeAssessment) && tradeAssessment?.status !== 'centre_rejected';
-          const showLegacyPilot = !hasPartnerAssignment;
-          return (
-          <Card className="overflow-hidden shadow-sm">
-            <CardContent className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-start gap-3 border-b border-border/60 pb-4">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                  <Wrench className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="font-semibold">Test 3 — Physical trade test</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Required for <span className="font-medium text-foreground">{appliedSkillLabel === '—' ? 'your trade' : appliedSkillLabel}</span>.
-                    SafeWork assigns you to a trade test centre. Bring your physical Aadhaar card on the day.
-                  </p>
-                </div>
-              </div>
-
-              {tradeAssessment && tradeAssessment.status !== 'centre_rejected' ? (
-                <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary" className="gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {tradeAssessment.reporting_window || TRADE_TEST_REPORTING_WINDOW}
-                    </Badge>
-                    <Badge variant="outline">{tradeAssessment.status.replace(/_/g, ' ')}</Badge>
-                    {tradeAssessment.outcome && (
-                      <Badge>{tradeAssessment.outcome.replace(/_/g, ' ')}</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm font-medium">
-                    {tradeAssessment.center_name || row.trade_test_center_name || 'Trade test centre'}
-                  </p>
-                  {(tradeAssessment.center_city || tradeAssessment.center_state || tradeAssessment.center_pincode) && (
-                    <p className="text-sm text-muted-foreground">
-                      {[tradeAssessment.center_city, tradeAssessment.center_state, tradeAssessment.center_pincode]
-                        .filter(Boolean)
-                        .join(', ')}
-                    </p>
-                  )}
-                  {tradeAssessment.center_address && (
-                    <p className="flex items-start gap-2 text-sm text-foreground">
-                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span>{tradeAssessment.center_address}</span>
-                    </p>
-                  )}
-                  {(tradeAssessment.center_contact_name || tradeAssessment.center_contact_phone) && (
-                    <p className="flex items-start gap-2 text-sm text-foreground">
-                      <Phone className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span>
-                        {[tradeAssessment.center_contact_name, tradeAssessment.center_contact_phone]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
-                    </p>
-                  )}
-                  {(tradeAssessment.appointment_date || tradeAssessment.scheduled_at) && (
-                    <p className="text-sm">
-                      <span className="text-muted-foreground">Appointment: </span>
-                      <span className="font-medium">
-                        {formatAppointmentDate(
-                          tradeAssessment.appointment_date || tradeAssessment.scheduled_at,
-                        )}
-                      </span>
-                    </p>
-                  )}
-                  {(row.trade_test_instructions || tradeAssessment.center_instructions) && (
-                    <p className="text-xs text-muted-foreground whitespace-pre-line">
-                      {row.trade_test_instructions || tradeAssessment.center_instructions}
-                    </p>
-                  )}
-                  {tradeAssessment.center_maps_url && (
-                    <Button asChild variant="outline" size="sm">
-                      <a href={tradeAssessment.center_maps_url} target="_blank" rel="noreferrer">
-                        <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                        Open in Maps
-                      </a>
-                    </Button>
-                  )}
-                  <p className="text-sm text-foreground">{tradeTestAssignmentLabel(tradeAssessment)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Centre names are location-based. Partner company names are not shown here.
-                  </p>
-                </div>
-              ) : row.trade_test_place || row.trade_test_scheduled_at || row.trade_test_instructions ? (
-                <div className="rounded-xl border border-border bg-muted/30 px-3 py-3 text-sm space-y-1">
-                  {tradeAssessment?.status === 'centre_rejected' && (
-                    <p className="text-sm text-amber-700 dark:text-amber-400">
-                      Previous centre declined — SafeWork will reassign you.
-                    </p>
-                  )}
-                  {row.trade_test_place && (
-                    <p>
-                      <span className="text-muted-foreground">Centre: </span>
-                      <span className="font-medium">{row.trade_test_place}</span>
-                    </p>
-                  )}
-                  {row.trade_test_scheduled_at && (
-                    <p>
-                      <span className="text-muted-foreground">When: </span>
-                      <span className="font-medium">{formatWhen(row.trade_test_scheduled_at)}</span>
-                    </p>
-                  )}
-                  {row.trade_test_reporting_window && (
-                    <p>
-                      <span className="text-muted-foreground">Reporting window: </span>
-                      <span className="font-medium">{row.trade_test_reporting_window}</span>
-                    </p>
-                  )}
-                  {row.trade_test_instructions && (
-                    <p className="text-xs text-muted-foreground whitespace-pre-line">
-                      {row.trade_test_instructions}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-dashed p-4 space-y-2">
-                  <p className="text-sm font-medium">Waiting for SafeWork allocation</p>
-                  <p className="text-xs text-muted-foreground">
-                    An admin will assign you to a centre near{' '}
-                    {row.state || 'your state'}. You will see the full address, appointment date, and
-                    reporting window here once allocated.
-                  </p>
-                  {tradeAssessment?.status === 'centre_rejected' && (
-                    <p className="text-sm text-amber-700 dark:text-amber-400">
-                      Previous centre declined — SafeWork will reassign you.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {showLegacyPilot && (
-                <details className="rounded-lg border p-4 space-y-3">
-                  <summary className="text-sm font-medium cursor-pointer">
-                    Self-select centre &amp; upload
-                  </summary>
-                  <div className="pt-3 space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary" className="gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Reporting time: {TRADE_TEST_REPORTING_WINDOW}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{TRADE_TEST_REPORTING_WINDOW_HINT}</p>
-
-                    {centers.length === 0 ? (
-                      <p className="text-sm text-destructive">
-                        No trade test centre is mapped for {row.state || 'your state'} yet.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        <Label>Available centre{centers.length > 1 ? 's' : ''} for your state</Label>
-                        <RadioGroup
-                          value={selectedTradeCenterId}
-                          onValueChange={setSelectedTradeCenterId}
-                          disabled={saving || (centerConfirmed && Boolean(row.trade_test_result_url))}
-                          className="space-y-2"
-                        >
-                          {centers.map((c) => (
-                            <label
-                              key={c.id}
-                              className={cn(
-                                'flex items-start gap-3 rounded-lg border p-3 cursor-pointer',
-                                selectedTradeCenterId === c.id && 'border-primary bg-primary/5',
-                              )}
-                            >
-                              <RadioGroupItem value={c.id} id={`tt-center-${c.id}`} className="mt-0.5" />
-                              <div>
-                                <p className="text-sm font-medium">{c.name}</p>
-                                <p className="text-xs text-muted-foreground">{c.city}, {c.state}</p>
-                              </div>
-                            </label>
-                          ))}
-                        </RadioGroup>
-                      </div>
-                    )}
-
-                    {centerConfirmed ? (
-                      <p className="text-sm text-success">
-                        ✓ Centre confirmed: {row.trade_test_center_name}
-                      </p>
-                    ) : (
-                      <Button
-                        disabled={saving || !selectedTradeCenterId || centers.length === 0}
-                        onClick={async () => {
-                          if (!subjectId) return;
-                          const center = centers.find((c) => c.id === selectedTradeCenterId);
-                          if (!center) {
-                            toast.error('Select a trade test centre');
-                            return;
-                          }
-                          setSaving(true);
-                          try {
-                            const next = await bookTradeTestCenter(subjectId, {
-                              centerId: center.id,
-                              centerName: center.name,
-                              reportingWindow: TRADE_TEST_REPORTING_WINDOW,
-                            });
-                            setRow({
-                              ...next,
-                              stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                            });
-                            notifyVerificationUpdated();
-                            toast.success(`Centre confirmed — report ${TRADE_TEST_REPORTING_WINDOW}`);
-                          } catch (e) {
-                            toast.error(e instanceof Error ? e.message : 'Could not confirm centre');
-                          } finally {
-                            setSaving(false);
-                          }
-                        }}
-                      >
-                        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                        Confirm trade test centre
-                      </Button>
-                    )}
-
-                    <div className="space-y-1.5">
-                      <Label>Trade test result (image or PDF)</Label>
-                      <Input
-                        type="file"
-                        accept="image/*,.pdf,application/pdf"
-                        disabled={saving || !centerConfirmed}
-                        onChange={(e) => setTradeResultFile(e.target.files?.[0] || null)}
-                      />
-                      {tradeResultFile && (
-                        <p className="text-xs text-success">✓ {tradeResultFile.name}</p>
-                      )}
-                    </div>
-                    <Button
-                      disabled={saving || !centerConfirmed || (!tradeResultFile && !row.trade_test_result_url)}
-                      onClick={async () => {
-                        if (!subjectId) return;
-                        if (!tradeResultFile && !row.trade_test_result_url) {
-                          toast.error('Upload your trade test result');
-                          return;
-                        }
-                        setSaving(true);
-                        try {
-                          let url = row.trade_test_result_url || '';
-                          if (tradeResultFile) {
-                            const ext = tradeResultFile.name.split('.').pop() || 'pdf';
-                            const path = `${subjectId}/trade-test/${Date.now()}.${ext}`;
-                            const { error: upErr } = await supabase.storage
-                              .from(DOCS_BUCKET)
-                              .upload(path, tradeResultFile, { upsert: false });
-                            if (upErr) throw new Error(upErr.message);
-                            const { data: signed, error: urlErr } = await supabase.storage
-                              .from(DOCS_BUCKET)
-                              .createSignedUrl(path, 31536000);
-                            if (urlErr || !signed?.signedUrl) {
-                              throw new Error(urlErr?.message || 'Could not create file URL');
-                            }
-                            url = signed.signedUrl;
-                          }
-                          const next = await submitTradeTestResult(subjectId, url);
-                          setRow({
-                            ...next,
-                            stage: normalizeVerificationStage(next.stage, next.trade_test_required),
-                          });
-                          setTradeResultFile(null);
-                          notifyVerificationUpdated();
-                          toast.success('Trade test result uploaded — waiting for admin review');
-                        } catch (e) {
-                          toast.error(e instanceof Error ? e.message : 'Upload failed');
-                        } finally {
-                          setSaving(false);
-                        }
-                      }}
-                    >
-                      {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
-                      Submit trade test result
-                    </Button>
-                  </div>
-                </details>
-              )}
-            </CardContent>
-          </Card>
-          );
-        })()}
+        {!viewingCompletedStep && (stage === 'trade_test' || (stage === 'tests' && tradeNeeded)) && subjectId && (
+          <WorkerTradeTestStage
+            row={row}
+            subjectId={subjectId}
+            workerName={displayProfile?.full_name || 'Worker'}
+            workerPhone={displayProfile?.phone}
+            avatarUrl={displayProfile?.avatar_url}
+            onBooked={() => {
+              notifyVerificationUpdated();
+              void load();
+            }}
+          />
+        )}
 
         {!viewingCompletedStep && stage === 'medical' && subjectId && (
           <MedicalTestStage

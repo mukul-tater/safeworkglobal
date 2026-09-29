@@ -1,20 +1,24 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import PartnerLayout from "../../layout/PartnerLayout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { useCurrentPartner } from "../../hooks/useCurrentPartner";
-import { listPartnerAssessments, assessmentWorkerLabel } from "@/modules/trade-test/services/assessmentService";
+import { listPartnerAssessments, assessmentWorkerLabel, findPartnerAssessmentByReference } from "@/modules/trade-test/services/assessmentService";
+import { appliedForLine, testTodayLine, tradeLabel } from "@/modules/trade-test/lib/slipCopy";
 import type { AssessmentRow } from "@/modules/trade-test/types";
 
 export default function SsvnCheckin() {
   const { partner } = useCurrentPartner();
   const navigate = useNavigate();
-  const [code, setCode] = useState("");
+  const [searchParams] = useSearchParams();
+  const [code, setCode] = useState(searchParams.get("ref") || "");
   const [rows, setRows] = useState<AssessmentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lookingUp, setLookingUp] = useState(false);
 
   useEffect(() => {
     if (!partner?.id) return;
@@ -27,7 +31,7 @@ export default function SsvnCheckin() {
         const map = new Map<string, AssessmentRow>();
         [...today, ...active]
           .filter((a) =>
-            ["accepted", "scheduled", "checked_in", "kyc_done", "running"].includes(a.status),
+            ["allocated", "accepted", "scheduled", "checked_in", "kyc_done", "running"].includes(a.status),
           )
           .forEach((a) => map.set(a.id, a));
         setRows([...map.values()]);
@@ -39,11 +43,33 @@ export default function SsvnCheckin() {
     })();
   }, [partner?.id]);
 
-  const openById = () => {
-    const id = code.trim();
-    if (!id) return;
-    navigate(`/partner/ssvn/assessment/${id}`);
+  const openByReference = async (reference: string) => {
+    const id = reference.trim();
+    if (!id || !partner?.id) return;
+    setLookingUp(true);
+    try {
+      const row = await findPartnerAssessmentByReference(partner.id, id);
+      if (!row) {
+        toast.error("No booking with that reference for your centre");
+        setLookingUp(false);
+        return false;
+      }
+      navigate(`/partner/ssvn/assessment/${row.id}`);
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open that booking");
+      setLookingUp(false);
+      return false;
+    }
   };
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (!ref || !partner?.id) return;
+    void openByReference(ref);
+    // Open the scanned slip once the centre is signed in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partner?.id, searchParams]);
 
   return (
     <PartnerLayout>
@@ -51,21 +77,25 @@ export default function SsvnCheckin() {
         <div>
           <h1 className="text-2xl font-bold">Candidate check-in</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Open the worker&apos;s assessment to review Aadhaar / PAN / passport, confirm the person
-            who arrived, take a live photo, then run video KYC.
+            Scan the worker&apos;s slip or type the booking reference. Confirm the job, the test, and
+            the person, then start the test.
           </p>
         </div>
         <Card className="p-6 space-y-4">
           <div>
-            <label className="text-sm font-medium">Assessment ID</label>
+            <label className="text-sm font-medium">Booking reference</label>
             <Input
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="Paste assessment id"
+              placeholder="TT-10000"
             />
           </div>
-          <Button className="w-full" onClick={openById} disabled={!code.trim()}>
-            Open arrival check
+          <Button
+            className="w-full"
+            onClick={() => void openByReference(code)}
+            disabled={!code.trim() || lookingUp}
+          >
+            {lookingUp ? "Opening…" : "Open arrival check"}
           </Button>
         </Card>
 
@@ -81,6 +111,12 @@ export default function SsvnCheckin() {
                 <div>
                   <div className="font-medium">{assessmentWorkerLabel(a)}</div>
                   <div className="text-sm text-muted-foreground">
+                    {appliedForLine(tradeLabel(a.primary_skill, a.job_title))}
+                    {" · "}
+                    {testTodayLine(tradeLabel(a.primary_skill, a.job_title))}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {a.booking_reference ? `${a.booking_reference} · ` : ""}
                     {a.appointment_date || "Unscheduled"}
                     {a.reporting_window ? ` · ${a.reporting_window}` : ""}
                   </div>

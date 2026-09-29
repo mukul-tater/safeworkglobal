@@ -37,6 +37,8 @@ export type VideoKycLogEntry = {
   operator_name?: string | null;
 };
 
+export type TradeTestAssignmentMode = 'worker_select' | 'admin_assign';
+
 export type TradeTestCenterRow = {
   id: string;
   name: string;
@@ -51,6 +53,9 @@ export type TradeTestCenterRow = {
   contact_phone: string | null;
   maps_url: string | null;
   instructions: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  trades: string[] | null;
 };
 
 export type AssessmentRow = {
@@ -99,6 +104,8 @@ export type AssessmentRow = {
   quality_reviewed_by: string | null;
   quality_reviewed_at: string | null;
   quality_notes: string | null;
+  booking_reference: string | null;
+  slip_issued_at: string | null;
   created_at: string;
   updated_at: string;
   // joined
@@ -115,6 +122,11 @@ export type AssessmentRow = {
   center_maps_url?: string | null;
   center_instructions?: string | null;
   primary_skill?: string | null;
+  job_title?: string | null;
+  job_country?: string | null;
+  job_location?: string | null;
+  job_experience?: string | null;
+  worker_avatar_url?: string | null;
 };
 
 export type WorkerIdentityDoc = {

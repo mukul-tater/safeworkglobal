@@ -1,13 +1,15 @@
-import type { ReactNode } from 'react';
+import { useCallback, useEffect, type ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
 import SearchSelect from '@/components/SearchSelect';
 import {
-  getIndiaCities,
-  getIndiaCitiesInState,
   getIndiaDistricts,
-  getIndiaPincodes,
   getIndiaStates,
+  INDIA_LOCALITY_WINDOW,
+  pincodesFromLocalities,
+  resolveIndiaPlace,
+  searchIndiaLocalities,
 } from '@/lib/indiaLocations';
+import { useIndiaLocalities } from '@/lib/useIndiaLocalities';
 import { cn } from '@/lib/utils';
 
 export type IndiaLocationValue = {
@@ -66,17 +68,33 @@ export default function IndiaLocationFields({
   showPincode = true,
   cityLabel = 'Village / Town / City',
   cityAllowCustom = true,
-  cityHint = 'If your village is not listed, select the nearest city.',
+  cityHint = 'Search your village, town, or city. If it is not listed, type the name.',
   className,
 }: Props) {
   const states = getIndiaStates();
   const districts = getIndiaDistricts(value.state);
-  const cities = showDistrict
-    ? getIndiaCities(value.state, value.district)
-    : getIndiaCitiesInState(value.state);
-  const pincodes = getIndiaPincodes(value.state, value.district, value.city);
+  const { localities, loading, failed } = useIndiaLocalities(
+    value.state,
+    showDistrict ? value.district : '',
+  );
+  const cities = localities.map((locality) => locality.name);
+  const pincodes = pincodesFromLocalities(localities, value.city);
+  const waiting = showDistrict && loading && !failed;
 
   const patch = (partial: Partial<IndiaLocationValue>) => onChange({ ...value, ...partial });
+
+  const searchCities = useCallback(
+    (query: string) => searchIndiaLocalities(value.state, query).then((rows) => rows.map((row) => row.name)),
+    [value.state],
+  );
+
+  useEffect(() => {
+    const place = resolveIndiaPlace(value.state, showDistrict ? value.district : '');
+    const nextState = place.state;
+    const nextDistrict = showDistrict ? place.district : value.district;
+    if (nextState === value.state && nextDistrict === value.district) return;
+    onChange({ ...value, state: nextState, district: nextDistrict });
+  }, [onChange, showDistrict, value]);
 
   return (
     <div className={cn(className)}>
@@ -111,25 +129,32 @@ export default function IndiaLocationFields({
           <SearchSelect
             value={value.city}
             onChange={(city) => patch({ city, pincode: '' })}
-            options={cities}
+            options={showDistrict ? cities : []}
+            remoteSearch={showDistrict ? undefined : searchCities}
+            maxVisible={INDIA_LOCALITY_WINDOW}
+            loading={waiting}
             placeholder={
               showDistrict
-                ? value.district
-                  ? 'Select city or nearest city'
-                  : 'Select district first'
+                ? waiting
+                  ? 'Loading localities…'
+                  : value.district
+                    ? 'Select city or nearest city'
+                    : 'Select district first'
                 : value.state
-                  ? 'Select city or nearest city'
+                  ? 'Search city or nearest city'
                   : 'Select state first'
             }
             searchPlaceholder="Search city / town"
             title={cityLabel}
             disabled={showDistrict ? !value.district : !value.state}
             emptyText={
-              (showDistrict ? value.district : value.state)
-                ? 'No match — select the nearest city'
-                : showDistrict
-                  ? 'Select a district first'
-                  : 'Select a state first'
+              failed
+                ? 'Could not load the list — type your village'
+                : (showDistrict ? value.district : value.state)
+                  ? 'No match — type your village or town'
+                  : showDistrict
+                    ? 'Select a district first'
+                    : 'Select a state first'
             }
             allowCustom={cityAllowCustom}
             customHint="Use this village / town name"
@@ -143,17 +168,21 @@ export default function IndiaLocationFields({
             value={value.pincode}
             onChange={(pincode) => patch({ pincode })}
             options={pincodes}
+            maxVisible={INDIA_LOCALITY_WINDOW}
+            loading={waiting}
             placeholder={
-              showDistrict
-                ? value.district
-                  ? 'Select PIN code'
-                  : 'Select district first'
-                : 'Select location first'
+              waiting
+                ? 'Loading PIN codes'
+                : showDistrict
+                  ? value.district
+                    ? 'Select PIN code'
+                    : 'Select district first'
+                  : 'Select location first'
             }
             searchPlaceholder="Search PIN code"
             title="PIN Code"
-            disabled={showDistrict ? !value.district : !value.state}
-            emptyText="No PIN codes for this location"
+            disabled={showDistrict ? !value.district || waiting : !value.state}
+            emptyText={failed ? 'Could not load PIN codes — type a 6-digit PIN' : 'No PIN codes for this location'}
             allowCustom
             isValidCustom={(q) => /^[1-9]\d{5}$/.test(q.trim())}
             customHint="Use this PIN code"

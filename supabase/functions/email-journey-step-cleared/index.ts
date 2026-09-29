@@ -116,7 +116,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (nErr) throw nErr
     const isReupload = notification?.type === 'kyc_reupload_required'
-    if (!notification || (notification.type !== 'journey_step_cleared' && !isReupload)) {
+    const isSlip = notification?.type === 'trade_test_slip' || notification?.type === 'trade_test_slip_cancelled'
+    if (!notification || (notification.type !== 'journey_step_cleared' && !isReupload && !isSlip)) {
       return new Response(JSON.stringify({ skipped: true, reason: 'not_journey_notification' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -147,6 +148,125 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const data = (notification.data || {}) as Record<string, unknown>
+
+    if (isSlip) {
+      const assessmentId = typeof data.assessment_id === 'string' ? data.assessment_id : ''
+      const cancelled = notification.type === 'trade_test_slip_cancelled' || data.cancelled === true
+      let slipData: Record<string, string | boolean> = {
+        workerName: displayText(profile?.full_name, 'there'),
+        cancelled,
+        cancelReason: typeof data.reject_reason === 'string' ? data.reject_reason : '',
+        reference: typeof data.booking_reference === 'string' ? data.booking_reference : '',
+        journeyUrl: JOURNEY_URL,
+        testName: 'Test 3 — Physical trade test',
+      }
+      if (assessmentId) {
+        const { data: assessment } = await supabase
+          .from('assessments')
+          .select('booking_reference, appointment_date, reporting_window, status, job_id, trade_test_center_id, worker_verification_id')
+          .eq('id', assessmentId)
+          .maybeSingle()
+        let skill = verification?.primary_skill || ''
+        let jobTitle = ''
+        let jobCountry = ''
+        let jobLocation = ''
+        let experience = ''
+        const jobId = assessment?.job_id || verification?.journey_job_id
+        if (jobId) {
+          const { data: job } = await supabase
+            .from('jobs')
+            .select('title, country, location, experience_level')
+            .eq('id', jobId)
+            .maybeSingle()
+          jobTitle = job?.title || ''
+          jobCountry = job?.country || ''
+          jobLocation = job?.location || ''
+          experience = job?.experience_level || ''
+        }
+        const trade = (skill || jobTitle || 'your trade').trim()
+        let centreName = ''
+        let address = ''
+        let contact = ''
+        let mapsUrl = ''
+        let instructions = ''
+        if (assessment?.trade_test_center_id) {
+          const { data: center } = await supabase
+            .from('trade_test_centers')
+            .select('name, address, city, state, pincode, contact_name, contact_phone, maps_url, instructions')
+            .eq('id', assessment.trade_test_center_id)
+            .maybeSingle()
+          centreName = center?.name || ''
+          address = [center?.address, center?.city, center?.state, center?.pincode].filter(Boolean).join(', ')
+          contact = [center?.contact_name, center?.contact_phone].filter(Boolean).join(' · ')
+          mapsUrl = center?.maps_url || ''
+          instructions = center?.instructions || ''
+        }
+        const status = assessment?.status === 'accepted' || assessment?.status === 'scheduled'
+          ? 'Accepted by centre'
+          : assessment?.status === 'checked_in'
+            ? 'Checked in'
+            : cancelled
+              ? 'Cancelled'
+              : 'Booked'
+        slipData = {
+          ...slipData,
+          reference: assessment?.booking_reference || slipData.reference,
+          appliedFor: `Applied for: ${trade}`,
+          testToday: `Test today: ${trade} physical trade test`,
+          intro: `This person applied for a ${trade} job and is here to give the ${trade} physical trade test.`,
+          jobPlace: [jobLocation, jobCountry].filter(Boolean).join(', '),
+          experience,
+          appointmentDate: assessment?.appointment_date || '',
+          reportingWindow: assessment?.reporting_window || '',
+          centreName,
+          address,
+          contact,
+          mapsUrl,
+          instructions,
+          status,
+        }
+      }
+
+      const workerEmail = displayableEmail(verification?.email) || displayableEmail(profile?.email)
+      if (!workerEmail) {
+        return new Response(JSON.stringify({ success: true, skipped: 'no_contact_email' }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      try {
+        const result = await sendTemplateEmail('trade-test-slip', workerEmail, {
+          templateData: slipData,
+          idempotencyKey: `trade-test-slip-${notification.id}`,
+          replyTo: MUKUL_EMAIL,
+          from: MUKUL_FROM,
+        })
+        return new Response(JSON.stringify({ success: true, emailed: result.sent, to: workerEmail }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      } catch (firstErr) {
+        console.warn('trade test slip email from Mukul failed, retrying noreply', firstErr)
+        try {
+          const result = await sendTemplateEmail('trade-test-slip', workerEmail, {
+            templateData: slipData,
+            idempotencyKey: `trade-test-slip-${notification.id}-noreply`,
+            replyTo: MUKUL_EMAIL,
+          })
+          return new Response(JSON.stringify({ success: true, emailed: result.sent, to: workerEmail, fromFallback: true }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        } catch (slipErr) {
+          console.error('trade test slip email failed', slipErr)
+          return new Response(JSON.stringify({ success: false, emailed: false }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+      }
+    }
+
     const nextStage = typeof data.next_stage === 'string' ? data.next_stage : ''
     const clearedStage = typeof data.cleared_stage === 'string' ? data.cleared_stage : ''
     const isTerminal = nextStage === 'gcc_ready' || nextStage === 'deployment'

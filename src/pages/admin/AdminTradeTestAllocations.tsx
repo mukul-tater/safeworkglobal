@@ -15,16 +15,22 @@ import {
 import { Loader2, CheckCircle2, XCircle, AlertTriangle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRADE_TEST_REPORTING_WINDOW } from '@/data/tradeTestCenters';
+import { TRADE_TEST_REQUIRED_SKILLS } from '@/modules/worker-verification/constants';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   allocateAssessment,
   assessmentWorkerLabel,
   getAssessmentScores,
+  getTradeTestAssignmentMode,
   listAssessmentMedia,
   listAssessmentsForQualityReview,
+  adminLinkCenterPartner,
   listSsvnPartners,
   listTradeTestCenters,
   listWorkersNeedingAllocation,
   qualityReviewAssessment,
+  setTradeTestAssignmentMode,
   signedEvidenceUrl,
   updateTradeTestCenter,
 } from '@/modules/trade-test/services/assessmentService';
@@ -40,6 +46,10 @@ type CenterDraft = {
   contact_phone: string;
   maps_url: string;
   instructions: string;
+  latitude: string;
+  longitude: string;
+  trades: string[];
+  partner_id: string;
 };
 
 function draftFromCenter(c: TradeTestCenterRow): CenterDraft {
@@ -50,7 +60,17 @@ function draftFromCenter(c: TradeTestCenterRow): CenterDraft {
     contact_phone: c.contact_phone || '',
     maps_url: c.maps_url || '',
     instructions: c.instructions || '',
+    latitude: c.latitude == null ? '' : String(c.latitude),
+    longitude: c.longitude == null ? '' : String(c.longitude),
+    trades: c.trades || [],
+    partner_id: c.partner_id || '',
   };
+}
+
+function centresForSkill(centers: TradeTestCenterRow[], skill: string | null) {
+  const wanted = (skill || '').trim();
+  if (!wanted) return [];
+  return centers.filter((center) => (center.trades || []).includes(wanted));
 }
 
 export default function AdminTradeTestAllocations() {
@@ -68,6 +88,8 @@ export default function AdminTradeTestAllocations() {
   const [centerDrafts, setCenterDrafts] = useState<Record<string, CenterDraft>>({});
   const [editingCenterId, setEditingCenterId] = useState<string | null>(null);
   const [savingCenterId, setSavingCenterId] = useState<string | null>(null);
+  const [assignmentMode, setAssignmentMode] = useState<'worker_select' | 'admin_assign'>('admin_assign');
+  const [savingMode, setSavingMode] = useState(false);
   const [notesById, setNotesById] = useState<Record<string, string>>({});
   const [selectedReview, setSelectedReview] = useState<string | null>(null);
   const [reviewScores, setReviewScores] = useState<AssessmentScoresRow | null>(null);
@@ -76,12 +98,14 @@ export default function AdminTradeTestAllocations() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [w, c, p, r] = await Promise.all([
+      const [w, c, p, r, mode] = await Promise.all([
         listWorkersNeedingAllocation(),
         listTradeTestCenters(true),
         listSsvnPartners(),
         listAssessmentsForQualityReview(),
+        getTradeTestAssignmentMode(),
       ]);
+      setAssignmentMode(mode);
       setWorkers(w);
       setCenters(c);
       setCenterDrafts((prev) => {
@@ -101,11 +125,12 @@ export default function AdminTradeTestAllocations() {
       const dateStr = tomorrow.toISOString().slice(0, 10);
       for (const row of w) {
         nextDate[row.user_id] = dateStr;
-        const match = c.find(
+        const forSkill = centresForSkill(c, row.primary_skill);
+        const match = forSkill.find(
           (x) => x.state.toLowerCase() === (row.state || '').toLowerCase(),
         );
         if (match) nextCenter[row.user_id] = match.id;
-        else if (c[0]) nextCenter[row.user_id] = c[0].id;
+        else if (forSkill[0]) nextCenter[row.user_id] = forSkill[0].id;
       }
       setCenterByWorker((prev) => ({ ...nextCenter, ...prev }));
       setDateByWorker((prev) => ({ ...nextDate, ...prev }));
@@ -154,6 +179,12 @@ export default function AdminTradeTestAllocations() {
     if (!draft) return;
     setSavingCenterId(centerId);
     try {
+      const latitude = draft.latitude.trim() ? Number(draft.latitude) : null;
+      const longitude = draft.longitude.trim() ? Number(draft.longitude) : null;
+      if ((latitude != null && !Number.isFinite(latitude)) || (longitude != null && !Number.isFinite(longitude))) {
+        toast.error('Map pin must be a latitude and longitude');
+        return;
+      }
       await updateTradeTestCenter(centerId, {
         address: draft.address.trim() || null,
         pincode: draft.pincode.trim() || null,
@@ -161,7 +192,11 @@ export default function AdminTradeTestAllocations() {
         contact_phone: draft.contact_phone.trim() || null,
         maps_url: draft.maps_url.trim() || null,
         instructions: draft.instructions.trim() || null,
+        latitude,
+        longitude,
+        trades: draft.trades,
       });
+      await adminLinkCenterPartner(centerId, draft.partner_id || null);
       toast.success('Centre details saved — workers will see this address');
       await load();
     } catch (e) {
@@ -179,6 +214,11 @@ export default function AdminTradeTestAllocations() {
       return;
     }
     const center = centers.find((c) => c.id === centerId);
+    const worker = workers.find((row) => row.user_id === userId);
+    if (!center || !centresForSkill([center], worker?.primary_skill || null).length) {
+      toast.error(`This centre does not test ${worker?.primary_skill || 'this trade'}`);
+      return;
+    }
     if (!center?.address?.trim()) {
       toast.warning('This centre has no street address yet — add it in Centre details so the worker can find it.');
     }
@@ -254,6 +294,42 @@ export default function AdminTradeTestAllocations() {
           </div>
         </div>
 
+        <Card>
+          <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-medium">Who picks the centre</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {assignmentMode === 'worker_select'
+                  ? 'Workers choose the nearest centre that tests their trade, then pick a date.'
+                  : 'Workers wait. SafeWork assigns the centre, date, and partner.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <span className={assignmentMode === 'admin_assign' ? 'font-medium' : 'text-muted-foreground'}>
+                SafeWork assigns
+              </span>
+              <Switch
+                checked={assignmentMode === 'worker_select'}
+                disabled={savingMode}
+                onCheckedChange={(checked) => {
+                  const next = checked ? 'worker_select' : 'admin_assign';
+                  setSavingMode(true);
+                  void setTradeTestAssignmentMode(next)
+                    .then(() => {
+                      setAssignmentMode(next);
+                      toast.success(checked ? 'Workers can choose a centre' : 'SafeWork assigns centres');
+                    })
+                    .catch((e) => toast.error(e instanceof Error ? e.message : 'Could not save'))
+                    .finally(() => setSavingMode(false));
+                }}
+              />
+              <span className={assignmentMode === 'worker_select' ? 'font-medium' : 'text-muted-foreground'}>
+                Worker chooses
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
           <TabsList>
             <TabsTrigger value="allocate">Allocate ({workers.length})</TabsTrigger>
@@ -273,7 +349,7 @@ export default function AdminTradeTestAllocations() {
                   <div>
                     <p className="font-medium">Centre details</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Address and contact shown to the worker after allocation. Partner company names stay hidden.
+                      Set the trades, a map pin, and the approved partner who runs the centre. Workers only see centres that test their job and have a partner linked. Partner company names stay hidden from workers.
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -281,7 +357,7 @@ export default function AdminTradeTestAllocations() {
                       const draft = centerDrafts[c.id] || draftFromCenter(c);
                       const open = editingCenterId === c.id;
                       const missingAddress = !(c.address || '').trim();
-                      const patchDraft = (key: keyof CenterDraft, value: string) =>
+                      const patchDraft = (key: Exclude<keyof CenterDraft, 'trades'>, value: string) =>
                         setCenterDrafts((prev) => ({
                           ...prev,
                           [c.id]: { ...(prev[c.id] || draftFromCenter(c)), [key]: value },
@@ -350,6 +426,75 @@ export default function AdminTradeTestAllocations() {
                                     placeholder="10-digit mobile"
                                   />
                                 </div>
+                                <div className="space-y-1.5">
+                                  <Label>Latitude</Label>
+                                  <Input
+                                    value={draft.latitude}
+                                    onChange={(e) => patchDraft('latitude', e.target.value)}
+                                    placeholder="26.9124"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label>Longitude</Label>
+                                  <Input
+                                    value={draft.longitude}
+                                    onChange={(e) => patchDraft('longitude', e.target.value)}
+                                    placeholder="75.7873"
+                                  />
+                                </div>
+                                <div className="space-y-1.5 sm:col-span-2">
+                                  <Label>Trade test partner login</Label>
+                                  <Select
+                                    value={draft.partner_id || '__none__'}
+                                    onValueChange={(value) => {
+                                      setCenterDrafts((prev) => ({
+                                        ...prev,
+                                        [c.id]: {
+                                          ...(prev[c.id] || draft),
+                                          partner_id: value === '__none__' ? '' : value,
+                                        },
+                                      }));
+                                    }}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Link a partner" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="__none__">No partner linked</SelectItem>
+                                      {partners.map((p) => (
+                                        <SelectItem key={p.id} value={p.id}>
+                                          {p.partner_code || p.id.slice(0, 8)}
+                                          {p.company_name ? ` — ${p.company_name}` : ''}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-1.5 sm:col-span-2">
+                                  <Label>Trades this centre can test</Label>
+                                  <div className="grid gap-2 sm:grid-cols-2">
+                                    {TRADE_TEST_REQUIRED_SKILLS.map((skill) => {
+                                      const checked = draft.trades.includes(skill);
+                                      return (
+                                        <label key={skill} className="flex items-center gap-2 text-sm">
+                                          <Checkbox
+                                            checked={checked}
+                                            onCheckedChange={(value) => {
+                                              const next = value
+                                                ? [...draft.trades, skill]
+                                                : draft.trades.filter((item) => item !== skill);
+                                              setCenterDrafts((prev) => ({
+                                                ...prev,
+                                                [c.id]: { ...(prev[c.id] || draft), trades: next },
+                                              }));
+                                            }}
+                                          />
+                                          {skill}
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                                 <div className="space-y-1.5 sm:col-span-2">
                                   <Label>Default instructions</Label>
                                   <Textarea
@@ -413,13 +558,19 @@ export default function AdminTradeTestAllocations() {
                             <SelectValue placeholder="Select centre" />
                           </SelectTrigger>
                           <SelectContent>
-                            {centers.map((c) => (
+                            {centresForSkill(centers, w.primary_skill).map((c) => (
                               <SelectItem key={c.id} value={c.id}>
                                 {c.name}
+                                {c.latitude == null ? ' (no map pin)' : ''}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                        {centresForSkill(centers, w.primary_skill).length === 0 && (
+                          <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                            No centre is set up to test {w.primary_skill || 'this trade'}.
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-1.5">
                         <Label>SSVN partner</Label>

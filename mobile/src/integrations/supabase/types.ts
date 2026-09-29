@@ -5063,6 +5063,9 @@ export type Database = {
         }[]
       }
       resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
+      india_find_district: { Args: { p_city: string; p_state: string }; Returns: string }
+      india_localities: { Args: { p_district: string; p_state: string }; Returns: Json }
+      india_locality_search: { Args: { p_query: string; p_state: string }; Returns: Json }
       resolve_worker_auth_email: { Args: { p_identifier: string }; Returns: string }
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }

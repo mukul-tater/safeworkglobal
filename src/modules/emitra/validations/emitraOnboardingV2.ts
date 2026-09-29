@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { getIndiaDistricts, getIndiaStates } from '@/lib/indiaLocations';
+import { isIndiaDistrict, isIndiaState } from '@/lib/indiaLocations';
 
 const phoneRegex = /^[6-9]\d{9}$/;
 const pincodeRegex = /^[1-9]\d{5}$/;
@@ -41,7 +41,7 @@ export const emitraV2BasicSchema = z.object({
   state: z
     .string()
     .min(1, 'State is required')
-    .refine((value) => getIndiaStates().includes(value), 'Select a valid state'),
+    .refine((value) => isIndiaState(value), 'Select a valid state'),
   pincode: z.string().regex(pincodeRegex, 'Enter a valid 6-digit PIN code'),
   google_maps_url: mapsLocationSchema,
   shop_photo_url: z.string().min(1, 'Upload a centre photograph'),
@@ -55,8 +55,7 @@ export const emitraV2BasicSchema = z.object({
     .min(1, 'Date of birth is required')
     .refine(isAdult, 'You must be at least 18 years old'),
 }).superRefine((data, ctx) => {
-  const districts = getIndiaDistricts(data.state);
-  if (data.state && districts.length > 0 && !districts.includes(data.district)) {
+  if (data.state && isIndiaState(data.state) && !isIndiaDistrict(data.state, data.district)) {
     ctx.addIssue({ code: 'custom', path: ['district'], message: 'Select a district in the chosen state' });
   }
 });

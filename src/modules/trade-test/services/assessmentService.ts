@@ -90,6 +90,8 @@ function normalizeAssessment(row: AssessmentRow): AssessmentRow {
     pan_verified: Boolean(row.pan_verified),
     identity_same_person: Boolean(row.identity_same_person),
     video_kyc_log: asVideoKycLog(row.video_kyc_log),
+    booking_reference: row.booking_reference ?? null,
+    slip_issued_at: row.slip_issued_at ?? null,
     docs_pre_reviewed_at: row.docs_pre_reviewed_at ?? null,
     arrival_photo_path: row.arrival_photo_path ?? row.kyc_photo_path ?? null,
     arrival_photo_taken_by_name: row.arrival_photo_taken_by_name ?? null,
@@ -121,29 +123,52 @@ async function enrichAssessments(rows: AssessmentRow[]): Promise<AssessmentRow[]
   const workerIds = [...new Set(rows.map((r) => r.worker_id))];
   const centerIds = [...new Set(rows.map((r) => r.trade_test_center_id).filter(Boolean))] as string[];
   const verIds = [...new Set(rows.map((r) => r.worker_verification_id).filter(Boolean))] as string[];
+  const jobIds = [...new Set(rows.map((r) => r.job_id).filter(Boolean))] as string[];
 
-  const [directory, { data: centers }, { data: vers }] = await Promise.all([
+  const [directory, { data: centers }, { data: vers }, { data: jobs }, { data: avatars }] = await Promise.all([
     loadWorkerDirectory(workerIds),
     centerIds.length
       ? supabase
           .from('trade_test_centers')
           .select(
-            'id, name, city, state, address, pincode, contact_name, contact_phone, maps_url, instructions',
+            'id, name, city, state, address, pincode, contact_name, contact_phone, maps_url, instructions, latitude, longitude, trades',
           )
           .in('id', centerIds)
       : Promise.resolve({ data: [] }),
     verIds.length
-      ? supabase.from('worker_verification').select('id, primary_skill').in('id', verIds)
+      ? supabase.from('worker_verification').select('id, primary_skill, journey_job_id').in('id', verIds)
+      : Promise.resolve({ data: [] }),
+    jobIds.length
+      ? supabase.from('jobs').select('id, title, country, location, experience_level').in('id', jobIds)
+      : Promise.resolve({ data: [] }),
+    workerIds.length
+      ? supabase.from('profiles').select('id, avatar_url').in('id', workerIds)
       : Promise.resolve({ data: [] }),
   ]);
 
   const cmap = new Map((centers || []).map((c: any) => [c.id, c]));
   const vmap = new Map((vers || []).map((v: any) => [v.id, v]));
+  const jmap = new Map((jobs || []).map((j: any) => [j.id, j]));
+  const amap = new Map((avatars || []).map((p: any) => [p.id, p.avatar_url || null]));
+  const extraJobIds = [...new Set(
+    (vers || [])
+      .map((v: any) => v.journey_job_id as string | null)
+      .filter((id): id is string => Boolean(id) && !jmap.has(id)),
+  )];
+  if (extraJobIds.length) {
+    const { data: moreJobs } = await supabase
+      .from('jobs')
+      .select('id, title, country, location, experience_level')
+      .in('id', extraJobIds);
+    for (const job of moreJobs || []) jmap.set((job as any).id, job);
+  }
 
   return rows.map((r) => {
     const p = directory.get(r.worker_id);
     const c = r.trade_test_center_id ? cmap.get(r.trade_test_center_id) : null;
     const v = r.worker_verification_id ? vmap.get(r.worker_verification_id) : null;
+    const jobId = r.job_id || (v as any)?.journey_job_id || null;
+    const job = jobId ? jmap.get(jobId) : null;
     return normalizeAssessment({
       ...r,
       worker_name: String(p?.full_name || '').trim() || null,
@@ -158,6 +183,11 @@ async function enrichAssessments(rows: AssessmentRow[]): Promise<AssessmentRow[]
       center_maps_url: (c as any)?.maps_url || null,
       center_instructions: (c as any)?.instructions || null,
       primary_skill: (v as any)?.primary_skill || null,
+      job_title: (job as any)?.title || null,
+      job_country: (job as any)?.country || null,
+      job_location: (job as any)?.location || null,
+      job_experience: (job as any)?.experience_level || null,
+      worker_avatar_url: amap.get(r.worker_id) || null,
       worker_email: displayableEmail(p?.email) || null,
     } as AssessmentRow);
   });
@@ -180,6 +210,9 @@ export async function updateTradeTestCenter(
     contact_phone?: string | null;
     maps_url?: string | null;
     instructions?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    trades?: string[] | null;
   },
 ): Promise<void> {
   const { error } = await supabase
@@ -191,10 +224,55 @@ export async function updateTradeTestCenter(
       contact_phone: patch.contact_phone ?? null,
       maps_url: patch.maps_url ?? null,
       instructions: patch.instructions ?? null,
+      latitude: patch.latitude ?? null,
+      longitude: patch.longitude ?? null,
+      trades: patch.trades ?? [],
       updated_at: new Date().toISOString(),
     })
     .eq('id', centerId);
   if (error) throw new Error(error.message);
+}
+
+export async function getTradeTestAssignmentMode(): Promise<'worker_select' | 'admin_assign'> {
+  const { data, error } = await supabase.rpc('trade_test_assignment_mode');
+  if (error) return 'admin_assign';
+  return data === 'worker_select' ? 'worker_select' : 'admin_assign';
+}
+
+export async function setTradeTestAssignmentMode(
+  mode: 'worker_select' | 'admin_assign',
+): Promise<void> {
+  const { error } = await supabase.rpc('admin_set_trade_test_assignment_mode', { p_mode: mode });
+  if (error) throw new Error(error.message);
+}
+
+export async function bookWorkerTradeTest(input: {
+  centerId: string;
+  appointmentDate: string;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc('book_worker_trade_test', {
+    p_center_id: input.centerId,
+    p_appointment_date: input.appointmentDate,
+  });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('Could not book the trade test');
+  return String(data);
+}
+
+export async function findPartnerAssessmentByReference(
+  partnerId: string,
+  reference: string,
+): Promise<AssessmentRow | null> {
+  const ref = reference.trim();
+  if (!ref) return null;
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ref);
+  let q = supabase.from('assessments').select('*').eq('partner_id', partnerId);
+  q = isUuid ? q.eq('id', ref) : q.eq('booking_reference', ref.toUpperCase());
+  const { data, error } = await q.maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  const [row] = await enrichAssessments([data as AssessmentRow]);
+  return row;
 }
 
 function centerPlaceLine(center: {

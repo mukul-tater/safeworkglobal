@@ -89,7 +89,7 @@ export default function WorkerVerificationScreen() {
       setEmail(data.email || profile?.email || '');
       setCity(data.city || '');
       setStateName(data.state || '');
-      setDistrict(data.district || findIndiaDistrict(data.state || '', data.city || ''));
+      setDistrict(data.district || (await findIndiaDistrict(data.state || '', data.city || '')));
       setGender(data.gender || '');
       setEducation(data.education_level || EDUCATION_LEVELS[2]);
       if (data.education_level === 'Below 10th') setTenthPass(false);

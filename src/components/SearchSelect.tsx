@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -20,6 +20,11 @@ interface Props {
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
   /** Shown in the mobile picker header. */
   title?: string;
+  /** Paint at most this many matches. Search still runs over the full list. */
+  maxVisible?: number;
+  loading?: boolean;
+  /** Replaces the local list. Called after two characters, debounced. */
+  remoteSearch?: (query: string) => Promise<string[]>;
 }
 
 function matchesQuery(option: string, query: string): boolean {
@@ -44,22 +49,77 @@ export default function SearchSelect({
   customHint = 'Use this value',
   inputMode,
   title = 'Select',
+  maxVisible,
+  loading = false,
+  remoteSearch,
 }: Props) {
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [remoteOptions, setRemoteOptions] = useState<string[]>([]);
+  const [remoteLoading, setRemoteLoading] = useState(false);
+  const [remoteFailed, setRemoteFailed] = useState(false);
 
-  const trimmed = query.trim();
-  const filtered = useMemo(
-    () => options.filter((option) => matchesQuery(option, query)),
-    [options, query],
+  const localFiltered = useMemo(
+    () => (remoteSearch ? [] : options.filter((option) => matchesQuery(option, query))),
+    [options, query, remoteSearch],
   );
+
+  useEffect(() => {
+    if (!remoteSearch || !open) return;
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setRemoteOptions([]);
+      setRemoteLoading(false);
+      setRemoteFailed(false);
+      return;
+    }
+    let cancel = false;
+    setRemoteLoading(true);
+    const timer = window.setTimeout(() => {
+      remoteSearch(trimmed)
+        .then((rows) => {
+          if (cancel) return;
+          setRemoteOptions(rows);
+          setRemoteFailed(false);
+        })
+        .catch(() => {
+          if (cancel) return;
+          setRemoteOptions([]);
+          setRemoteFailed(true);
+        })
+        .finally(() => {
+          if (!cancel) setRemoteLoading(false);
+        });
+    }, 250);
+    return () => {
+      cancel = true;
+      window.clearTimeout(timer);
+    };
+  }, [open, query, remoteSearch]);
+
+  const filtered = remoteSearch ? remoteOptions : localFiltered;
+  const visible = maxVisible ? filtered.slice(0, maxVisible) : filtered;
+  const hiddenCount = filtered.length - visible.length;
+  const busy = loading || remoteLoading;
+  const trimmed = query.trim();
 
   const showCustom =
     allowCustom &&
     trimmed.length > 0 &&
+    !filtered.some((option) => option.toLowerCase() === trimmed.toLowerCase()) &&
     !options.some((option) => option.toLowerCase() === trimmed.toLowerCase()) &&
     (!isValidCustom || isValidCustom(trimmed));
+
+  const statusText = busy
+    ? 'Loading…'
+    : remoteSearch && trimmed.length < 2
+      ? 'Type at least 2 letters'
+      : remoteFailed
+        ? 'Could not load matches. Type the name to use it.'
+        : filtered.length === 0
+          ? emptyText
+          : '';
 
   const close = () => {
     setOpen(false);
@@ -90,7 +150,7 @@ export default function SearchSelect({
           </span>
         </button>
       ) : null}
-      {filtered.map((option) => (
+      {visible.map((option) => (
         <button
           key={option}
           type="button"
@@ -106,8 +166,13 @@ export default function SearchSelect({
           <span className="min-w-0 break-words">{option}</span>
         </button>
       ))}
-      {filtered.length === 0 && !showCustom ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">{emptyText}</p>
+      {hiddenCount > 0 ? (
+        <p className="px-4 py-3 text-center text-xs text-muted-foreground">
+          Showing {visible.length} of {filtered.length}. Keep typing to narrow the list.
+        </p>
+      ) : null}
+      {visible.length === 0 && !showCustom && statusText ? (
+        <p className="px-4 py-6 text-center text-sm text-muted-foreground">{statusText}</p>
       ) : null}
     </div>
   );

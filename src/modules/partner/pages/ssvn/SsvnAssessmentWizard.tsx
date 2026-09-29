@@ -64,6 +64,7 @@ import {
   videoKycLogLabel,
 } from '@/modules/trade-test/constants';
 import { getMediaDurationSeconds } from '@/modules/trade-test/lib/mediaDuration';
+import { appliedForLine, slipIntroLine, testTodayLine, tradeLabel } from '@/modules/trade-test/lib/slipCopy';
 
 const emptyScores = (): AssessmentScoresInput => ({
   assessor_name: '',
@@ -268,10 +269,16 @@ export default function SsvnAssessmentWizard() {
               {assessmentWorkerLabel(row)}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
+              {row.booking_reference ? `${row.booking_reference} · ` : ''}
               {row.center_name || 'Trade test centre'}
               {row.appointment_date ? ` · ${row.appointment_date}` : ''}
               {row.reporting_window ? ` · ${row.reporting_window}` : ''}
               {row.worker_phone ? ` · ${row.worker_phone}` : ''}
+            </p>
+            <p className="text-sm mt-2">{appliedForLine(tradeLabel(row.primary_skill, row.job_title))}</p>
+            <p className="text-sm">{testTodayLine(tradeLabel(row.primary_skill, row.job_title))}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {slipIntroLine(tradeLabel(row.primary_skill, row.job_title))}
             </p>
           </div>
           <Badge variant="outline">{row.status}</Badge>

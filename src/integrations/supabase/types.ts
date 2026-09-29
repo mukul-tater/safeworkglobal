@@ -6578,6 +6578,9 @@ export type Database = {
           worker_name: string
         }[]
       }
+      india_find_district: { Args: { p_city: string; p_state: string }; Returns: string }
+      india_localities: { Args: { p_district: string; p_state: string }; Returns: Json }
+      india_locality_search: { Args: { p_query: string; p_state: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -18,7 +18,8 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import SearchSelect from '@/components/SearchSelect';
-import { getIndiaPincodes } from '@/lib/indiaLocations';
+import { INDIA_LOCALITY_WINDOW, pincodesFromLocalities } from '@/lib/indiaLocations';
+import { useIndiaLocalities } from '@/lib/useIndiaLocalities';
 import { useWorkerAuth } from '../context/WorkerAuthContext';
 import { useWorkerLanguage } from '../context/WorkerLanguageContext';
 import { workerApi } from '../services/workerApi';
@@ -93,6 +94,13 @@ export default function WorkerOnboardingPage() {
   const [activeProofId, setActiveProofId] = useState<number | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
+  const pinStateName = states.find((s) => String(s.id) === stateId)?.name ?? '';
+  const pinDistrictName = districts.find((d) => String(d.id) === districtId)?.name ?? '';
+  const { localities: pinLocalities, loading: pinsLoading, failed: pinsFailed } = useIndiaLocalities(
+    pinStateName,
+    pinDistrictName,
+  );
+  const districtPincodes = pincodesFromLocalities(pinLocalities);
 
   const loadOnboardingData = async () => {
     if (!token || !worker) return;
@@ -570,14 +578,15 @@ export default function WorkerOnboardingPage() {
                 <SearchSelect
                   value={pincode}
                   onChange={setPincode}
-                  options={getIndiaPincodes(
-                    states.find((s) => String(s.id) === stateId)?.name || '',
-                    districts.find((d) => String(d.id) === districtId)?.name || '',
-                  )}
-                  placeholder={districtId ? 'Select PIN code' : 'Select district first'}
+                  options={districtPincodes}
+                  maxVisible={INDIA_LOCALITY_WINDOW}
+                  loading={pinsLoading}
+                  placeholder={
+                    pinsLoading ? 'Loading PIN codes' : districtId ? 'Select PIN code' : 'Select district first'
+                  }
                   searchPlaceholder="Search PIN code"
-                  disabled={!districtId}
-                  emptyText="No PIN codes for this district"
+                  disabled={!districtId || pinsLoading}
+                  emptyText={pinsFailed ? 'Could not load PIN codes — type a 6-digit PIN' : 'No PIN codes for this district'}
                   allowCustom
                   isValidCustom={(q) => /^[1-9]\d{5}$/.test(q.trim())}
                   customHint="Use this PIN code"
