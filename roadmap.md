@@ -15,3 +15,9 @@
 - [ ] Dynamic sitemap architecture with accurate last-modified values.
 - [ ] Admin SEO controls, health reporting, and privacy-conscious conversion analytics.
 - [ ] Responsive, metadata, structured-data, route protection, and regression verification.
+
+## Selected Security Findings
+- [x] Fix only the six named permissive RLS findings and two named storage owner-binding findings; mark only those findings resolved.
+
+## Admin Firebase Account Cleanup
+- [ ] Review the uploaded deletion brief and release a user's Firebase phone identity before admin account deletion.
