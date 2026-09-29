@@ -6805,6 +6805,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      expire_public_jobs: { Args: never; Returns: number }
       generate_employer_requirement_ref: { Args: never; Returns: string }
       generate_partner_code: { Args: never; Returns: string }
       get_employer_company_names: {
@@ -7041,6 +7042,7 @@ export type Database = {
       }
       public_employer_by_slug: { Args: { p_slug: string }; Returns: Json }
       public_job_by_slug: { Args: { p_slug: string }; Returns: Json }
+      public_seo_snapshot: { Args: never; Returns: Json }
       record_site_visit: { Args: never; Returns: undefined }
       request_journey_step_email: {
         Args: { p_notification_id: string }
