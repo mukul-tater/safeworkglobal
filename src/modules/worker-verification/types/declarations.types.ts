@@ -138,6 +138,20 @@ export const ORIGINAL_DOCS_READY_NOTICE = {
   continueHi: 'मेरा आधार मेरे पास है — आगे बढ़ें',
 } as const;
 
+/** Partner add-worker: the operator reads this to the worker before declarations. */
+export const PARTNER_TELL_WORKER_DOCS = {
+  promptEn: 'Tell the worker',
+  promptHi: 'वर्कर को बताएँ',
+  titleEn: 'These documents should be ready with you',
+  titleHi: 'ये दस्तावेज़ आपके पास तैयार होने चाहिए',
+  bodyEn:
+    'Your original Aadhaar card should be ready with you. PAN and passport can be uploaded later — we will ask for them after your skill test is complete.',
+  bodyHi:
+    'आपका मूल आधार कार्ड आपके पास तैयार होना चाहिए। पैन और पासपोर्ट बाद में अपलोड कर सकते हैं — कौशल परीक्षा पूरी होने के बाद हम ये माँगेंगे।',
+  continueEn: 'Worker has Aadhaar ready — Continue',
+  continueHi: 'वर्कर के पास आधार तैयार है — आगे बढ़ें',
+} as const;
+
 /** English on top, Hindi below — used throughout the pre-journey declaration form. */
 export const PRE_JOURNEY_COPY = {
   headerBadge: { en: 'Pre-Journey Validation & Declarations', hi: 'यात्रा-पूर्व सत्यापन और घोषणाएँ' },

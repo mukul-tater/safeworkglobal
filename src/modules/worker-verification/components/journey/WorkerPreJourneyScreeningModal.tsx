@@ -30,6 +30,7 @@ import PassportRequirementInfo from '@/components/worker/PassportRequirementInfo
 import {
   CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
   ORIGINAL_DOCS_READY_NOTICE,
+  PARTNER_TELL_WORKER_DOCS,
   PRE_JOURNEY_COPY,
   type EnHi,
   type MedicalFitnessDeclaration,
@@ -56,6 +57,8 @@ interface Props {
   onCompleted: (decl: WorkerPreJourneyDeclaration) => void;
   /** Render in the page (keeps the worker portal sidebar visible). */
   variant?: 'modal' | 'inline';
+  /** Partner is filling this for a worker and should read the document notice to them. */
+  tellWorker?: boolean;
 }
 
 type Step = 0 | 1 | 2 | 3 | 4;
@@ -103,6 +106,7 @@ export default function WorkerPreJourneyScreeningModal({
   isOpen,
   onCompleted,
   variant = 'modal',
+  tellWorker = false,
 }: Props) {
   const [step, setStep] = useState<Step>(0);
   const [medical, setMedical] = useState<MedicalFitnessDeclaration>(INITIAL_MEDICAL);
@@ -205,11 +209,19 @@ export default function WorkerPreJourneyScreeningModal({
                       {ORIGINAL_DOCS_READY_NOTICE.badgeHi}
                     </span>
                   </div>
+                  {tellWorker ? (
+                    <p className="mt-2 text-sm font-semibold text-primary">
+                      {PARTNER_TELL_WORKER_DOCS.promptEn}
+                      <HindiText className="mt-0.5 block text-xs font-medium text-muted-foreground">
+                        {PARTNER_TELL_WORKER_DOCS.promptHi}
+                      </HindiText>
+                    </p>
+                  ) : null}
                   <CardTitle className="mt-2 break-words text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl">
-                    {ORIGINAL_DOCS_READY_NOTICE.titleEn}
+                    {tellWorker ? PARTNER_TELL_WORKER_DOCS.titleEn : ORIGINAL_DOCS_READY_NOTICE.titleEn}
                   </CardTitle>
                   <HindiText className="mt-1 text-base font-semibold text-muted-foreground">
-                    {ORIGINAL_DOCS_READY_NOTICE.titleHi}
+                    {tellWorker ? PARTNER_TELL_WORKER_DOCS.titleHi : ORIGINAL_DOCS_READY_NOTICE.titleHi}
                   </HindiText>
                 </>
               ) : (
@@ -305,10 +317,12 @@ export default function WorkerPreJourneyScreeningModal({
               <Alert className="border-primary/30 bg-primary/5">
                 <Info className="h-4 w-4 text-primary" />
                 <AlertTitle className="text-sm font-semibold text-foreground">
-                  {ORIGINAL_DOCS_READY_NOTICE.bodyEn}
+                  {tellWorker ? PARTNER_TELL_WORKER_DOCS.bodyEn : ORIGINAL_DOCS_READY_NOTICE.bodyEn}
                 </AlertTitle>
                 <AlertDescription className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  <HindiText>{ORIGINAL_DOCS_READY_NOTICE.bodyHi}</HindiText>
+                  <HindiText>
+                    {tellWorker ? PARTNER_TELL_WORKER_DOCS.bodyHi : ORIGINAL_DOCS_READY_NOTICE.bodyHi}
+                  </HindiText>
                 </AlertDescription>
               </Alert>
 
@@ -1084,8 +1098,12 @@ export default function WorkerPreJourneyScreeningModal({
                 onClick={handleNextStep}
                 className="h-auto w-full flex-col gap-0.5 bg-primary px-4 py-2.5 text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm sm:w-auto"
               >
-                <span className="text-sm">{ORIGINAL_DOCS_READY_NOTICE.continueEn}</span>
-                <span className="text-xs font-medium opacity-90">{ORIGINAL_DOCS_READY_NOTICE.continueHi}</span>
+                <span className="text-sm">
+                  {tellWorker ? PARTNER_TELL_WORKER_DOCS.continueEn : ORIGINAL_DOCS_READY_NOTICE.continueEn}
+                </span>
+                <span className="text-xs font-medium opacity-90">
+                  {tellWorker ? PARTNER_TELL_WORKER_DOCS.continueHi : ORIGINAL_DOCS_READY_NOTICE.continueHi}
+                </span>
               </Button>
             ) : step < 4 ? (
               <Button

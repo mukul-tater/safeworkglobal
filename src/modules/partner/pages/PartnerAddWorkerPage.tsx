@@ -71,6 +71,7 @@ function PartnerAddWorkerShell({
           userId={PARTNER_DRAFT_DECL_ID}
           isOpen
           variant="inline"
+          tellWorker
           onCompleted={onDeclarationsDone}
         />
       ) : (
