@@ -23,6 +23,7 @@ import IndiaLocationFields from "@/components/IndiaLocationFields";
 import { partnerAuthEmailFromMobile, displayableEmail } from "@/lib/workerAuthEmail";
 import { passwordSignupIssue, sanitizePasswordInput, PASSWORD_HINT } from "@/lib/validations/password";
 import { lockedPartnerFromPath } from "@/modules/partner/config/partnerPortalRoutes";
+import { getPartnerSignupOption } from "@/modules/partner/config/partnerSignupOptions";
 import type { AuthContinueLocationState } from "@/lib/authContinue";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
 import FormStepPills from "@/components/FormStepPills";
@@ -83,6 +84,14 @@ export default function PartnerRegisterLegacy() {
     ifsc: "",
     upi: "",
   });
+
+  useEffect(() => {
+    if (!portal) return;
+    const option = getPartnerSignupOption(portal.code);
+    if (option && option.status !== "live") {
+      navigate("/partner/register", { replace: true });
+    }
+  }, [portal, navigate]);
 
   useEffect(() => {
     (supabase as any)

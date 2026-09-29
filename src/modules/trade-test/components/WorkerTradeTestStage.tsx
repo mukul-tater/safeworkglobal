@@ -50,7 +50,7 @@ export default function WorkerTradeTestStage({
   avatarUrl,
   onBooked,
 }: Props) {
-  const [mode, setMode] = useState<TradeTestAssignmentMode>('admin_assign');
+  const [mode, setMode] = useState<TradeTestAssignmentMode>('worker_select');
   const [centers, setCenters] = useState<TradeTestCenterRow[]>([]);
   const [origin, setOrigin] = useState<MapPoint | null>(null);
   const [assessment, setAssessment] = useState<AssessmentRow | null>(null);

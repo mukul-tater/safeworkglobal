@@ -3,13 +3,13 @@
 
 CREATE TABLE IF NOT EXISTS public.trade_test_settings (
   id int PRIMARY KEY CHECK (id = 1),
-  assignment_mode text NOT NULL DEFAULT 'admin_assign'
+  assignment_mode text NOT NULL DEFAULT 'worker_select'
     CHECK (assignment_mode IN ('worker_select', 'admin_assign')),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-INSERT INTO public.trade_test_settings (id)
-VALUES (1)
+INSERT INTO public.trade_test_settings (id, assignment_mode)
+VALUES (1, 'worker_select')
 ON CONFLICT (id) DO NOTHING;
 
 REVOKE ALL ON public.trade_test_settings FROM PUBLIC, anon, authenticated;

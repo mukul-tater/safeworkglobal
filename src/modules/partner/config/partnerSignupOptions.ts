@@ -6,7 +6,7 @@ export type PartnerSignupStatus = "live" | "coming_soon";
 /**
  * Public partner signup options (Get Started → Partner).
  * Add a new entry here when a partner type gets its own onboarding route.
- * Only `status: "live"` options are shown in the chooser UI for now.
+ * Only E-Mitra and SSVN are live. Other types stay visible as coming soon.
  */
 export interface PartnerSignupOption {
   code: string;
@@ -43,7 +43,7 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
     name: "ITI",
     shortDescription: "Industrial Training Institutes — train and onboard skilled workers",
     icon: GraduationCap,
-    status: "live",
+    status: "coming_soon",
     registerPath: "/partner/register-iti",
     accentClass: "bg-teal-500/10 text-teal-700 dark:text-teal-400",
   },
@@ -53,7 +53,7 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
     shortDescription:
       "MEA-approved licensed recruitment agencies — overseas placement, visa & emigration",
     icon: HeartPulse,
-    status: "live",
+    status: "coming_soon",
     registerPath: "/partner/register-srn",
     accentClass: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
   },
@@ -63,7 +63,7 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
     shortDescription:
       "Placement consultants, recruitment partners, freelancers, NGOs and candidate mobilisers",
     icon: UsersRound,
-    status: "live",
+    status: "coming_soon",
     registerPath: "/partner/register-consultant",
     accentClass: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
   },
@@ -72,7 +72,7 @@ export const PARTNER_SIGNUP_OPTIONS: PartnerSignupOption[] = [
     name: "Employer",
     shortDescription: "Hire verified workers for overseas jobs",
     icon: Briefcase,
-    status: "live",
+    status: "coming_soon",
     registerPath: "/employer/quick-signup",
     accentClass: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
   },

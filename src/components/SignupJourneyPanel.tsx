@@ -93,9 +93,9 @@ const COPY = {
       badge: 'Partner signup',
       BadgeIcon: Handshake,
       headline: 'Grow with the SafeWork partner network',
-      body: 'Apply as E-Mitra, a trade test centre, ITI, licensed RA or consultant — onboard verified workers and earn through the platform. No large upfront listing fees.',
+      body: 'Apply as E-Mitra or a trade test centre — onboard verified workers and earn through the platform. No large upfront listing fees.',
       steps: [
-        { n: '1', title: 'Choose type', detail: 'E-Mitra, SSVN, ITI, RA or consultant' },
+        { n: '1', title: 'Choose type', detail: 'E-Mitra or SSVN' },
         { n: '2', title: 'Complete application', detail: 'Organisation details & documents' },
         { n: '3', title: 'Go live', detail: 'Approved partners start serving workers' },
       ],

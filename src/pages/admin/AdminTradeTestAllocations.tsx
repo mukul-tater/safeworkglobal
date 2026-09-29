@@ -88,7 +88,7 @@ export default function AdminTradeTestAllocations() {
   const [centerDrafts, setCenterDrafts] = useState<Record<string, CenterDraft>>({});
   const [editingCenterId, setEditingCenterId] = useState<string | null>(null);
   const [savingCenterId, setSavingCenterId] = useState<string | null>(null);
-  const [assignmentMode, setAssignmentMode] = useState<'worker_select' | 'admin_assign'>('admin_assign');
+  const [assignmentMode, setAssignmentMode] = useState<'worker_select' | 'admin_assign'>('worker_select');
   const [savingMode, setSavingMode] = useState(false);
   const [notesById, setNotesById] = useState<Record<string, string>>({});
   const [selectedReview, setSelectedReview] = useState<string | null>(null);

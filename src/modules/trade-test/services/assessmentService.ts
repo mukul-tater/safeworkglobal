@@ -235,8 +235,8 @@ export async function updateTradeTestCenter(
 
 export async function getTradeTestAssignmentMode(): Promise<'worker_select' | 'admin_assign'> {
   const { data, error } = await supabase.rpc('trade_test_assignment_mode');
-  if (error) return 'admin_assign';
-  return data === 'worker_select' ? 'worker_select' : 'admin_assign';
+  if (error || data == null || data === '') return 'worker_select';
+  return data === 'admin_assign' ? 'admin_assign' : 'worker_select';
 }
 
 export async function setTradeTestAssignmentMode(

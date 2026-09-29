@@ -31,7 +31,7 @@ import { PARTNER_EXISTING_ACCOUNT_PATH } from "@/lib/getStarted";
 
 /**
  * Partner signup hub — choose a partner type.
- * Live types (E-Mitra, SSVN, ITI, MEA Licensed RA, Consultants, Employer) redirect to their onboarding after confirm.
+ * Live types (E-Mitra, SSVN) redirect to their onboarding after confirm. Other types are shown as coming soon.
  */
 export default function PartnerRegister() {
   const navigate = useNavigate();
@@ -78,7 +78,7 @@ export default function PartnerRegister() {
     <>
       <SEOHead
         title="Partner Registration | SafeWork Global"
-        description="Apply to join the SafeWork Global partner network as E-Mitra, a trade test centre, ITI, licensed recruitment agency or consultant."
+        description="Apply to join the SafeWork Global partner network as E-Mitra or a trade test centre."
       />
       <AuthSplitLayout
         audience="partner"
@@ -105,32 +105,39 @@ export default function PartnerRegister() {
         </div>
 
         <div className="grid gap-2">
-          {PARTNER_SIGNUP_OPTIONS.filter((o) => o.status === "live").map((option) => {
+          {PARTNER_SIGNUP_OPTIONS.map((option) => {
             const Icon = option.icon;
-            const isSelected = selectedCode === option.code;
             const isLive = option.status === "live";
+            const isSelected = isLive && selectedCode === option.code;
 
             return (
               <div
                 key={option.code}
-                role="button"
-                tabIndex={0}
+                role={isLive ? "button" : undefined}
+                tabIndex={isLive ? 0 : undefined}
+                aria-disabled={isLive ? undefined : true}
                 onClick={() => {
+                  if (!isLive) return;
                   setSelectedCode(option.code);
-                  if (isLive) requestContinue(option);
+                  requestContinue(option);
                 }}
                 onKeyDown={(e) => {
+                  if (!isLive) return;
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     setSelectedCode(option.code);
-                    if (isLive) requestContinue(option);
+                    requestContinue(option);
                   }
                 }}
                 className={cn(
-                  "w-full cursor-pointer rounded-xl border px-3 py-3 text-left transition-all",
+                  "w-full rounded-xl border px-3 py-3 text-left transition-all",
+                  isLive
+                    ? "cursor-pointer"
+                    : "cursor-default bg-muted/30 opacity-80",
                   isSelected
                     ? "border-primary bg-primary/5 ring-1 ring-primary/25"
-                    : "border-border hover:bg-muted/50",
+                    : "border-border",
+                  isLive && !isSelected && "hover:bg-muted/50",
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -197,7 +204,12 @@ export default function PartnerRegister() {
                           </PopoverContent>
                         </Popover>
                       )}
-                      <Badge className="h-5 text-[10px]">{t("partner.available")}</Badge>
+                      <Badge
+                        variant={isLive ? "default" : "secondary"}
+                        className="h-5 text-[10px]"
+                      >
+                        {isLive ? t("partner.available") : t("partner.comingSoon")}
+                      </Badge>
                       {option.code === DEFAULT_PARTNER_SIGNUP_CODE && (
                         <Badge variant="secondary" className="h-5 text-[10px]">
                           {t("partner.default")}

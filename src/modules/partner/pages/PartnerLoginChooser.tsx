@@ -1,17 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Building2, Store, GraduationCap, Briefcase, HeartPulse, UsersRound, ArrowRight } from 'lucide-react';
 import AuthSplitLayout from '@/components/AuthSplitLayout';
 
 const OPTIONS = [
-  {
-    code: 'SSVN',
-    title: 'Trade Test Centre (SSVN)',
-    description: 'Accept allocations, run Aadhaar KYC + practical tests, submit for SafeWork review.',
-    to: '/partner/ssvn/login',
-    accent: 'bg-violet-500/10 text-violet-700 dark:text-violet-400',
-    Icon: Building2,
-  },
   {
     code: 'SEN',
     title: 'E-Mitra Partner',
@@ -19,6 +12,16 @@ const OPTIONS = [
     to: '/emitra/login',
     accent: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
     Icon: Store,
+    enabled: true,
+  },
+  {
+    code: 'SSVN',
+    title: 'Trade Test Centre (SSVN)',
+    description: 'Accept allocations, run Aadhaar KYC + practical tests, submit for SafeWork review.',
+    to: '/partner/ssvn/login',
+    accent: 'bg-violet-500/10 text-violet-700 dark:text-violet-400',
+    Icon: Building2,
+    enabled: true,
   },
   {
     code: 'ITI',
@@ -27,6 +30,7 @@ const OPTIONS = [
     to: '/partner/iti/login',
     accent: 'bg-teal-500/10 text-teal-700 dark:text-teal-400',
     Icon: GraduationCap,
+    enabled: false,
   },
   {
     code: 'SRN',
@@ -35,6 +39,7 @@ const OPTIONS = [
     to: '/partner/srn/login',
     accent: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
     Icon: HeartPulse,
+    enabled: false,
   },
   {
     code: 'CONSULTANT',
@@ -43,6 +48,7 @@ const OPTIONS = [
     to: '/partner/consultant/login',
     accent: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
     Icon: UsersRound,
+    enabled: false,
   },
   {
     code: 'EMPLOYER',
@@ -51,6 +57,7 @@ const OPTIONS = [
     to: '/employer/login',
     accent: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
     Icon: Briefcase,
+    enabled: false,
   },
 ] as const;
 
@@ -72,22 +79,49 @@ export default function PartnerLoginChooser() {
       </div>
 
       <div className="grid gap-2">
-        {OPTIONS.map((opt) => (
-          <Link
-            key={opt.code}
-            to={opt.to}
-            className="flex items-start gap-3 rounded-xl border border-border px-3 py-3 transition-all hover:border-primary/40 hover:bg-muted/50"
-          >
-            <div className={`shrink-0 rounded-lg p-2 ${opt.accent}`}>
-              <opt.Icon className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold">{opt.title}</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">{opt.description}</p>
-            </div>
-            <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
-          </Link>
-        ))}
+        {OPTIONS.map((opt) => {
+          const body = (
+            <>
+              <div className={`shrink-0 rounded-lg p-2 ${opt.accent}`}>
+                <opt.Icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                  {opt.title}
+                  {!opt.enabled && (
+                    <Badge variant="secondary" className="h-5 text-[10px] font-medium">
+                      Coming soon
+                    </Badge>
+                  )}
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">{opt.description}</p>
+              </div>
+              {opt.enabled && <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />}
+            </>
+          );
+
+          if (!opt.enabled) {
+            return (
+              <div
+                key={opt.code}
+                aria-disabled="true"
+                className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 px-3 py-3 opacity-80"
+              >
+                {body}
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={opt.code}
+              to={opt.to}
+              className="flex items-start gap-3 rounded-xl border border-border px-3 py-3 transition-all hover:border-primary/40 hover:bg-muted/50"
+            >
+              {body}
+            </Link>
+          );
+        })}
       </div>
 
       <p className="pt-5 text-center text-sm text-muted-foreground">
