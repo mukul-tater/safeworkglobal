@@ -1,5 +1,6 @@
--- Admin can set a new login password for an E-Mitra centre.
--- The password is stored only as a bcrypt hash. Existing sessions are signed out.
+-- auth.refresh_tokens.user_id is varchar, not uuid. Comparing it directly
+-- raised "operator does not exist: character varying = uuid" and rolled back
+-- the password change.
 
 CREATE OR REPLACE FUNCTION public.admin_set_partner_password(
   p_partner_id uuid,
@@ -48,7 +49,6 @@ BEGIN
     updated_at = now()
   WHERE id = v_user_id;
 
-  -- Old refresh tokens must stop working after the password changes.
   BEGIN
     DELETE FROM auth.refresh_tokens WHERE user_id::text = v_user_id::text;
   EXCEPTION
@@ -74,7 +74,3 @@ BEGIN
   );
 END;
 $$;
-
-REVOKE ALL ON FUNCTION public.admin_set_partner_password(uuid, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.admin_set_partner_password(uuid, text) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_set_partner_password(uuid, text) TO service_role;
