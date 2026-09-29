@@ -10,6 +10,7 @@ const MUKUL_EMAIL = 'mukultater@safeworkglobal.com'
 const MUKUL_FROM = `SafeWork Global <${MUKUL_EMAIL}>`
 const JOURNEY_URL = 'https://safeworkglobal.com/worker/journey'
 const ADMIN_URL = 'https://safeworkglobal.com/admin/journey-ops'
+const CENTRE_INBOX_URL = 'https://safeworkglobal.com/partner/ssvn/inbox'
 const WORKER_MOBILE_DOMAIN = 'workers.safeworkglobal.app'
 const PARTNER_MOBILE_DOMAIN = 'partners.safeworkglobal.app'
 
@@ -51,6 +52,79 @@ function displayableEmail(email: string | null | undefined): string | null {
 function displayText(value: string | null | undefined, fallback = 'not provided'): string {
   const trimmed = value?.trim() ?? ''
   return trimmed || fallback
+}
+
+function displayPhone(phone: string | null | undefined): string {
+  const digits = (phone || '').replace(/\D/g, '').slice(-10)
+  if (digits.length !== 10) return displayText(phone, '')
+  return `+91 ${digits}`
+}
+
+function yearsLabel(years: number | null | undefined): string {
+  if (years == null || Number.isNaN(Number(years))) return ''
+  const n = Number(years)
+  if (n <= 0) return ''
+  return n === 1 ? '1 year' : `${n} years`
+}
+
+type ServiceClient = ReturnType<typeof createClient>
+
+async function centreContactEmail(supabase: ServiceClient, partnerId: string): Promise<string | null> {
+  const [{ data: ext }, { data: org }] = await Promise.all([
+    supabase.from('partner_profiles_ext').select('email').eq('partner_id', partnerId).maybeSingle(),
+    supabase.from('partners').select('user_id').eq('id', partnerId).maybeSingle(),
+  ])
+  const registered = displayableEmail((ext as { email?: string | null } | null)?.email)
+  if (registered) return registered
+  const userId = (org as { user_id?: string | null } | null)?.user_id
+  if (!userId) return null
+  const { data: partnerProfile } = await supabase.from('profiles').select('email').eq('id', userId).maybeSingle()
+  return displayableEmail((partnerProfile as { email?: string | null } | null)?.email)
+}
+
+async function emailTradeTestCentre(
+  supabase: ServiceClient,
+  input: {
+    notificationId: string
+    assessmentId: string
+    partnerId: string
+    cancelled: boolean
+    cancelReason: string
+    templateData: Record<string, string | boolean>
+  },
+): Promise<{ emailed: boolean; to: string | null; skipped?: string }> {
+  let to: string | null = null
+  try {
+    to = await centreContactEmail(supabase, input.partnerId)
+  } catch (err) {
+    console.error('trade test centre email lookup failed', err)
+    return { emailed: false, to: null, skipped: 'lookup_failed' }
+  }
+  if (!to) return { emailed: false, to: null, skipped: 'no_centre_email' }
+
+  const idempotencyKey = `trade-test-centre-${input.notificationId}`
+  try {
+    const result = await sendTemplateEmail('trade-test-centre-brief', to, {
+      templateData: input.templateData,
+      idempotencyKey,
+      replyTo: MUKUL_EMAIL,
+      from: MUKUL_FROM,
+    })
+    return { emailed: result.sent, to }
+  } catch (firstErr) {
+    console.warn('trade test centre email from Mukul failed, retrying noreply', firstErr)
+    try {
+      const result = await sendTemplateEmail('trade-test-centre-brief', to, {
+        templateData: input.templateData,
+        idempotencyKey: `${idempotencyKey}-noreply`,
+        replyTo: MUKUL_EMAIL,
+      })
+      return { emailed: result.sent, to }
+    } catch (err) {
+      console.error('trade test centre email failed', err)
+      return { emailed: false, to, skipped: 'send_failed' }
+    }
+  }
 }
 
 function bearerToken(req: Request): string | null {
@@ -160,12 +234,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
         journeyUrl: JOURNEY_URL,
         testName: 'Test 3 — Physical trade test',
       }
+      let centrePartnerId = ''
+      let centreNameForBrief = ''
       if (assessmentId) {
         const { data: assessment } = await supabase
           .from('assessments')
-          .select('booking_reference, appointment_date, reporting_window, status, job_id, trade_test_center_id, worker_verification_id')
+          .select('booking_reference, appointment_date, reporting_window, status, job_id, partner_id, trade_test_center_id, worker_verification_id')
           .eq('id', assessmentId)
           .maybeSingle()
+        centrePartnerId = assessment?.partner_id || ''
         let skill = verification?.primary_skill || ''
         let jobTitle = ''
         let jobCountry = ''
@@ -196,6 +273,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
             .eq('id', assessment.trade_test_center_id)
             .maybeSingle()
           centreName = center?.name || ''
+          centreNameForBrief = centreName
           address = [center?.address, center?.city, center?.state, center?.pincode].filter(Boolean).join(', ')
           contact = [center?.contact_name, center?.contact_phone].filter(Boolean).join(' · ')
           mapsUrl = center?.maps_url || ''
@@ -227,9 +305,63 @@ Deno.serve(async (req: Request): Promise<Response> => {
         }
       }
 
+      const { data: workerProfile } = await supabase
+        .from('worker_profiles')
+        .select('years_of_experience, current_city, state, aadhaar_last4')
+        .eq('user_id', notification.user_id)
+        .maybeSingle()
+      const workerLocation = [
+        workerProfile?.current_city || verification?.city,
+        workerProfile?.state || verification?.state,
+      ].filter(Boolean).join(', ')
+      const aadhaarEnding = (workerProfile?.aadhaar_last4 || '').replace(/\D/g, '').slice(-4)
+      const trade = String(slipData.appliedFor || '').replace(/^Applied for:\s*/i, '')
+        || verification?.primary_skill
+        || 'trade'
+      const centreEmail = centrePartnerId
+        ? await emailTradeTestCentre(supabase, {
+            notificationId: notification.id,
+            assessmentId,
+            partnerId: centrePartnerId,
+            cancelled,
+            cancelReason: String(slipData.cancelReason || ''),
+            templateData: {
+              centreName: centreNameForBrief || 'Trade test centre',
+              cancelled,
+              cancelReason: String(slipData.cancelReason || ''),
+              workerName: displayText(profile?.full_name, 'A worker'),
+              workerPhone: displayPhone(profile?.phone),
+              workerEmail: displayableEmail(verification?.email) || displayableEmail(profile?.email) || '',
+              trade,
+              yearsExperience: yearsLabel(
+                workerProfile?.years_of_experience == null
+                  ? null
+                  : Number(workerProfile.years_of_experience),
+              ),
+              workerLocation,
+              aadhaarEnding,
+              appliedFor: trade,
+              jobPlace: String(slipData.jobPlace || ''),
+              experienceAsked: String(slipData.experience || ''),
+              reference: String(slipData.reference || ''),
+              appointmentDate: String(slipData.appointmentDate || ''),
+              reportingWindow: String(slipData.reportingWindow || ''),
+              portalUrl: assessmentId
+                ? `https://safeworkglobal.com/partner/ssvn/assessment/${assessmentId}`
+                : CENTRE_INBOX_URL,
+            },
+          })
+        : { emailed: false, to: null, skipped: 'no_centre' }
+
       const workerEmail = displayableEmail(verification?.email) || displayableEmail(profile?.email)
       if (!workerEmail) {
-        return new Response(JSON.stringify({ success: true, skipped: 'no_contact_email' }), {
+        return new Response(JSON.stringify({
+          success: true,
+          skipped: 'no_contact_email',
+          centreEmailed: centreEmail.emailed,
+          centreTo: centreEmail.to,
+          centreSkipped: centreEmail.skipped,
+        }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
@@ -241,7 +373,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
           replyTo: MUKUL_EMAIL,
           from: MUKUL_FROM,
         })
-        return new Response(JSON.stringify({ success: true, emailed: result.sent, to: workerEmail }), {
+        return new Response(JSON.stringify({
+          success: true,
+          emailed: result.sent,
+          to: workerEmail,
+          centreEmailed: centreEmail.emailed,
+          centreTo: centreEmail.to,
+          centreSkipped: centreEmail.skipped,
+        }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
@@ -253,13 +392,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
             idempotencyKey: `trade-test-slip-${notification.id}-noreply`,
             replyTo: MUKUL_EMAIL,
           })
-          return new Response(JSON.stringify({ success: true, emailed: result.sent, to: workerEmail, fromFallback: true }), {
+          return new Response(JSON.stringify({
+            success: true,
+            emailed: result.sent,
+            to: workerEmail,
+            fromFallback: true,
+            centreEmailed: centreEmail.emailed,
+            centreTo: centreEmail.to,
+            centreSkipped: centreEmail.skipped,
+          }), {
             status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
         } catch (slipErr) {
           console.error('trade test slip email failed', slipErr)
-          return new Response(JSON.stringify({ success: false, emailed: false }), {
+          return new Response(JSON.stringify({
+            success: centreEmail.emailed,
+            emailed: false,
+            centreEmailed: centreEmail.emailed,
+            centreTo: centreEmail.to,
+            centreSkipped: centreEmail.skipped,
+          }), {
             status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })

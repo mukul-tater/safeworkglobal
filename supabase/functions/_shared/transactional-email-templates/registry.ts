@@ -21,6 +21,7 @@ import { template as contactEnquiryTemplate } from './contact-enquiry.tsx'
 import { template as journeyStepClearedTemplate } from './journey-step-cleared.tsx'
 import { template as journeyStepClearedOpsTemplate } from './journey-step-cleared-ops.tsx'
 import { template as signupEmailOtpTemplate } from './signup-email-otp.tsx'
+import { template as tradeTestCentreBriefTemplate } from './trade-test-centre-brief.tsx'
 import { template as tradeTestSlipTemplate } from './trade-test-slip.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
@@ -28,5 +29,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'journey-step-cleared': journeyStepClearedTemplate,
   'journey-step-cleared-ops': journeyStepClearedOpsTemplate,
   'signup-email-otp': signupEmailOtpTemplate,
+  'trade-test-centre-brief': tradeTestCentreBriefTemplate,
   'trade-test-slip': tradeTestSlipTemplate,
 }
