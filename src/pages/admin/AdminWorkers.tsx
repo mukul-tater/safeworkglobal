@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Eye, MapPin, Briefcase, Share2 } from "lucide-react";
+import { Search, Eye, MapPin, Briefcase, Share2, Store } from "lucide-react";
 import WorkerShareDialog from "@/components/admin/WorkerShareDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -30,6 +30,14 @@ interface WorkerRow {
   expected_salary_max: number | null;
   currency: string | null;
   profile: Record<string, unknown> | null;
+  createdBy: WorkerCreator | null;
+}
+
+interface WorkerCreator {
+  label: string;
+  name: string | null;
+  code: string | null;
+  emitraId: string | null;
 }
 
 interface WorkerApplicationDetail {
@@ -111,6 +119,106 @@ function changeSentence(row: WorkerChangeDetail): string {
   }
 
   return `${what} · ${by} · ${when}`;
+}
+
+function firstText(...values: Array<string | null | undefined>): string | null {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+}
+
+function creatorDetails(creator: WorkerCreator): string | null {
+  const parts = [creator.name, creator.code, creator.emitraId ? `ID ${creator.emitraId}` : null].filter(
+    (part): part is string => !!part,
+  );
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+function creatorSummary(creator: WorkerCreator): string {
+  const details = creatorDetails(creator);
+  return details ? `${creator.label} · ${details}` : creator.label;
+}
+
+interface PartnerCentreRow {
+  id: string;
+  center_name: string | null;
+  agency_name: string | null;
+  owner_name: string | null;
+  partner_code: string | null;
+  emitra_id: string | null;
+}
+
+interface PartnerOrgRow {
+  id: string;
+  code: string | null;
+  typeCode: string | null;
+  typeName: string | null;
+  companyName: string | null;
+}
+
+function creatorForWorker(
+  wp: { source_type?: string | null; source_partner_id?: string | null; added_by_org_id?: string | null } | undefined,
+  centres: Map<string, PartnerCentreRow>,
+  orgs: Map<string, PartnerOrgRow>,
+): WorkerCreator | null {
+  if (!wp) return null;
+  const sourceType = wp.source_type || "organic";
+  const centre = wp.source_partner_id ? centres.get(wp.source_partner_id) : undefined;
+  const org = wp.added_by_org_id ? orgs.get(wp.added_by_org_id) : undefined;
+  const partnerSourced = sourceType === "emitra" || sourceType === "partner" || !!centre || !!org;
+  if (!partnerSourced) return null;
+
+  const emitraId = firstText(centre?.emitra_id);
+  const isEmitra = sourceType === "emitra" || org?.typeCode === "SEN" || !!emitraId;
+  return {
+    label: isEmitra ? "E-Mitra" : firstText(org?.typeName) || "Partner",
+    name: firstText(centre?.center_name, org?.companyName, centre?.agency_name, centre?.owner_name),
+    code: firstText(org?.code, centre?.partner_code),
+    emitraId,
+  };
+}
+
+async function loadPartnerCentres(profileIds: string[]): Promise<Map<string, PartnerCentreRow>> {
+  const map = new Map<string, PartnerCentreRow>();
+  if (profileIds.length === 0) return map;
+  const { data } = await supabase
+    .from("partner_profiles")
+    .select("id, center_name, agency_name, owner_name, partner_code, emitra_id")
+    .in("id", profileIds);
+  for (const row of data || []) map.set(row.id, row);
+  return map;
+}
+
+async function loadPartnerOrgs(orgIds: string[]): Promise<Map<string, PartnerOrgRow>> {
+  const map = new Map<string, PartnerOrgRow>();
+  if (orgIds.length === 0) return map;
+  const { data: orgs } = await supabase
+    .from("partners")
+    .select("id, partner_code, partner_type_id")
+    .in("id", orgIds);
+  const rows = orgs || [];
+  const typeIds = Array.from(new Set(rows.map((row) => row.partner_type_id)));
+  const [{ data: types }, { data: extras }] = await Promise.all([
+    typeIds.length
+      ? supabase.from("partner_types").select("id, code, name").in("id", typeIds)
+      : Promise.resolve({ data: [] as { id: string; code: string; name: string }[] }),
+    supabase.from("partner_profiles_ext").select("partner_id, company_name").in("partner_id", orgIds),
+  ]);
+  const typeById = new Map((types || []).map((type) => [type.id, type]));
+  const nameByOrg = new Map((extras || []).map((extra) => [extra.partner_id, extra.company_name]));
+  for (const row of rows) {
+    const type = typeById.get(row.partner_type_id);
+    map.set(row.id, {
+      id: row.id,
+      code: row.partner_code,
+      typeCode: type?.code ?? null,
+      typeName: type?.name ?? null,
+      companyName: nameByOrg.get(row.id) ?? null,
+    });
+  }
+  return map;
 }
 
 export default function AdminWorkers() {
@@ -241,6 +349,17 @@ export default function AdminWorkers() {
         appCounts[a.worker_id] = (appCounts[a.worker_id] || 0) + 1;
       });
 
+      const profileIds = Array.from(
+        new Set((workerProfiles || []).map((w) => w.source_partner_id).filter((id): id is string => !!id)),
+      );
+      const orgIds = Array.from(
+        new Set((workerProfiles || []).map((w) => w.added_by_org_id).filter((id): id is string => !!id)),
+      );
+      const [centres, orgs] = await Promise.all([
+        loadPartnerCentres(profileIds),
+        loadPartnerOrgs(orgIds),
+      ]);
+
       const rows: WorkerRow[] = (profiles || []).map((p) => {
         const wp = workerProfiles?.find((w) => w.user_id === p.id);
         const skills = [
@@ -262,6 +381,7 @@ export default function AdminWorkers() {
           expected_salary_max: wp?.expected_salary_max ?? null,
           currency: wp?.currency ?? "INR",
           profile: wp,
+          createdBy: creatorForWorker(wp, centres, orgs),
         };
       });
 
@@ -281,7 +401,11 @@ export default function AdminWorkers() {
       w.full_name?.toLowerCase().includes(q) ||
       w.email?.toLowerCase().includes(q) ||
       w.phone?.toLowerCase().includes(q) ||
-      w.skills.some((s) => s.toLowerCase().includes(q));
+      w.skills.some((s) => s.toLowerCase().includes(q)) ||
+      w.createdBy?.label.toLowerCase().includes(q) ||
+      w.createdBy?.name?.toLowerCase().includes(q) ||
+      w.createdBy?.code?.toLowerCase().includes(q) ||
+      w.createdBy?.emitraId?.toLowerCase().includes(q);
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "onboarded" && w.onboarding_completed) ||
@@ -313,7 +437,7 @@ export default function AdminWorkers() {
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search name, email, phone, skills..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Search name, email, phone, skills, centre..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Status" /></SelectTrigger>
@@ -343,6 +467,9 @@ export default function AdminWorkers() {
                     {w.application_count > 0 && (
                       <Badge variant="outline">{w.application_count} applications</Badge>
                     )}
+                    {w.createdBy && (
+                      <Badge variant="outline">{w.createdBy.label}</Badge>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">{w.email || w.phone || "No contact email yet"}</p>
                   <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
@@ -353,6 +480,12 @@ export default function AdminWorkers() {
                       <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" />{w.experience_years} yrs exp</span>
                     )}
                     <span>Joined {w.joined}</span>
+                    {w.createdBy && creatorDetails(w.createdBy) && (
+                      <span className="flex items-center gap-1">
+                        <Store className="h-3 w-3" />
+                        {creatorDetails(w.createdBy)}
+                      </span>
+                    )}
                   </div>
                   {w.skills.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
@@ -410,6 +543,9 @@ export default function AdminWorkers() {
                   {formatSalaryINR(viewWorker.expected_salary_min, viewWorker.expected_salary_max, viewWorker.currency || "INR")}
                 </p>
                 <p><span className="font-medium">Onboarding:</span> {viewWorker.onboarding_completed ? "Complete" : "Incomplete"}</p>
+                {viewWorker.createdBy && (
+                  <p><span className="font-medium">Created by:</span> {creatorSummary(viewWorker.createdBy)}</p>
+                )}
               </div>
 
               <div>
