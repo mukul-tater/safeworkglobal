@@ -189,9 +189,12 @@ const Footer = () => {
                   <MessageCircle className="h-3.5 w-3.5 shrink-0" />
                   <span>WhatsApp {SAFEWORK_CONTACT.whatsappDisplay}</span>
                 </a>
-                <span className="flex items-start gap-1.5 text-white/50 max-w-xs">
+                <span className="flex items-start gap-1.5 text-white/50 max-w-sm">
                   <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  <span>{SAFEWORK_CONTACT.officeAddress}</span>
+                  <span className="leading-relaxed">
+                    <span className="block">Office: {SAFEWORK_CONTACT.officeAddress}</span>
+                    <span className="block">Working: {SAFEWORK_CONTACT.workingAddress}</span>
+                  </span>
                 </span>
               </div>
 

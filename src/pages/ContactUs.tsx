@@ -536,7 +536,7 @@ export default function ContactUs() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-border/50 sm:col-span-2">
+              <Card className="border-border/50">
                 <CardContent className="p-5 flex items-start gap-3">
                   <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
                     <MapPin className="h-5 w-5 text-primary" />
@@ -546,6 +546,19 @@ export default function ContactUs() {
                       Office Address
                     </p>
                     <p className="text-sm font-semibold text-foreground leading-relaxed">{SAFEWORK_CONTACT.officeAddress}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="p-5 flex items-start gap-3">
+                  <div className="p-2.5 rounded-xl bg-primary/10 shrink-0">
+                    <MapPin className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                      Working Address
+                    </p>
+                    <p className="text-sm font-semibold text-foreground leading-relaxed">{SAFEWORK_CONTACT.workingAddress}</p>
                   </div>
                 </CardContent>
               </Card>

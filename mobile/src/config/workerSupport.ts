@@ -9,6 +9,7 @@ export function getWorkerSupportMailtoUrl(subject = 'SafeWork Global – Worker 
 export const SAFEWORK_CONTACT = {
   email: WORKER_SUPPORT_EMAIL,
   officeAddress: 'Ward No. 12, Pratap Choraha, Fatehnagar, Udaipur, Rajasthan 313205',
+  workingAddress: 'Near Ajanta Marble PVT LTD, NH 8, Karjia Ghati, Gunjol, Nathdwara, Rajasthan 313001',
   brand: 'SafeWork Global',
   operatingCompany: 'AgriFox Smart Solutions Private Limited',
   founderName: 'Mukul Tater',

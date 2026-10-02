@@ -112,6 +112,7 @@ export default function PrivacyPolicy() {
               <li>Email: <a href={`mailto:${SAFEWORK_CONTACT.email}`} className="text-primary underline">{SAFEWORK_CONTACT.email}</a></li>
               <li>WhatsApp / Mobile: <a href={SAFEWORK_CONTACT.whatsappUrl} className="text-primary underline" target="_blank" rel="noopener noreferrer">{SAFEWORK_CONTACT.whatsappDisplay}</a></li>
               <li>Office Address: {SAFEWORK_CONTACT.officeAddress}</li>
+              <li>Working Address: {SAFEWORK_CONTACT.workingAddress}</li>
             </ul>
           </section>
         </div>
