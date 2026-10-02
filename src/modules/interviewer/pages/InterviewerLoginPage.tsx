@@ -90,8 +90,8 @@ export default function InterviewerLoginPage() {
                 <ForgotPasswordControl
                   loginPath="/interviewer/login"
                   initialIdentifier={email}
-                  title="Reset interviewer password"
-                  description="Enter the email for your interviewer account. We'll send a secure link to set a new password."
+                  title="Reset your password"
+                  description="Enter the email on your own interviewer account. We'll send a reset link to that inbox."
                   triggerClassName="text-xs"
                 />
               </div>

@@ -443,8 +443,11 @@ export default function SsvnLoginPage() {
                 <ForgotPasswordControl
                   loginPath={portal.loginPath}
                   initialIdentifier={email}
-                  title={`Reset ${typeLabel} password`}
-                  description="Enter the email from your partner application. We'll send a secure link to set a new password."
+                  title="Reset your password"
+                  description="Enter the email or mobile on your own account. A real email gets a reset link. A mobile-only account gets an SMS code."
+                  identifierLabel="Email or mobile"
+                  identifierPlaceholder="centre@email.com or 10-digit mobile"
+                  identifierType="text"
                   triggerClassName="text-xs"
                 />
               </div>
@@ -500,8 +503,11 @@ export default function SsvnLoginPage() {
               <ForgotPasswordControl
                 loginPath={portal.loginPath}
                 initialIdentifier={email}
-                title={`Reset ${typeLabel} password`}
-                description="Enter the email from your partner application. We'll send a secure link to set a new password."
+                title="Reset your password"
+                description="Enter the email or mobile on your own account. A real email gets a reset link. A mobile-only account gets an SMS code."
+                identifierLabel="Email or mobile"
+                identifierPlaceholder="centre@email.com or 10-digit mobile"
+                identifierType="text"
                 triggerClassName="text-xs"
               />
             </div>

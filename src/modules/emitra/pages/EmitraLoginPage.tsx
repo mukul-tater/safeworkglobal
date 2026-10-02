@@ -195,10 +195,10 @@ export default function EmitraLoginPage() {
                   <ForgotPasswordControl
                     loginPath="/emitra/login"
                     initialIdentifier={identifierValue}
-                    title="Reset partner password"
-                    description="Enter the email from your partner application. We'll send a secure link to set a new password."
-                    identifierLabel="Partner email"
-                    identifierPlaceholder="partner@email.com"
+                    title="Reset your password"
+                    description="Enter the email or mobile on your own partner account. A real email gets a reset link. A mobile-only account gets an SMS code."
+                    identifierLabel="Email or mobile"
+                    identifierPlaceholder="partner@email.com or 10-digit mobile"
                     identifierType="text"
                     triggerClassName="text-sm"
                     resolveAuthEmail={async (raw) => {

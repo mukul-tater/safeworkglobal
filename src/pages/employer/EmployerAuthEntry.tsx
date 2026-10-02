@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ForgotPasswordControl from '@/components/ForgotPasswordControl';
+import { resolveWorkerAuthEmail } from '@/lib/resolveWorkerAuthEmail';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import AuthContinueIdentifier from '@/components/auth/AuthContinueIdentifier';
@@ -324,9 +325,13 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
               <Label htmlFor="employer-password">Password</Label>
               <ForgotPasswordControl
                 loginPath="/employer/login"
-                initialIdentifier={email}
-                title="Reset employer password"
-                description="Enter the work email you use to continue. We'll send a secure link to set a new password."
+                initialIdentifier={method === 'email' ? email : mobile}
+                title="Reset your password"
+                description="Enter the email or mobile on your own account. A real email gets a reset link. A mobile-only account gets an SMS code."
+                identifierLabel="Email or mobile"
+                identifierPlaceholder="you@company.com or 10-digit mobile"
+                identifierType="text"
+                resolveAuthEmail={resolveWorkerAuthEmail}
                 triggerClassName="text-xs"
               />
             </div>

@@ -17,6 +17,8 @@ project_id = "etpiadoqryvtlpmiuxia"
     verify_jwt = false
   [functions.purge-storage]
     verify_jwt = false
+  [functions.reset-password-sms]
+    verify_jwt = false
   [functions.razorpay-webhook]
     verify_jwt = false
   [functions.send-notification]

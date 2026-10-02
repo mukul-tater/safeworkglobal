@@ -117,7 +117,7 @@ export default function AuthScreen({ route }: Props) {
     }
     if (isSyntheticAuthEmail(resolved)) {
       setError(
-        'This account was created with mobile only and has no email inbox. Use the email from signup, or contact SafeWork support.',
+        'This account was created with mobile only. Open safeworkglobal.com, choose Forgot password on the sign-in page, and we will text a code to that number.',
       );
       return;
     }

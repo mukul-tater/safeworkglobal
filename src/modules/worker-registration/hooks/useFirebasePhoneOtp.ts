@@ -56,8 +56,12 @@ export const WORKER_OTP_RECAPTCHA_BTN_ID = 'worker-send-sms-btn';
 /** @deprecated Use WORKER_OTP_RECAPTCHA_BTN_ID — kept for older page imports. */
 export const WORKER_OTP_RECAPTCHA_HOST_ID = WORKER_OTP_RECAPTCHA_BTN_ID;
 
+function isRecaptchaHost(id: string | null | undefined, keepId: string): boolean {
+  return id === keepId || id === WORKER_OTP_RECAPTCHA_BTN_ID;
+}
+
 /** Remove leftover challenge widgets so they don't float over the OTP step. */
-export function dismissRecaptchaWidgets() {
+export function dismissRecaptchaWidgets(keepId = WORKER_OTP_RECAPTCHA_BTN_ID) {
   if (typeof document === 'undefined') return;
 
   document.querySelectorAll('iframe[src*="recaptcha"]').forEach((iframe) => {
@@ -66,7 +70,7 @@ export function dismissRecaptchaWidgets() {
     const isBadge = title.includes('badge') || el.offsetHeight < 80;
     if (isBadge) return;
     const wrap = el.closest('div');
-    if (wrap && wrap.id !== WORKER_OTP_RECAPTCHA_BTN_ID) {
+    if (wrap && !isRecaptchaHost(wrap.id, keepId)) {
       wrap.remove();
     } else {
       el.remove();
@@ -74,12 +78,12 @@ export function dismissRecaptchaWidgets() {
   });
 
   document.querySelectorAll('.g-recaptcha').forEach((node) => {
-    if (node.id === WORKER_OTP_RECAPTCHA_BTN_ID) return;
+    if (isRecaptchaHost(node.id, keepId)) return;
     node.remove();
   });
 }
 
-export function useFirebasePhoneOtp() {
+export function useFirebasePhoneOtp(recaptchaButtonId = WORKER_OTP_RECAPTCHA_BTN_ID) {
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
   const pendingDevPhoneRef = useRef<string | null>(null);
@@ -91,8 +95,8 @@ export function useFirebasePhoneOtp() {
       /* ignore */
     }
     recaptchaRef.current = null;
-    dismissRecaptchaWidgets();
-  }, []);
+    dismissRecaptchaWidgets(recaptchaButtonId);
+  }, [recaptchaButtonId]);
 
   const resetRecaptcha = useCallback(() => {
     clearVerifierOnly();
@@ -100,13 +104,13 @@ export function useFirebasePhoneOtp() {
   }, [clearVerifierOnly]);
 
   const ensureRecaptcha = useCallback(async () => {
-    const button = document.getElementById(WORKER_OTP_RECAPTCHA_BTN_ID);
+    const button = document.getElementById(recaptchaButtonId);
     if (!button) {
       throw new Error('Send SMS button not ready. Refresh and try again.');
     }
 
     const auth = getFirebaseAuth();
-    const verifier = new RecaptchaVerifier(auth, WORKER_OTP_RECAPTCHA_BTN_ID, {
+    const verifier = new RecaptchaVerifier(auth, recaptchaButtonId, {
       size: 'invisible',
       callback: () => {
         /* token ready — signInWithPhoneNumber continues */
@@ -119,7 +123,7 @@ export function useFirebasePhoneOtp() {
     await verifier.render();
     recaptchaRef.current = verifier;
     return verifier;
-  }, [clearVerifierOnly]);
+  }, [clearVerifierOnly, recaptchaButtonId]);
 
   const sendOtp = useCallback(
     async (mobileNumber: string) => {

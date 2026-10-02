@@ -488,8 +488,10 @@ export default function WorkerLoginPage() {
                       <ForgotPasswordControl
                         loginPath="/worker/login"
                         initialIdentifier={method === 'email' ? email : mobile}
-                        title="Reset worker password"
-                        description="Enter the email you used to create your worker account. We'll send a secure link to set a new password. Mobile-only accounts should contact SafeWork support."
+                        title="Reset your password"
+                        description="Enter the email or mobile on your own worker account. A real email gets a reset link. A mobile-only account gets an SMS code."
+                        identifierLabel="Email or mobile"
+                        identifierPlaceholder="you@example.com or 10-digit mobile"
                         identifierType="text"
                         resolveAuthEmail={resolveWorkerAuthEmail}
                         triggerClassName="text-xs"

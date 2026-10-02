@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
-import { isSyntheticAuthEmail } from '@/lib/workerAuthEmail';
+import { prepareSmsPasswordReset } from '@/lib/passwordResetSms';
+import { isValidIndianMobile, normalizeIndianMobile } from '@/lib/validations/common';
+import { isSyntheticAuthEmail, mobileFromSyntheticAuthEmail } from '@/lib/workerAuthEmail';
 
 export const RESET_PASSWORD_PATH = '/reset-password';
 export const PASSWORD_RESET_NEXT_STORAGE_KEY = 'swg_password_reset_next';
@@ -77,9 +79,14 @@ export const GENERIC_RESET_SENT_MESSAGE =
   'If an account exists for that email, a reset link has been sent. Check your inbox and spam folder.';
 
 export const SYNTHETIC_ACCOUNT_RESET_MESSAGE =
-  'This account was created with mobile only and has no email inbox. Use the email from signup, or contact SafeWork support.';
+  'This account was created with mobile only. Enter that mobile number and we will text a code to set a new password.';
 
 export type PasswordResetResult = { ok: true } | { ok: false; error: string };
+
+export type PasswordResetRoute =
+  | { channel: 'email' }
+  | { channel: 'sms'; mobile: string }
+  | { channel: 'error'; error: string };
 
 /**
  * Send a Supabase recovery email. Synthetic mobile-login addresses are rejected
@@ -128,4 +135,60 @@ export async function requestPasswordReset(
 
   if (error) return { ok: false, error: error.message };
   return { ok: true };
+}
+
+/**
+ * Email link for accounts with a real inbox. SMS code for mobile-only accounts.
+ * An unverified number cannot set a password. SMS is sent only after the server
+ * confirms the number belongs to that person's own account.
+ */
+export async function routePasswordReset(
+  identifier: string,
+  options: {
+    loginPath: string;
+    resolveAuthEmail?: (raw: string) => Promise<string | null>;
+  },
+): Promise<PasswordResetRoute> {
+  const raw = identifier.trim();
+  if (!raw) {
+    return { channel: 'error', error: 'Enter the email or mobile you use to sign in.' };
+  }
+
+  let resolved: string | null;
+  try {
+    resolved = options.resolveAuthEmail
+      ? await options.resolveAuthEmail(raw)
+      : raw.includes('@')
+        ? raw.toLowerCase()
+        : null;
+  } catch (err) {
+    return {
+      channel: 'error',
+      error: err instanceof Error ? err.message : 'Could not send a reset email.',
+    };
+  }
+
+  if (resolved && !isSyntheticAuthEmail(resolved) && resolved.includes('@')) {
+    const sent = await requestPasswordReset(resolved, { loginPath: options.loginPath });
+    if (sent.ok === false) return { channel: 'error', error: sent.error };
+    return { channel: 'email' };
+  }
+
+  const mobile =
+    mobileFromSyntheticAuthEmail(resolved) ||
+    (isValidIndianMobile(raw) ? normalizeIndianMobile(raw) : null);
+
+  if (!mobile) {
+    if (isSyntheticAuthEmail(resolved)) {
+      return { channel: 'error', error: SYNTHETIC_ACCOUNT_RESET_MESSAGE };
+    }
+    return {
+      channel: 'error',
+      error: 'Enter the email you use to sign in. Password reset is sent by email, not SMS.',
+    };
+  }
+
+  const prepared = await prepareSmsPasswordReset(mobile);
+  if (prepared.ok === false) return { channel: 'error', error: prepared.error };
+  return { channel: 'sms', mobile };
 }

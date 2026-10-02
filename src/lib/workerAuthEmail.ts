@@ -43,6 +43,16 @@ export function isPartnerMobileAuthEmail(email: string | null | undefined): bool
   return email.toLowerCase().endsWith(`@${PARTNER_MOBILE_AUTH_EMAIL_DOMAIN}`);
 }
 
+/** 10-digit mobile encoded in a worker or partner mobile-login address. */
+export function mobileFromSyntheticAuthEmail(email: string | null | undefined): string | null {
+  const lower = email?.trim().toLowerCase() ?? '';
+  const worker = lower.match(/^m(\d{10})@workers\.safeworkglobal\.app$/);
+  if (worker) return worker[1];
+  const partner = lower.match(/^emitra(\d{10})@partners\.safeworkglobal\.app$/);
+  if (partner) return partner[1];
+  return null;
+}
+
 /** Synthetic Supabase auth emails that must never be shown as contact email. */
 export function isSyntheticAuthEmail(email: string | null | undefined): boolean {
   if (!email?.trim()) return false;

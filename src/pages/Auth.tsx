@@ -580,7 +580,7 @@ export default function Auth() {
                     className="h-11"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Reset links are sent by email. If you signed up with mobile only, contact SafeWork support.
+                    Reset links are sent by email. Mobile-only accounts can reset with an SMS code from the worker or partner sign-in page.
                   </p>
                 </div>
                 <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
