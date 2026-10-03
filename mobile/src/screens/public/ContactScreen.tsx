@@ -119,8 +119,8 @@ export default function ContactScreen() {
         <Pressable onPress={() => openUrl(SAFEWORK_CONTACT.mobileTel)}>
           <Text style={styles.link}>Call {SAFEWORK_CONTACT.mobileDisplay}</Text>
         </Pressable>
-        <Text style={styles.muted}>Office: {SAFEWORK_CONTACT.officeAddress}</Text>
-        <Text style={styles.muted}>Working: {SAFEWORK_CONTACT.workingAddress}</Text>
+        <Text style={styles.muted}>Registered address: {SAFEWORK_CONTACT.officeAddress}</Text>
+        <Text style={styles.muted}>Office address: {SAFEWORK_CONTACT.workingAddress}</Text>
         {SAFEWORK_SOCIAL_LINKS.map((item) => (
           <Pressable key={item.label} onPress={() => openUrl(item.href)}>
             <Text style={styles.link}>{item.label}</Text>

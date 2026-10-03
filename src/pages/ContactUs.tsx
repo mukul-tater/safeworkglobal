@@ -543,7 +543,7 @@ export default function ContactUs() {
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                      Office Address
+                      Registered Address
                     </p>
                     <p className="text-sm font-semibold text-foreground leading-relaxed">{SAFEWORK_CONTACT.officeAddress}</p>
                   </div>
@@ -556,7 +556,7 @@ export default function ContactUs() {
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                      Working Address
+                      Office Address
                     </p>
                     <p className="text-sm font-semibold text-foreground leading-relaxed">{SAFEWORK_CONTACT.workingAddress}</p>
                   </div>
