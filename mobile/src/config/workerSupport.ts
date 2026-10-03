@@ -62,4 +62,4 @@ export const EMIGRATE_PORTAL_URL = 'https://emigrate.gov.in/';
 export const MADAD_PORTAL_URL = 'https://www.madad.gov.in/madad/';
 
 export const RA_DISCLOSURE =
-  'Licensed & regulated. SafeWork Global is a technology and workforce mobility platform. Overseas recruitment through Vesta Immigration LLP, Registered Recruiting Agent (MEA), RC No. B-2069/UP/PART/1000+/5/10331/2023.';
+  'Licensed & regulated. SafeWork Global is a technology and workforce mobility platform. Overseas recruitment through a registered recruitment agency.';
