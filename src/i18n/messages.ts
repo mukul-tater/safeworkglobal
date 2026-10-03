@@ -135,7 +135,7 @@ const en = {
   "footer.privacy": "Privacy",
   "footer.terms": "Terms",
   "footer.ra":
-    "Licensed & regulated. SafeWork Global is a technology and workforce mobility platform. Overseas recruitment through a registered recruitment agency.",
+    "Licensed Recruitment Partner • Technology-Enabled Workforce Mobility\nSafeWork Global is a technology and workforce mobility platform. Overseas recruitment and deployment are processed through our MEA-registered Recruiting Agent partner, in accordance with applicable regulations.",
   "footer.employerToast": "You're logged in as an Employer. Sign out to create a Worker profile.",
   "footer.workerToast": "You're logged in as a Worker. Sign out to access employer features.",
 
@@ -307,7 +307,7 @@ const hi: Record<AppMessageKey, string> = {
   "footer.privacy": "गोपनीयता",
   "footer.terms": "नियम",
   "footer.ra":
-    "लाइसेंस्ड और विनियमित। SafeWork Global एक तकनीक और workforce mobility प्लेटफ़ॉर्म है। विदेश भर्ती एक पंजीकृत भर्ती एजेंसी के माध्यम से।",
+    "लाइसेंस्ड रिक्रूटमेंट पार्टनर • टेक्नोलॉजी-इनेबल्ड वर्कफोर्स मोबिलिटी\nSafeWork Global एक तकनीक और workforce mobility प्लेटफ़ॉर्म है। विदेश भर्ती और तैनाती हमारे MEA-पंजीकृत Recruiting Agent पार्टनर के माध्यम से, लागू नियमों के अनुसार की जाती है।",
   "footer.employerToast": "आप नियोक्ता के रूप में लॉग इन हैं। श्रमिक प्रोफ़ाइल बनाने के लिए साइन आउट करें।",
   "footer.workerToast": "आप श्रमिक के रूप में लॉग इन हैं। नियोक्ता सुविधाओं के लिए साइन आउट करें।",
 

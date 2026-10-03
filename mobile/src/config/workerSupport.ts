@@ -62,4 +62,4 @@ export const EMIGRATE_PORTAL_URL = 'https://emigrate.gov.in/';
 export const MADAD_PORTAL_URL = 'https://www.madad.gov.in/madad/';
 
 export const RA_DISCLOSURE =
-  'Licensed & regulated. SafeWork Global is a technology and workforce mobility platform. Overseas recruitment through a registered recruitment agency.';
+  'Licensed Recruitment Partner • Technology-Enabled Workforce Mobility\nSafeWork Global is a technology and workforce mobility platform. Overseas recruitment and deployment are processed through our MEA-registered Recruiting Agent partner, in accordance with applicable regulations.';

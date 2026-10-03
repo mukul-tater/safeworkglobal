@@ -165,9 +165,15 @@ const Footer = () => {
         {/* RA Licensing — footer-only disclosure */}
         <div className="relative z-10 bg-[#f3f4f6]">
           <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-            <p className="text-center text-xs sm:text-[13px] leading-relaxed text-[#4b5563]">
-              {t("footer.ra")}
-            </p>
+            <div className="text-center text-xs sm:text-[13px] leading-relaxed text-[#4b5563]">
+              {t("footer.ra")
+                .split("\n")
+                .map((line, index) => (
+                  <p key={index} className={index === 0 ? "font-medium" : "mt-1"}>
+                    {line}
+                  </p>
+                ))}
+            </div>
           </div>
         </div>
 
