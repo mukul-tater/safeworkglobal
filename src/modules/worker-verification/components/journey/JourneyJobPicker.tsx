@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import JobChangeFeeDialog from '@/modules/worker-verification/components/journey/JobChangeFeeDialog';
 import {
@@ -70,9 +70,10 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
     const skills = skillsByJob.get(String(job.id)) ?? [];
     const postedRaw = job.posted_at ?? job.created_at;
     const listedSalary = getPublicJobSalary(String(job.title), description);
-    const rawSalaryMin = listedSalary?.salary_min ?? (job.salary_min as number | null) ?? null;
-    const rawSalaryMax = listedSalary?.salary_max ?? (job.salary_max as number | null) ?? null;
-    const currency = listedSalary ? 'INR' : String(job.currency || 'INR');
+    const monthlyListed = listedSalaryIsMonthly(listedSalary);
+    const rawSalaryMin = monthlyListed ? listedSalary.salary_min : ((job.salary_min as number | null) ?? null);
+    const rawSalaryMax = monthlyListed ? listedSalary.salary_max : ((job.salary_max as number | null) ?? null);
+    const currency = monthlyListed ? 'INR' : String(job.currency || 'INR');
     return {
       id: String(job.id),
       slug: String(job.slug || job.id),
