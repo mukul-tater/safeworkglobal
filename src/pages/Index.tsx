@@ -47,7 +47,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background has-mobile-nav overflow-x-hidden">
+    <div className="min-h-screen bg-background has-mobile-nav overflow-x-clip">
       <SEOHead
         title={DEFAULT_TITLE}
         description={DEFAULT_DESCRIPTION}

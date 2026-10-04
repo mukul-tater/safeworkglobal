@@ -26,7 +26,7 @@ export default function ResourcePageLayout({
   structuredData,
 }: ResourcePageLayoutProps) {
   return (
-    <div className="min-h-screen bg-background has-mobile-nav overflow-x-hidden">
+    <div className="min-h-screen bg-background has-mobile-nav overflow-x-clip">
       <SEOHead title={title} description={description} canonicalUrl={canonicalPath} structuredData={structuredData} />
       <Header />
 

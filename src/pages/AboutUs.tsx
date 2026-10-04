@@ -217,7 +217,7 @@ export default function AboutUs() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-background has-mobile-nav overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-background has-mobile-nav overflow-x-clip">
       <SEOHead
         title="About SafeWork Global"
         description="SafeWork Global is a technology and workforce mobility platform connecting India's skilled workforce with global employment opportunities through worker onboarding, skill verification and a transparent workforce ecosystem."
