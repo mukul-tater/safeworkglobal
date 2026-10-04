@@ -5,6 +5,7 @@ import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
 import { jobsBrowsePath } from '@/lib/jobsBrowse';
+import { devCompareJobRecord, isDevCompareJob } from '@/lib/devCompareJob';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -98,6 +99,27 @@ export default function JobDetail() {
     const loadData = async () => {
       if (!slug) {
         setLoading(false);
+        return;
+      }
+
+      if (isDevCompareJob(slug)) {
+        if (!import.meta.env.DEV) {
+          if (!cancelled) {
+            toast({
+              title: 'Job not found',
+              description: 'This job listing does not exist',
+              variant: 'destructive',
+            });
+            navigate('/jobs');
+            setLoading(false);
+          }
+          return;
+        }
+        if (!cancelled) {
+          setJob(devCompareJobRecord());
+          setLoading(false);
+        }
+        clearTimeout(watchdog);
         return;
       }
 
@@ -378,19 +400,20 @@ export default function JobDetail() {
   }
 
   const lockedJobId = journeyRow?.journey_job_id || null;
-  const displayTitle = getPublicJobTitle(job.title, job.description);
+  const devJob = isDevCompareJob(job.slug);
+  const displayTitle = devJob ? job.title : getPublicJobTitle(job.title, job.description);
   const backToJobs = jobsBrowsePath({
     country: job.country || 'UAE',
     category: inferUaeListedJob(job.title, job.description),
   });
-  const aboutTheRole = getPublicJobAbout(job.title, job.description);
-  const responsibilities = listPublicJobResponsibilities(
-    job.title,
-    job.responsibilities,
-    job.description,
-  );
-  const listedSalary = getPublicJobSalary(job.title, job.description);
-  const serviceCharge = getPublicJobServiceCharge(job.title, job.description, job.service_charge);
+  const aboutTheRole = devJob ? job.description : getPublicJobAbout(job.title, job.description);
+  const responsibilities = devJob
+    ? (job.responsibilities ?? '').split(/\n+/).map((line) => line.trim()).filter(Boolean)
+    : listPublicJobResponsibilities(job.title, job.responsibilities, job.description);
+  const listedSalary = devJob ? null : getPublicJobSalary(job.title, job.description);
+  const serviceCharge = devJob
+    ? job.service_charge
+    : getPublicJobServiceCharge(job.title, job.description, job.service_charge);
   const textPay = listedSalary?.salary_display ?? null;
   const monthlyListed = listedSalaryIsMonthly(listedSalary);
   const salaryMin = monthlyListed ? listedSalary.salary_min : job.salary_min;

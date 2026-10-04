@@ -33,6 +33,8 @@ export interface JobListItem {
   description: string;
   skills: string[];
   serviceCharge: number | null;
+  /** Use the stored salary instead of the shared UAE trade band. */
+  useStoredSalary?: boolean;
 }
 
 function relativeTime(date: Date): string {
@@ -55,7 +57,6 @@ interface JobResultCardProps {
   onAction?: (job: JobListItem) => void;
   actionLabel?: string;
   actionDisabled?: boolean;
-  /** Show a Compare tick. Omitted on lists that are not comparing across countries. */
   compareSelected?: boolean;
   compareDisabled?: boolean;
   onToggleCompare?: (job: JobListItem) => void;
@@ -94,7 +95,7 @@ export default function JobResultCard({
               'mb-2 flex w-fit items-center gap-2 text-sm font-medium',
               compareDisabled && 'text-muted-foreground',
             )}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
           >
             <Checkbox
               checked={compareSelected}
@@ -154,8 +155,8 @@ export default function JobResultCard({
                 min={job.rawSalaryMin}
                 max={job.rawSalaryMax}
                 currency={job.currency}
-                title={job.title}
-                description={job.description}
+                title={job.useStoredSalary ? undefined : job.title}
+                description={job.useStoredSalary ? undefined : job.description}
               />
             </dd>
             <dd className="flex items-center gap-1.5">

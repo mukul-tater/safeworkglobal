@@ -22,8 +22,7 @@ import JobSearchFilters, {
 import SavedSearchDialog from '@/components/search/SavedSearchDialog';
 import JobSearchHero from '@/components/jobs/JobSearchHero';
 import JobResultCard, { type JobListItem } from '@/components/jobs/JobResultCard';
-import JobComparisonDrawer from '@/components/JobComparisonDrawer';
-import HindiText from '@/components/indian-workforce/HindiText';
+import JobCompareHighlight from '@/components/jobs/JobCompareHighlight';
 import JobCountryGrid from '@/components/jobs/JobCountryGrid';
 import JobTradeGrid from '@/components/jobs/JobTradeGrid';
 import JobsEmptyState, { type JobFacet } from '@/components/jobs/JobsEmptyState';
@@ -32,10 +31,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/use-debounce';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, UAE_LISTED_JOB_LABELS, UAE_LISTED_JOBS, type UaeListedJob } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, jobsBrowsePath } from '@/lib/jobsBrowse';
+import { devCompareListItem } from '@/lib/devCompareJob';
 import { scrollToTop } from '@/lib/scrollToTop';
 
 const JOBS_PER_PAGE = 20;
@@ -109,23 +109,6 @@ function filterJobs(jobs: JobListItem[], filters: JobFilters): JobListItem[] {
   });
 }
 
-/** Keep one job from each country at the top so both sides of a comparison are on the first page. */
-function surfaceEachCountry(jobs: JobListItem[]): JobListItem[] {
-  const seen = new Set<string>();
-  const first: JobListItem[] = [];
-  const rest: JobListItem[] = [];
-  for (const job of jobs) {
-    const key = job.country.toLowerCase();
-    if (!seen.has(key)) {
-      seen.add(key);
-      first.push(job);
-    } else {
-      rest.push(job);
-    }
-  }
-  return [...first, ...rest];
-}
-
 function sortJobs(jobs: JobListItem[], sort: SortOption): JobListItem[] {
   const sorted = [...jobs];
   switch (sort) {
@@ -175,7 +158,6 @@ export default function Jobs() {
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
   const [savePendingId, setSavePendingId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
-  const [compareOpen, setCompareOpen] = useState(false);
 
   const debouncedKeyword = useDebounce(keywordInput, 400);
 
@@ -279,7 +261,9 @@ export default function Jobs() {
           };
         });
 
-        if (!cancelled) setAllJobs(formatted);
+        const devJob = devCompareListItem();
+        const withDevJob = devJob ? [...formatted.filter((job) => job.slug !== devJob.slug), devJob] : formatted;
+        if (!cancelled) setAllJobs(withDevJob);
       } catch (error) {
         console.error('Error fetching jobs:', error);
         if (!cancelled) {
@@ -320,22 +304,20 @@ export default function Jobs() {
   const countrySelected = filters.country !== ANY_COUNTRY;
   const jobSelected = filters.jobCategory !== ANY_CATEGORY;
 
-  const tradeCountries = useMemo(() => {
+  const sameTradeJobs = useMemo(() => {
     if (!jobSelected) return [];
-    return [
-      ...new Set(
-        allJobs.filter((job) => job.category === filters.jobCategory).map((job) => job.country),
-      ),
-    ];
-  }, [allJobs, filters.jobCategory, jobSelected]);
+    return filterJobs(allJobs, { ...filters, country: ANY_COUNTRY });
+  }, [allJobs, filters, jobSelected]);
 
-  const canCompareTrade = tradeCountries.length >= 2;
+  const compareAvailable = useMemo(() => {
+    const countries = new Set(sameTradeJobs.map((job) => job.country.toLowerCase()));
+    return countries.size >= 2;
+  }, [sameTradeJobs]);
 
   const jobs = useMemo(() => {
-    const activeFilters = canCompareTrade ? { ...filters, country: ANY_COUNTRY } : filters;
-    const sorted = sortJobs(filterJobs(allJobs, activeFilters), sortOption);
-    return canCompareTrade ? surfaceEachCountry(sorted) : sorted;
-  }, [allJobs, canCompareTrade, filters, sortOption]);
+    const source = compareAvailable ? sameTradeJobs : filterJobs(allJobs, filters);
+    return sortJobs(source, sortOption);
+  }, [allJobs, compareAvailable, filters, sameTradeJobs, sortOption]);
 
   const compareJobs = useMemo(
     () =>
@@ -347,16 +329,10 @@ export default function Jobs() {
 
   useEffect(() => {
     setCompareIds((prev) => {
-      const next = prev.filter((id) =>
-        allJobs.some((job) => job.id === id && job.category === filters.jobCategory),
-      );
+      const next = prev.filter((id) => sameTradeJobs.some((job) => job.id === id));
       return next.length === prev.length ? prev : next;
     });
-  }, [allJobs, filters.jobCategory]);
-
-  useEffect(() => {
-    if (!canCompareTrade || compareIds.length === 0) setCompareOpen(false);
-  }, [canCompareTrade, compareIds.length]);
+  }, [sameTradeJobs]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -470,11 +446,6 @@ export default function Jobs() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const clearCompare = () => {
-    setCompareIds([]);
-    setCompareOpen(false);
-  };
-
   const toggleCompare = (job: JobListItem) => {
     setCompareIds((prev) => {
       if (prev.includes(job.id)) return prev.filter((id) => id !== job.id);
@@ -485,10 +456,6 @@ export default function Jobs() {
       const selected = prev
         .map((id) => allJobs.find((item) => item.id === id))
         .filter((item): item is JobListItem => Boolean(item));
-      if (selected.some((item) => item.category !== job.category)) {
-        toast.error('Compare the same kind of job');
-        return prev;
-      }
       if (selected.some((item) => item.country.toLowerCase() === job.country.toLowerCase())) {
         toast.error('Pick this job in another country');
         return prev;
@@ -658,28 +625,17 @@ export default function Jobs() {
           >
             ← All jobs in {filters.country}
           </button>
+          {compareAvailable && (
+            <JobCompareHighlight
+              trade={filters.jobCategory}
+              jobs={compareJobs}
+              onClear={() => setCompareIds([])}
+            />
+          )}
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <div>
-              {canCompareTrade && filters.jobCategory in UAE_LISTED_JOB_LABELS && (
-                <p className="text-base font-semibold">
-                  {UAE_LISTED_JOB_LABELS[filters.jobCategory as UaeListedJob].en}
-                  <span className="font-medium text-muted-foreground"> / </span>
-                  <HindiText className="inline font-medium text-muted-foreground">
-                    {UAE_LISTED_JOB_LABELS[filters.jobCategory as UaeListedJob].hi}
-                  </HindiText>
-                </p>
-              )}
-              {canCompareTrade && !(filters.jobCategory in UAE_LISTED_JOB_LABELS) && (
-                <p className="text-base font-semibold">{filters.jobCategory}</p>
-              )}
-              <p className="text-sm font-medium">
-                {loading
-                  ? 'Searching…'
-                  : canCompareTrade
-                    ? `${tradeCountries.length} countries · ${jobs.length} ${jobs.length === 1 ? 'job' : 'jobs'}`
-                    : `${jobs.length} ${jobs.length === 1 ? 'job' : 'jobs'} found`}
-              </p>
-            </div>
+            <p className="text-sm font-medium">
+              {loading ? 'Searching…' : `${jobs.length} ${jobs.length === 1 ? 'job' : 'jobs'} found`}
+            </p>
 
             <div className="flex min-w-0 items-center gap-2">
               <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
@@ -771,7 +727,7 @@ export default function Jobs() {
             />
           ) : (
             <>
-              <div className={`space-y-3 ${canCompareTrade && compareIds.length > 0 ? 'pb-20' : ''}`}>
+              <div className="space-y-3">
                 {paginatedJobs.map((job) => (
                   <JobResultCard
                     key={job.id}
@@ -780,8 +736,8 @@ export default function Jobs() {
                     savePending={savePendingId === job.id}
                     onToggleSave={handleToggleSave}
                     compareSelected={compareIds.includes(job.id)}
-                    compareDisabled={canCompareTrade ? compareChoiceDisabled(job) : false}
-                    onToggleCompare={canCompareTrade ? toggleCompare : undefined}
+                    compareDisabled={compareAvailable ? compareChoiceDisabled(job) : false}
+                    onToggleCompare={compareAvailable ? toggleCompare : undefined}
                   />
                 ))}
               </div>
@@ -819,33 +775,6 @@ export default function Jobs() {
       </div>
 
       <SavedSearchDialog open={showSaveDialog} onOpenChange={setShowSaveDialog} onSave={handleSaveSearch} />
-
-      {canCompareTrade && compareIds.length > 0 && (
-        <div className="fixed inset-x-0 bottom-16 z-40 border-t border-border bg-background/95 p-3 backdrop-blur md:bottom-0">
-          <div className="mx-auto flex max-w-lg items-center gap-3">
-            {compareIds.length < 2 ? (
-              <>
-                <p className="min-w-0 flex-1 text-sm">Select one more job in another country</p>
-                <Button variant="outline" size="sm" onClick={clearCompare}>
-                  Clear
-                </Button>
-              </>
-            ) : (
-              <Button className="w-full" onClick={() => setCompareOpen(true)}>
-                Compare ({compareIds.length})
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-
-      <JobComparisonDrawer
-        open={compareOpen}
-        onOpenChange={setCompareOpen}
-        jobs={compareJobs}
-        onRemoveJob={(id) => setCompareIds((prev) => prev.filter((jobId) => jobId !== id))}
-        onClearAll={clearCompare}
-      />
     </>
   );
 
