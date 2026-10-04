@@ -534,6 +534,7 @@ export default function Jobs() {
         keyword={keywordInput}
         country={filters.country}
         loading={loading}
+        showForm={!(countrySelected && !jobSelected)}
         onKeywordChange={setKeywordInput}
         onCountryChange={(country) =>
           goBrowse({
@@ -589,22 +590,6 @@ export default function Jobs() {
             </div>
           ) : !jobSelected ? (
             <div className="space-y-4">
-              <div className="flex lg:hidden">
-                <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <SlidersHorizontal className="h-4 w-4" />
-                      Filters
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-full overflow-y-auto p-0 sm:max-w-sm">
-                    <SheetHeader className="border-b border-border/60 px-5 py-4">
-                      <SheetTitle className="text-base">Filters</SheetTitle>
-                    </SheetHeader>
-                    <JobSearchFilters filters={filters} onFiltersChange={handleFiltersChange} className="rounded-none border-0" />
-                  </SheetContent>
-                </Sheet>
-              </div>
               <button
                 type="button"
                 className="text-sm text-muted-foreground hover:text-foreground"
