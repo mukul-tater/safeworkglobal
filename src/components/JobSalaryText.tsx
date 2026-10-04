@@ -29,6 +29,13 @@ export default function JobSalaryText({
   className,
 }: JobSalaryTextProps) {
   const listed = title ? getPublicJobSalary(title, description) : null;
+  if (listed?.salary_min == null && listed?.salary_max == null && listed?.salary_display) {
+    return (
+      <span className={cn('inline-flex flex-col', className)}>
+        <span className={primaryClassName}>{listed.salary_display}</span>
+      </span>
+    );
+  }
   const resolvedEmpty = emptyLabel ?? 'Salary on application';
   const { primary, inrLine } = getJobSalaryDisplay(
     listed?.salary_min ?? min,

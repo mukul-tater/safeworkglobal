@@ -61,6 +61,7 @@ export const POPULAR_JOB_TITLES = [
   'Construction Labour/Helper', 'Pipe Fitter',
   'Furniture Carpenter - Finishing, All Rounder', 'Steel Fixer', 'AC Technician',
   'Warehouse Helper', 'Cleaner (Male)', 'Cleaner (Female)', 'Scaffolder', 'Painter', 'Aluminium Fixer/Fabricator',
+  'Delivery', 'Bike Rider',
   'Construction Worker', 'Site Supervisor', 'Civil Foreman',
   'Heavy Equipment Operator', 'Crane Operator', 'Forklift Operator', 'Excavator Operator',
   'Driver', 'Heavy Truck Driver', 'Light Vehicle Driver', 'Delivery Driver',
