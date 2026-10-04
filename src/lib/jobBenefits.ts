@@ -110,6 +110,52 @@ export function listPublicJobBenefits(raw?: string | null): string[] {
 
 export const PUBLIC_JOB_BENEFITS_TEXT = STANDARD_JOB_BENEFITS.join('\n');
 
+const COMPARE_EMPTY = '—';
+
+export interface JobCompareBenefitRows {
+  stay: string;
+  food: string;
+  hours: string;
+  contract: string;
+}
+
+const FOOD_BENEFIT: StandardJobBenefit =
+  'Food (usually included in salary) - Minimum 200 and kitchen facilities';
+const HOURS_BENEFIT: StandardJobBenefit = '8-10 hours of duty + overtime (extra pay)';
+const WEEK_BENEFIT: StandardJobBenefit = '6-day work week';
+const CONTRACT_BENEFIT: StandardJobBenefit = '2-year contract';
+const LEGAL_CONTRACT_BENEFIT: StandardJobBenefit = 'Legal contract and job security';
+
+function extraBenefitLine(additional: string, pattern: RegExp): string | null {
+  const hit = additional
+    .split(',')
+    .map((part) => part.trim())
+    .find((part) => part && pattern.test(part));
+  return hit || null;
+}
+
+/** Short compare-sheet labels taken only from benefits the job actually lists. */
+export function jobCompareBenefitRows(raw: string | null | undefined): JobCompareBenefitRows {
+  const { selected, additional } = parseJobBenefits(raw);
+  const has = (benefit: StandardJobBenefit) => selected.includes(benefit);
+
+  const hourParts = [
+    has(HOURS_BENEFIT) ? '8–10 + OT' : null,
+    has(WEEK_BENEFIT) ? '6-day week' : null,
+  ].filter((part): part is string => Boolean(part));
+
+  return {
+    stay: has('Accommodation') ? 'Accommodation' : extraBenefitLine(additional, /accommodat|housing/i) ?? COMPARE_EMPTY,
+    food: has(FOOD_BENEFIT) ? 'Included' : extraBenefitLine(additional, /\bfood\b|meal/i) ?? COMPARE_EMPTY,
+    hours: hourParts.join(' · ') || extraBenefitLine(additional, /hour|overtime|shift/i) || COMPARE_EMPTY,
+    contract: has(CONTRACT_BENEFIT)
+      ? '2 years'
+      : has(LEGAL_CONTRACT_BENEFIT)
+        ? 'Legal contract'
+        : extraBenefitLine(additional, /contract/i) ?? COMPARE_EMPTY,
+  };
+}
+
 export function listJobBenefits(raw: string | null | undefined): string[] {
   if (!raw?.trim()) return [];
   const items: string[] = [];

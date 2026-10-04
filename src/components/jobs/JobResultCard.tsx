@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Bookmark, BriefcaseBusiness, Clock, Loader2, MapPin, ShieldCheck, Wallet } from 'lucide-react';
 import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
@@ -13,7 +14,11 @@ export interface JobListItem {
   company: string;
   companyLogoUrl: string | null;
   location: string;
+  /** City or area, without the country. Used by job comparison. */
+  city?: string;
   country: string;
+  /** Raw benefits text. Comparison shows a dash when this is empty. */
+  benefits?: string | null;
   salaryDisplay: string | null;
   rawSalaryMin: number | null;
   rawSalaryMax: number | null;
@@ -50,6 +55,10 @@ interface JobResultCardProps {
   onAction?: (job: JobListItem) => void;
   actionLabel?: string;
   actionDisabled?: boolean;
+  /** Show a Compare tick. Omitted on lists that are not comparing across countries. */
+  compareSelected?: boolean;
+  compareDisabled?: boolean;
+  onToggleCompare?: (job: JobListItem) => void;
 }
 
 export default function JobResultCard({
@@ -61,6 +70,9 @@ export default function JobResultCard({
   onAction,
   actionLabel = 'View job',
   actionDisabled = false,
+  compareSelected = false,
+  compareDisabled = false,
+  onToggleCompare,
 }: JobResultCardProps) {
   const navigate = useNavigate();
   const jobUrl = `/jobs/${job.slug}`;
@@ -76,6 +88,23 @@ export default function JobResultCard({
       className="group cursor-pointer rounded-xl border border-border/60 bg-card p-4 transition-colors hover:border-primary/40 sm:p-5"
     >
       <div className="min-w-0">
+        {onToggleCompare && (
+          <label
+            className={cn(
+              'mb-2 flex w-fit items-center gap-2 text-sm font-medium',
+              compareDisabled && 'text-muted-foreground',
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Checkbox
+              checked={compareSelected}
+              disabled={compareDisabled}
+              aria-label={`Compare ${job.title} in ${job.country}`}
+              onCheckedChange={() => onToggleCompare(job)}
+            />
+            Compare
+          </label>
+        )}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="truncate text-base font-semibold leading-snug transition-colors group-hover:text-primary sm:text-lg">
