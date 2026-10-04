@@ -9,6 +9,8 @@ const corsHeaders = {
 };
 
 const ASSESSMENT_FEE_INR = 35400;
+const DELIVERY_SERVICE_CHARGE_INR = 80000;
+const DELIVERY_JOB_ID = "a1e10000-2026-4000-8000-000000000030";
 /** Keep in sync with src/modules/worker-verification/payment/bankTransfer.ts */
 const RAZORPAY_GATEWAY_FEE_PCT = 2.5;
 
@@ -16,6 +18,20 @@ function resolveFeeInr(value: unknown): number {
   const n = Number(value);
   if (!Number.isFinite(n) || n < 1) return ASSESSMENT_FEE_INR;
   return Math.round(n);
+}
+
+function isDeliveryListing(job: {
+  id?: string | null;
+  title?: string | null;
+  slug?: string | null;
+}): boolean {
+  if (job.id === DELIVERY_JOB_ID) return true;
+  if (String(job.slug || "").includes("bike-rider")) return true;
+  const title = String(job.title || "").toLowerCase().trim();
+  if (title === "delivery" || title === "bike rider") return true;
+  return ["bike rider", "delivery rider", "bike delivery", "delivery boy"].some((needle) =>
+    title.includes(needle)
+  );
 }
 
 function withGatewayFee(baseFee: number): { base: number; fee: number; charged: number } {
@@ -166,10 +182,19 @@ serve(async (req) => {
     if (!row?.journey_job_id) return ASSESSMENT_FEE_INR;
     const { data: job, error: jobErr } = await admin
       .from("jobs")
-      .select("service_charge")
+      .select("id, title, slug, service_charge")
       .eq("id", row.journey_job_id)
       .maybeSingle();
     if (jobErr) throw new Error(jobErr.message);
+    if (job && isDeliveryListing(job)) {
+      if (Number(job.service_charge) !== DELIVERY_SERVICE_CHARGE_INR) {
+        await admin
+          .from("jobs")
+          .update({ service_charge: DELIVERY_SERVICE_CHARGE_INR })
+          .eq("id", job.id);
+      }
+      return DELIVERY_SERVICE_CHARGE_INR;
+    }
     return resolveFeeInr(job?.service_charge);
   }
 

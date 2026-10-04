@@ -22,6 +22,7 @@ import {
   skillRequiresTradeTest,
 } from '../constants';
 import { resolveServiceChargeInr } from '@/lib/jobServiceCharge';
+import { getPublicJobServiceCharge } from '@/lib/uaeListedJobs';
 import { getWorkerDocumentSignedUrl } from '@/lib/storage';
 import {
   type BankTransferMethod,
@@ -67,21 +68,29 @@ export async function getServiceChargeForJob(jobId: string | null | undefined): 
   if (!jobId) return ASSESSMENT_FEE_INR;
   const { data, error } = await supabase
     .from('jobs')
-    .select('service_charge')
+    .select('title, description, service_charge')
     .eq('id', jobId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return resolveServiceChargeInr(data?.service_charge);
+  return resolveServiceChargeInr(
+    getPublicJobServiceCharge(data?.title ?? '', data?.description ?? '', data?.service_charge),
+  );
 }
 
 export async function getServiceChargesForJobs(jobIds: string[]): Promise<Map<string, number>> {
   const unique = [...new Set(jobIds.filter(Boolean))];
   const map = new Map<string, number>();
   if (unique.length === 0) return map;
-  const { data, error } = await supabase.from('jobs').select('id, service_charge').in('id', unique);
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('id, title, description, service_charge')
+    .in('id', unique);
   if (error) throw new Error(error.message);
-  (data || []).forEach((row: { id: string; service_charge: number | null }) => {
-    map.set(row.id, resolveServiceChargeInr(row.service_charge));
+  (data || []).forEach((row: { id: string; title: string | null; description: string | null; service_charge: number | null }) => {
+    map.set(
+      row.id,
+      resolveServiceChargeInr(getPublicJobServiceCharge(row.title ?? '', row.description ?? '', row.service_charge)),
+    );
   });
   return map;
 }
