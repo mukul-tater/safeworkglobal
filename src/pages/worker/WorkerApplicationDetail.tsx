@@ -23,6 +23,7 @@ import {
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
+import { getPublicJobServiceCharge } from "@/lib/uaeListedJobs";
 import { listPublicJobBenefits } from "@/lib/jobBenefits";
 import { getPublicJobAbout, listPublicJobResponsibilities } from "@/lib/uaeListedJobs";
 
@@ -226,7 +227,7 @@ export default function WorkerApplicationDetail() {
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <JobServiceFee amount={job.service_charge} showWhenCharged />
+                    <JobServiceFee amount={getPublicJobServiceCharge(job.title, job.description, job.service_charge)} showWhenCharged />
                   </div>
                 </div>
                 

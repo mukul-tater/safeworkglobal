@@ -16,7 +16,7 @@ import painterImg from '@/assets/trades/painter.jpg';
 import aluminiumImg from '@/assets/trades/aluminium.jpg';
 import cleanerMaleImg from '@/assets/trades/cleaner-male.jpg';
 import cleanerFemaleImg from '@/assets/trades/cleaner-female.jpg';
-import deliveryImg from '@/assets/trades/warehouse.jpg';
+import deliveryImg from '@/assets/trades/delivery.jpg';
 import type { UaeListedJob } from '@/lib/uaeListedJobs';
 
 export const UAE_LISTED_JOB_CARD_VISUALS: Record<UaeListedJob, { image: string; position?: string }> = {
@@ -39,7 +39,7 @@ export const UAE_LISTED_JOB_CARD_VISUALS: Record<UaeListedJob, { image: string; 
   Scaffolder: { image: scaffolderImg, position: 'center 40%' },
   Painter: { image: painterImg, position: 'center 40%' },
   'Aluminium Fixer/Fabricator': { image: aluminiumImg, position: 'center 32%' },
-  Delivery: { image: deliveryImg, position: 'center 72%' },
+  Delivery: { image: deliveryImg, position: 'center 42%' },
 };
 
 export const UAE_LISTED_JOB_SKILLS: Record<UaeListedJob, string[]> = {

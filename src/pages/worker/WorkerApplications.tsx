@@ -13,6 +13,7 @@ import { ApplicationListSkeleton } from "@/components/ui/page-skeleton";
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
+import { getPublicJobServiceCharge } from "@/lib/uaeListedJobs";
 
 interface JobData {
   title: string;
@@ -155,7 +156,7 @@ export default function WorkerApplications() {
                               />
                               </span>
                             )}
-                            <JobServiceFee amount={app.job.service_charge} />
+                            <JobServiceFee amount={getPublicJobServiceCharge(app.job.title, '', app.job.service_charge)} />
                           </>
                         )}
                       </div>

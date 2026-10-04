@@ -32,7 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/use-debounce';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, UAE_LISTED_JOB_LABELS, UAE_LISTED_JOBS, type UaeListedJob } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, UAE_LISTED_JOB_LABELS, UAE_LISTED_JOBS, type UaeListedJob } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, jobsBrowsePath } from '@/lib/jobsBrowse';
@@ -275,7 +275,7 @@ export default function Jobs() {
             postedAt: new Date(job.posted_at),
             description: description.length > 180 ? `${description.slice(0, 180).trimEnd()}…` : description,
             skills: job.job_skills?.map((s: any) => s.skill_name) || [],
-            serviceCharge: job.service_charge ?? null,
+            serviceCharge: getPublicJobServiceCharge(job.title, job.description ?? '', job.service_charge),
           };
         });
 

@@ -193,9 +193,21 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ListedJobSalary> = {
   Delivery: {
     salary_min: null,
     salary_max: null,
-    salary_display: 'AED 7.5 per delivery',
+    salary_display: '₹190 – ₹200 per delivery',
   },
 };
+
+/** SafeWork service fee for the Delivery listing. Other trades use the stored job fee. */
+export const UAE_DELIVERY_SERVICE_CHARGE_INR = 80000;
+
+export function getPublicJobServiceCharge(
+  title: string,
+  description = '',
+  stored?: number | null,
+): number | null {
+  if (inferUaeListedJob(title, description) === 'Delivery') return UAE_DELIVERY_SERVICE_CHARGE_INR;
+  return stored ?? null;
+}
 
 export function getPublicJobSalary(title: string, description = '') {
   const listed = inferUaeListedJob(title, description);
@@ -243,7 +255,7 @@ export const UAE_LISTED_JOB_ABOUT: Record<UaeListedJob, string> = {
   'Aluminium Fixer/Fabricator':
     'Aluminium fixer and fabricator openings for UAE windows, doors, cladding and shop-fronts. You will cut, mill, assemble and install aluminium frames from fabrication drawings, join sections and prepare surfaces for powder coat or anodising. Visa sponsorship for shortlisted candidates.',
   Delivery:
-    'Bike rider openings for full-time delivery work in the UAE (Keta). You need a valid Indian driving license and an ECNR passport, and you must be physically fit for flexible shifts. Riding experience is preferred; freshers may be considered. Pay is AED 7.5 per delivery. Duty is 11+1 hours a day. Age 22–37 years. The UAE license fee of AED 4,500 is deducted over up to 10 months. Accommodation, transport and food are provided until the UAE license is issued. Selection is through an online interview. Visa sponsorship for shortlisted candidates.',
+    'Bike rider openings for full-time delivery work in the UAE (Keta). You need a valid Indian driving license and an ECNR passport, and you must be physically fit for flexible shifts. Riding experience is preferred; freshers may be considered. Pay is ₹190 – ₹200 per delivery. Duty is 11+1 hours a day. Age 22–37 years. The UAE license fee of AED 4,500 is deducted over up to 10 months. Accommodation, transport and food are provided until the UAE license is issued. Selection is through an online interview. Visa sponsorship for shortlisted candidates.',
 };
 
 export function getPublicJobAbout(title: string, stored?: string | null, description = ''): string {

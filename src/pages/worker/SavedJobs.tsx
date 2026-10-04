@@ -12,6 +12,7 @@ import { Bookmark, MapPin, Briefcase, Trash2, Loader2, ExternalLink } from "luci
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
+import { getPublicJobServiceCharge } from "@/lib/uaeListedJobs";
 
 interface SavedJob {
   id: string;
@@ -139,7 +140,7 @@ export default function SavedJobs() {
                         title={job.title}
                       />
                       </span>
-                      <JobServiceFee amount={job.service_charge} />
+                      <JobServiceFee amount={getPublicJobServiceCharge(job.title, '', job.service_charge)} />
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">

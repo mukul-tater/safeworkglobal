@@ -3,7 +3,7 @@ import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
 import { jobsBrowsePath } from '@/lib/jobsBrowse';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
@@ -390,6 +390,7 @@ export default function JobDetail() {
     job.description,
   );
   const listedSalary = getPublicJobSalary(job.title, job.description);
+  const serviceCharge = getPublicJobServiceCharge(job.title, job.description, job.service_charge);
   const textPay = listedSalary?.salary_display ?? null;
   const monthlyListed = listedSalaryIsMonthly(listedSalary);
   const salaryMin = monthlyListed ? listedSalary.salary_min : job.salary_min;
@@ -478,7 +479,7 @@ export default function JobDetail() {
                         Visa Sponsorship
                       </Badge>
                     )}
-                    <JobServiceFee amount={job.service_charge} />
+                    <JobServiceFee amount={serviceCharge} />
                     <Badge variant={job.status === 'ACTIVE' ? 'default' : 'secondary'}>
                       {job.status}
                     </Badge>
@@ -615,7 +616,7 @@ export default function JobDetail() {
                     </Alert>
                   ) : showApply ? (
                     <>
-                      <JobServiceFee amount={job.service_charge} showWhenCharged />
+                      <JobServiceFee amount={serviceCharge} showWhenCharged />
                       <Button 
                         size="lg" 
                         onClick={handleApplyClick}

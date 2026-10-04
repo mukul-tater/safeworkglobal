@@ -10,7 +10,7 @@ import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
-import { getPublicJobAbout, getPublicJobTitle, isPublicListedJob } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from '@/lib/uaeListedJobs';
 
 interface FeaturedJob {
   id: string;
@@ -225,13 +225,13 @@ export default function FeaturedJobs() {
                       primaryClassName="text-lg font-bold text-primary"
                     />
                     <div className="mt-2">
-                      <JobServiceFee amount={job.service_charge} />
+                      <JobServiceFee amount={getPublicJobServiceCharge(job.title, job.description, job.service_charge)} />
                     </div>
                   </div>
                 )}
                 {!hasSalary(job) && (
                   <div className="mb-3">
-                    <JobServiceFee amount={job.service_charge} />
+                    <JobServiceFee amount={getPublicJobServiceCharge(job.title, job.description, job.service_charge)} />
                   </div>
                 )}
 

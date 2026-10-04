@@ -9,7 +9,7 @@ import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
-import { getPublicJobTitle, isPublicListedJob } from "@/lib/uaeListedJobs";
+import { getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from "@/lib/uaeListedJobs";
 
 interface JobPreview {
   id: string;
@@ -190,7 +190,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                       </div>
                     )}
                     <div className="mt-2">
-                      <JobServiceFee amount={job.service_charge} />
+                      <JobServiceFee amount={getPublicJobServiceCharge(job.title, '', job.service_charge)} />
                     </div>
                   </div>
                   {hasSalary(job) && (

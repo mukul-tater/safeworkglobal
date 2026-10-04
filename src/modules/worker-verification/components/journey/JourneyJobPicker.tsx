@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import JobChangeFeeDialog from '@/modules/worker-verification/components/journey/JobChangeFeeDialog';
 import {
@@ -95,7 +95,11 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       postedAt: postedRaw ? new Date(String(postedRaw)) : new Date(),
       description: description.length > 180 ? `${description.slice(0, 180).trimEnd()}…` : description,
       skills,
-      serviceCharge: (job.service_charge as number | null) ?? null,
+      serviceCharge: getPublicJobServiceCharge(
+        String(job.title),
+        storedDescription,
+        job.service_charge as number | null,
+      ),
     };
   });
 }
