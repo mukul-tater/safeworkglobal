@@ -9,6 +9,41 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   QAR: 'QAR',
 };
 
+/**
+ * Listed UAE salaries were converted at this rate (nearest rupee thousand).
+ * Display uses the same rate so AED and INR stay paired.
+ */
+export const INR_PER_AED = 23;
+
+function formatGrouped(amount: number): string {
+  return Math.round(amount).toLocaleString('en-IN');
+}
+
+/** AED first, rupees in parentheses. Amounts are monthly INR unless currency is AED. */
+export function formatJobSalaryAedAndInr(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  currency: string = 'INR',
+): string | null {
+  if (min == null && max == null) return null;
+  if (currency !== 'INR' && currency !== 'AED') return null;
+
+  const toAed = (amount: number) =>
+    currency === 'AED' ? Math.round(amount) : Math.round(amount / INR_PER_AED);
+  const toInr = (amount: number) =>
+    currency === 'INR' ? Math.round(amount) : Math.round(amount * INR_PER_AED);
+
+  const aedLabel = (amount: number) => `AED ${formatGrouped(toAed(amount))}`;
+  const inrLabel = (amount: number) => `₹${formatGrouped(toInr(amount))}`;
+
+  if (min != null && max != null) {
+    if (min === max) return `${aedLabel(min)} (${inrLabel(min)})`;
+    return `${aedLabel(min)} – ${aedLabel(max).replace('AED ', '')} (${inrLabel(min)} – ${inrLabel(max)})`;
+  }
+  if (min != null) return `From ${aedLabel(min)} (${inrLabel(min)})`;
+  return `Up to ${aedLabel(max!)} (${inrLabel(max!)})`;
+}
+
 /** Converts with a verified rate supplied by fx_rates; never guesses. */
 export function convertSalaryToINR(amount: number, currency: string, inrPerUnit?: number | null): number | null {
   if (currency === 'INR') return Math.round(amount);

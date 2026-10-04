@@ -15,6 +15,10 @@ function salaryCeiling(job: JobListItem): number | null {
 }
 
 function formatInrSalary(job: JobListItem): string {
+  if (job.salaryDisplay) {
+    const monthly = job.rawSalaryMin != null || job.rawSalaryMax != null;
+    return monthly && !/per /i.test(job.salaryDisplay) ? `${job.salaryDisplay} per month` : job.salaryDisplay;
+  }
   const min = job.salaryMin;
   const max = job.salaryMax;
   if (min == null && max == null) return '—';
@@ -57,8 +61,8 @@ export default function JobCompareHighlight({ trade, jobs, onClear }: Props) {
             {jobs.length === 0
               ? 'Tick Compare on two jobs in different countries.'
               : jobs.length === 1
-                ? 'Tick one more job in another country. Salary is in rupees per month.'
-                : 'Salary is shown in rupees per month.'}
+                ? 'Tick one more job in another country. Salary is in AED and rupees.'
+                : 'Salary is shown in AED and rupees.'}
           </p>
           {jobs.length > 0 && (
             <Button variant="outline" size="sm" onClick={onClear}>

@@ -419,10 +419,11 @@ export default function JobDetail() {
   const salaryMin = monthlyListed ? listedSalary.salary_min : job.salary_min;
   const salaryMax = monthlyListed ? listedSalary.salary_max : job.salary_max;
   const salaryCurrency = monthlyListed ? 'INR' : job.currency;
-  const salaryMeta =
-    monthlyListed || (salaryMin != null && salaryMax != null)
-      ? formatSalaryINR(salaryMin, salaryMax, salaryCurrency)
-      : textPay || 'Salary not specified';
+  const salaryMeta = textPay
+    ? monthlyListed
+      ? `${textPay} per month`
+      : textPay
+    : formatSalaryINR(salaryMin, salaryMax, salaryCurrency);
   const isCurrentJourneyJob = Boolean(lockedJobId && lockedJobId === job.id);
   const applyLabel = applying
     ? 'Applying...'

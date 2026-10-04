@@ -1,4 +1,4 @@
-import { getJobSalaryDisplay } from '@/lib/jobSalaryUtils';
+import { formatJobSalaryAedAndInr, getJobSalaryDisplay } from '@/lib/jobSalaryUtils';
 import { getPublicJobSalary } from '@/lib/uaeListedJobs';
 import { cn } from '@/lib/utils';
 
@@ -29,18 +29,35 @@ export default function JobSalaryText({
   className,
 }: JobSalaryTextProps) {
   const listed = title ? getPublicJobSalary(title, description) : null;
-  if (listed?.salary_min == null && listed?.salary_max == null && listed?.salary_display) {
+  if (listed?.salary_display) {
+    const monthly = listed.salary_min != null || listed.salary_max != null;
     return (
       <span className={cn('inline-flex flex-col', className)}>
-        <span className={primaryClassName}>{listed.salary_display}</span>
+        <span className={primaryClassName}>
+          {listed.salary_display}
+          {monthly ? (
+            <span className="font-normal text-muted-foreground"> {periodLabel}</span>
+          ) : null}
+        </span>
+      </span>
+    );
+  }
+  const dual = formatJobSalaryAedAndInr(min, max, currency);
+  if (dual && (min != null || max != null)) {
+    return (
+      <span className={cn('inline-flex flex-col', className)}>
+        <span className={primaryClassName}>
+          {dual}
+          <span className="font-normal text-muted-foreground"> {periodLabel}</span>
+        </span>
       </span>
     );
   }
   const resolvedEmpty = emptyLabel ?? 'Salary on application';
   const { primary, inrLine } = getJobSalaryDisplay(
-    listed?.salary_min ?? min,
-    listed?.salary_max ?? max,
-    listed ? 'INR' : currency,
+    min,
+    max,
+    currency,
     emptyLabel,
   );
   const showPeriod = primary !== resolvedEmpty;
