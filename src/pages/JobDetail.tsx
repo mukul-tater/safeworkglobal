@@ -3,7 +3,7 @@ import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities } from '@/lib/uaeListedJobs';
 import { jobsBrowsePath } from '@/lib/jobsBrowse';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
@@ -390,15 +390,9 @@ export default function JobDetail() {
     job.description,
   );
   const listedSalary = getPublicJobSalary(job.title, job.description);
-  const textPay = listedSalary?.salary_display ?? null;
-  const monthlyListed = listedSalaryIsMonthly(listedSalary);
-  const salaryMin = monthlyListed ? listedSalary.salary_min : job.salary_min;
-  const salaryMax = monthlyListed ? listedSalary.salary_max : job.salary_max;
-  const salaryCurrency = monthlyListed ? 'INR' : job.currency;
-  const salaryMeta =
-    monthlyListed || (salaryMin != null && salaryMax != null)
-      ? formatSalaryINR(salaryMin, salaryMax, salaryCurrency)
-      : textPay || 'Salary not specified';
+  const salaryMin = listedSalary?.salary_min ?? job.salary_min;
+  const salaryMax = listedSalary?.salary_max ?? job.salary_max;
+  const salaryCurrency = listedSalary ? 'INR' : job.currency;
   const isCurrentJourneyJob = Boolean(lockedJobId && lockedJobId === job.id);
   const applyLabel = applying
     ? 'Applying...'
@@ -435,20 +429,16 @@ export default function JobDetail() {
         "addressCountry": job.country
       }
     },
-    ...(salaryMin != null && salaryMax != null
-      ? {
-          baseSalary: {
-            "@type": "MonetaryAmount",
-            currency: "INR",
-            value: {
-              "@type": "QuantitativeValue",
-              minValue: convertSalaryToINR(salaryMin, salaryCurrency),
-              maxValue: convertSalaryToINR(salaryMax, salaryCurrency),
-              unitText: "MONTH",
-            },
-          },
-        }
-      : {}),
+    "baseSalary": {
+      "@type": "MonetaryAmount",
+      "currency": "INR",
+      "value": {
+        "@type": "QuantitativeValue",
+        "minValue": convertSalaryToINR(salaryMin, salaryCurrency),
+        "maxValue": convertSalaryToINR(salaryMax, salaryCurrency),
+        "unitText": "MONTH"
+      }
+    },
     "experienceRequirements": job.experience_level,
     "responsibilities": responsibilities.join('. ') || undefined,
     "skills": job.job_skills?.map(s => s.skill_name).join(', ') || undefined
@@ -746,7 +736,7 @@ export default function JobDetail() {
     </>,
     <SEOHead
       title={`${displayTitle} | SafeWork Global`}
-      description={`Apply for ${displayTitle} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${salaryMeta}.`}
+      description={`Apply for ${displayTitle} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${formatSalaryINR(salaryMin, salaryMax, salaryCurrency)}.`}
       keywords={`${displayTitle}, ${job.location} jobs, ${job.country} jobs, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
       canonicalUrl={`${job.slug ? `https://www.safeworkglobal.com/jobs/${job.slug}` : "https://www.safeworkglobal.com/jobs"}`}
       ogType="article"

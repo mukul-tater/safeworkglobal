@@ -19,7 +19,6 @@ export const UAE_LISTED_JOBS = [
   'Scaffolder',
   'Painter',
   'Aluminium Fixer/Fabricator',
-  'Delivery',
 ] as const;
 
 export type UaeListedJob = (typeof UAE_LISTED_JOBS)[number];
@@ -48,7 +47,6 @@ export const UAE_LISTED_JOB_LABELS: Record<UaeListedJob, { en: string; hi: strin
   Scaffolder: { en: 'Scaffolder', hi: 'पाड़ बाँधने वाला / मचान बनाने वाला' },
   Painter: { en: 'Painter', hi: 'पेंटर' },
   'Aluminium Fixer/Fabricator': { en: 'Aluminium Fixer', hi: 'एल्युमिनियम फिक्सर' },
-  Delivery: { en: 'Delivery', hi: 'डिलीवरी' },
 };
 
 /**
@@ -75,11 +73,9 @@ export const UAE_LISTED_JOB_WORK: Record<UaeListedJob, string> = {
   Scaffolder: 'scaffolding',
   Painter: 'painting',
   'Aluminium Fixer/Fabricator': 'aluminium fitting',
-  Delivery: 'bike delivery',
 };
 
 const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
-  { job: 'Delivery', needles: ['bike rider', 'delivery rider', 'bike delivery', 'delivery boy'] },
   { job: 'Aluminium Fixer/Fabricator', needles: ['aluminium fixer', 'aluminum fixer', 'aluminium fabricator', 'aluminum fabricator', 'glazing fabricator'] },
   { job: 'Shuttering Carpenter', needles: ['shuttering carpenter', 'shuttering', 'formwork carpenter', 's. carpenter'] },
   { job: 'MIG Welder', needles: ['mig welder', 'mig welding', 'mag welder'] },
@@ -127,13 +123,7 @@ export function listedJobDisplayName(job: string): string {
 /** Public-facing title: listed trade name when we can infer one. */
 export function getPublicJobTitle(title: string, description = ''): string {
   const job = inferUaeListedJob(title, description);
-  if (!job) return title;
-  // Delivery is the category. A more specific title (Bike Rider) stays on the listing.
-  if (job === 'Delivery') {
-    const trimmed = title.trim();
-    if (trimmed && trimmed.toLowerCase() !== 'delivery') return trimmed;
-  }
-  return UAE_LISTED_JOB_LABELS[job].en;
+  return job ? UAE_LISTED_JOB_LABELS[job].en : title;
 }
 
 /** Generic Carpenter listing — removed from Find jobs; shuttering / furniture stay. */
@@ -148,19 +138,11 @@ export function isPublicListedJob(title: string, description = '', slug?: string
   return inferUaeListedJob(title, description) != null;
 }
 
-export type ListedJobSalary = {
-  salary_min: number | null;
-  salary_max: number | null;
+function inrBand(salary_min: number, salary_max: number): {
+  salary_min: number;
+  salary_max: number;
   salary_display: string;
-};
-
-export function listedSalaryIsMonthly(
-  salary: ListedJobSalary | null | undefined,
-): salary is ListedJobSalary & { salary_min: number; salary_max: number } {
-  return salary != null && salary.salary_min != null && salary.salary_max != null;
-}
-
-function inrBand(salary_min: number, salary_max: number): ListedJobSalary {
+} {
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
   return {
     salary_min,
@@ -170,7 +152,7 @@ function inrBand(salary_min: number, salary_max: number): ListedJobSalary {
 }
 
 /** Monthly INR salary ranges for the public UAE listings. */
-export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ListedJobSalary> = {
+export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ReturnType<typeof inrBand>> = {
   Electrician: inrBand(35000, 42000),
   Welder: inrBand(39000, 42000),
   'MIG Welder': inrBand(39000, 42000),
@@ -190,11 +172,6 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ListedJobSalary> = {
   Scaffolder: inrBand(36000, 42000),
   Painter: inrBand(36000, 42000),
   'Aluminium Fixer/Fabricator': inrBand(39000, 42000),
-  Delivery: {
-    salary_min: null,
-    salary_max: null,
-    salary_display: 'AED 7.5 per delivery',
-  },
 };
 
 export function getPublicJobSalary(title: string, description = '') {
@@ -242,8 +219,6 @@ export const UAE_LISTED_JOB_ABOUT: Record<UaeListedJob, string> = {
     'Painter openings for UAE interiors and structural steel. You will prepare surfaces, apply emulsion, enamel and texture finishes by brush, roller or spray, protect adjacent work and close snags before handover. Visa sponsorship for shortlisted candidates.',
   'Aluminium Fixer/Fabricator':
     'Aluminium fixer and fabricator openings for UAE windows, doors, cladding and shop-fronts. You will cut, mill, assemble and install aluminium frames from fabrication drawings, join sections and prepare surfaces for powder coat or anodising. Visa sponsorship for shortlisted candidates.',
-  Delivery:
-    'Bike rider openings for full-time delivery work in the UAE (Keta). You need a valid Indian driving license and an ECNR passport, and you must be physically fit for flexible shifts. Riding experience is preferred; freshers may be considered. Pay is AED 7.5 per delivery. Duty is 11+1 hours a day. Age 22–37 years. The UAE license fee of AED 4,500 is deducted over up to 10 months. Accommodation, transport and food are provided until the UAE license is issued. Selection is through an online interview. Visa sponsorship for shortlisted candidates.',
 };
 
 export function getPublicJobAbout(title: string, stored?: string | null, description = ''): string {
@@ -406,14 +381,6 @@ export const UAE_LISTED_JOB_RESPONSIBILITIES: Record<UaeListedJob, string[]> = {
     'File, grind and prepare surfaces for powder coat or anodising',
     'Follow workshop and site HSE, including hot-work controls',
   ],
-  Delivery: [
-    'Deliver orders safely and on time',
-    'Follow assigned delivery routes and schedules',
-    'Keep clear communication with the company and team',
-    'Handle deliveries carefully',
-    'Follow UAE traffic and road-safety rules',
-    'Complete the deliveries assigned for the day',
-  ],
 };
 
 export function listPublicJobResponsibilities(
@@ -542,7 +509,6 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
     { youtubeId: 'mmsn1S2Ojks' },
   ],
   'Aluminium Fixer/Fabricator': [{ youtubeId: 'ovEDLzbAWpg' }],
-  Delivery: [],
 };
 
 export function getPublicJobVideos(title: string, description = ''): ListedJobVideo[] {
