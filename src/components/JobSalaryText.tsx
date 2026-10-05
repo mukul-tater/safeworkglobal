@@ -8,6 +8,7 @@ interface JobSalaryTextProps {
   currency?: string;
   title?: string;
   description?: string;
+  country?: string | null;
   emptyLabel?: string;
   /** Shown after a real range. Pass a translation on localized screens. */
   periodLabel?: string;
@@ -22,13 +23,14 @@ export default function JobSalaryText({
   currency = 'INR',
   title,
   description,
+  country,
   emptyLabel,
   periodLabel = 'per month',
   primaryClassName,
   inrClassName,
   className,
 }: JobSalaryTextProps) {
-  const listed = title ? getPublicJobSalary(title, description) : null;
+  const listed = title ? getPublicJobSalary(title, description, country) : null;
   if (listed?.salary_display) {
     const monthly = listed.salary_min != null || listed.salary_max != null;
     return (

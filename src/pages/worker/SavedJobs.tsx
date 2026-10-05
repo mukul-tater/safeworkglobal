@@ -138,9 +138,10 @@ export default function SavedJobs() {
                         max={job.salary_max}
                         currency={job.currency}
                         title={job.title}
+                        country={job.country}
                       />
                       </span>
-                      <JobServiceFee amount={getPublicJobServiceCharge(job.title, '', job.service_charge)} />
+                      <JobServiceFee amount={getPublicJobServiceCharge(job.title, '', job.service_charge, job.country)} />
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">

@@ -17,8 +17,9 @@ export function inferWorkerSkillFromJob(
   title: string,
   description = '',
   jobSkills: string[] = [],
+  country?: string | null,
 ): string {
-  const listed = inferUaeListedJob(title, description);
+  const listed = inferUaeListedJob(title, description, country);
   if (listed) return listed;
 
   for (const skill of jobSkills) {
@@ -47,8 +48,9 @@ export function appliedJobSkillLabel(
   primarySkill?: string | null,
   jobTitle?: string | null,
   jobDescription?: string | null,
+  country?: string | null,
 ): string {
-  const listedFromJob = inferUaeListedJob(jobTitle || '', jobDescription || '');
+  const listedFromJob = inferUaeListedJob(jobTitle || '', jobDescription || '', country);
   if (listedFromJob) return listedJobDisplayName(listedFromJob);
 
   const skill = (primarySkill || '').trim();
@@ -66,8 +68,9 @@ export function appliedJobWorkPhrase(
   primarySkill?: string | null,
   jobTitle?: string | null,
   jobDescription?: string | null,
+  country?: string | null,
 ): string {
-  const listedFromJob = inferUaeListedJob(jobTitle || '', jobDescription || '');
+  const listedFromJob = inferUaeListedJob(jobTitle || '', jobDescription || '', country);
   if (listedFromJob) return UAE_LISTED_JOB_WORK[listedFromJob];
 
   const skill = (primarySkill || '').trim();

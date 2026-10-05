@@ -222,12 +222,13 @@ export default function WorkerApplicationDetail() {
                         currency={job.currency}
                         title={job.title}
                         description={job.description}
+                        country={job.country}
                         emptyLabel="Not specified"
                       />
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <JobServiceFee amount={getPublicJobServiceCharge(job.title, job.description, job.service_charge)} showWhenCharged />
+                    <JobServiceFee amount={getPublicJobServiceCharge(job.title, job.description, job.service_charge, job.country)} showWhenCharged />
                   </div>
                 </div>
                 
@@ -237,15 +238,15 @@ export default function WorkerApplicationDetail() {
                   <div>
                     <h3 className="font-medium mb-2">Description</h3>
                     <p className="text-sm text-muted-foreground whitespace-pre-line">
-                      {getPublicJobAbout(job.title, job.description)}
+                      {getPublicJobAbout(job.title, job.description, '', job.country)}
                     </p>
                   </div>
                   
-                  {listPublicJobResponsibilities(job.title, job.responsibilities, job.description).length > 0 && (
+                  {listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country).length > 0 && (
                     <div>
                       <h3 className="font-medium mb-2">Responsibilities</h3>
                       <ul className="space-y-1">
-                        {listPublicJobResponsibilities(job.title, job.responsibilities, job.description).map((item) => (
+                        {listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country).map((item) => (
                           <li key={item} className="text-sm text-muted-foreground">
                             {item}
                           </li>

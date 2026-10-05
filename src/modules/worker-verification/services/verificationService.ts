@@ -68,12 +68,12 @@ export async function getServiceChargeForJob(jobId: string | null | undefined): 
   if (!jobId) return ASSESSMENT_FEE_INR;
   const { data, error } = await supabase
     .from('jobs')
-    .select('title, description, service_charge')
+    .select('title, description, country, service_charge')
     .eq('id', jobId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   return resolveServiceChargeInr(
-    getPublicJobServiceCharge(data?.title ?? '', data?.description ?? '', data?.service_charge),
+    getPublicJobServiceCharge(data?.title ?? '', data?.description ?? '', data?.service_charge, data?.country),
   );
 }
 
@@ -83,13 +83,13 @@ export async function getServiceChargesForJobs(jobIds: string[]): Promise<Map<st
   if (unique.length === 0) return map;
   const { data, error } = await supabase
     .from('jobs')
-    .select('id, title, description, service_charge')
+    .select('id, title, description, country, service_charge')
     .in('id', unique);
   if (error) throw new Error(error.message);
-  (data || []).forEach((row: { id: string; title: string | null; description: string | null; service_charge: number | null }) => {
+  (data || []).forEach((row: { id: string; title: string | null; description: string | null; country: string | null; service_charge: number | null }) => {
     map.set(
       row.id,
-      resolveServiceChargeInr(getPublicJobServiceCharge(row.title ?? '', row.description ?? '', row.service_charge)),
+      resolveServiceChargeInr(getPublicJobServiceCharge(row.title ?? '', row.description ?? '', row.service_charge, row.country)),
     );
   });
   return map;

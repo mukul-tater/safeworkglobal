@@ -68,6 +68,7 @@ interface Props {
   tradeAssessment?: AssessmentRow | null;
   appliedJobTitle?: string | null;
   appliedJobDescription?: string | null;
+  appliedJobCountry?: string | null;
   onGoToCurrent: () => void;
   /** Shown on the finished Find jobs card so a worker can switch after leaving that step. */
   onChangeJob?: () => void;
@@ -268,6 +269,7 @@ export default function CompletedStepReview({
   tradeAssessment,
   appliedJobTitle,
   appliedJobDescription,
+  appliedJobCountry,
   onGoToCurrent,
   onChangeJob,
   children,
@@ -276,6 +278,7 @@ export default function CompletedStepReview({
     row.primary_skill,
     appliedJobTitle,
     appliedJobDescription,
+    appliedJobCountry,
   );
   const kycTone: Tone =
     kycStatus === 'verified' ? 'success' : kycStatus === 'rejected' ? 'error' : 'pending';

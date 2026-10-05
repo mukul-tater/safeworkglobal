@@ -153,10 +153,11 @@ export default function WorkerApplications() {
                                 max={app.job.salary_max}
                                 currency={app.job.currency}
                                 title={app.job.title}
+                                country={app.job.country}
                               />
                               </span>
                             )}
-                            <JobServiceFee amount={getPublicJobServiceCharge(app.job.title, '', app.job.service_charge)} />
+                            <JobServiceFee amount={getPublicJobServiceCharge(app.job.title, '', app.job.service_charge, app.job.country)} />
                           </>
                         )}
                       </div>

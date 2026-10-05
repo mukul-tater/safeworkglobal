@@ -2,6 +2,7 @@
 export const DESTINATION_COUNTRIES = [
   'All Countries',
   'UAE',
+  'Ukraine',
 ];
 
 // Worker nationalities (source countries)

@@ -157,6 +157,7 @@ export default function JobResultCard({
                 currency={job.currency}
                 title={job.useStoredSalary ? undefined : job.title}
                 description={job.useStoredSalary ? undefined : job.description}
+                country={job.country}
               />
             </dd>
             <dd className="flex items-center gap-1.5">

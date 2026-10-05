@@ -46,6 +46,7 @@ async function syncSkillFromJob(
     title?: string;
     description?: string;
     skills?: string[];
+    country?: string | null;
     advanceFromFindJobs?: boolean;
   },
 ): Promise<WorkerVerification> {
@@ -53,6 +54,7 @@ async function syncSkillFromJob(
     opts.title || '',
     opts.description || '',
     opts.skills || [],
+    opts.country,
   );
   const tradeRequired = skillRequiresTradeTest(nextSkill);
   const patch: Record<string, unknown> = {
@@ -94,6 +96,7 @@ export async function applyToJobForJourney(opts: {
   title?: string;
   description?: string;
   skills?: string[];
+  country?: string | null;
 }): Promise<{ applicationId: string; verification: WorkerVerification | null }> {
   const existing = await getOrCreateVerification(opts.workerUserId);
   if (existing.journey_job_id && existing.journey_job_id !== opts.jobId) {
@@ -121,13 +124,14 @@ export async function changeJourneyJob(opts: {
   title?: string;
   description?: string;
   skills?: string[];
+  country?: string | null;
 }): Promise<{ applicationId: string; verification: WorkerVerification | null }> {
   const existing = await getOrCreateVerification(opts.workerUserId);
   if (!canChangeJourneyJob(existing)) {
     throw new Error('This job cannot be changed after GCC ready');
   }
 
-  const skill = inferWorkerSkillFromJob(opts.title || '', opts.description || '', opts.skills || []);
+  const skill = inferWorkerSkillFromJob(opts.title || '', opts.description || '', opts.skills || [], opts.country);
   const { data, error } = await supabase.rpc('change_journey_job', {
     p_job_id: opts.jobId,
     p_user_id: opts.workerUserId,

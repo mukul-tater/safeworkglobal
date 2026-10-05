@@ -1,6 +1,15 @@
 const ANY_CATEGORY = 'All Categories';
 const ANY_COUNTRY = 'All Countries';
 
+/** "Rivne Region, Ukraine". Skip a repeated country when the city was not given. */
+export function formatJobPlace(location?: string | null, country?: string | null): string {
+  const loc = (location ?? '').trim();
+  const cty = (country ?? '').trim();
+  if (!loc) return cty;
+  if (!cty || loc.toLowerCase() === cty.toLowerCase()) return loc;
+  return `${loc}, ${cty}`;
+}
+
 export function browseFromSearchParams(searchParams: URLSearchParams): {
   keyword: string;
   country: string;

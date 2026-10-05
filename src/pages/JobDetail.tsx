@@ -5,7 +5,7 @@ import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
-import { jobsBrowsePath } from '@/lib/jobsBrowse';
+import { formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
 import { devCompareJobRecord, isDevCompareJob } from '@/lib/devCompareJob';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
@@ -419,19 +419,19 @@ export default function JobDetail() {
 
   const lockedJobId = journeyRow?.journey_job_id || null;
   const devJob = isDevCompareJob(job.slug);
-  const displayTitle = devJob ? job.title : getPublicJobTitle(job.title, job.description);
+  const displayTitle = devJob ? job.title : getPublicJobTitle(job.title, job.description, job.country);
   const backToJobs = jobsBrowsePath({
     country: job.country || 'UAE',
-    category: inferUaeListedJob(job.title, job.description),
+    category: inferUaeListedJob(job.title, job.description, job.country),
   });
-  const aboutTheRole = devJob ? job.description : getPublicJobAbout(job.title, job.description);
+  const aboutTheRole = devJob ? job.description : getPublicJobAbout(job.title, job.description, '', job.country);
   const responsibilities = devJob
     ? (job.responsibilities ?? '').split(/\n+/).map((line) => line.trim()).filter(Boolean)
-    : listPublicJobResponsibilities(job.title, job.responsibilities, job.description);
-  const listedSalary = devJob ? null : getPublicJobSalary(job.title, job.description);
+    : listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country);
+  const listedSalary = devJob ? null : getPublicJobSalary(job.title, job.description, job.country);
   const serviceCharge = devJob
     ? job.service_charge
-    : getPublicJobServiceCharge(job.title, job.description, job.service_charge);
+    : getPublicJobServiceCharge(job.title, job.description, job.service_charge, job.country);
   const textPay = listedSalary?.salary_display ?? null;
   const monthlyListed = listedSalaryIsMonthly(listedSalary);
   const salaryMin = monthlyListed ? listedSalary.salary_min : job.salary_min;
@@ -538,7 +538,7 @@ export default function JobDetail() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
                       <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                      <span className="break-words">{job.location}, {job.country}</span>
+                      <span className="break-words">{formatJobPlace(job.location, job.country)}</span>
                     </div>
                     <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
                       <JobSalaryText
@@ -547,6 +547,7 @@ export default function JobDetail() {
                         currency={salaryCurrency}
                         title={job.title}
                         description={job.description}
+                        country={job.country}
                         emptyLabel="Salary not specified"
                         className="w-full min-w-0"
                         primaryClassName="break-words font-semibold text-foreground"
@@ -572,7 +573,7 @@ export default function JobDetail() {
                 </CardContent>
               </Card>
 
-              <JobRoleVideo title={job.title} description={job.description} />
+              <JobRoleVideo title={job.title} description={job.description} country={job.country} />
 
               {/* Responsibilities */}
               {responsibilities.length > 0 && (

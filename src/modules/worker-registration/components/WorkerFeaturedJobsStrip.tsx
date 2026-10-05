@@ -9,6 +9,7 @@ import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
+import { formatJobPlace } from "@/lib/jobsBrowse";
 import { getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from "@/lib/uaeListedJobs";
 
 interface JobPreview {
@@ -75,8 +76,8 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
 
         setJobs(
           results
-            .filter((job) => isPublicListedJob(job.title, '', job.slug))
-            .map((job) => ({ ...job, title: getPublicJobTitle(job.title) }))
+            .filter((job) => isPublicListedJob(job.title, '', job.slug, job.country))
+            .map((job) => ({ ...job, title: getPublicJobTitle(job.title, '', job.country) }))
             .slice(0, 3),
         );
       } catch (error) {
@@ -172,7 +173,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
                       <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
                       <span className="truncate">
-                        {job.location}, {job.country}
+                        {formatJobPlace(job.location, job.country)}
                       </span>
                     </div>
                     {hasSalary(job) && (
@@ -182,6 +183,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                           max={job.salary_max}
                           currency={job.currency}
                           title={job.title}
+                          country={job.country}
                           periodLabel={t("jobs.perMonth")}
                           primaryClassName="text-lg font-bold text-primary"
                           inrClassName="text-xs font-normal"
@@ -190,7 +192,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                       </div>
                     )}
                     <div className="mt-2">
-                      <JobServiceFee amount={getPublicJobServiceCharge(job.title, '', job.service_charge)} />
+                      <JobServiceFee amount={getPublicJobServiceCharge(job.title, '', job.service_charge, job.country)} />
                     </div>
                   </div>
                   {hasSalary(job) && (

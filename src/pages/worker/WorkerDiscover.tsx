@@ -188,11 +188,12 @@ export default function WorkerDiscover() {
                               max={job.salary_max}
                               currency={job.currency}
                               title={job.title}
+                              country={job.country}
                             />
                           </p>
                         )}
                         <div className="mt-2">
-                          <JobServiceFee amount={getPublicJobServiceCharge(job.title, '', job.service_charge)} />
+                          <JobServiceFee amount={getPublicJobServiceCharge(job.title, '', job.service_charge, job.country)} />
                         </div>
                       </div>
                       <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />

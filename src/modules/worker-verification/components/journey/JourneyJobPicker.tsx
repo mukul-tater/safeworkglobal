@@ -8,6 +8,7 @@ import JobCountryGrid from '@/components/jobs/JobCountryGrid';
 import JobTradeGrid from '@/components/jobs/JobTradeGrid';
 import { supabase } from '@/integrations/supabase/client';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
+import { formatJobPlace } from '@/lib/jobsBrowse';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
@@ -30,10 +31,14 @@ import type { WorkerVerification } from '@/modules/worker-verification/types';
 
 const KNOWN_CATEGORIES = JOB_CATEGORIES.filter((c) => c !== 'All Categories');
 
-function inferCategory(title: string, description: string): string {
-  return inferUaeListedJob(title, description)
+function inferCategory(title: string, description: string, country?: string): string {
+  return inferUaeListedJob(title, description, country)
     ?? KNOWN_CATEGORIES.find((category) => `${title} ${description}`.toLowerCase().includes(category.toLowerCase()))
     ?? 'Other';
+}
+
+function listsJobsWithoutTrade(country: string): boolean {
+  return country.trim().toLowerCase() === 'ukraine';
 }
 
 async function fetchActiveJobs(): Promise<JobListItem[]> {
@@ -65,10 +70,11 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
 
   return rows.map((job: Record<string, unknown>) => {
     const storedDescription = String(job.description ?? '');
-    const description = getPublicJobAbout(String(job.title), storedDescription) || storedDescription;
+    const country = String(job.country ?? '');
+    const description = getPublicJobAbout(String(job.title), storedDescription, '', country) || storedDescription;
     const skills = skillsByJob.get(String(job.id)) ?? [];
     const postedRaw = job.posted_at ?? job.created_at;
-    const listedSalary = getPublicJobSalary(String(job.title), description);
+    const listedSalary = getPublicJobSalary(String(job.title), description, country);
     const monthlyListed = listedSalaryIsMonthly(listedSalary);
     const rawSalaryMin = monthlyListed ? listedSalary.salary_min : ((job.salary_min as number | null) ?? null);
     const rawSalaryMax = monthlyListed ? listedSalary.salary_max : ((job.salary_max as number | null) ?? null);
@@ -76,11 +82,11 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
     return {
       id: String(job.id),
       slug: String(job.slug || job.id),
-      title: getPublicJobTitle(String(job.title), storedDescription),
+      title: getPublicJobTitle(String(job.title), storedDescription, country),
       company: '',
       companyLogoUrl: null,
-      location: `${job.location}, ${job.country}`,
-      country: String(job.country),
+      location: formatJobPlace(String(job.location ?? ''), country),
+      country,
       salaryDisplay: listedSalary?.salary_display ?? (job.salary_display as string | null) ?? null,
       rawSalaryMin,
       rawSalaryMax,
@@ -88,7 +94,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       salaryMin: rawSalaryMin == null ? null : convertSalaryToINR(rawSalaryMin, currency),
       salaryMax: rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
       type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
-      category: inferCategory(String(job.title), description),
+      category: inferCategory(String(job.title), description, country),
       experienceLevel: String(job.experience_level ?? ''),
       visaSponsorship: Boolean(job.visa_sponsorship),
       postedAt: postedRaw ? new Date(String(postedRaw)) : new Date(),
@@ -98,6 +104,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
         String(job.title),
         storedDescription,
         job.service_charge as number | null,
+        country,
       ),
     };
   });
@@ -190,14 +197,15 @@ export default function JourneyJobPicker({
     let cancelled = false;
     void supabase
       .from('jobs')
-      .select('title, description')
+      .select('title, description, country')
       .eq('id', journeyJobId)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
         const title = (data as { title?: string } | null)?.title;
         const description = (data as { description?: string } | null)?.description ?? '';
-        setCurrentTitle(title ? getPublicJobTitle(title, description) : null);
+        const jobCountry = (data as { country?: string } | null)?.country;
+        setCurrentTitle(title ? getPublicJobTitle(title, description, jobCountry) : null);
       });
     return () => {
       cancelled = true;
@@ -229,12 +237,13 @@ export default function JourneyJobPicker({
         title: job.title,
         description: job.description,
         skills: job.skills,
+        country: job.country,
       });
       setAppliedIds((prev) => new Set(prev).add(job.id));
       clearPendingJourneyJob();
       setPickingReplacement(false);
       void reloadMeta();
-      const skill = inferWorkerSkillFromJob(job.title, job.description, job.skills);
+      const skill = inferWorkerSkillFromJob(job.title, job.description, job.skills, job.country);
       toast.success(
         skill !== 'Other'
           ? `Applied. Test 1 will check ${listedJobDisplayName(skill)} work.`
@@ -393,7 +402,7 @@ export default function JourneyJobPicker({
             setCategory(null);
           }}
         />
-      ) : !category ? (
+      ) : !listsJobsWithoutTrade(country) && !category ? (
         <>
           <button
             type="button"
@@ -417,9 +426,16 @@ export default function JourneyJobPicker({
           <button
             type="button"
             className="text-sm text-muted-foreground hover:text-foreground"
-            onClick={() => setCategory(null)}
+            onClick={() => {
+              if (listsJobsWithoutTrade(country)) {
+                setCountry(null);
+                setCategory(null);
+                return;
+              }
+              setCategory(null);
+            }}
           >
-            ← All jobs in {country}
+            {listsJobsWithoutTrade(country) ? '← All countries' : `← All jobs in ${country}`}
           </button>
 
           {visible.length === 0 ? (

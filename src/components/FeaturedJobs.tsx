@@ -10,6 +10,7 @@ import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatJobPlace } from '@/lib/jobsBrowse';
 import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from '@/lib/uaeListedJobs';
 
 interface FeaturedJob {
@@ -80,8 +81,8 @@ export default function FeaturedJobs() {
         if (error) throw error;
         setJobs(
           ((data || []) as FeaturedJob[])
-            .filter((job) => isPublicListedJob(job.title, job.description, job.slug))
-            .map((job) => ({ ...job, title: getPublicJobTitle(job.title, job.description) }))
+            .filter((job) => isPublicListedJob(job.title, job.description, job.slug, job.country))
+            .map((job) => ({ ...job, title: getPublicJobTitle(job.title, job.description, job.country) }))
             .slice(0, 6),
         );
       } catch (error) {
@@ -211,7 +212,7 @@ export default function FeaturedJobs() {
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
                   <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
                   <span aria-hidden>{countryFlag(job.country)}</span>
-                  <span className="truncate">{job.location}, {job.country}</span>
+                  <span className="truncate">{formatJobPlace(job.location, job.country)}</span>
                 </div>
 
                 {hasSalary(job) && (
@@ -222,21 +223,22 @@ export default function FeaturedJobs() {
                       currency={job.currency}
                       title={job.title}
                       description={job.description}
+                      country={job.country}
                       primaryClassName="text-lg font-bold text-primary"
                     />
                     <div className="mt-2">
-                      <JobServiceFee amount={getPublicJobServiceCharge(job.title, job.description, job.service_charge)} />
+                      <JobServiceFee amount={getPublicJobServiceCharge(job.title, job.description, job.service_charge, job.country)} />
                     </div>
                   </div>
                 )}
                 {!hasSalary(job) && (
                   <div className="mb-3">
-                    <JobServiceFee amount={getPublicJobServiceCharge(job.title, job.description, job.service_charge)} />
+                    <JobServiceFee amount={getPublicJobServiceCharge(job.title, job.description, job.service_charge, job.country)} />
                   </div>
                 )}
 
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
-                  {getPublicJobAbout(job.title, job.description)}
+                  {getPublicJobAbout(job.title, job.description, '', job.country)}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2 mb-3">

@@ -354,6 +354,7 @@ export default function WorkerVerificationPage({
   const [assessmentFee, setAssessmentFee] = useState(ASSESSMENT_FEE_INR);
   const [journeyJobTitle, setJourneyJobTitle] = useState<string | null>(null);
   const [journeyJobDescription, setJourneyJobDescription] = useState<string | null>(null);
+  const [journeyJobCountry, setJourneyJobCountry] = useState<string | null>(null);
 
   const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
@@ -679,6 +680,7 @@ export default function WorkerVerificationPage({
       setAssessmentFee(ASSESSMENT_FEE_INR);
       setJourneyJobTitle(null);
       setJourneyJobDescription(null);
+      setJourneyJobCountry(null);
       return;
     }
     void getServiceChargeForJob(jobId)
@@ -690,13 +692,15 @@ export default function WorkerVerificationPage({
       });
     void supabase
       .from('jobs')
-      .select('title, description')
+      .select('title, description, country')
       .eq('id', jobId)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        setJourneyJobTitle((data as { title?: string } | null)?.title ?? null);
-        setJourneyJobDescription((data as { description?: string } | null)?.description ?? null);
+        const job = data as { title?: string; description?: string; country?: string } | null;
+        setJourneyJobTitle(job?.title ?? null);
+        setJourneyJobDescription(job?.description ?? null);
+        setJourneyJobCountry(job?.country ?? null);
       });
     return () => {
       cancelled = true;
@@ -1197,11 +1201,13 @@ export default function WorkerVerificationPage({
     row.primary_skill,
     journeyJobTitle,
     journeyJobDescription,
+    journeyJobCountry,
   );
   const workPhrase = appliedJobWorkPhrase(
     row.primary_skill,
     journeyJobTitle,
     journeyJobDescription,
+    journeyJobCountry,
   );
 
   if (rawStage === 'gcc_ready' && !forceIdentity) {
@@ -1342,6 +1348,7 @@ export default function WorkerVerificationPage({
             row={row}
             appliedJobTitle={journeyJobTitle}
             appliedJobDescription={journeyJobDescription}
+            appliedJobCountry={journeyJobCountry}
             photoCount={photoCount}
             videoCount={videoCount}
             kycStatus={kycStatusValue}

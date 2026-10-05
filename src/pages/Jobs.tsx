@@ -33,13 +33,19 @@ import { JOB_CATEGORIES } from '@/lib/constants';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
-import { browseFromSearchParams, jobsBrowsePath } from '@/lib/jobsBrowse';
+import { browseFromSearchParams, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
 import { devCompareListItem } from '@/lib/devCompareJob';
 import { scrollToTop } from '@/lib/scrollToTop';
 
 const JOBS_PER_PAGE = 20;
 const SUGGESTED_CATEGORIES = [...UAE_LISTED_JOBS];
-const SUGGESTED_COUNTRIES = ['UAE'];
+const SUGGESTED_COUNTRIES = ['UAE', 'Ukraine'];
+const PUBLIC_COUNTRIES = new Set(['uae', 'ukraine']);
+
+/** Ukraine listings are the jobs themselves. UAE still picks a trade first. */
+function listsJobsWithoutTrade(country: string): boolean {
+  return country.trim().toLowerCase() === 'ukraine';
+}
 
 const SORT_OPTIONS = [
   { value: 'recent', label: 'Newest first' },
@@ -53,8 +59,8 @@ type SortOption = (typeof SORT_OPTIONS)[number]['value'];
 const KNOWN_CATEGORIES = JOB_CATEGORIES.filter((c) => c !== ANY_CATEGORY);
 
 /** Prefer the UAE listed trades; fall back to the broader industry list. */
-function inferCategory(title: string, description: string): string {
-  return inferUaeListedJob(title, description)
+function inferCategory(title: string, description: string, country?: string): string {
+  return inferUaeListedJob(title, description, country)
     ?? KNOWN_CATEGORIES.find((category) => `${title} ${description}`.toLowerCase().includes(category.toLowerCase()))
     ?? 'Other';
 }
@@ -218,8 +224,8 @@ export default function Jobs() {
         const formatted: JobListItem[] = (data || [])
           .filter((job: any) => !isHiddenPublicJob(job.title, job.slug))
           .map((job: any) => {
-          const description: string = getPublicJobAbout(job.title, job.description) || job.description || '';
-          const listedSalary = getPublicJobSalary(job.title, job.description ?? '');
+          const description: string = getPublicJobAbout(job.title, job.description, '', job.country) || job.description || '';
+          const listedSalary = getPublicJobSalary(job.title, job.description ?? '', job.country);
           const monthlyListed = listedSalaryIsMonthly(listedSalary);
           const rawSalaryMin = monthlyListed ? listedSalary.salary_min : (job.salary_min ?? null);
           const rawSalaryMax = monthlyListed ? listedSalary.salary_max : (job.salary_max ?? null);
@@ -228,11 +234,11 @@ export default function Jobs() {
           return {
             id: job.id,
             slug: job.slug || job.id,
-            title: getPublicJobTitle(job.title, job.description ?? ''),
+            title: getPublicJobTitle(job.title, job.description ?? '', job.country),
             company: '',
             companyLogoUrl: null,
             city: job.location || '',
-            location: `${job.location}, ${job.country}`,
+            location: formatJobPlace(job.location, job.country),
             country: job.country,
             benefits: typeof job.benefits === 'string' ? job.benefits : null,
             salaryDisplay: listedSalary?.salary_display ?? job.salary_display ?? null,
@@ -242,13 +248,13 @@ export default function Jobs() {
             salaryMin: rawSalaryMin == null ? null : convertSalaryToINR(rawSalaryMin, currency),
             salaryMax: rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
             type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
-            category: inferCategory(job.title, description),
+            category: inferCategory(job.title, description, job.country),
             experienceLevel: job.experience_level ?? '',
             visaSponsorship: job.visa_sponsorship || false,
             postedAt: new Date(job.posted_at),
             description: description.length > 180 ? `${description.slice(0, 180).trimEnd()}…` : description,
             skills: job.job_skills?.map((s: any) => s.skill_name) || [],
-            serviceCharge: getPublicJobServiceCharge(job.title, job.description ?? '', job.service_charge),
+            serviceCharge: getPublicJobServiceCharge(job.title, job.description ?? '', job.service_charge, job.country),
           };
         });
 
@@ -294,6 +300,7 @@ export default function Jobs() {
 
   const countrySelected = filters.country !== ANY_COUNTRY;
   const jobSelected = filters.jobCategory !== ANY_CATEGORY;
+  const showJobList = jobSelected || listsJobsWithoutTrade(filters.country);
 
   const sameTradeJobs = useMemo(() => {
     if (!jobSelected) return [];
@@ -422,7 +429,7 @@ export default function Jobs() {
   }, [allJobs]);
 
   const countryFacets = useMemo(() => {
-    const facets = topFacets(allJobs, 'country', 6).filter((f) => f.label === 'UAE');
+    const facets = topFacets(allJobs, 'country', 6).filter((f) => PUBLIC_COUNTRIES.has(f.label.toLowerCase()));
     return facets.length > 0 ? facets : SUGGESTED_COUNTRIES.map((label) => ({ label }));
   }, [allJobs]);
 
@@ -559,7 +566,7 @@ export default function Jobs() {
                 onSelect={(country) => goBrowse({ country, jobCategory: ANY_CATEGORY })}
               />
             </div>
-          ) : !jobSelected ? (
+          ) : !showJobList ? (
             <div className="space-y-4">
               <button
                 type="button"
@@ -577,9 +584,16 @@ export default function Jobs() {
           <button
             type="button"
             className="mb-4 text-sm text-muted-foreground hover:text-foreground"
-            onClick={() => goBrowse({ country: filters.country, jobCategory: ANY_CATEGORY }, 'replace')}
+            onClick={() =>
+              goBrowse(
+                listsJobsWithoutTrade(filters.country)
+                  ? { country: ANY_COUNTRY, jobCategory: ANY_CATEGORY }
+                  : { country: filters.country, jobCategory: ANY_CATEGORY },
+                'replace',
+              )
+            }
           >
-            ← All jobs in {filters.country}
+            {listsJobsWithoutTrade(filters.country) ? '← All countries' : `← All jobs in ${filters.country}`}
           </button>
           {compareAvailable && (
             <JobCompareHighlight

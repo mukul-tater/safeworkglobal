@@ -50,7 +50,7 @@ export const UAE_LISTED_JOB_LABELS: Record<UaeListedJob, { en: string; hi: strin
   Scaffolder: { en: 'Scaffolder', hi: 'पाड़ बाँधने वाला / मचान बनाने वाला' },
   Painter: { en: 'Painter', hi: 'पेंटर' },
   'Aluminium Fixer/Fabricator': { en: 'Aluminium Fixer', hi: 'एल्युमिनियम फिक्सर' },
-  Delivery: { en: 'Delivery', hi: 'डिलीवरी' },
+  Delivery: { en: 'Bike delivery persons (Food and Parcel)', hi: 'बाइक डिलीवरी (खाना और पार्सल)' },
 };
 
 /**
@@ -105,8 +105,17 @@ const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'Construction Labour/Helper', needles: ['helper', 'labour', 'labor'] },
 ];
 
+/** UAE trade copy applies to UAE listings. Other countries keep their own title, pay and duties. */
+function usesUaeListingTemplate(country?: string | null): boolean {
+  if (country == null) return true;
+  const value = country.trim().toLowerCase();
+  if (!value) return true;
+  return value === 'uae';
+}
+
 /** Map a job title/description onto the UAE listed trades. Exact title, then specific needles. */
-export function inferUaeListedJob(title: string, description = ''): UaeListedJob | null {
+export function inferUaeListedJob(title: string, description = '', country?: string | null): UaeListedJob | null {
+  if (!usesUaeListingTemplate(country)) return null;
   const titleLower = title.toLowerCase().trim();
   const exact = UAE_LISTED_JOBS.find((job) => job.toLowerCase() === titleLower);
   if (exact) return exact;
@@ -127,14 +136,9 @@ export function listedJobDisplayName(job: string): string {
 }
 
 /** Public-facing title: listed trade name when we can infer one. */
-export function getPublicJobTitle(title: string, description = ''): string {
-  const job = inferUaeListedJob(title, description);
+export function getPublicJobTitle(title: string, description = '', country?: string | null): string {
+  const job = inferUaeListedJob(title, description, country);
   if (!job) return title;
-  // Delivery is the category. A more specific title (Bike Rider) stays on the listing.
-  if (job === 'Delivery') {
-    const trimmed = title.trim();
-    if (trimmed && trimmed.toLowerCase() !== 'delivery') return trimmed;
-  }
   return UAE_LISTED_JOB_LABELS[job].en;
 }
 
@@ -145,9 +149,14 @@ export function isHiddenPublicJob(title: string, slug?: string | null): boolean 
 }
 
 /** True when the listing maps onto a Find-jobs / homepage trade. */
-export function isPublicListedJob(title: string, description = '', slug?: string | null): boolean {
+export function isPublicListedJob(
+  title: string,
+  description = '',
+  slug?: string | null,
+  country?: string | null,
+): boolean {
   if (isHiddenPublicJob(title, slug)) return false;
-  return inferUaeListedJob(title, description) != null;
+  return inferUaeListedJob(title, description, country) != null;
 }
 
 export type ListedJobSalary = {
@@ -205,13 +214,14 @@ export function getPublicJobServiceCharge(
   title: string,
   description = '',
   stored?: number | null,
+  country?: string | null,
 ): number | null {
-  if (inferUaeListedJob(title, description) === 'Delivery') return UAE_DELIVERY_SERVICE_CHARGE_INR;
+  if (inferUaeListedJob(title, description, country) === 'Delivery') return UAE_DELIVERY_SERVICE_CHARGE_INR;
   return stored ?? null;
 }
 
-export function getPublicJobSalary(title: string, description = '') {
-  const listed = inferUaeListedJob(title, description);
+export function getPublicJobSalary(title: string, description = '', country?: string | null) {
+  const listed = inferUaeListedJob(title, description, country);
   return listed ? UAE_LISTED_JOB_SALARIES[listed] : null;
 }
 
@@ -259,8 +269,13 @@ export const UAE_LISTED_JOB_ABOUT: Record<UaeListedJob, string> = {
     'Bike rider openings for full-time delivery work in the UAE (Keta). You need a valid Indian driving license and an ECNR passport, and you must be physically fit for flexible shifts. Riding experience is preferred; freshers may be considered. Pay is AED 3,000 – 3,500 (₹78,000 – ₹91,000) per month. Duty is 11+1 hours a day. Age 22–37 years. The UAE license fee of AED 4,500 is deducted over up to 10 months. Accommodation, transport and food are provided until the UAE license is issued. Selection is through an online interview. Visa sponsorship for shortlisted candidates.',
 };
 
-export function getPublicJobAbout(title: string, stored?: string | null, description = ''): string {
-  const listed = inferUaeListedJob(title, description || stored || '');
+export function getPublicJobAbout(
+  title: string,
+  stored?: string | null,
+  description = '',
+  country?: string | null,
+): string {
+  const listed = inferUaeListedJob(title, description || stored || '', country);
   if (listed) return UAE_LISTED_JOB_ABOUT[listed];
   return stored?.trim() || '';
 }
@@ -433,8 +448,9 @@ export function listPublicJobResponsibilities(
   title: string,
   stored?: string | null,
   description = '',
+  country?: string | null,
 ): string[] {
-  const listed = inferUaeListedJob(title, description);
+  const listed = inferUaeListedJob(title, description, country);
   if (listed) return UAE_LISTED_JOB_RESPONSIBILITIES[listed];
   if (!stored?.trim()) return [];
   return stored
@@ -558,7 +574,7 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
   Delivery: [],
 };
 
-export function getPublicJobVideos(title: string, description = ''): ListedJobVideo[] {
-  const listed = inferUaeListedJob(title, description);
+export function getPublicJobVideos(title: string, description = '', country?: string | null): ListedJobVideo[] {
+  const listed = inferUaeListedJob(title, description, country);
   return listed ? UAE_LISTED_JOB_VIDEOS[listed] : [];
 }

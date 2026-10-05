@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 interface JobRoleVideoProps {
   title: string;
   description?: string;
+  country?: string | null;
 }
 
 function embedSrc(youtubeId: string, startSeconds?: number) {
@@ -13,8 +14,8 @@ function embedSrc(youtubeId: string, startSeconds?: number) {
   return `https://www.youtube-nocookie.com/embed/${youtubeId}${query ? `?${query}` : ''}`;
 }
 
-export default function JobRoleVideo({ title, description = '' }: JobRoleVideoProps) {
-  const videos = getPublicJobVideos(title, description);
+export default function JobRoleVideo({ title, description = '', country }: JobRoleVideoProps) {
+  const videos = getPublicJobVideos(title, description, country);
   if (videos.length === 0) return null;
 
   return (

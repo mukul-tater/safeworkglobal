@@ -115,6 +115,7 @@ export function formatJobSalaryNative(
 ): string {
   if (min == null && max == null) return emptyLabel;
   if (min != null && max != null) {
+    if (min === max) return formatNativeAmount(min, currency);
     return `${formatNativeAmount(min, currency)} – ${formatNativeAmount(max, currency)}`;
   }
   if (min != null) return `From ${formatNativeAmount(min, currency)}`;
