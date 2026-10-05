@@ -29,7 +29,6 @@ import JobsEmptyState, { type JobFacet } from '@/components/jobs/JobsEmptyState'
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { useDebounce } from '@/hooks/use-debounce';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
@@ -148,7 +147,6 @@ export default function Jobs() {
     country: initialBrowse.country,
     jobCategory: initialBrowse.jobCategory,
   }));
-  const [keywordInput, setKeywordInput] = useState(initialBrowse.keyword);
   const [loading, setLoading] = useState(true);
   const [allJobs, setAllJobs] = useState<JobListItem[]>([]);
   const [sortOption, setSortOption] = useState<SortOption>('recent');
@@ -159,17 +157,10 @@ export default function Jobs() {
   const [savePendingId, setSavePendingId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
 
-  const debouncedKeyword = useDebounce(keywordInput, 400);
-
-  useEffect(() => {
-    setFilters((prev) => (prev.keyword === debouncedKeyword ? prev : { ...prev, keyword: debouncedKeyword }));
-  }, [debouncedKeyword]);
-
   // Country + category live in the URL so browser back returns to the previous wizard step.
   // useLayoutEffect: swap the step before paint so a focused category card cannot keep the page pinned to the bottom.
   useLayoutEffect(() => {
     const { keyword, country, jobCategory } = browseFromSearchParams(searchParams);
-    setKeywordInput((prev) => (prev === keyword ? prev : keyword));
     setFilters((prev) =>
       prev.keyword === keyword && prev.country === country && prev.jobCategory === jobCategory
         ? prev
@@ -191,12 +182,12 @@ export default function Jobs() {
         jobsBrowsePath({
           country: next.country,
           category: next.jobCategory,
-          keyword: next.keyword ?? keywordInput,
+          keyword: next.keyword ?? browseFromSearchParams(searchParams).keyword,
         }),
         { replace: mode === 'replace' },
       );
     },
-    [keywordInput, navigate],
+    [navigate, searchParams],
   );
 
   const handleFiltersChange = useCallback(
@@ -436,7 +427,6 @@ export default function Jobs() {
   }, [allJobs]);
 
   const resetFilters = useCallback(() => {
-    setKeywordInput('');
     setFilters(EMPTY_JOB_FILTERS);
     navigate('/jobs');
   }, [navigate]);
@@ -530,26 +520,7 @@ export default function Jobs() {
 
   const jobsContent = (
     <>
-      <JobSearchHero
-        keyword={keywordInput}
-        country={filters.country}
-        loading={loading}
-        showForm={!(countrySelected && !jobSelected)}
-        onKeywordChange={setKeywordInput}
-        onCountryChange={(country) =>
-          goBrowse({
-            country,
-            jobCategory: country === ANY_COUNTRY ? ANY_CATEGORY : filters.jobCategory,
-          })
-        }
-        onSearch={() =>
-          goBrowse({
-            country: filters.country === ANY_COUNTRY && keywordInput.trim() ? 'UAE' : filters.country,
-            jobCategory: filters.jobCategory,
-            keyword: keywordInput,
-          })
-        }
-      />
+      <JobSearchHero />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[288px_1fr] xl:grid-cols-[312px_1fr]">
         <aside className="hidden self-start lg:sticky lg:top-24 lg:block">

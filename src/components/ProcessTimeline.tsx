@@ -90,7 +90,7 @@ const ProcessTimeline = () => {
           <p className="text-muted-foreground text-xs sm:text-sm">
             {!authResolving && isEmployer ? "Ready to start hiring?" : "Ready to start your journey?"}
             <span className="text-primary font-medium ml-1">
-              {!authResolving && isEmployer ? "Browse workers above" : "Search jobs above"}
+              {!authResolving && isEmployer ? "Find workers in the menu" : "Browse jobs from the menu"}
             </span>
           </p>
         </div>

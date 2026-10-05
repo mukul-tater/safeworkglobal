@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bookmark, Loader2, Search } from 'lucide-react';
+import { Bookmark, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import JobResultCard, { type JobListItem } from '@/components/jobs/JobResultCard';
 import JobCountryGrid from '@/components/jobs/JobCountryGrid';
 import JobTradeGrid from '@/components/jobs/JobTradeGrid';
@@ -120,7 +119,6 @@ export default function JourneyJobPicker({
   const navigate = useNavigate();
   const [jobs, setJobs] = useState<JobListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState('');
   const [country, setCountry] = useState<string | null>(null);
   const [category, setCategory] = useState<string | null>(null);
   const [favouritesOnly, setFavouritesOnly] = useState(false);
@@ -214,18 +212,12 @@ export default function JourneyJobPicker({
   );
 
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
     return countryJobs.filter((job) => {
       if (favouritesOnly && !savedIds.has(job.id)) return false;
       if (category && job.category !== category) return false;
-      if (!q) return true;
-      return (
-        job.title.toLowerCase().includes(q) ||
-        job.location.toLowerCase().includes(q) ||
-        job.skills.some((s) => s.toLowerCase().includes(q))
-      );
+      return true;
     });
-  }, [countryJobs, query, favouritesOnly, savedIds, category]);
+  }, [countryJobs, favouritesOnly, savedIds, category]);
 
   const applyJob = async (job: JobListItem, change: boolean) => {
     setApplyingId(job.id);
@@ -350,9 +342,6 @@ export default function JourneyJobPicker({
     if (favouritesOnly) {
       return 'No favourite jobs yet. Turn off Favourites to see all live jobs, or tap the bookmark on a job to save it.';
     }
-    if (query.trim()) {
-      return 'No matching jobs right now. Try a different search.';
-    }
     return 'No matching jobs right now.';
   })();
 
@@ -386,15 +375,6 @@ export default function JourneyJobPicker({
       )}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search title, employer, or skill"
-            className="h-11 pl-10"
-          />
-        </div>
         <Button
           type="button"
           variant={favouritesOnly ? 'default' : 'outline'}

@@ -2,7 +2,6 @@ import Header from "@/components/Header";
 import SEOHead from "@/components/SEOHead";
 import { DEFAULT_DESCRIPTION, DEFAULT_OG_DESCRIPTION, DEFAULT_TITLE, canonicalUrl } from "@/lib/seo";
 import HeroSection from "@/components/HeroSection";
-import HomeSearchBar from "@/components/HomeSearchBar";
 import HomeTradesStrip from "@/components/HomeTradesStrip";
 import WhySafeWork from "@/components/WhySafeWork";
 import WorkerJourneyDemo from "@/components/WorkerJourneyDemo";
@@ -61,7 +60,6 @@ const Index = () => {
 
       {isEmployer ? (
         <>
-          <HomeSearchBar />
           <ScrollReveal>
             <HomeTradesStrip />
           </ScrollReveal>
@@ -74,8 +72,6 @@ const Index = () => {
         </>
       ) : showDefaultHome ? (
         <>
-          <HomeSearchBar />
-
           <ScrollReveal>
             <HomeTradesStrip />
           </ScrollReveal>
