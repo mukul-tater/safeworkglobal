@@ -90,7 +90,7 @@ export default function JobChangeFeeDialog({
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
-        <AlertDialogHeader>
+        <AlertDialogHeader className="text-left">
           <AlertDialogTitle>Extra amount before this job change</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3 text-sm text-muted-foreground">
@@ -98,7 +98,7 @@ export default function JobChangeFeeDialog({
                 An admin set <span className="font-medium text-foreground">{formatInr(amount)}</span> for
                 this change. Pay it with Razorpay, or send it by bank transfer and upload the proof.
               </p>
-              <p>
+              <p className="break-words">
                 Razorpay total is <span className="font-medium text-foreground">{formatInr(razorpayTotal)}</span>.
                 Bank transfer is {formatInr(amount)} to {BANK_TRANSFER_ACCOUNT.beneficiary}, account{' '}
                 {BANK_TRANSFER_ACCOUNT.accountNumber}, IFSC {BANK_TRANSFER_ACCOUNT.ifsc}.
@@ -135,11 +135,11 @@ export default function JobChangeFeeDialog({
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy !== null}>Cancel</AlertDialogCancel>
-          <Button type="button" variant="outline" disabled={busy !== null} onClick={() => void payBank()}>
+          <Button type="button" variant="outline" className="w-full sm:w-auto" disabled={busy !== null} onClick={() => void payBank()}>
             {busy === 'bank' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit bank proof
           </Button>
-          <Button type="button" disabled={busy !== null} onClick={() => void payRazorpay()}>
+          <Button type="button" className="w-full sm:w-auto" disabled={busy !== null} onClick={() => void payRazorpay()}>
             {busy === 'razorpay' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Pay {formatInr(razorpayTotal)}
           </Button>

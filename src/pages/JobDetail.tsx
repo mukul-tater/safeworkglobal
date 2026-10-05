@@ -1,4 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
@@ -42,6 +43,23 @@ import {
 } from '@/modules/worker-verification/services/jobJourneyService';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
+
+/** Sits on document.body so it stays at the bottom of the phone, outside the worker panel scroller. */
+function MobileJobActionBar({ aboveNav, children }: { aboveNav: boolean; children: ReactNode }) {
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <div
+      className={`fixed inset-x-0 z-40 border-t border-border bg-card px-4 pt-3 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] lg:hidden ${
+        aboveNav
+          ? 'bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] pb-3'
+          : 'bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]'
+      }`}
+    >
+      {children}
+    </div>,
+    document.body,
+  );
+}
 
 interface JobData {
   id: string;
@@ -479,8 +497,13 @@ export default function JobDetail() {
     "skills": job.job_skills?.map(s => s.skill_name).join(', ') || undefined
   };
 
+  const showMobileBar = showApply || isAdmin;
+  const mobileBarClearance = showMobileBar
+    ? 'pb-[calc(8.5rem+env(safe-area-inset-bottom,0px))] lg:pb-0'
+    : '';
+
   return layout(
-    <>
+    <div className={mobileBarClearance}>
       <Link to={fromJourney ? '/worker/journey' : backToJobs}>
         <Button variant="ghost" className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -513,11 +536,11 @@ export default function JobDetail() {
                   <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{displayTitle}</h1>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="h-4 w-4 shrink-0" />
-                      <span>{job.location}, {job.country}</span>
+                    <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span className="break-words">{job.location}, {job.country}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
                       <JobSalaryText
                         min={salaryMin}
                         max={salaryMax}
@@ -525,12 +548,13 @@ export default function JobDetail() {
                         title={job.title}
                         description={job.description}
                         emptyLabel="Salary not specified"
-                        primaryClassName="font-semibold text-foreground"
+                        className="w-full min-w-0"
+                        primaryClassName="break-words font-semibold text-foreground"
                       />
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4 shrink-0" />
-                      <span>Posted {format(new Date(job.posted_at), 'MMM d, yyyy')}</span>
+                    <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
+                      <Calendar className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span className="break-words">Posted {format(new Date(job.posted_at), 'MMM d, yyyy')}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -542,7 +566,7 @@ export default function JobDetail() {
                   <CardTitle>About the Role</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  <p className="break-words text-muted-foreground whitespace-pre-wrap leading-relaxed">
                     {aboutTheRole || job.description}
                   </p>
                 </CardContent>
@@ -612,9 +636,9 @@ export default function JobDetail() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6 pb-36 lg:pb-0">
+            <div className="space-y-6">
               {/* Apply Card */}
-              <Card className="sticky top-24">
+              <Card className="lg:sticky lg:top-24">
                 <CardContent className="p-6 space-y-4">
                   {isAdmin ? (
                     <>
@@ -715,13 +739,7 @@ export default function JobDetail() {
             </div>
           </div>
           {showApply && (
-            <div
-              className={`lg:hidden fixed inset-x-0 z-40 border-t border-border bg-card/95 px-4 py-3 backdrop-blur-md ${
-                role === 'worker'
-                  ? 'bottom-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]'
-                  : 'bottom-[calc(4rem+env(safe-area-inset-bottom,0px))]'
-              }`}
-            >
+            <MobileJobActionBar aboveNav={role !== 'worker'}>
               <p className="mb-2 text-center text-xs text-muted-foreground">
                 Service fee payable after the video interview. Not before that.
               </p>
@@ -735,10 +753,10 @@ export default function JobDetail() {
                 {isCurrentJourneyJob ? <CheckCircle2 className="mr-2 h-5 w-5" /> : null}
                 {applyLabel}
               </Button>
-            </div>
+            </MobileJobActionBar>
           )}
           {isAdmin && (
-            <div className="lg:hidden fixed inset-x-0 z-40 border-t border-border bg-card/95 px-4 py-3 backdrop-blur-md bottom-[calc(4rem+env(safe-area-inset-bottom,0px))]">
+            <MobileJobActionBar aboveNav>
               <Button
                 size="lg"
                 className="w-full"
@@ -747,7 +765,7 @@ export default function JobDetail() {
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit job
               </Button>
-            </div>
+            </MobileJobActionBar>
           )}
           <ChangeJobDialog
             open={changeOpen}
@@ -768,7 +786,7 @@ export default function JobDetail() {
               }}
             />
           )}
-    </>,
+    </div>,
     <SEOHead
       title={`${displayTitle} | SafeWork Global`}
       description={`Apply for ${displayTitle} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${salaryMeta}.`}
