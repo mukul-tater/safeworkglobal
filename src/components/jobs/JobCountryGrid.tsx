@@ -21,19 +21,22 @@ const UKRAINE_PLACES = [
 
 const COUNTRIES: {
   code: string;
-  image?: string;
+  image: string;
+  position: string;
   title: { hi: string; en: string };
   places: { name: string; hindi?: boolean }[];
 }[] = [
   {
     code: 'UAE',
-    image: '/country-insights/uae/worksite-skyline.png',
+    image: '/country-insights/uae/dubai-skyline.jpg',
+    position: 'center 42%',
     title: { hi: 'दुबई', en: 'UAE' },
     places: UAE_EMIRATES,
   },
   {
     code: 'Ukraine',
-    image: '/country-insights/ukraine/worksite.jpg',
+    image: '/country-insights/ukraine/kyiv.jpg',
+    position: 'center 45%',
     title: { hi: 'यूक्रेन', en: 'Ukraine' },
     places: UKRAINE_PLACES,
   },
@@ -61,15 +64,12 @@ export default function JobCountryGrid({ onSelect }: Props) {
             className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card text-left shadow-sm transition-colors hover:border-primary/40"
           >
             <div className="relative h-40 w-full overflow-hidden sm:h-48">
-              {country.image ? (
-                <img
-                  src={country.image}
-                  alt=""
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              ) : (
-                <div className="h-full w-full bg-gradient-to-br from-sky-950 via-sky-800 to-amber-600 transition-transform duration-300 group-hover:scale-105" />
-              )}
+              <img
+                src={country.image}
+                alt=""
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                style={{ objectPosition: country.position }}
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-4 text-white">
                 <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-white/80">
