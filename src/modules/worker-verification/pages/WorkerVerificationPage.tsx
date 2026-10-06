@@ -1620,7 +1620,7 @@ export default function WorkerVerificationPage({
             icon={Search}
             title="Find jobs"
             description="Browse UAE openings and apply to one job. Test 1 will match the job you apply to."
-            timeEstimate="One job at a time. Use Change job if you need a different opening."
+            timeEstimate="One job at a time."
           >
             <JourneyJobPicker
               workerUserId={subjectId}

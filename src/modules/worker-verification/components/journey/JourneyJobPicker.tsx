@@ -22,6 +22,7 @@ import {
   applyToJobForJourney,
   changeJourneyJob,
   getJobSwitchPolicy,
+  JOB_CHANGE_ENABLED,
   listAppliedJobIds,
   listFavouriteJobIds,
   toggleFavouriteJob,
@@ -120,7 +121,7 @@ interface Props {
 export default function JourneyJobPicker({
   workerUserId,
   journeyJobId,
-  canChangeJob = true,
+  canChangeJob = JOB_CHANGE_ENABLED,
   onAdvanced,
 }: Props) {
   const navigate = useNavigate();
@@ -462,9 +463,19 @@ export default function JourneyJobPicker({
                     onOpen={() => navigate(`/jobs/${job.slug}?from=journey`)}
                     onAction={() => requestApply(job)}
                     actionLabel={
-                      applying ? 'Applying…' : isCurrent ? 'Current job' : appliedIds.has(job.id) ? 'Switch to this job' : 'Apply'
+                      applying
+                        ? 'Applying…'
+                        : isCurrent
+                          ? 'Current job'
+                          : journeyJobId && !switchAllowed
+                            ? 'Already on a job'
+                            : appliedIds.has(job.id)
+                              ? switchAllowed
+                                ? 'Switch to this job'
+                                : 'Applied'
+                              : 'Apply'
                     }
-                    actionDisabled={applying || isCurrent}
+                    actionDisabled={applying || isCurrent || Boolean(journeyJobId && !isCurrent && !switchAllowed)}
                   />
                 );
               })}

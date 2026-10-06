@@ -11,7 +11,11 @@ import {
 
 const supabase: any = supabaseTyped;
 
+/** Flip to true when job switching should show again. */
+export const JOB_CHANGE_ENABLED = false;
+
 export function canChangeJourneyJob(row: Pick<WorkerVerification, 'stage' | 'gcc_ready_at'>): boolean {
+  if (!JOB_CHANGE_ENABLED) return false;
   if (row.gcc_ready_at) return false;
   return row.stage !== 'gcc_ready' && row.stage !== 'deployment';
 }
@@ -126,6 +130,9 @@ export async function changeJourneyJob(opts: {
   skills?: string[];
   country?: string | null;
 }): Promise<{ applicationId: string; verification: WorkerVerification | null }> {
+  if (!JOB_CHANGE_ENABLED) {
+    throw new Error('Job change is not available right now');
+  }
   const existing = await getOrCreateVerification(opts.workerUserId);
   if (!canChangeJourneyJob(existing)) {
     throw new Error('This job cannot be changed after GCC ready');

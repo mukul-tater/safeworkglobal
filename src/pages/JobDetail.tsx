@@ -40,6 +40,7 @@ import {
   canChangeJourneyJob,
   changeJourneyJob,
   getJobSwitchPolicy,
+  JOB_CHANGE_ENABLED,
 } from '@/modules/worker-verification/services/jobJourneyService';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
@@ -235,6 +236,14 @@ export default function JobDetail() {
     }
     const lockedId = journeyRow?.journey_job_id;
     if (lockedId && lockedId !== job.id) {
+      if (!JOB_CHANGE_ENABLED) {
+        toast({
+          title: 'Job change is unavailable',
+          description: 'You already have a job. Changing it is turned off for now.',
+          variant: 'destructive',
+        });
+        return;
+      }
       if (journeyRow && !canChangeJourneyJob(journeyRow)) {
         toast({
           title: 'Job is locked',
@@ -443,19 +452,22 @@ export default function JobDetail() {
       : textPay
     : formatSalaryINR(salaryMin, salaryMax, salaryCurrency);
   const isCurrentJourneyJob = Boolean(lockedJobId && lockedJobId === job.id);
+  const otherJobLocked = Boolean(lockedJobId && lockedJobId !== job.id && !JOB_CHANGE_ENABLED);
   const applyLabel = applying
     ? 'Applying...'
     : isCurrentJourneyJob
       ? 'Current job'
-      : !isLoggedIn
-        ? 'Apply now'
-        : isWorker && !canApplyToJobs
-          ? 'Finish Essentials to apply'
-          : lockedJobId && lockedJobId !== job.id
-            ? 'Switch to this job'
-            : hasApplied
-              ? 'Already applied'
-              : 'Apply now';
+      : otherJobLocked
+        ? 'Already on another job'
+        : !isLoggedIn
+          ? 'Apply now'
+          : isWorker && !canApplyToJobs
+            ? 'Finish Essentials to apply'
+            : lockedJobId && lockedJobId !== job.id
+              ? 'Switch to this job'
+              : hasApplied
+                ? 'Already applied'
+                : 'Apply now';
 
   // Structured data for job posting
   const jobStructuredData = {
@@ -669,7 +681,7 @@ export default function JobDetail() {
                       <Button 
                         size="lg" 
                         onClick={handleApplyClick}
-                        disabled={applying || job.status !== 'ACTIVE' || isCurrentJourneyJob}
+                        disabled={applying || job.status !== 'ACTIVE' || isCurrentJourneyJob || otherJobLocked}
                         className="hidden w-full lg:inline-flex"
                       >
                         {applying ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
@@ -747,7 +759,7 @@ export default function JobDetail() {
               <Button
                 size="lg"
                 onClick={handleApplyClick}
-                disabled={applying || job.status !== 'ACTIVE' || isCurrentJourneyJob}
+                disabled={applying || job.status !== 'ACTIVE' || isCurrentJourneyJob || otherJobLocked}
                 className="w-full"
               >
                 {applying ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
