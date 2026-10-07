@@ -23,9 +23,8 @@ import {
 import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
-import { getPublicJobServiceCharge } from "@/lib/uaeListedJobs";
-import { listPublicJobBenefits } from "@/lib/jobBenefits";
-import { getPublicJobAbout, listPublicJobResponsibilities } from "@/lib/uaeListedJobs";
+import PublicJobBenefitsList from "@/components/jobs/PublicJobBenefitsList";
+import { getPublicJobAbout, getPublicJobServiceCharge, listPublicJobResponsibilities } from "@/lib/uaeListedJobs";
 
 interface ApplicationData {
   id: string;
@@ -257,13 +256,14 @@ export default function WorkerApplicationDetail() {
                   
                   <div>
                     <h3 className="font-medium mb-2">Benefits</h3>
-                    <ul className="space-y-1">
-                      {listPublicJobBenefits(job.benefits).map((benefit) => (
-                        <li key={benefit} className="text-sm text-muted-foreground">
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
+                    <PublicJobBenefitsList
+                      title={job.title}
+                      description={job.description}
+                      country={job.country}
+                      benefits={job.benefits}
+                      className="space-y-2"
+                      itemClassName="text-sm text-muted-foreground"
+                    />
                   </div>
                 </div>
               </Card>

@@ -30,7 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, publicJobBenefitsText, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
@@ -240,7 +240,7 @@ export default function Jobs() {
             city: job.location || '',
             location: formatJobPlace(job.location, job.country),
             country: job.country,
-            benefits: typeof job.benefits === 'string' ? job.benefits : null,
+            benefits: publicJobBenefitsText(job.title, job.description ?? '', job.country, typeof job.benefits === 'string' ? job.benefits : null),
             salaryDisplay: listedSalary?.salary_display ?? job.salary_display ?? null,
             rawSalaryMin,
             rawSalaryMax,

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
-import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
+import PublicJobBenefitsList from '@/components/jobs/PublicJobBenefitsList';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
 import { formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
 import { devCompareJobRecord, isDevCompareJob } from '@/lib/devCompareJob';
@@ -612,20 +612,14 @@ export default function JobDetail() {
                   <CardTitle>Benefits & Perks</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
-                    {listPublicJobBenefits(job.benefits).map((benefit) => {
-                      const info = jobBenefitInfo(benefit);
-                      return (
-                        <li key={benefit} className="flex items-start gap-2 text-muted-foreground">
-                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                          <span>
-                            {benefit}
-                            {info ? ` — ${info}` : ''}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <PublicJobBenefitsList
+                    title={job.title}
+                    description={job.description}
+                    country={job.country}
+                    benefits={job.benefits}
+                    showIcon
+                    itemClassName="flex items-start gap-2 text-muted-foreground"
+                  />
                 </CardContent>
               </Card>
 

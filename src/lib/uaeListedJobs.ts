@@ -1,3 +1,4 @@
+import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
 import { formatJobSalaryAedAndInr } from '@/lib/jobSalaryUtils';
 
 /** Categories we currently list under UAE on Find jobs / Choose a job. */
@@ -266,7 +267,7 @@ export const UAE_LISTED_JOB_ABOUT: Record<UaeListedJob, string> = {
   'Aluminium Fixer/Fabricator':
     'Aluminium fixer and fabricator openings for UAE windows, doors, cladding and shop-fronts. You will cut, mill, assemble and install aluminium frames from fabrication drawings, join sections and prepare surfaces for powder coat or anodising. Visa sponsorship for shortlisted candidates.',
   Delivery:
-    'Bike rider openings for full-time delivery work in the UAE (Keta). You need a valid Indian driving license and an ECNR passport, and you must be physically fit for flexible shifts. Riding experience is preferred; freshers may be considered. Pay is AED 3,000 – 3,500 (₹78,000 – ₹91,000) per month. Duty is 11+1 hours a day. Age 22–37 years. The UAE license fee of AED 4,500 is deducted over up to 10 months. Accommodation, transport and food are provided until the UAE license is issued. Selection is through an online interview. Visa sponsorship for shortlisted candidates.',
+    'Bike rider openings for full-time delivery work in the UAE (Keta). You need a valid Indian driving license and an ECNR passport, and you must be physically fit for flexible shifts. Riding experience is preferred; freshers may be considered. Pay is AED 3,000 – 3,500 (₹78,000 – ₹91,000) per month. Duty is 8–10 hours a day, with overtime paid extra. Age 22–37 years. The UAE license fee of AED 4,500 is deducted over up to 10 months. Accommodation is provided until the license is issued. Food is usually included in the salary, with a minimum of 200 and kitchen facilities until the 2-wheeler license is issued. Selection is through an online interview. Visa sponsorship for shortlisted candidates.',
 };
 
 export function getPublicJobAbout(
@@ -278,6 +279,77 @@ export function getPublicJobAbout(
   const listed = inferUaeListedJob(title, description || stored || '', country);
   if (listed) return UAE_LISTED_JOB_ABOUT[listed];
   return stored?.trim() || '';
+}
+
+export type DisplayedJobBenefit = {
+  en: string;
+  hi?: string;
+  info?: string;
+  infoHi?: string;
+};
+
+/** Bike delivery perks. English on the first line, Hindi under it. */
+const BIKE_DELIVERY_BENEFITS: DisplayedJobBenefit[] = [
+  { en: 'Flight tickets', hi: 'फ्लाइट टिकट' },
+  {
+    en: 'Accommodation (till the license is issued)',
+    hi: 'आवास (लाइसेंस जारी होने तक)',
+  },
+  {
+    en: 'Food (usually included in salary) - Minimum 200 and kitchen facilities (2 Wheeler license milne tak)',
+    hi: 'खाना (आमतौर पर सैलरी में शामिल) — न्यूनतम 200 और किचन की सुविधा (2 व्हीलर लाइसेंस मिलने तक)',
+  },
+  { en: 'Local transport', hi: 'लोकल ट्रांसपोर्ट' },
+  { en: 'MOL', hi: 'एमओएल (श्रम मंत्रालय)' },
+  { en: 'Work visa and Emirates ID', hi: 'वर्क वीज़ा और एमिरेट्स आईडी' },
+  { en: 'Legal contract and job security', hi: 'कानूनी अनुबंध और नौकरी की सुरक्षा' },
+  { en: 'Airport pickup', hi: 'एयरपोर्ट पिकअप' },
+  {
+    en: '8-10 hours of duty + overtime (extra pay)',
+    hi: '8-10 घंटे की ड्यूटी + ओवरटाइम (अतिरिक्त पगार)',
+  },
+  { en: 'Medical facility + Insurance in Dubai', hi: 'दुबई में मेडिकल सुविधा और बीमा' },
+  {
+    en: 'PBBY Insurance in India',
+    hi: 'भारत में PBBY बीमा',
+    info: 'Pravasi Bharatiya Bima Yojana (PBBY) cover in India.',
+    infoHi: 'प्रवासी भारतीय बीमा योजना (PBBY) का भारत में कवर।',
+  },
+  {
+    en: 'Uniform provided by company',
+    hi: 'कंपनी द्वारा यूनिफॉर्म',
+    info: 'Company-issued work uniform.',
+    infoHi: 'कंपनी की ओर से दी गई वर्क यूनिफॉर्म।',
+  },
+  {
+    en: '2-year contract',
+    hi: '2 साल का कॉन्ट्रैक्ट',
+    info: 'Standard employment period of 2 years.',
+    infoHi: 'नौकरी की सामान्य अवधि 2 साल।',
+  },
+];
+
+export function listDisplayedJobBenefits(
+  title: string,
+  description = '',
+  country?: string | null,
+  raw?: string | null,
+): DisplayedJobBenefit[] {
+  if (inferUaeListedJob(title, description, country) === 'Delivery') return BIKE_DELIVERY_BENEFITS;
+  return listPublicJobBenefits(raw).map((en) => ({ en, info: jobBenefitInfo(en) }));
+}
+
+/** Newline benefits text used by compare and stored listings. */
+export function publicJobBenefitsText(
+  title: string,
+  description = '',
+  country?: string | null,
+  stored?: string | null,
+): string | null {
+  if (inferUaeListedJob(title, description, country) === 'Delivery') {
+    return BIKE_DELIVERY_BENEFITS.map((benefit) => benefit.en).join('\n');
+  }
+  return stored ?? null;
 }
 
 /** Role-specific duties shown on public job pages. */
