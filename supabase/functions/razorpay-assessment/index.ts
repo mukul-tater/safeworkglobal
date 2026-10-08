@@ -11,6 +11,7 @@ const corsHeaders = {
 const ASSESSMENT_FEE_INR = 35400;
 const DELIVERY_SERVICE_CHARGE_INR = 80000;
 const UKRAINE_SERVICE_CHARGE_INR = 200000;
+const EUROPE_SERVICE_CHARGE_INR = 350000;
 const DELIVERY_JOB_ID = "a1e10000-2026-4000-8000-000000000030";
 /** Keep in sync with src/modules/worker-verification/payment/bankTransfer.ts */
 const RAZORPAY_GATEWAY_FEE_PCT = 2.5;
@@ -27,6 +28,14 @@ function isUkraineListing(job: {
 }): boolean {
   if (String(job.country || "").trim().toLowerCase() === "ukraine") return true;
   return String(job.slug || "").startsWith("ukraine-listed-");
+}
+
+function isEuropeListing(job: {
+  country?: string | null;
+  slug?: string | null;
+}): boolean {
+  if (String(job.country || "").trim().toLowerCase() === "europe") return true;
+  return String(job.slug || "").startsWith("europe-listed-");
 }
 
 function isDeliveryListing(job: {
@@ -203,6 +212,15 @@ serve(async (req) => {
           .eq("id", job.id);
       }
       return UKRAINE_SERVICE_CHARGE_INR;
+    }
+    if (job && isEuropeListing(job)) {
+      if (Number(job.service_charge) !== EUROPE_SERVICE_CHARGE_INR) {
+        await admin
+          .from("jobs")
+          .update({ service_charge: EUROPE_SERVICE_CHARGE_INR })
+          .eq("id", job.id);
+      }
+      return EUROPE_SERVICE_CHARGE_INR;
     }
     if (job && isDeliveryListing(job)) {
       if (Number(job.service_charge) !== DELIVERY_SERVICE_CHARGE_INR) {

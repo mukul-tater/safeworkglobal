@@ -49,7 +49,7 @@ BEGIN
     openings = 1,
     visa_sponsorship = false,
     remote_allowed = false,
-    service_charge = 35400,
+    service_charge = 350000,
     expires_at = GREATEST(COALESCE(j.expires_at, now()), now() + interval '18 months')
   FROM (
     VALUES
@@ -270,7 +270,7 @@ BEGIN
       now(),
       now() + interval '18 months',
       seed.slug,
-      35400
+      350000
     FROM (
       VALUES
         (
