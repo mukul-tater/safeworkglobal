@@ -5,6 +5,7 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   EUR: '€',
   GBP: '£',
   AED: 'AED',
+  CZK: 'CZK',
   SAR: 'SAR',
   QAR: 'QAR',
 };

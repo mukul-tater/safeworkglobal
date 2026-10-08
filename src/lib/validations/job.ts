@@ -71,7 +71,7 @@ const jobPostingBaseSchema = z.object({
     .optional()
     .or(z.nan()),
 
-  currency: z.enum(["INR", "USD", "EUR", "GBP", "AED", "SAR", "QAR"], {
+  currency: z.enum(["INR", "USD", "EUR", "GBP", "AED", "SAR", "QAR", "CZK"], {
     required_error: "Currency is required",
   }),
 

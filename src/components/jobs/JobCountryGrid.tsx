@@ -19,6 +19,15 @@ const UKRAINE_PLACES = [
   { name: 'Khmelnytskyi' },
 ];
 
+const EUROPE_PLACES = [
+  { name: 'Czech Republic' },
+  { name: 'Choceň' },
+  { name: 'Rajhrad' },
+  { name: 'Žiželice' },
+  { name: 'Slaný' },
+  { name: 'Beroun' },
+];
+
 const COUNTRIES: {
   code: string;
   image: string;
@@ -40,6 +49,13 @@ const COUNTRIES: {
     title: { hi: 'यूक्रेन', en: 'Ukraine' },
     places: UKRAINE_PLACES,
   },
+  {
+    code: 'Europe',
+    image: '/country-insights/europe/prague.jpg',
+    position: 'center 42%',
+    title: { hi: 'यूरोप', en: 'Europe' },
+    places: EUROPE_PLACES,
+  },
 ];
 
 interface Props {
@@ -55,7 +71,7 @@ export default function JobCountryGrid({ onSelect }: Props) {
           Browse verified jobs by destination. More countries will be added soon.
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {COUNTRIES.map((country) => (
           <button
             key={country.code}

@@ -3,6 +3,7 @@ export const DESTINATION_COUNTRIES = [
   'All Countries',
   'UAE',
   'Ukraine',
+  'Europe',
 ];
 
 // Worker nationalities (source countries)
@@ -188,5 +189,6 @@ export const CURRENCIES = [
   { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
   { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+  { code: 'CZK', symbol: 'Kč', name: 'Czech Koruna' },
 ];

@@ -5,7 +5,7 @@ import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import PublicJobBenefitsList from '@/components/jobs/PublicJobBenefitsList';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
-import { formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
+import { formatJobPlace, jobsBrowsePath, usesStoredPayText } from '@/lib/jobsBrowse';
 import { devCompareJobRecord, isDevCompareJob } from '@/lib/devCompareJob';
 import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
@@ -83,6 +83,7 @@ interface JobData {
   slug: string;
   posted_by_role?: string | null;
   service_charge?: number | null;
+  salary_display?: string | null;
   job_skills: { skill_name: string }[];
 }
 
@@ -560,6 +561,7 @@ export default function JobDetail() {
                         title={job.title}
                         description={job.description}
                         country={job.country}
+                        display={usesStoredPayText(job.country) ? job.salary_display : undefined}
                         emptyLabel="Salary not specified"
                         className="w-full min-w-0"
                         primaryClassName="break-words font-semibold text-foreground"

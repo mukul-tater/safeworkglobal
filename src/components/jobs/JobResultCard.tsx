@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Bookmark, BriefcaseBusiness, Clock, Loader2, MapPin, ShieldCheck, Wallet } from 'lucide-react';
 import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
+import { usesStoredPayText } from '@/lib/jobsBrowse';
 import { cn } from '@/lib/utils';
 
 export interface JobListItem {
@@ -158,6 +159,7 @@ export default function JobResultCard({
                 title={job.useStoredSalary ? undefined : job.title}
                 description={job.useStoredSalary ? undefined : job.description}
                 country={job.country}
+                display={usesStoredPayText(job.country) ? job.salaryDisplay : undefined}
               />
             </dd>
             <dd className="flex items-center gap-1.5">

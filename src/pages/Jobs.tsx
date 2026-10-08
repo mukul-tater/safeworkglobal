@@ -39,12 +39,13 @@ import { scrollToTop } from '@/lib/scrollToTop';
 
 const JOBS_PER_PAGE = 20;
 const SUGGESTED_CATEGORIES = [...UAE_LISTED_JOBS];
-const SUGGESTED_COUNTRIES = ['UAE', 'Ukraine'];
-const PUBLIC_COUNTRIES = new Set(['uae', 'ukraine']);
+const SUGGESTED_COUNTRIES = ['UAE', 'Ukraine', 'Europe'];
+const PUBLIC_COUNTRIES = new Set(['uae', 'ukraine', 'europe']);
 
-/** Ukraine listings are the jobs themselves. UAE still picks a trade first. */
+/** Ukraine and Europe listings are the jobs themselves. UAE still picks a trade first. */
 function listsJobsWithoutTrade(country: string): boolean {
-  return country.trim().toLowerCase() === 'ukraine';
+  const value = country.trim().toLowerCase();
+  return value === 'ukraine' || value === 'europe';
 }
 
 const SORT_OPTIONS = [

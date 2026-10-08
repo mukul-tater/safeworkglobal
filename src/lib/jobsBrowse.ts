@@ -1,6 +1,11 @@
 const ANY_CATEGORY = 'All Categories';
 const ANY_COUNTRY = 'All Countries';
 
+/** Europe pay is stored as the vacancy text, including hourly rates. */
+export function usesStoredPayText(country?: string | null): boolean {
+  return (country ?? '').trim().toLowerCase() === 'europe';
+}
+
 /** "Rivne Region, Ukraine". Skip a repeated country when the city was not given. */
 export function formatJobPlace(location?: string | null, country?: string | null): string {
   const loc = (location ?? '').trim();

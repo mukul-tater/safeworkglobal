@@ -39,7 +39,8 @@ function inferCategory(title: string, description: string, country?: string): st
 }
 
 function listsJobsWithoutTrade(country: string): boolean {
-  return country.trim().toLowerCase() === 'ukraine';
+  const value = country.trim().toLowerCase();
+  return value === 'ukraine' || value === 'europe';
 }
 
 async function fetchActiveJobs(): Promise<JobListItem[]> {

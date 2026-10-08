@@ -9,6 +9,8 @@ interface JobSalaryTextProps {
   title?: string;
   description?: string;
   country?: string | null;
+  /** Exact pay sentence from the vacancy. Shown as written. */
+  display?: string | null;
   emptyLabel?: string;
   /** Shown after a real range. Pass a translation on localized screens. */
   periodLabel?: string;
@@ -24,12 +26,21 @@ export default function JobSalaryText({
   title,
   description,
   country,
+  display,
   emptyLabel,
   periodLabel = 'per month',
   primaryClassName,
   inrClassName,
   className,
 }: JobSalaryTextProps) {
+  const stored = display?.trim();
+  if (stored) {
+    return (
+      <span className={cn('inline-flex flex-col', className)}>
+        <span className={primaryClassName}>{stored}</span>
+      </span>
+    );
+  }
   const listed = title ? getPublicJobSalary(title, description, country) : null;
   if (listed?.salary_display) {
     const monthly = listed.salary_min != null || listed.salary_max != null;
