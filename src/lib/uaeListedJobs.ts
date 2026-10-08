@@ -208,8 +208,11 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ListedJobSalary> = {
   },
 };
 
-/** SafeWork service fee for the Delivery listing. Other trades use the stored job fee. */
+/** SafeWork service fee for the Delivery listing. Other UAE trades use the stored job fee. */
 export const UAE_DELIVERY_SERVICE_CHARGE_INR = 80000;
+
+/** SafeWork service fee for every Ukraine listing. */
+export const UKRAINE_SERVICE_CHARGE_INR = 200000;
 
 export function getPublicJobServiceCharge(
   title: string,
@@ -218,6 +221,7 @@ export function getPublicJobServiceCharge(
   country?: string | null,
 ): number | null {
   if (inferUaeListedJob(title, description, country) === 'Delivery') return UAE_DELIVERY_SERVICE_CHARGE_INR;
+  if ((country ?? '').trim().toLowerCase() === 'ukraine') return UKRAINE_SERVICE_CHARGE_INR;
   return stored ?? null;
 }
 

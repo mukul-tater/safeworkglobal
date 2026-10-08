@@ -21,7 +21,7 @@ BEGIN
      LIMIT 1;
   END IF;
 
-  UPDATE public.jobs AS jxq
+  UPDATE public.jobs AS j
   SET
     status = 'ACTIVE',
     title = seed.title,
@@ -40,7 +40,7 @@ BEGIN
     openings = 1,
     visa_sponsorship = false,
     remote_allowed = false,
-    service_charge = 35400,
+    service_charge = 200000,
     expires_at = GREATEST(COALESCE(j.expires_at, now()), now() + interval '18 months')
   FROM (
     VALUES
@@ -333,7 +333,7 @@ BEGIN
       now(),
       now() + interval '18 months',
       seed.slug,
-      35400
+      200000
     FROM (
       VALUES
         (
