@@ -20,6 +20,7 @@ import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
 import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
+import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
 import { adminUpdateJob } from "@/services/AdminService";
 import PostedByBadge from "@/components/jobs/PostedByBadge";
 
@@ -30,6 +31,7 @@ export default function EditJob() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
+  const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
   const [companyName, setCompanyName] = useState<string>("");
   const [postedByRole, setPostedByRole] = useState<string>("employer");
 
@@ -88,6 +90,7 @@ export default function EditJob() {
 
       const skillNames = jobSkills?.map(s => s.skill_name) || [];
       setSkills(skillNames);
+      setYoutubeUrls(Array.isArray(job.youtube_urls) ? job.youtube_urls : []);
 
       // Set form values
       reset({
@@ -167,6 +170,7 @@ export default function EditJob() {
         status: data.status,
         expires_at: data.expires_at || null,
         service_charge: data.service_charge,
+        youtube_urls: youtubeUrls,
       };
 
       const { error: jobError } = await adminUpdateJob(jobId, jobData, skills);
@@ -513,6 +517,8 @@ export default function EditJob() {
                 </div>
               </CardContent>
             </Card>
+
+            <JobYoutubeLinksField urls={youtubeUrls} onChange={setYoutubeUrls} />
 
             <Card>
               <CardHeader>

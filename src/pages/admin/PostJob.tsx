@@ -21,6 +21,7 @@ import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
 import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
 import { PUBLIC_JOB_BENEFITS_TEXT } from "@/lib/jobBenefits";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
+import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
 import JobTitleAutocomplete from "@/components/employer/JobTitleAutocomplete";
 import { adminCreateJob } from "@/services/AdminService";
 import SearchSelect from "@/components/SearchSelect";
@@ -35,6 +36,7 @@ export default function AdminPostJob() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
+  const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
   const [employers, setEmployers] = useState<EmployerOption[]>([]);
   const [loadingEmployers, setLoadingEmployers] = useState(true);
 
@@ -156,6 +158,7 @@ export default function AdminPostJob() {
         expires_at: data.expires_at || null,
         posted_at: data.status === "ACTIVE" ? new Date().toISOString() : null,
         service_charge: data.service_charge,
+        youtube_urls: youtubeUrls,
       };
 
       const { data: jobId, error } = await adminCreateJob(data.employer_id, jobData, skills);
@@ -521,6 +524,8 @@ export default function AdminPostJob() {
               </div>
             </CardContent>
           </Card>
+
+          <JobYoutubeLinksField urls={youtubeUrls} onChange={setYoutubeUrls} />
 
           <Card>
             <CardHeader>

@@ -1645,6 +1645,7 @@ export type Database = {
           title: string
           updated_at: string | null
           visa_sponsorship: boolean | null
+          youtube_urls: string[]
         }
         Insert: {
           benefits?: string | null
@@ -1682,6 +1683,7 @@ export type Database = {
           title: string
           updated_at?: string | null
           visa_sponsorship?: boolean | null
+          youtube_urls?: string[]
         }
         Update: {
           benefits?: string | null
@@ -1719,6 +1721,7 @@ export type Database = {
           title?: string
           updated_at?: string | null
           visa_sponsorship?: boolean | null
+          youtube_urls?: string[]
         }
         Relationships: [
           {

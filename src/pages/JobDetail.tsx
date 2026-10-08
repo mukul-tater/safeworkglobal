@@ -84,6 +84,7 @@ interface JobData {
   posted_by_role?: string | null;
   service_charge?: number | null;
   salary_display?: string | null;
+  youtube_urls?: string[] | null;
   job_skills: { skill_name: string }[];
 }
 
@@ -587,7 +588,12 @@ export default function JobDetail() {
                 </CardContent>
               </Card>
 
-              <JobRoleVideo title={job.title} description={job.description} country={job.country} />
+              <JobRoleVideo
+                title={job.title}
+                description={job.description}
+                country={job.country}
+                youtubeUrls={job.youtube_urls}
+              />
 
               {/* Responsibilities */}
               {responsibilities.length > 0 && (
