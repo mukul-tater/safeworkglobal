@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { CURRENCIES } from "@/lib/constants";
 import { SERVICE_CHARGE_MAX_INR, SERVICE_CHARGE_MIN_INR } from "@/lib/jobServiceCharge";
 import { requiredFutureDateString, parseDateInput } from "@/lib/validations/common";
+
+const jobCurrencyCodes = CURRENCIES.map((currency) => currency.code) as [string, ...string[]];
 
 const salaryRangeRefine = {
   refine: (data: { salary_min?: number; salary_max?: number }) => {
@@ -71,8 +74,8 @@ const jobPostingBaseSchema = z.object({
     .optional()
     .or(z.nan()),
 
-  currency: z.enum(["INR", "USD", "EUR", "GBP", "AED", "SAR", "QAR", "CZK"], {
-    required_error: "Currency is required",
+  currency: z.enum(jobCurrencyCodes, {
+    errorMap: () => ({ message: "Select a currency" }),
   }),
 
   openings: z.number()

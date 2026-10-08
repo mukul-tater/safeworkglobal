@@ -12,9 +12,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { adminJobPostSchema, type AdminJobPostFormData } from "@/lib/validations/job";
+import { firstFormErrorMessage, invalidFieldClass, revealInvalidField } from "@/lib/formErrors";
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
 import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
@@ -125,6 +126,12 @@ export default function AdminPostJob() {
     setValue("skills", updatedSkills);
   };
 
+  const onInvalid = (formErrors: FieldErrors<AdminJobPostFormData>) => {
+    const firstField = Object.keys(formErrors)[0];
+    toast.error(firstFormErrorMessage(formErrors) ?? "Please fix the highlighted fields");
+    if (firstField) revealInvalidField(firstField);
+  };
+
   const onSubmit = async (data: AdminJobPostFormData) => {
     setIsSubmitting(true);
 
@@ -177,13 +184,13 @@ export default function AdminPostJob() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit, () => toast.error("Please fix the highlighted fields"))}>
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
         <div className="space-y-6 max-w-4xl">
           <Card>
             <CardHeader>
               <CardTitle>Employer</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-2" data-field="employer_id">
               <Label>List under company *</Label>
               {loadingEmployers ? (
                 <p className="text-sm text-muted-foreground">Loading employers…</p>
@@ -219,8 +226,7 @@ export default function AdminPostJob() {
               <CardTitle>Basic Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="title">Job Title *</Label>
+              <div data-field="title">
                 <JobTitleAutocomplete
                   id="title"
                   value={watch("title") || ""}
@@ -232,29 +238,55 @@ export default function AdminPostJob() {
                 )}
               </div>
 
-              <div>
+              <div data-field="description">
                 <Label htmlFor="description">Job Description *</Label>
-                <Textarea id="description" {...register("description")} rows={6} />
+                <Textarea
+                  id="description"
+                  aria-invalid={!!errors.description}
+                  className={errors.description ? invalidFieldClass : undefined}
+                  {...register("description")}
+                  rows={6}
+                />
                 {errors.description && (
                   <p className="text-sm text-destructive mt-1">{errors.description.message}</p>
                 )}
               </div>
 
-              <div>
+              <div data-field="responsibilities">
                 <Label htmlFor="responsibilities">Key Responsibilities</Label>
-                <Textarea id="responsibilities" {...register("responsibilities")} rows={4} />
+                <Textarea
+                  id="responsibilities"
+                  aria-invalid={!!errors.responsibilities}
+                  className={errors.responsibilities ? invalidFieldClass : undefined}
+                  {...register("responsibilities")}
+                  rows={4}
+                />
+                {errors.responsibilities && (
+                  <p className="text-sm text-destructive mt-1">{errors.responsibilities.message}</p>
+                )}
               </div>
 
-              <div>
+              <div data-field="requirements">
                 <Label htmlFor="requirements">Requirements</Label>
-                <Textarea id="requirements" {...register("requirements")} rows={4} />
+                <Textarea
+                  id="requirements"
+                  aria-invalid={!!errors.requirements}
+                  className={errors.requirements ? invalidFieldClass : undefined}
+                  {...register("requirements")}
+                  rows={4}
+                />
+                {errors.requirements && (
+                  <p className="text-sm text-destructive mt-1">{errors.requirements.message}</p>
+                )}
               </div>
 
-              <JobBenefitsField
-                value={watch("benefits") || ""}
-                onChange={(v) => setValue("benefits", v, { shouldValidate: true })}
-                error={errors.benefits?.message}
-              />
+              <div data-field="benefits">
+                <JobBenefitsField
+                  value={watch("benefits") || ""}
+                  onChange={(v) => setValue("benefits", v, { shouldValidate: true })}
+                  error={errors.benefits?.message}
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -264,17 +296,26 @@ export default function AdminPostJob() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div data-field="location">
                   <Label htmlFor="location">Location *</Label>
-                  <Input id="location" {...register("location")} />
+                  <Input
+                    id="location"
+                    aria-invalid={!!errors.location}
+                    className={errors.location ? invalidFieldClass : undefined}
+                    {...register("location")}
+                  />
                   {errors.location && (
                     <p className="text-sm text-destructive mt-1">{errors.location.message}</p>
                   )}
                 </div>
-                <div>
+                <div data-field="country">
                   <Label htmlFor="country">Country *</Label>
                   <Select value={watch("country")} onValueChange={(value) => setValue("country", value, { shouldValidate: true })}>
-                    <SelectTrigger>
+                    <SelectTrigger
+                      id="country"
+                      aria-invalid={!!errors.country}
+                      className={errors.country ? invalidFieldClass : undefined}
+                    >
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent className="max-h-64">
@@ -290,10 +331,14 @@ export default function AdminPostJob() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div data-field="job_type">
                   <Label htmlFor="job_type">Job Type *</Label>
                   <Select value={jobType} onValueChange={(value) => setValue("job_type", value as AdminJobPostFormData["job_type"], { shouldValidate: true })}>
-                    <SelectTrigger>
+                    <SelectTrigger
+                      id="job_type"
+                      aria-invalid={!!errors.job_type}
+                      className={errors.job_type ? invalidFieldClass : undefined}
+                    >
                       <SelectValue placeholder="Select job type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -308,10 +353,14 @@ export default function AdminPostJob() {
                     <p className="text-sm text-destructive mt-1">{errors.job_type.message}</p>
                   )}
                 </div>
-                <div>
+                <div data-field="experience_level">
                   <Label htmlFor="experience_level">Experience Level *</Label>
                   <Select value={experienceLevel} onValueChange={(value) => setValue("experience_level", value as AdminJobPostFormData["experience_level"], { shouldValidate: true })}>
-                    <SelectTrigger>
+                    <SelectTrigger
+                      id="experience_level"
+                      aria-invalid={!!errors.experience_level}
+                      className={errors.experience_level ? invalidFieldClass : undefined}
+                    >
                       <SelectValue placeholder="Select experience level" />
                     </SelectTrigger>
                     <SelectContent>
@@ -328,11 +377,15 @@ export default function AdminPostJob() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
+                <div data-field="currency">
                   <Label htmlFor="currency">Currency *</Label>
-                  <Select value={currency} onValueChange={(value) => setValue("currency", value as AdminJobPostFormData["currency"])}>
-                    <SelectTrigger>
-                      <SelectValue />
+                  <Select value={currency} onValueChange={(value) => setValue("currency", value as AdminJobPostFormData["currency"], { shouldValidate: true })}>
+                    <SelectTrigger
+                      id="currency"
+                      aria-invalid={!!errors.currency}
+                      className={errors.currency ? invalidFieldClass : undefined}
+                    >
+                      <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                     <SelectContent className="max-h-64">
                       {CURRENCIES.map((curr) => (
@@ -342,24 +395,47 @@ export default function AdminPostJob() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.currency && (
+                    <p className="text-sm text-destructive mt-1">{errors.currency.message}</p>
+                  )}
                 </div>
-                <div>
+                <div data-field="salary_min">
                   <Label htmlFor="salary_min">Min Salary (per month)</Label>
-                  <Input id="salary_min" type="number" {...register("salary_min", { valueAsNumber: true })} />
+                  <Input
+                    id="salary_min"
+                    type="number"
+                    aria-invalid={!!errors.salary_min}
+                    className={errors.salary_min ? invalidFieldClass : undefined}
+                    {...register("salary_min", { valueAsNumber: true })}
+                  />
+                  {errors.salary_min && (
+                    <p className="text-sm text-destructive mt-1">{errors.salary_min.message}</p>
+                  )}
                 </div>
-                <div>
+                <div data-field="salary_max">
                   <Label htmlFor="salary_max">Max Salary (per month)</Label>
-                  <Input id="salary_max" type="number" {...register("salary_max", { valueAsNumber: true })} />
+                  <Input
+                    id="salary_max"
+                    type="number"
+                    aria-invalid={!!errors.salary_max}
+                    className={errors.salary_max ? invalidFieldClass : undefined}
+                    {...register("salary_max", { valueAsNumber: true })}
+                  />
+                  {errors.salary_max && (
+                    <p className="text-sm text-destructive mt-1">{errors.salary_max.message}</p>
+                  )}
                 </div>
               </div>
 
-              <div>
+              <div data-field="service_charge">
                 <Label htmlFor="service_charge">SafeWork Global service charge (₹) *</Label>
                 <Input
                   id="service_charge"
                   type="number"
                   min={1}
                   step={1}
+                  aria-invalid={!!errors.service_charge}
+                  className={errors.service_charge ? invalidFieldClass : undefined}
                   {...register("service_charge", { valueAsNumber: true })}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
@@ -371,30 +447,55 @@ export default function AdminPostJob() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div data-field="openings">
                   <Label htmlFor="openings">Number of Openings *</Label>
-                  <Input id="openings" type="number" {...register("openings", { valueAsNumber: true })} />
+                  <Input
+                    id="openings"
+                    type="number"
+                    aria-invalid={!!errors.openings}
+                    className={errors.openings ? invalidFieldClass : undefined}
+                    {...register("openings", { valueAsNumber: true })}
+                  />
+                  {errors.openings && (
+                    <p className="text-sm text-destructive mt-1">{errors.openings.message}</p>
+                  )}
                 </div>
-                <div>
+                <div data-field="expires_at">
                   <Label htmlFor="expires_at">Expiry Date</Label>
-                  <Input id="expires_at" type="date" {...register("expires_at")} />
+                  <Input
+                    id="expires_at"
+                    type="date"
+                    aria-invalid={!!errors.expires_at}
+                    className={errors.expires_at ? invalidFieldClass : undefined}
+                    {...register("expires_at")}
+                  />
+                  {errors.expires_at && (
+                    <p className="text-sm text-destructive mt-1">{errors.expires_at.message}</p>
+                  )}
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="status">Status *</Label>
-                <Select value={watch("status")} onValueChange={(value) => setValue("status", value as AdminJobPostFormData["status"])}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
-                    <SelectItem value="PENDING">Pending</SelectItem>
-                    <SelectItem value="ACTIVE">Active (publish now)</SelectItem>
-                    <SelectItem value="PAUSED">Paused</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div data-field="status">
+                  <Label htmlFor="status">Status *</Label>
+                  <Select value={watch("status")} onValueChange={(value) => setValue("status", value as AdminJobPostFormData["status"], { shouldValidate: true })}>
+                    <SelectTrigger
+                      id="status"
+                      aria-invalid={!!errors.status}
+                      className={errors.status ? `w-48 ${invalidFieldClass}` : "w-48"}
+                    >
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DRAFT">Draft</SelectItem>
+                      <SelectItem value="PENDING">Pending</SelectItem>
+                      <SelectItem value="ACTIVE">Active (publish now)</SelectItem>
+                      <SelectItem value="PAUSED">Paused</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.status && (
+                    <p className="text-sm text-destructive mt-1">{errors.status.message}</p>
+                  )}
+                </div>
 
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
