@@ -647,7 +647,11 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
     { youtubeId: 'mmsn1S2Ojks' },
   ],
   'Aluminium Fixer/Fabricator': [{ youtubeId: 'ovEDLzbAWpg' }],
-  Delivery: [],
+  Delivery: [
+    { youtubeId: '1k5yecjHlq0' },
+    { youtubeId: 'KvA00e5EIwk' },
+    { youtubeId: 'gl-UDyQIq8Y' },
+  ],
 };
 
 export function getPublicJobVideos(title: string, description = '', country?: string | null): ListedJobVideo[] {
