@@ -102,7 +102,7 @@ export default function JobCompareHighlight({ trade, jobs, onClear }: Props) {
                     </span>
                   </td>
                   <td className="border-b px-3 py-3">{benefits.contract}</td>
-                  <td className="border-b px-3 py-3">{formatServiceChargeInr(job.serviceCharge)}</td>
+                  <td className="border-b px-3 py-3">{formatServiceChargeInr(job.serviceCharge)} +GST</td>
                   <td className="border-b px-3 py-3">{benefits.stay}</td>
                   <td className="border-b px-3 py-3">
                     <Button size="sm" asChild>
