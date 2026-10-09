@@ -57,6 +57,13 @@
       "when": 1790704350062,
       "tag": "0007_tighten_selected_rls_and_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791561583195,
+      "tag": "0008_restore_mobile_binding_identity_check",
+      "breakpoints": true
     }
   ]
 }
