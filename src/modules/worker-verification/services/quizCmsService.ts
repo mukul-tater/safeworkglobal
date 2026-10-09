@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { BASIC_TRADE_KNOWLEDGE_BANK } from '../quiz-data/basic-trade-knowledge';
 import { isUaeListedQuizSkill } from '../quiz-data/quizSkill';
-import { QUIZ_PASS_SCORE, QUIZ_QUESTIONS_TO_SHOW } from '../constants';
+import { QUIZ_QUESTIONS_TO_SHOW } from '../constants';
+import { quizPassScoreForSkill } from '../quiz-data/quizResult';
 import { UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import type { SkillQuizConfig, SkillQuizItem } from '../types';
 
@@ -136,7 +137,7 @@ export async function publishDefaultQuizBank(skill: string): Promise<number> {
       questions_to_show: QUIZ_QUESTIONS_TO_SHOW,
       selection_mode: 'random_active',
       selected_ids: [],
-      pass_score: QUIZ_PASS_SCORE,
+      pass_score: quizPassScoreForSkill(skill),
       active: true,
     });
   }

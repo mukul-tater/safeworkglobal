@@ -13,7 +13,6 @@ import type {
 } from '../types';
 import {
   ASSESSMENT_FEE_INR,
-  QUIZ_PASS_SCORE,
   QUIZ_QUESTIONS_TO_SHOW,
   VERIFICATION_STAGE_ORDER,
   WORKER_TERMS_VERSION,
@@ -32,6 +31,7 @@ import {
 } from '../payment/bankTransfer';
 import { loadQuizItemsFromJson } from '../quiz-data';
 import { gradeLocalQuiz } from '../quiz-data/gradeLocal';
+import { quizPassScoreForSkill } from '../quiz-data/quizResult';
 import { isQuizItemUuid, resolveQuizSkillCode } from '../quiz-data/quizSkill';
 import { shuffleCopy } from '../quiz-data/shuffle';
 import type { QuizOption } from '../types';
@@ -466,7 +466,7 @@ export async function submitQuiz(
     const result = Array.isArray(graded) ? graded[0] : graded;
     score = Number(result?.score ?? 0);
   }
-  const passed = score >= QUIZ_PASS_SCORE;
+  const passed = score >= quizPassScoreForSkill(items[0]?.skill_code);
   const now = new Date().toISOString();
 
   const { data, error } = await supabase

@@ -21,10 +21,10 @@ import type { WorkerVerification } from '@/modules/worker-verification/types';
 import type { AssessmentRow } from '@/modules/trade-test/types';
 import {
   ASSESSMENT_FEE_INCLUSIONS,
-  QUIZ_PASS_SCORE,
   type GccNavStepId,
 } from '@/modules/worker-verification/constants';
-import { describeQuizResult } from '@/modules/worker-verification/quiz-data/quizResult';
+import { describeQuizResult, quizPassScoreForSkill } from '@/modules/worker-verification/quiz-data/quizResult';
+import { resolveQuizSkillCode } from '@/modules/worker-verification/quiz-data/quizSkill';
 import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
 import { MedicalRequiredTestsNote } from '@/modules/worker-verification/components/journey/MedicalTestStage';
 import IndemnityBondAgreement from '@/modules/worker-verification/components/agreement/IndemnityBondAgreement';
@@ -280,6 +280,13 @@ export default function CompletedStepReview({
     appliedJobDescription,
     appliedJobCountry,
   );
+  const quizSkill = resolveQuizSkillCode({
+    primarySkill: row.primary_skill,
+    jobTitle: appliedJobTitle,
+    jobDescription: appliedJobDescription,
+  });
+  const quizPassScore = quizPassScoreForSkill(quizSkill);
+  const quizResult = row.quiz_score == null ? null : describeQuizResult(row.quiz_score, quizSkill);
   const kycTone: Tone =
     kycStatus === 'verified' ? 'success' : kycStatus === 'rejected' ? 'error' : 'pending';
   const kycLabel =
@@ -396,28 +403,22 @@ export default function CompletedStepReview({
                   <span className="text-lg text-muted-foreground">%</span>
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Pass mark {QUIZ_PASS_SCORE}% · screening only, not a trade certificate
+                  Pass mark {quizPassScore}% · screening only, not a trade certificate
                 </p>
               </div>
               <StatusPill
-                tone={(row.quiz_score ?? 0) >= QUIZ_PASS_SCORE ? 'success' : 'pending'}
-                label={(row.quiz_score ?? 0) >= QUIZ_PASS_SCORE ? 'Screening passed' : 'Screening not passed'}
+                tone={(row.quiz_score ?? 0) >= quizPassScore ? 'success' : 'pending'}
+                label={(row.quiz_score ?? 0) >= quizPassScore ? 'Screening passed' : 'Screening not passed'}
               />
             </div>
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
               <Detail
                 label="Result"
-                value={
-                  row.quiz_score == null
-                    ? '—'
-                    : describeQuizResult(row.quiz_score).screeningEn
-                }
+                value={quizResult?.screeningEn ?? '—'}
               />
               <Detail
                 label="Knowledge band"
-                value={
-                  row.quiz_score == null ? '—' : describeQuizResult(row.quiz_score).bandEn
-                }
+                value={quizResult?.bandEn ?? '—'}
               />
               <Detail label="Skill tested" value={appliedSkill} />
               <Detail label="Completed on" value={formatDate(row.quiz_completed_at)} />

@@ -36,7 +36,6 @@ import {
   navStepForStage,
   normalizeVerificationStage,
   panAndPassportRequiredAfterSkillTest,
-  QUIZ_PASS_SCORE,
   skillRequiresTradeTest,
   youtubeEmbedUrl,
   type GccNavStepId,
@@ -45,7 +44,12 @@ import {
 } from '@/modules/worker-verification/constants';
 import type { BondTemplate, SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
 import { isMcqQuizItem } from '@/modules/worker-verification/types';
-import { describeQuizResult } from '@/modules/worker-verification/quiz-data/quizResult';
+import {
+  DELIVERY_QUIZ_DISCLAIMER,
+  describeQuizResult,
+  quizPassScoreForSkill,
+} from '@/modules/worker-verification/quiz-data/quizResult';
+import { resolveQuizSkillCode } from '@/modules/worker-verification/quiz-data/quizSkill';
 import {
   completeMediaStep,
   completeIdentityKyc,
@@ -478,7 +482,7 @@ export default function WorkerVerificationPage({
       if (
         v.quiz_score != null &&
         !v.quiz_completed_at &&
-        Number(v.quiz_score) < QUIZ_PASS_SCORE
+        Number(v.quiz_score) < quizPassScoreForSkill(v.primary_skill)
       ) {
         setQuizFailScore(Number(v.quiz_score));
         setQuizNeedsRetake(true);
@@ -976,7 +980,7 @@ export default function WorkerVerificationPage({
       }));
       const next = await submitQuiz(subjectId, answers, quizItems);
       const score = Number(next.quiz_score) || 0;
-      const result = describeQuizResult(score);
+      const result = describeQuizResult(score, quizItems[0]?.skill_code ?? row?.primary_skill);
       if (!result.passed) {
         setRow(next);
         setQuizIndex(0);
@@ -1203,6 +1207,12 @@ export default function WorkerVerificationPage({
     journeyJobDescription,
     journeyJobCountry,
   );
+  const quizSkill = resolveQuizSkillCode({
+    primarySkill: row.primary_skill,
+    jobTitle: journeyJobTitle,
+    jobDescription: journeyJobDescription,
+  });
+  const quizPassScore = quizPassScoreForSkill(quizSkill);
   const workPhrase = appliedJobWorkPhrase(
     row.primary_skill,
     journeyJobTitle,
@@ -1647,15 +1657,15 @@ export default function WorkerVerificationPage({
           <StageResultShell
             tone="error"
             title="Basic Trade Knowledge Screening: NOT PASSED"
-            body={`Score ${quizFailScore}%. Pass mark is ${QUIZ_PASS_SCORE}%. You can retake Test 1 immediately — no waiting.`}
+            body={`Score ${quizFailScore}%. Pass mark is ${quizPassScore}%. You can retake Test 1 immediately — no waiting.`}
             stats={[
               { label: 'Your score', value: `${quizFailScore}%` },
-              { label: 'Pass mark', value: `${QUIZ_PASS_SCORE}%` },
+              { label: 'Pass mark', value: `${quizPassScore}%` },
               { label: 'Next step', value: 'Retake now' },
             ]}
           >
             <p className="text-sm text-muted-foreground" lang="hi">
-              बेसिक ट्रेड नॉलेज स्क्रीनिंग: पास नहीं। स्कोर {quizFailScore}%. पास मार्क्स {QUIZ_PASS_SCORE}% है।
+              बेसिक ट्रेड नॉलेज स्क्रीनिंग: पास नहीं। स्कोर {quizFailScore}%. पास मार्क्स {quizPassScore}% है।
               आप टेस्ट 1 अभी दोबारा दे सकते हैं।
             </p>
             <Button onClick={() => void startQuizRetake()} disabled={saving}>
@@ -1691,6 +1701,14 @@ export default function WorkerVerificationPage({
                 <span className="mt-2 block" lang="hi">
                   यह स्क्रीनिंग टेस्ट है, ट्रेड सर्टिफिकेट नहीं। प्रश्न {quizIndex + 1} / {quizItems.length}.
                 </span>
+                {quizSkill === 'Delivery' ? (
+                  <>
+                    <span className="mt-2 block">{DELIVERY_QUIZ_DISCLAIMER.en}</span>
+                    <span className="mt-1 block" lang="hi">
+                      {DELIVERY_QUIZ_DISCLAIMER.hi}
+                    </span>
+                  </>
+                ) : null}
               </>
             }
             footer={
@@ -1706,11 +1724,11 @@ export default function WorkerVerificationPage({
                   <div className="text-sm text-foreground">
                     <p>
                     Last score <span className="font-semibold">{quizFailScore}%</span>. Pass mark is{' '}
-                    {QUIZ_PASS_SCORE}%. This is a new attempt — answer all {quizItems.length} questions
+                    {quizPassScore}%. This is a new attempt — answer all {quizItems.length} questions
                     again.
                     </p>
                     <p className="mt-1 text-muted-foreground" lang="hi">
-                      पिछला स्कोर {quizFailScore}%. पास मार्क्स {QUIZ_PASS_SCORE}% है। यह नया प्रयास है —
+                      पिछला स्कोर {quizFailScore}%. पास मार्क्स {quizPassScore}% है। यह नया प्रयास है —
                       सभी प्रश्न फिर से उत्तर दें।
                     </p>
                   </div>
