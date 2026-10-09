@@ -10,7 +10,7 @@ import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatJobPlace } from '@/lib/jobsBrowse';
+import { formatJobPlace, usesStoredPayText } from '@/lib/jobsBrowse';
 import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from '@/lib/uaeListedJobs';
 
 interface FeaturedJob {
@@ -224,6 +224,7 @@ export default function FeaturedJobs() {
                       title={job.title}
                       description={job.description}
                       country={job.country}
+                      display={usesStoredPayText(job.country) ? job.salary_display : undefined}
                       primaryClassName="text-lg font-bold text-primary"
                     />
                     <div className="mt-2">

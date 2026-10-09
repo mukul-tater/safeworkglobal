@@ -7,7 +7,7 @@ import JobResultCard, { type JobListItem } from '@/components/jobs/JobResultCard
 import JobCountryGrid from '@/components/jobs/JobCountryGrid';
 import JobTradeGrid from '@/components/jobs/JobTradeGrid';
 import { supabase } from '@/integrations/supabase/client';
-import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
+import { convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
 import { formatJobPlace } from '@/lib/jobsBrowse';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
@@ -89,7 +89,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       companyLogoUrl: null,
       location: formatJobPlace(String(job.location ?? ''), country),
       country,
-      salaryDisplay: listedSalary?.salary_display ?? (job.salary_display as string | null) ?? null,
+      salaryDisplay: withCzkAndInrPay(listedSalary?.salary_display ?? (job.salary_display as string | null)) || null,
       rawSalaryMin,
       rawSalaryMax,
       currency,

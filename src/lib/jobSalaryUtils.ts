@@ -16,6 +16,88 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
  */
 export const INR_PER_AED = 23;
 
+/**
+ * Czech listing rate already used on the seat-belt vacancy: 150 CZK = ₹665.
+ * Hourly and monthly figures use this pair so CZK and INR stay together.
+ */
+export const CZK_TO_INR_NUMERATOR = 665;
+export const CZK_TO_INR_DENOMINATOR = 150;
+
+export function czkToInr(czk: number): number {
+  return Math.round((czk * CZK_TO_INR_NUMERATOR) / CZK_TO_INR_DENOMINATOR);
+}
+
+function formatInrFromCzk(czk: number): string {
+  return `₹${czkToInr(czk).toLocaleString('en-IN')}`;
+}
+
+function formatInrSpanFromCzk(min: number, max?: number): string {
+  if (max == null || min === max) return formatInrFromCzk(min);
+  const lo = Math.min(min, max);
+  const hi = Math.max(min, max);
+  return `${formatInrFromCzk(lo)} – ${formatInrFromCzk(hi)}`;
+}
+
+function parsePayAmount(raw: string): number {
+  return Number(raw.replace(/,/g, ''));
+}
+
+/** 150, 25,000, or 1,20,000. A trailing comma is not part of the amount. */
+const PAY_AMOUNT = String.raw`\d{1,3}(?:,\d{2,3})*`;
+
+/** Inserts ₹ beside each CZK amount. Leaves text that already has rupees unchanged. */
+export function appendInrToCzkAmounts(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed || /₹|\bINR\b/i.test(trimmed) || !/CZK/i.test(trimmed)) return trimmed;
+
+  const prefixed = new RegExp(
+    `CZK\\s*(${PAY_AMOUNT})(?:\\s*[–—-]\\s*(?:CZK\\s*)?(${PAY_AMOUNT}))?(?!\\s*\\(₹)`,
+    'gi',
+  );
+  const suffixed = new RegExp(
+    `(${PAY_AMOUNT})(?:\\s*[–—-]\\s*(${PAY_AMOUNT}))?\\s+CZK(?!\\s*\\(₹)`,
+    'gi',
+  );
+
+  const withPrefix = trimmed.replace(prefixed, (match, minRaw: string, maxRaw?: string) => {
+    const min = parsePayAmount(minRaw);
+    const max = maxRaw ? parsePayAmount(maxRaw) : undefined;
+    return `${match} (${formatInrSpanFromCzk(min, max)})`;
+  });
+
+  return withPrefix.replace(suffixed, (match, minRaw: string, maxRaw?: string) => {
+    const min = parsePayAmount(minRaw);
+    const max = maxRaw ? parsePayAmount(maxRaw) : undefined;
+    return `${match} (${formatInrSpanFromCzk(min, max)})`;
+  });
+}
+
+/** Salary line for a Czech vacancy: CZK first, rupees in parentheses. */
+export function withCzkAndInrPay(text: string | null | undefined): string {
+  const trimmed = text?.trim() ?? '';
+  if (!trimmed) return '';
+  if (/₹|\bINR\b/i.test(trimmed)) return trimmed;
+  if (/180 per hour/i.test(trimmed) && /currency not stated/i.test(trimmed)) {
+    return `180 CZK/hour (${formatInrFromCzk(180)})`;
+  }
+  return appendInrToCzkAmounts(trimmed);
+}
+
+/** Pay sentences on Czech job descriptions, without rewriting accommodation amounts that already use ₹. */
+export function annotateEuropePayDescription(text: string): string {
+  if (!text.trim()) return text;
+  if (/₹/.test(text) && !/\bINR\b/i.test(text)) return text;
+
+  const next = text
+    .replace(
+      'The vacancy states 180 per hour. The currency was not stated.',
+      'Pay is 180 CZK per hour.',
+    )
+    .replace(/\s*\([^)]*\bINR\b[^)]*\)/gi, '');
+
+  return appendInrToCzkAmounts(next);
+}
+
 function formatGrouped(amount: number): string {
   return Math.round(amount).toLocaleString('en-IN');
 }

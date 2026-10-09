@@ -31,7 +31,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, publicJobBenefitsText, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
-import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR } from '@/lib/jobSalaryUtils';
+import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
 import { devCompareListItem } from '@/lib/devCompareJob';
@@ -242,7 +242,7 @@ export default function Jobs() {
             location: formatJobPlace(job.location, job.country),
             country: job.country,
             benefits: publicJobBenefitsText(job.title, job.description ?? '', job.country, typeof job.benefits === 'string' ? job.benefits : null),
-            salaryDisplay: listedSalary?.salary_display ?? job.salary_display ?? null,
+            salaryDisplay: withCzkAndInrPay(listedSalary?.salary_display ?? job.salary_display) || null,
             rawSalaryMin,
             rawSalaryMax,
             currency,

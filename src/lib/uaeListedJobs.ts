@@ -1,5 +1,5 @@
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
-import { formatJobSalaryAedAndInr } from '@/lib/jobSalaryUtils';
+import { annotateEuropePayDescription, formatJobSalaryAedAndInr } from '@/lib/jobSalaryUtils';
 
 /** Categories we currently list under UAE on Find jobs / Choose a job. */
 export const UAE_LISTED_JOBS = [
@@ -292,7 +292,9 @@ export function getPublicJobAbout(
 ): string {
   const listed = inferUaeListedJob(title, description || stored || '', country);
   if (listed) return UAE_LISTED_JOB_ABOUT[listed];
-  return stored?.trim() || '';
+  const text = stored?.trim() || '';
+  if ((country ?? '').trim().toLowerCase() === 'europe') return annotateEuropePayDescription(text);
+  return text;
 }
 
 export type DisplayedJobBenefit = {

@@ -9,7 +9,7 @@ import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
-import { formatJobPlace } from "@/lib/jobsBrowse";
+import { formatJobPlace, usesStoredPayText } from "@/lib/jobsBrowse";
 import { getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from "@/lib/uaeListedJobs";
 
 interface JobPreview {
@@ -184,6 +184,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                           currency={job.currency}
                           title={job.title}
                           country={job.country}
+                          display={usesStoredPayText(job.country) ? job.salary_display : undefined}
                           periodLabel={t("jobs.perMonth")}
                           primaryClassName="text-lg font-bold text-primary"
                           inrClassName="text-xs font-normal"

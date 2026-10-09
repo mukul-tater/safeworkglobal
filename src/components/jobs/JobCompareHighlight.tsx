@@ -17,7 +17,8 @@ function salaryCeiling(job: JobListItem): number | null {
 function formatInrSalary(job: JobListItem): string {
   if (job.salaryDisplay) {
     const monthly = job.rawSalaryMin != null || job.rawSalaryMax != null;
-    return monthly && !/per /i.test(job.salaryDisplay) ? `${job.salaryDisplay} per month` : job.salaryDisplay;
+    const alreadyPeriod = /per |\/hour|\/month/i.test(job.salaryDisplay);
+    return monthly && !alreadyPeriod ? `${job.salaryDisplay} per month` : job.salaryDisplay;
   }
   const min = job.salaryMin;
   const max = job.salaryMax;
