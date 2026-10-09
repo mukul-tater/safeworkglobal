@@ -432,7 +432,7 @@ export default function EditJob() {
                     {...register("service_charge", { valueAsNumber: true })}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Shown on this job and charged after the video interview. Default is ₹{DEFAULT_SERVICE_CHARGE_INR.toLocaleString("en-IN")}.
+                    Workers see this as the amount plus GST. Enter the total they pay, including GST. Default is ₹{DEFAULT_SERVICE_CHARGE_INR.toLocaleString("en-IN")}.
                   </p>
                   {errors.service_charge && (
                     <p className="text-sm text-destructive mt-1">{errors.service_charge.message}</p>

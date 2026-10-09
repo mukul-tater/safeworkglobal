@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { displayableEmail } from '@/lib/workerAuthEmail';
-import { serviceChargeGstSplit } from '@/lib/jobServiceCharge';
+import { formatServiceChargePlusGst } from '@/lib/jobServiceCharge';
 import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
 import { ASSESSMENT_FEE_INCLUSIONS, normalizeVerificationStage } from '@/modules/worker-verification/constants';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
@@ -111,7 +111,7 @@ export default function PaymentStage({
   showDevReset: boolean;
   onPaid: (next: WorkerVerification) => void;
 }) {
-  const feeSplit = serviceChargeGstSplit(assessmentFee);
+  const serviceChargeLabel = formatServiceChargePlusGst(assessmentFee);
   const gatewayFee = razorpayGatewayFeeInr(assessmentFee);
   const razorpayTotal = razorpayChargedAmountInr(assessmentFee);
   const paymentNote = bankTransferPaymentNote(subjectId);
@@ -221,36 +221,22 @@ export default function PaymentStage({
           <div>
             <h2 className="text-lg font-semibold font-heading leading-tight">Assessment fee</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              This fee depends on your selected job. Pay the exact {formatInr(assessmentFee)} by bank transfer, or pay
-              instantly with Razorpay (2.5% extra).
+              This fee depends on your selected job. Pay {serviceChargeLabel} by bank transfer, or pay instantly with
+              Razorpay (2.5% extra).
             </p>
           </div>
         </div>
 
         <div className="rounded-xl border border-border p-4">
-          <p className="text-3xl font-bold font-heading tabular-nums text-foreground">{formatInr(assessmentFee)}</p>
+          <p className="text-3xl font-bold font-heading tabular-nums text-foreground">{serviceChargeLabel}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            One-time all-inclusive fee for your overseas job application
+            One-time service charge for your overseas job application
           </p>
-          <div className="mt-3 border-t border-border pt-3 text-sm">
-            <div className="flex items-center justify-between py-0.5">
-              <span className="text-muted-foreground">Skill assessment &amp; processing</span>
-              <span className="tabular-nums">{formatInr(feeSplit.base)}</span>
-            </div>
-            <div className="flex items-center justify-between py-0.5">
-              <span className="text-muted-foreground">GST (18%)</span>
-              <span className="tabular-nums">{formatInr(feeSplit.gst)}</span>
-            </div>
-            <div className="mt-1 flex items-center justify-between border-t border-border pt-2 font-semibold">
-              <span>Total</span>
-              <span className="tabular-nums">{formatInr(assessmentFee)}</span>
-            </div>
-          </div>
         </div>
 
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
           <p className="text-sm font-semibold font-heading text-foreground">
-            What you get in this {formatInr(assessmentFee)}
+            What you get in this {serviceChargeLabel}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">No hidden agent charges — this fee covers:</p>
           <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -323,7 +309,7 @@ export default function PaymentStage({
                   <Badge>Recommended</Badge>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Pay the exact {formatInr(assessmentFee)}. No extra charge.
+                  Pay {serviceChargeLabel}. No extra charge.
                 </p>
               </button>
               <button
@@ -433,7 +419,7 @@ export default function PaymentStage({
               <p className="font-semibold text-foreground">Razorpay adds a {RAZORPAY_GATEWAY_FEE_PCT}% gateway charge</p>
               <p className="mt-1 text-foreground">
                 You will pay <strong>{formatInr(gatewayFee)} extra</strong> — total{' '}
-                <strong>{formatInr(razorpayTotal)}</strong> instead of {formatInr(assessmentFee)}.
+                <strong>{formatInr(razorpayTotal)}</strong> instead of {serviceChargeLabel}.
                 {submitted ? ' Use this only if you do not want to wait for bank verification.' : ' Use direct bank / UPI to avoid this extra charge.'}
               </p>
             </div>
@@ -521,7 +507,7 @@ export default function PaymentStage({
             <AlertDialogTitle>Pay {formatInr(razorpayTotal)} with Razorpay?</AlertDialogTitle>
             <AlertDialogDescription>
               Razorpay charges an extra {RAZORPAY_GATEWAY_FEE_PCT}% gateway fee ({formatInr(gatewayFee)}). You will pay{' '}
-              {formatInr(razorpayTotal)} instead of the exact fee {formatInr(assessmentFee)}. Direct bank / UPI has no
+              {formatInr(razorpayTotal)} instead of {serviceChargeLabel}. Direct bank / UPI has no
               extra charge.
             </AlertDialogDescription>
           </AlertDialogHeader>

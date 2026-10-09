@@ -20,3 +20,9 @@ export function serviceChargeGstSplit(amount?: number | string | null) {
   const base = Math.round(total / 1.18);
   return { base, gst: total - base, total };
 }
+
+/** Worker-facing label. The stored amount includes GST; the label shows only the base. */
+export function formatServiceChargePlusGst(amount?: number | string | null): string {
+  const { base } = serviceChargeGstSplit(amount);
+  return `₹${base.toLocaleString('en-IN')} + GST`;
+}

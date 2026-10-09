@@ -208,14 +208,17 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ListedJobSalary> = {
   },
 };
 
-/** SafeWork service fee for the Delivery listing. Other UAE trades use the stored job fee. */
-export const UAE_DELIVERY_SERVICE_CHARGE_INR = 80000;
+/** UAE trades other than bike delivery. Stored total is ₹30,000 + 18% GST. */
+export const UAE_SERVICE_CHARGE_INR = 35400;
 
-/** SafeWork service fee for every Ukraine listing. */
-export const UKRAINE_SERVICE_CHARGE_INR = 200000;
+/** Dubai bike delivery. Stored total is ₹80,000 + 18% GST. */
+export const UAE_DELIVERY_SERVICE_CHARGE_INR = 94400;
 
-/** SafeWork service fee for every Europe listing. */
-export const EUROPE_SERVICE_CHARGE_INR = 350000;
+/** Every Ukraine listing. Stored total is ₹2,00,000 + 18% GST. */
+export const UKRAINE_SERVICE_CHARGE_INR = 236000;
+
+/** Czech Republic listings (country Europe). Stored total is ₹3,00,000 + 18% GST. */
+export const EUROPE_SERVICE_CHARGE_INR = 354000;
 
 export function getPublicJobServiceCharge(
   title: string,
@@ -223,9 +226,12 @@ export function getPublicJobServiceCharge(
   stored?: number | null,
   country?: string | null,
 ): number | null {
-  if (inferUaeListedJob(title, description, country) === 'Delivery') return UAE_DELIVERY_SERVICE_CHARGE_INR;
-  if ((country ?? '').trim().toLowerCase() === 'ukraine') return UKRAINE_SERVICE_CHARGE_INR;
-  if ((country ?? '').trim().toLowerCase() === 'europe') return EUROPE_SERVICE_CHARGE_INR;
+  const listed = inferUaeListedJob(title, description, country);
+  if (listed === 'Delivery') return UAE_DELIVERY_SERVICE_CHARGE_INR;
+  const normalized = (country ?? '').trim().toLowerCase();
+  if (normalized === 'ukraine') return UKRAINE_SERVICE_CHARGE_INR;
+  if (normalized === 'europe') return EUROPE_SERVICE_CHARGE_INR;
+  if (normalized === 'uae' || listed) return UAE_SERVICE_CHARGE_INR;
   return stored ?? null;
 }
 

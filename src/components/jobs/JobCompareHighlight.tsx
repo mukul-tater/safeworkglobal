@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import HindiText from '@/components/indian-workforce/HindiText';
 import { jobCompareBenefitRows } from '@/lib/jobBenefits';
-import { formatServiceChargeInr } from '@/lib/jobServiceCharge';
+import { formatServiceChargePlusGst } from '@/lib/jobServiceCharge';
 import { UAE_LISTED_JOB_LABELS, type UaeListedJob } from '@/lib/uaeListedJobs';
 import { formatINRAmount } from '@/lib/utils';
 import type { JobListItem } from '@/components/jobs/JobResultCard';
@@ -102,7 +102,7 @@ export default function JobCompareHighlight({ trade, jobs, onClear }: Props) {
                     </span>
                   </td>
                   <td className="border-b px-3 py-3">{benefits.contract}</td>
-                  <td className="border-b px-3 py-3">{formatServiceChargeInr(job.serviceCharge)}</td>
+                  <td className="border-b px-3 py-3">{formatServiceChargePlusGst(job.serviceCharge)}</td>
                   <td className="border-b px-3 py-3">{benefits.stay}</td>
                   <td className="border-b px-3 py-3">
                     <Button size="sm" asChild>

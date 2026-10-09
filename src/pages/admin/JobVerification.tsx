@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  formatServiceChargeInr,
+  formatServiceChargePlusGst,
   resolveServiceChargeInr,
   SERVICE_CHARGE_MAX_INR,
   SERVICE_CHARGE_MIN_INR,
@@ -149,7 +149,7 @@ export default function JobVerification() {
     try {
       const { error } = await adminUpdateJob(feeJob.id, { service_charge: amount });
       if (error) throw new Error(error);
-      toast.success(`Service charge updated to ${formatServiceChargeInr(amount)}`);
+      toast.success(`Service charge updated to ${formatServiceChargePlusGst(amount)}`);
       setFeeJob(null);
       fetchJobs();
     } catch (error: any) {
@@ -254,7 +254,7 @@ export default function JobVerification() {
                       Posted {job.posted_at ? new Date(job.posted_at).toLocaleDateString() : "Draft"}
                     </p>
                     <p className="text-xs md:text-sm text-foreground mt-1">
-                      Service charge {formatServiceChargeInr(job.service_charge)}
+                      Service charge {formatServiceChargePlusGst(job.service_charge)}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
@@ -337,7 +337,7 @@ export default function JobVerification() {
               onChange={(e) => setFeeValue(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Workers see this on the job listing and pay it after the video interview.
+              Workers see this as the amount plus GST. Enter the total they pay, including GST.
             </p>
           </div>
           <DialogFooter>

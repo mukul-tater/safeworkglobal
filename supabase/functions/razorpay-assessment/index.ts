@@ -9,9 +9,10 @@ const corsHeaders = {
 };
 
 const ASSESSMENT_FEE_INR = 35400;
-const DELIVERY_SERVICE_CHARGE_INR = 80000;
-const UKRAINE_SERVICE_CHARGE_INR = 200000;
-const EUROPE_SERVICE_CHARGE_INR = 350000;
+const UAE_SERVICE_CHARGE_INR = 35400;
+const DELIVERY_SERVICE_CHARGE_INR = 94400;
+const UKRAINE_SERVICE_CHARGE_INR = 236000;
+const EUROPE_SERVICE_CHARGE_INR = 354000;
 const DELIVERY_JOB_ID = "a1e10000-2026-4000-8000-000000000030";
 /** Keep in sync with src/modules/worker-verification/payment/bankTransfer.ts */
 const RAZORPAY_GATEWAY_FEE_PCT = 2.5;
@@ -36,6 +37,14 @@ function isEuropeListing(job: {
 }): boolean {
   if (String(job.country || "").trim().toLowerCase() === "europe") return true;
   return String(job.slug || "").startsWith("europe-listed-");
+}
+
+function isUaeListing(job: {
+  country?: string | null;
+  slug?: string | null;
+}): boolean {
+  if (String(job.country || "").trim().toLowerCase() === "uae") return true;
+  return String(job.slug || "").startsWith("uae-listed-");
 }
 
 function isDeliveryListing(job: {
@@ -230,6 +239,15 @@ serve(async (req) => {
           .eq("id", job.id);
       }
       return DELIVERY_SERVICE_CHARGE_INR;
+    }
+    if (job && isUaeListing(job)) {
+      if (Number(job.service_charge) !== UAE_SERVICE_CHARGE_INR) {
+        await admin
+          .from("jobs")
+          .update({ service_charge: UAE_SERVICE_CHARGE_INR })
+          .eq("id", job.id);
+      }
+      return UAE_SERVICE_CHARGE_INR;
     }
     return resolveFeeInr(job?.service_charge);
   }
