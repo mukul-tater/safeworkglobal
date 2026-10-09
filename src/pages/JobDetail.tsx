@@ -439,6 +439,10 @@ export default function JobDetail() {
   const responsibilities = devJob
     ? (job.responsibilities ?? '').split(/\n+/).map((line) => line.trim()).filter(Boolean)
     : listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country);
+  const requirementLines = (job.requirements ?? '')
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const dualSalary = devJob ? null : adminRangeSalaryDisplay(job);
   const listedSalary = devJob || dualSalary ? null : getPublicJobSalary(job.title, job.description, job.country);
   const serviceCharge = devJob
@@ -595,6 +599,24 @@ export default function JobDetail() {
                 country={job.country}
                 youtubeUrls={job.youtube_urls}
               />
+
+              {requirementLines.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Requirements</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {requirementLines.map((item) => (
+                        <li key={item} className="flex items-start gap-2 text-muted-foreground">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <span className="break-words">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Responsibilities */}
               {responsibilities.length > 0 && (
