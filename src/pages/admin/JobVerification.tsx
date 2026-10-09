@@ -149,7 +149,7 @@ export default function JobVerification() {
     try {
       const { error } = await adminUpdateJob(feeJob.id, { service_charge: amount });
       if (error) throw new Error(error);
-      toast.success(`Service charge updated to ${formatServiceChargeInr(amount)}`);
+      toast.success(`Service charge updated to ${formatServiceChargeInr(amount)} +GST`);
       setFeeJob(null);
       fetchJobs();
     } catch (error: any) {
@@ -254,7 +254,7 @@ export default function JobVerification() {
                       Posted {job.posted_at ? new Date(job.posted_at).toLocaleDateString() : "Draft"}
                     </p>
                     <p className="text-xs md:text-sm text-foreground mt-1">
-                      Service charge {formatServiceChargeInr(job.service_charge)}
+                      Service charge {formatServiceChargeInr(job.service_charge)} +GST
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">

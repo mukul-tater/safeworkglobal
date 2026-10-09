@@ -6,7 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 
 export function formatJobServiceFee(amount?: number | null): string {
-  return `${formatServiceChargeInr(amount)}/-`;
+  return `${formatServiceChargeInr(amount)}/- +GST`;
 }
 
 /** Shown on every public job. Payment is only after the video interview. */
