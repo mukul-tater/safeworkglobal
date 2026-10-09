@@ -7066,6 +7066,10 @@ export type Database = {
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
       seo_health_summary: { Args: never; Returns: Json }
+      signup_mobile_taken: {
+        Args: { p_except_user_id?: string; p_phone: string }
+        Returns: boolean
+      }
       submit_bank_transfer_payment: {
         Args: {
           p_amount: number
