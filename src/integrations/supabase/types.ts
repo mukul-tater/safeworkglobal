@@ -6944,6 +6944,7 @@ export type Database = {
         Returns: Json
       }
       job_switch_policy: { Args: { p_user_id?: string }; Returns: Json }
+      job_youtube_urls_valid: { Args: { urls: string[] }; Returns: boolean }
       journey_email_webhook_secret: { Args: never; Returns: string }
       list_my_shared_workers: {
         Args: never
@@ -7007,6 +7008,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      normalize_job_youtube_urls: { Args: { p_urls: Json }; Returns: string[] }
       partner_attach_registered_worker: {
         Args: {
           p_email?: string
@@ -7064,6 +7066,10 @@ export type Database = {
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
       seo_health_summary: { Args: never; Returns: Json }
+      signup_mobile_taken: {
+        Args: { p_except_user_id?: string; p_phone: string }
+        Returns: boolean
+      }
       submit_bank_transfer_payment: {
         Args: {
           p_amount: number
@@ -7601,6 +7607,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      youtube_video_id: { Args: { url: string }; Returns: string }
     }
     Enums: {
       app_role:
