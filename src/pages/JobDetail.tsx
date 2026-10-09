@@ -7,7 +7,7 @@ import PublicJobBenefitsList from '@/components/jobs/PublicJobBenefitsList';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
 import { formatJobPlace, jobsBrowsePath, usesStoredPayText } from '@/lib/jobsBrowse';
 import { devCompareJobRecord, isDevCompareJob } from '@/lib/devCompareJob';
-import { convertSalaryToINR } from '@/lib/jobSalaryUtils';
+import { adminRangeSalaryDisplay, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -439,11 +439,12 @@ export default function JobDetail() {
   const responsibilities = devJob
     ? (job.responsibilities ?? '').split(/\n+/).map((line) => line.trim()).filter(Boolean)
     : listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country);
-  const listedSalary = devJob ? null : getPublicJobSalary(job.title, job.description, job.country);
+  const dualSalary = devJob ? null : adminRangeSalaryDisplay(job);
+  const listedSalary = devJob || dualSalary ? null : getPublicJobSalary(job.title, job.description, job.country);
   const serviceCharge = devJob
     ? job.service_charge
     : getPublicJobServiceCharge(job.title, job.description, job.service_charge, job.country);
-  const textPay = listedSalary?.salary_display ?? null;
+  const textPay = dualSalary ?? listedSalary?.salary_display ?? null;
   const monthlyListed = listedSalaryIsMonthly(listedSalary);
   const salaryMin = monthlyListed ? listedSalary.salary_min : job.salary_min;
   const salaryMax = monthlyListed ? listedSalary.salary_max : job.salary_max;
@@ -562,7 +563,7 @@ export default function JobDetail() {
                         title={job.title}
                         description={job.description}
                         country={job.country}
-                        display={usesStoredPayText(job.country) ? job.salary_display : undefined}
+                        display={dualSalary || usesStoredPayText(job.country) ? (dualSalary ?? job.salary_display) : undefined}
                         emptyLabel="Salary not specified"
                         className="w-full min-w-0"
                         primaryClassName="break-words font-semibold text-foreground"

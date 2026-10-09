@@ -51,25 +51,23 @@ export function appendInrToCzkAmounts(text: string): string {
   if (!trimmed || /₹|\bINR\b/i.test(trimmed) || !/CZK/i.test(trimmed)) return trimmed;
 
   const prefixed = new RegExp(
-    `CZK\\s*(${PAY_AMOUNT})(?:\\s*[–—-]\\s*(?:CZK\\s*)?(${PAY_AMOUNT}))?(?!\\s*\\(₹)`,
+    `CZK\\s*(${PAY_AMOUNT})(?:\\s*[–—-]\\s*(?:CZK\\s*)?(${PAY_AMOUNT}))?`,
     'gi',
   );
   const suffixed = new RegExp(
-    `(${PAY_AMOUNT})(?:\\s*[–—-]\\s*(${PAY_AMOUNT}))?\\s+CZK(?!\\s*\\(₹)`,
+    `(${PAY_AMOUNT})(?:\\s*[–—-]\\s*(${PAY_AMOUNT}))?\\s+CZK`,
     'gi',
   );
 
-  const withPrefix = trimmed.replace(prefixed, (match, minRaw: string, maxRaw?: string) => {
-    const min = parsePayAmount(minRaw);
-    const max = maxRaw ? parsePayAmount(maxRaw) : undefined;
-    return `${match} (${formatInrSpanFromCzk(min, max)})`;
-  });
+  const addInr = (source: string, pattern: RegExp) =>
+    source.replace(pattern, (match, minRaw: string, maxRaw: string | undefined, offset: number, full: string) => {
+      if (/^\s*\(/.test(full.slice(offset + match.length))) return match;
+      const min = parsePayAmount(minRaw);
+      const max = maxRaw ? parsePayAmount(maxRaw) : undefined;
+      return `${match} (${formatInrSpanFromCzk(min, max)})`;
+    });
 
-  return withPrefix.replace(suffixed, (match, minRaw: string, maxRaw?: string) => {
-    const min = parsePayAmount(minRaw);
-    const max = maxRaw ? parsePayAmount(maxRaw) : undefined;
-    return `${match} (${formatInrSpanFromCzk(min, max)})`;
-  });
+  return addInr(addInr(trimmed, prefixed), suffixed);
 }
 
 /** Salary line for a Czech vacancy: CZK first, rupees in parentheses. */
@@ -170,6 +168,60 @@ function formatInrPrimaryLine(
   }
   if (min != null) return `From ${formatInrAmountLabel(min)}`;
   return `Up to ${formatInrAmountLabel(max!)}`;
+}
+
+/** Destination-country currency for the admin country range. */
+export function currencyForDestination(country: string): string {
+  const value = country.trim().toLowerCase();
+  if (value === 'europe' || value.includes('czech')) return 'CZK';
+  if (value === 'uae') return 'AED';
+  if (value === 'ukraine') return 'USD';
+  return 'INR';
+}
+
+export function finiteSalary(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+export interface AdminSalaryRanges {
+  salary_min?: number | null;
+  salary_max?: number | null;
+  currency?: string | null;
+  local_salary_min?: number | null;
+  local_salary_max?: number | null;
+  local_salary_currency?: string | null;
+}
+
+/** Country amount first, local amount in parentheses. Null until a local range is saved. */
+export function adminRangeSalaryDisplay(job: AdminSalaryRanges): string | null {
+  const localMin = finiteSalary(job.local_salary_min);
+  const localMax = finiteSalary(job.local_salary_max);
+  if (localMin == null && localMax == null) return null;
+
+  const countryMin = finiteSalary(job.salary_min);
+  const countryMax = finiteSalary(job.salary_max);
+  const local = formatJobSalaryNative(localMin, localMax, job.local_salary_currency || 'INR');
+  if (countryMin == null && countryMax == null) return local;
+  const country = formatJobSalaryNative(countryMin, countryMax, job.currency || 'INR');
+  return `${country} (${local})`;
+}
+
+/** Fields written by the admin job form. Keeps an existing pay sentence until a local range is saved. */
+export function adminSalarySaveFields(
+  data: AdminSalaryRanges & { currency?: string | null },
+  hadLocalRange: boolean,
+): AdminSalaryRanges & { salary_display?: string | null } {
+  const fields: AdminSalaryRanges = {
+    salary_min: finiteSalary(data.salary_min),
+    salary_max: finiteSalary(data.salary_max),
+    currency: data.currency || 'INR',
+    local_salary_min: finiteSalary(data.local_salary_min),
+    local_salary_max: finiteSalary(data.local_salary_max),
+    local_salary_currency: data.local_salary_currency || 'INR',
+  };
+  const hasLocal = fields.local_salary_min != null || fields.local_salary_max != null;
+  if (!hasLocal && !hadLocalRange) return fields;
+  return { ...fields, salary_display: adminRangeSalaryDisplay(fields) };
 }
 
 /** Primary salary line in the job's native currency. */

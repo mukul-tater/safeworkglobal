@@ -159,7 +159,7 @@ export default function JobResultCard({
                 title={job.useStoredSalary ? undefined : job.title}
                 description={job.useStoredSalary ? undefined : job.description}
                 country={job.country}
-                display={usesStoredPayText(job.country) ? job.salaryDisplay : undefined}
+                display={job.useStoredSalary || usesStoredPayText(job.country) ? job.salaryDisplay : undefined}
               />
             </dd>
             <dd className="flex items-center gap-1.5">

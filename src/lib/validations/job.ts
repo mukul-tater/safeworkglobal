@@ -5,15 +5,23 @@ import { requiredFutureDateString, parseDateInput } from "@/lib/validations/comm
 
 const jobCurrencyCodes = CURRENCIES.map((currency) => currency.code) as [string, ...string[]];
 
+function salaryOrderOk(min?: number, max?: number): boolean {
+  if (min && max && Number.isFinite(min) && Number.isFinite(max)) return max >= min;
+  return true;
+}
+
 const salaryRangeRefine = {
-  refine: (data: { salary_min?: number; salary_max?: number }) => {
-    if (data.salary_min && data.salary_max) {
-      return data.salary_max >= data.salary_min;
-    }
-    return true;
-  },
+  refine: (data: { salary_min?: number; salary_max?: number }) =>
+    salaryOrderOk(data.salary_min, data.salary_max),
   message: "Maximum salary must be greater than or equal to minimum salary" as const,
   path: ["salary_max"] as (string | number)[],
+};
+
+const localSalaryRangeRefine = {
+  refine: (data: { local_salary_min?: number; local_salary_max?: number }) =>
+    salaryOrderOk(data.local_salary_min, data.local_salary_max),
+  message: "Local maximum must be greater than or equal to the local minimum" as const,
+  path: ["local_salary_max"] as (string | number)[],
 };
 
 const jobPostingBaseSchema = z.object({
@@ -134,13 +142,29 @@ const adminJobFieldsSchema = jobPostingBaseSchema
       .int("Service charge must be a whole rupee amount")
       .min(SERVICE_CHARGE_MIN_INR, `Service charge must be at least ₹${SERVICE_CHARGE_MIN_INR}`)
       .max(SERVICE_CHARGE_MAX_INR, `Service charge cannot exceed ₹${SERVICE_CHARGE_MAX_INR.toLocaleString("en-IN")}`),
+    local_salary_min: z.number()
+      .positive("Minimum local salary must be positive")
+      .optional()
+      .or(z.nan()),
+    local_salary_max: z.number()
+      .positive("Maximum local salary must be positive")
+      .optional()
+      .or(z.nan()),
+    local_salary_currency: z.enum(jobCurrencyCodes, {
+      errorMap: () => ({ message: "Select a local currency" }),
+    }).default("INR"),
   });
 
 /** Admin edit form — all job statuses, optional expiry, relaxed requirements */
-export const adminJobEditSchema = adminJobFieldsSchema.refine(salaryRangeRefine.refine, {
-  message: salaryRangeRefine.message,
-  path: salaryRangeRefine.path,
-});
+export const adminJobEditSchema = adminJobFieldsSchema
+  .refine(salaryRangeRefine.refine, {
+    message: salaryRangeRefine.message,
+    path: salaryRangeRefine.path,
+  })
+  .refine(localSalaryRangeRefine.refine, {
+    message: localSalaryRangeRefine.message,
+    path: localSalaryRangeRefine.path,
+  });
 
 export type AdminJobEditFormData = z.infer<typeof adminJobEditSchema>;
 
@@ -152,6 +176,10 @@ export const adminJobPostSchema = adminJobFieldsSchema
   .refine(salaryRangeRefine.refine, {
     message: salaryRangeRefine.message,
     path: salaryRangeRefine.path,
+  })
+  .refine(localSalaryRangeRefine.refine, {
+    message: localSalaryRangeRefine.message,
+    path: localSalaryRangeRefine.path,
   });
 
 export type AdminJobPostFormData = z.infer<typeof adminJobPostSchema>;

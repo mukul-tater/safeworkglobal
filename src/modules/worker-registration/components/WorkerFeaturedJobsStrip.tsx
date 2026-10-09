@@ -10,6 +10,7 @@ import JobServiceFee from "@/components/jobs/JobServiceFee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
 import { formatJobPlace, usesStoredPayText } from "@/lib/jobsBrowse";
+import { adminRangeSalaryDisplay } from "@/lib/jobSalaryUtils";
 import { getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from "@/lib/uaeListedJobs";
 
 interface JobPreview {
@@ -22,6 +23,9 @@ interface JobPreview {
   salary_max: number | null;
   currency: string;
   salary_display?: string | null;
+  local_salary_min?: number | null;
+  local_salary_max?: number | null;
+  local_salary_currency?: string | null;
   service_charge?: number | null;
 }
 
@@ -184,7 +188,7 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                           currency={job.currency}
                           title={job.title}
                           country={job.country}
-                          display={usesStoredPayText(job.country) ? job.salary_display : undefined}
+                          display={adminRangeSalaryDisplay(job) ?? (usesStoredPayText(job.country) ? job.salary_display : undefined)}
                           periodLabel={t("jobs.perMonth")}
                           primaryClassName="text-lg font-bold text-primary"
                           inrClassName="text-xs font-normal"

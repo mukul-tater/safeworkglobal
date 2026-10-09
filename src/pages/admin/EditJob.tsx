@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { adminNavGroups, adminProfileMenu } from "@/config/adminNav";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { adminJobEditSchema, type AdminJobEditFormData } from "@/lib/validations/job";
 import { firstFormErrorMessage, invalidFieldClass, revealInvalidField } from "@/lib/formErrors";
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
-import { DESTINATION_COUNTRIES, CURRENCIES } from "@/lib/constants";
+import { DESTINATION_COUNTRIES } from "@/lib/constants";
 import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
 import { adminUpdateJob } from "@/services/AdminService";
+import AdminSalaryRanges from "@/components/admin/AdminSalaryRanges";
+import { adminSalarySaveFields, currencyForDestination } from "@/lib/jobSalaryUtils";
 import PostedByBadge from "@/components/jobs/PostedByBadge";
 
 export default function EditJob() {
@@ -34,6 +36,7 @@ export default function EditJob() {
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
   const [companyName, setCompanyName] = useState<string>("");
   const [postedByRole, setPostedByRole] = useState<string>("employer");
+  const hadLocalRange = useRef(false);
 
   const {
     register,
@@ -52,6 +55,11 @@ export default function EditJob() {
   const jobType = watch("job_type");
   const experienceLevel = watch("experience_level");
   const currency = watch("currency");
+  const localCurrency = watch("local_salary_currency");
+  const localMin = watch("local_salary_min");
+  const localMax = watch("local_salary_max");
+  const countryMin = watch("salary_min");
+  const countryMax = watch("salary_max");
   const visaSponsorship = watch("visa_sponsorship");
   const remoteAllowed = watch("remote_allowed");
 
@@ -91,6 +99,7 @@ export default function EditJob() {
       const skillNames = jobSkills?.map(s => s.skill_name) || [];
       setSkills(skillNames);
       setYoutubeUrls(Array.isArray(job.youtube_urls) ? job.youtube_urls : []);
+      hadLocalRange.current = job.local_salary_min != null || job.local_salary_max != null;
 
       // Set form values
       reset({
@@ -105,7 +114,10 @@ export default function EditJob() {
         experience_level: job.experience_level as any,
         salary_min: job.salary_min || undefined,
         salary_max: job.salary_max || undefined,
-        currency: job.currency as any,
+        currency: job.currency as AdminJobEditFormData["currency"],
+        local_salary_min: job.local_salary_min || undefined,
+        local_salary_max: job.local_salary_max || undefined,
+        local_salary_currency: (job.local_salary_currency || "INR") as AdminJobEditFormData["local_salary_currency"],
         openings: job.openings,
         visa_sponsorship: job.visa_sponsorship || false,
         remote_allowed: job.remote_allowed || false,
@@ -161,9 +173,7 @@ export default function EditJob() {
         country: data.country,
         job_type: data.job_type,
         experience_level: data.experience_level,
-        salary_min: Number.isFinite(data.salary_min) ? data.salary_min : null,
-        salary_max: Number.isFinite(data.salary_max) ? data.salary_max : null,
-        currency: data.currency,
+        ...adminSalarySaveFields(data, hadLocalRange.current),
         openings: Number.isFinite(data.openings) ? data.openings : 1,
         visa_sponsorship: data.visa_sponsorship,
         remote_allowed: data.remote_allowed,
@@ -303,7 +313,10 @@ export default function EditJob() {
                   </div>
                   <div data-field="country">
                     <Label htmlFor="country">Country *</Label>
-                    <Select value={watch("country")} onValueChange={(value) => setValue("country", value, { shouldValidate: true })}>
+                    <Select value={watch("country")} onValueChange={(value) => {
+                      setValue("country", value, { shouldValidate: true });
+                      setValue("currency", currencyForDestination(value) as AdminJobEditFormData["currency"], { shouldValidate: true });
+                    }}>
                       <SelectTrigger
                         id="country"
                         aria-invalid={!!errors.country}
@@ -369,56 +382,26 @@ export default function EditJob() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div data-field="currency">
-                    <Label htmlFor="currency">Currency *</Label>
-                    <Select value={currency} onValueChange={(value) => setValue("currency", value as AdminJobEditFormData["currency"], { shouldValidate: true })}>
-                      <SelectTrigger
-                        id="currency"
-                        aria-invalid={!!errors.currency}
-                        className={errors.currency ? invalidFieldClass : undefined}
-                      >
-                        <SelectValue placeholder="Select currency" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-64">
-                        {CURRENCIES.map(curr => (
-                          <SelectItem key={curr.code} value={curr.code}>
-                            {curr.code} ({curr.symbol})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.currency && (
-                      <p className="text-sm text-destructive mt-1">{errors.currency.message}</p>
-                    )}
-                  </div>
-                  <div data-field="salary_min">
-                    <Label htmlFor="salary_min">Min Salary (per month)</Label>
-                    <Input
-                      id="salary_min"
-                      type="number"
-                      aria-invalid={!!errors.salary_min}
-                      className={errors.salary_min ? invalidFieldClass : undefined}
-                      {...register("salary_min", { valueAsNumber: true })}
-                    />
-                    {errors.salary_min && (
-                      <p className="text-sm text-destructive mt-1">{errors.salary_min.message}</p>
-                    )}
-                  </div>
-                  <div data-field="salary_max">
-                    <Label htmlFor="salary_max">Max Salary (per month)</Label>
-                    <Input
-                      id="salary_max"
-                      type="number"
-                      aria-invalid={!!errors.salary_max}
-                      className={errors.salary_max ? invalidFieldClass : undefined}
-                      {...register("salary_max", { valueAsNumber: true })}
-                    />
-                    {errors.salary_max && (
-                      <p className="text-sm text-destructive mt-1">{errors.salary_max.message}</p>
-                    )}
-                  </div>
-                </div>
+                <AdminSalaryRanges
+                  localCurrency={localCurrency}
+                  countryCurrency={currency}
+                  localMin={localMin}
+                  localMax={localMax}
+                  countryMin={countryMin}
+                  countryMax={countryMax}
+                  onLocalCurrencyChange={(value) => setValue("local_salary_currency", value as AdminJobEditFormData["local_salary_currency"], { shouldValidate: true })}
+                  onCountryCurrencyChange={(value) => setValue("currency", value as AdminJobEditFormData["currency"], { shouldValidate: true })}
+                  localMinRegister={register("local_salary_min", { valueAsNumber: true })}
+                  localMaxRegister={register("local_salary_max", { valueAsNumber: true })}
+                  countryMinRegister={register("salary_min", { valueAsNumber: true })}
+                  countryMaxRegister={register("salary_max", { valueAsNumber: true })}
+                  localMinError={errors.local_salary_min}
+                  localMaxError={errors.local_salary_max}
+                  localCurrencyError={errors.local_salary_currency}
+                  countryMinError={errors.salary_min}
+                  countryMaxError={errors.salary_max}
+                  countryCurrencyError={errors.currency}
+                />
 
                 <div data-field="service_charge">
                   <Label htmlFor="service_charge">SafeWork Global service charge (₹) *</Label>

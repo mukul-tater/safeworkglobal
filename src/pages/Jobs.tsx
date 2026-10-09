@@ -31,7 +31,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, publicJobBenefitsText, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
-import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
+import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
 import { devCompareListItem } from '@/lib/devCompareJob';
@@ -226,7 +226,8 @@ export default function Jobs() {
           .filter((job: any) => !isHiddenPublicJob(job.title, job.slug))
           .map((job: any) => {
           const description: string = getPublicJobAbout(job.title, job.description, '', job.country) || job.description || '';
-          const listedSalary = getPublicJobSalary(job.title, job.description ?? '', job.country);
+          const dualSalary = adminRangeSalaryDisplay(job);
+          const listedSalary = dualSalary ? null : getPublicJobSalary(job.title, job.description ?? '', job.country);
           const monthlyListed = listedSalaryIsMonthly(listedSalary);
           const rawSalaryMin = monthlyListed ? listedSalary.salary_min : (job.salary_min ?? null);
           const rawSalaryMax = monthlyListed ? listedSalary.salary_max : (job.salary_max ?? null);
@@ -242,12 +243,17 @@ export default function Jobs() {
             location: formatJobPlace(job.location, job.country),
             country: job.country,
             benefits: publicJobBenefitsText(job.title, job.description ?? '', job.country, typeof job.benefits === 'string' ? job.benefits : null),
-            salaryDisplay: withCzkAndInrPay(listedSalary?.salary_display ?? job.salary_display) || null,
+            salaryDisplay: dualSalary ?? (withCzkAndInrPay(listedSalary?.salary_display ?? job.salary_display) || null),
+            useStoredSalary: Boolean(dualSalary),
             rawSalaryMin,
             rawSalaryMax,
             currency,
-            salaryMin: rawSalaryMin == null ? null : convertSalaryToINR(rawSalaryMin, currency),
-            salaryMax: rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
+            salaryMin: dualSalary && (job.local_salary_currency || 'INR') === 'INR'
+              ? (job.local_salary_min ?? null)
+              : rawSalaryMin == null ? null : convertSalaryToINR(rawSalaryMin, currency),
+            salaryMax: dualSalary && (job.local_salary_currency || 'INR') === 'INR'
+              ? (job.local_salary_max ?? job.local_salary_min ?? null)
+              : rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
             type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
             category: inferCategory(job.title, description, job.country),
             experienceLevel: job.experience_level ?? '',

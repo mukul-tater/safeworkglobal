@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatJobPlace, usesStoredPayText } from '@/lib/jobsBrowse';
+import { adminRangeSalaryDisplay } from '@/lib/jobSalaryUtils';
 import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from '@/lib/uaeListedJobs';
 
 interface FeaturedJob {
@@ -24,6 +25,9 @@ interface FeaturedJob {
   salary_max: number | null;
   currency: string;
   salary_display?: string | null;
+  local_salary_min?: number | null;
+  local_salary_max?: number | null;
+  local_salary_currency?: string | null;
   job_type: string;
   visa_sponsorship: boolean;
   posted_at: string;
@@ -224,7 +228,7 @@ export default function FeaturedJobs() {
                       title={job.title}
                       description={job.description}
                       country={job.country}
-                      display={usesStoredPayText(job.country) ? job.salary_display : undefined}
+                      display={adminRangeSalaryDisplay(job) ?? (usesStoredPayText(job.country) ? job.salary_display : undefined)}
                       primaryClassName="text-lg font-bold text-primary"
                     />
                     <div className="mt-2">
