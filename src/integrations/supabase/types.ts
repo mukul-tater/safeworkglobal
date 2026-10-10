@@ -1626,6 +1626,9 @@ export type Database = {
           id: string
           indexable: boolean
           job_type: string
+          local_salary_currency: string | null
+          local_salary_max: number | null
+          local_salary_min: number | null
           location: string
           noindex_reason: string | null
           openings: number
@@ -1634,9 +1637,6 @@ export type Database = {
           remote_allowed: boolean | null
           requirements: string | null
           responsibilities: string | null
-          local_salary_currency: string | null
-          local_salary_max: number | null
-          local_salary_min: number | null
           salary_display: string | null
           salary_max: number | null
           salary_min: number | null
@@ -1667,6 +1667,9 @@ export type Database = {
           id?: string
           indexable?: boolean
           job_type: string
+          local_salary_currency?: string | null
+          local_salary_max?: number | null
+          local_salary_min?: number | null
           location: string
           noindex_reason?: string | null
           openings?: number
@@ -1675,9 +1678,6 @@ export type Database = {
           remote_allowed?: boolean | null
           requirements?: string | null
           responsibilities?: string | null
-          local_salary_currency?: string | null
-          local_salary_max?: number | null
-          local_salary_min?: number | null
           salary_display?: string | null
           salary_max?: number | null
           salary_min?: number | null
@@ -1708,6 +1708,9 @@ export type Database = {
           id?: string
           indexable?: boolean
           job_type?: string
+          local_salary_currency?: string | null
+          local_salary_max?: number | null
+          local_salary_min?: number | null
           location?: string
           noindex_reason?: string | null
           openings?: number
@@ -1716,9 +1719,6 @@ export type Database = {
           remote_allowed?: boolean | null
           requirements?: string | null
           responsibilities?: string | null
-          local_salary_currency?: string | null
-          local_salary_max?: number | null
-          local_salary_min?: number | null
           salary_display?: string | null
           salary_max?: number | null
           salary_min?: number | null
