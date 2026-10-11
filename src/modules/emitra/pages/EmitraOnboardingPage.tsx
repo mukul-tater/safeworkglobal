@@ -327,7 +327,7 @@ export default function EmitraOnboardingPage() {
       setOtp('');
       toast.success(`Verification code sent to +91 ${digits}`);
     } catch (err) {
-      firebaseOtp.resetRecaptcha();
+      firebaseOtp.clearVerifierOnly();
       toast.error(err instanceof Error ? err.message : 'Failed to send OTP');
     } finally {
       setOtpBusy(false);
@@ -388,7 +388,7 @@ export default function EmitraOnboardingPage() {
       setAgreementOtp('');
       toast.success(`Agreement OTP sent to +91 ${digits}`);
     } catch (err) {
-      firebaseOtp.resetRecaptcha();
+      firebaseOtp.clearVerifierOnly();
       toast.error(err instanceof Error ? err.message : 'Failed to send OTP');
     } finally {
       setAgreementOtpBusy(false);

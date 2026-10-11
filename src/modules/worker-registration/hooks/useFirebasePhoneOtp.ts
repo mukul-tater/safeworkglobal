@@ -101,6 +101,7 @@ export function useFirebasePhoneOtp(recaptchaButtonId = WORKER_OTP_RECAPTCHA_BTN
   const resetRecaptcha = useCallback(() => {
     clearVerifierOnly();
     confirmationRef.current = null;
+    pendingDevPhoneRef.current = null;
   }, [clearVerifierOnly]);
 
   const ensureRecaptcha = useCallback(async () => {
@@ -140,24 +141,27 @@ export function useFirebasePhoneOtp(recaptchaButtonId = WORKER_OTP_RECAPTCHA_BTN
       // Keep phone verification on one authorized canonical hostname. In
       // particular, mobile links may open the www alias while Firebase is
       // configured for the apex domain, producing auth/invalid-app-credential.
-      if (redirectToPhoneAuthHost()) return;
+      if (redirectToPhoneAuthHost()) {
+        throw new Error('Opening the SMS verification site. Tap Send SMS again after the page opens.');
+      }
 
       // Always recreate so a failed attempt does not leave a dead verifier
       clearVerifierOnly();
       const auth = getFirebaseAuth();
-      const verifier = await ensureRecaptcha();
       const phone = mobileNumber.startsWith('+') ? mobileNumber : `+91${mobileNumber}`;
 
       try {
-        confirmationRef.current = await signInWithPhoneNumber(auth, phone, verifier);
+        const verifier = await ensureRecaptcha();
+        const confirmation = await signInWithPhoneNumber(auth, phone, verifier);
+        confirmationRef.current = confirmation;
         // Drop challenge iframes; keep confirmation result for OTP verify
         dismissRecaptchaWidgets();
       } catch (err) {
-        resetRecaptcha();
+        clearVerifierOnly();
         throw new Error(mapFirebaseAuthError(err));
       }
     },
-    [clearVerifierOnly, ensureRecaptcha, resetRecaptcha]
+    [clearVerifierOnly, ensureRecaptcha]
   );
 
   const verifyOtp = useCallback(
@@ -165,7 +169,7 @@ export function useFirebasePhoneOtp(recaptchaButtonId = WORKER_OTP_RECAPTCHA_BTN
       const code = otp.replace(/\s/g, '');
       if (isDevOtpBypassEnabled()) {
         if (!pendingDevPhoneRef.current) {
-          throw new Error('Request OTP first');
+          throw new Error('This page lost the SMS session. Tap Resend SMS and enter the new code.');
         }
         if (!isOtpSixDigits(code)) {
           throw new Error('Enter the 6-digit OTP');
@@ -176,7 +180,7 @@ export function useFirebasePhoneOtp(recaptchaButtonId = WORKER_OTP_RECAPTCHA_BTN
       }
 
       if (!confirmationRef.current) {
-        throw new Error('Request OTP first');
+        throw new Error('This page lost the SMS session. Tap Resend SMS and enter the new code.');
       }
 
       try {

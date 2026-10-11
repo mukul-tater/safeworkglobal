@@ -278,7 +278,7 @@ export default function QuickWorkerSignup({
       } else if (phoneOtpVerified) {
         setError(message);
       } else {
-        firebaseOtp.resetRecaptcha();
+        firebaseOtp.clearVerifierOnly();
         setError(message);
       }
     } finally {
@@ -465,7 +465,7 @@ export default function QuickWorkerSignup({
       await firebaseOtp.sendOtp(digits);
       toast.success(`New code sent to +91 ${digits}`);
     } catch (err: unknown) {
-      firebaseOtp.resetRecaptcha();
+      firebaseOtp.clearVerifierOnly();
       setError(err instanceof Error ? err.message : 'Failed to resend OTP');
     } finally {
       setFormLoading(false);

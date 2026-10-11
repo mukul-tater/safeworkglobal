@@ -101,7 +101,12 @@ export async function adminSetUserEnabled(
   enabled: boolean,
   reason?: string | null
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase.rpc("admin_set_user_enabled", {
+  // This existing RPC is not included in the current generated function catalog.
+  const setUserEnabled = supabase.rpc as unknown as (
+    name: "admin_set_user_enabled",
+    args: { p_user_id: string; p_enabled: boolean; p_reason?: string },
+  ) => ReturnType<typeof supabase.rpc>;
+  const { error } = await setUserEnabled.call(supabase, "admin_set_user_enabled", {
     p_user_id: userId,
     p_enabled: enabled,
     p_reason: reason ?? undefined,

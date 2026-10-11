@@ -192,7 +192,7 @@ export default function EmitraRegisterPage() {
       setOtp('');
       toast.success(`Verification code sent to +91 ${digits}`);
     } catch (err) {
-      firebaseOtp.resetRecaptcha();
+      firebaseOtp.clearVerifierOnly();
       toast.error(err instanceof Error ? err.message : 'Failed to send OTP');
     } finally {
       setOtpBusy(false);

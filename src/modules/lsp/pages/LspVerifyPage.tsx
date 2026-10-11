@@ -90,7 +90,7 @@ export default function LspVerifyPage() {
       setStep('otp');
       setOtp('');
     } catch (err) {
-      firebaseOtp.resetRecaptcha();
+      firebaseOtp.clearVerifierOnly();
       setError(err instanceof Error ? err.message : 'Failed to send OTP');
     } finally {
       setLoading(false);
@@ -282,7 +282,7 @@ export default function LspVerifyPage() {
                       setOtp('');
                       toast.success(`New code sent to +91 ${digits}`);
                     } catch (err) {
-                      firebaseOtp.resetRecaptcha();
+                      firebaseOtp.clearVerifierOnly();
                       setError(err instanceof Error ? err.message : 'Failed to resend OTP');
                     } finally {
                       setLoading(false);

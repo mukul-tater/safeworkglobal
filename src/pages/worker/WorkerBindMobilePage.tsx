@@ -109,7 +109,7 @@ export default function WorkerBindMobilePage() {
       setStep('otp');
       setOtp('');
     } catch (err: unknown) {
-      firebaseOtp.resetRecaptcha();
+      firebaseOtp.clearVerifierOnly();
       setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.');
     } finally {
       setSubmitting(false);
@@ -165,7 +165,7 @@ export default function WorkerBindMobilePage() {
       await firebaseOtp.sendOtp(digits);
       toast.success(`New code sent to +91 ${digits}`);
     } catch (err: unknown) {
-      firebaseOtp.resetRecaptcha();
+      firebaseOtp.clearVerifierOnly();
       setError(err instanceof Error ? err.message : 'Failed to resend OTP');
     } finally {
       setSubmitting(false);

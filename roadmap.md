@@ -24,3 +24,6 @@
 
 ## Signup Email Identity Check
 - [x] Restore the existing unique-signup migration, match RPC arguments, reload the schema cache, and verify service-only access and safe signup errors.
+
+## SMS Session Recovery
+- [x] Preserve pending SMS confirmation on resend failure, reject redirect-only sends, audit all web callers, and verify recovery behavior with simulated Firebase responses and the worker login page.
