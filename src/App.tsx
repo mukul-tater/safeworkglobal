@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { recordSiteVisitOnce } from "@/lib/recordSiteVisit";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -81,6 +82,7 @@ import Reports from "./pages/admin/Reports";
 import DisputeResolution from "./pages/admin/DisputeResolution";
 import ContactSubmissions from "./pages/admin/ContactSubmissions";
 import AdminPartnerRewards from "./pages/admin/AdminPartnerRewards";
+import AdminPaymentSettings from "./pages/admin/AdminPaymentSettings";
 import AdminWorkers from "./pages/admin/AdminWorkers";
 import SharedWorkerPage from "./pages/shared/SharedWorkerPage";
 import AdminEmployers from "./pages/admin/AdminEmployers";
@@ -152,6 +154,7 @@ function EmitraRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppShell() {
+  usePlatformPaymentSettings();
   const { pathname } = useLocation();
   useEffect(() => {
     recordSiteVisitOnce();
@@ -449,6 +452,7 @@ function AppShell() {
           <Route path="/admin/ecr-management" element={<AdminRoute><ECRManagement /></AdminRoute>} />
           <Route path="/admin/job-verification" element={<AdminRoute><JobVerification /></AdminRoute>} />
           <Route path="/admin/post-job" element={<AdminRoute><AdminPostJob /></AdminRoute>} />
+          <Route path="/admin/payment-settings" element={<AdminRoute><AdminPaymentSettings /></AdminRoute>} />
           <Route path="/admin/edit-job/:jobId" element={<AdminRoute><EditJob /></AdminRoute>} />
           <Route path="/admin/compliance" element={<AdminRoute><ComplianceCheck /></AdminRoute>} />
           <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />

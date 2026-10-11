@@ -30,6 +30,7 @@ import { TRADE_TEST_CENTERS } from "@/data/tradeTestCenters";
 import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo";
 import InsuranceCoverageInfo from "@/components/worker/InsuranceCoverageInfo";
 import { ASSESSMENT_FEE_INCLUSIONS, MEDICAL_REQUIRED_TESTS, MEDICAL_TEST_INTRO } from "@/modules/worker-verification/constants";
+import { getAssessmentFeeInclusions, getRazorpayGatewayFeePct, withConfiguredStamp } from "@/lib/platformPaymentSettings";
 import IndemnityBondAgreement from "@/modules/worker-verification/components/agreement/IndemnityBondAgreement";
 import { INDEMNITY_BOND_HIGHLIGHTS } from "@/modules/worker-verification/agreement/indemnityBondContent";
 import { cn } from "@/lib/utils";
@@ -372,10 +373,31 @@ function StepDetail({
   );
 }
 
+function liveJourneySteps(): JourneyStep[] {
+  const gateway = getRazorpayGatewayFeePct();
+  return STEPS.map((step) => {
+    if (step.id === 'payment') {
+      return {
+        ...step,
+        description: `The fee varies by job. Pay the exact amount by bank transfer, or pay instantly with Razorpay (${gateway}% extra).`,
+        bullets: [...getAssessmentFeeInclusions()],
+      };
+    }
+    if (step.id === 'agreement') {
+      return {
+        ...step,
+        bullets: INDEMNITY_BOND_HIGHLIGHTS.en.map((line) => withConfiguredStamp(line)),
+      };
+    }
+    return step;
+  });
+}
+
 export default function WorkerJourneyDemo() {
-  const [activeId, setActiveId] = useState<string | null>(STEPS[0].id);
-  const activeStep = activeId ? STEPS.find((s) => s.id === activeId) ?? null : null;
-  const activeIndex = activeId ? STEPS.findIndex((s) => s.id === activeId) : -1;
+  const steps = liveJourneySteps();
+  const [activeId, setActiveId] = useState<string | null>(steps[0].id);
+  const activeStep = activeId ? steps.find((s) => s.id === activeId) ?? null : null;
+  const activeIndex = activeId ? steps.findIndex((s) => s.id === activeId) : -1;
 
   const toggleStep = (stepId: string) => {
     setActiveId((current) => (current === stepId ? null : stepId));
@@ -402,12 +424,12 @@ export default function WorkerJourneyDemo() {
         {/* Desktop: A — vertical stepper + detail panel */}
         <div className="hidden lg:grid lg:grid-cols-[minmax(0,18rem)_1fr] gap-8 xl:gap-10 items-start">
           <ol className="space-y-0">
-            {STEPS.map((step, index) => {
+            {steps.map((step, index) => {
               const isActive = step.id === activeId;
               const isDone = activeIndex >= 0 && index < activeIndex;
               return (
                 <li key={step.id} className="relative flex gap-3">
-                  {index < STEPS.length - 1 && (
+                  {index < steps.length - 1 && (
                     <div
                       className={cn(
                         "absolute left-[1.15rem] top-10 bottom-0 w-px",
@@ -496,7 +518,7 @@ export default function WorkerJourneyDemo() {
 
         {/* Mobile / tablet: D — accordion stepper */}
         <div className="lg:hidden space-y-3">
-          {STEPS.map((step, index) => {
+          {steps.map((step, index) => {
             const isActive = step.id === activeId;
             const isDone = activeIndex >= 0 && index < activeIndex;
             const Icon = step.icon;

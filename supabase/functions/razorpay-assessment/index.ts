@@ -8,19 +8,61 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const ASSESSMENT_FEE_INR = 35400;
-const UAE_SERVICE_CHARGE_INR = 35400;
-const DELIVERY_SERVICE_CHARGE_INR = 94400;
-const UKRAINE_SERVICE_CHARGE_INR = 236000;
-const EUROPE_SERVICE_CHARGE_INR = 354000;
 const DELIVERY_JOB_ID = "a1e10000-2026-4000-8000-000000000030";
-/** Keep in sync with src/modules/worker-verification/payment/bankTransfer.ts */
-const RAZORPAY_GATEWAY_FEE_PCT = 2.5;
 
-function resolveFeeInr(value: unknown): number {
+type FeeSettings = {
+  defaultInr: number;
+  uaeInr: number;
+  deliveryInr: number;
+  ukraineInr: number;
+  europeInr: number;
+  gatewayPct: number;
+};
+
+/** Used only when platform_payment_settings cannot be read. */
+const FEE_FALLBACK: FeeSettings = {
+  defaultInr: 35400,
+  uaeInr: 35400,
+  deliveryInr: 94400,
+  ukraineInr: 236000,
+  europeInr: 354000,
+  gatewayPct: 2.5,
+};
+
+function resolveFeeInr(value: unknown, fallback = FEE_FALLBACK.defaultInr): number {
   const n = Number(value);
-  if (!Number.isFinite(n) || n < 1) return ASSESSMENT_FEE_INR;
+  if (!Number.isFinite(n) || n < 1) return fallback;
   return Math.round(n);
+}
+
+async function loadFeeSettings(admin: ReturnType<typeof createClient>): Promise<FeeSettings> {
+  try {
+    const { data, error } = await admin
+      .from("platform_payment_settings")
+      .select(
+        "default_service_charge_inr, uae_service_charge_inr, uae_delivery_service_charge_inr, ukraine_service_charge_inr, europe_service_charge_inr, razorpay_gateway_fee_pct",
+      )
+      .eq("id", 1)
+      .maybeSingle();
+    if (error || !data) return FEE_FALLBACK;
+    const charge = (value: unknown, fallback: number) => {
+      const n = Math.round(Number(value));
+      return Number.isFinite(n) && n >= 1 ? n : fallback;
+    };
+    const gateway = Number(data.razorpay_gateway_fee_pct);
+    return {
+      defaultInr: charge(data.default_service_charge_inr, FEE_FALLBACK.defaultInr),
+      uaeInr: charge(data.uae_service_charge_inr, FEE_FALLBACK.uaeInr),
+      deliveryInr: charge(data.uae_delivery_service_charge_inr, FEE_FALLBACK.deliveryInr),
+      ukraineInr: charge(data.ukraine_service_charge_inr, FEE_FALLBACK.ukraineInr),
+      europeInr: charge(data.europe_service_charge_inr, FEE_FALLBACK.europeInr),
+      gatewayPct: Number.isFinite(gateway) && gateway >= 0 && gateway <= 15
+        ? gateway
+        : FEE_FALLBACK.gatewayPct,
+    };
+  } catch {
+    return FEE_FALLBACK;
+  }
 }
 
 function isUkraineListing(job: {
@@ -61,9 +103,12 @@ function isDeliveryListing(job: {
   );
 }
 
-function withGatewayFee(baseFee: number): { base: number; fee: number; charged: number } {
-  const base = resolveFeeInr(baseFee);
-  const charged = Math.round(base * (1 + RAZORPAY_GATEWAY_FEE_PCT / 100));
+function withGatewayFee(
+  baseFee: number,
+  settings: FeeSettings,
+): { base: number; fee: number; charged: number } {
+  const base = resolveFeeInr(baseFee, settings.defaultInr);
+  const charged = Math.round(base * (1 + settings.gatewayPct / 100));
   return { base, fee: charged - base, charged };
 }
 
@@ -145,6 +190,7 @@ serve(async (req) => {
   if (userErr || !user) return json(401, { error: "Not authenticated" });
 
   const admin = createClient(supabaseUrl, serviceKey);
+  const feeSettings = await loadFeeSettings(admin);
 
   async function resolvePayerUserId(requested?: string): Promise<string> {
     const requestedId = String(requested || "").trim();
@@ -206,7 +252,7 @@ serve(async (req) => {
       .eq("user_id", payerId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!row?.journey_job_id) return ASSESSMENT_FEE_INR;
+    if (!row?.journey_job_id) return feeSettings.defaultInr;
     const { data: job, error: jobErr } = await admin
       .from("jobs")
       .select("id, title, slug, country, service_charge")
@@ -214,42 +260,42 @@ serve(async (req) => {
       .maybeSingle();
     if (jobErr) throw new Error(jobErr.message);
     if (job && isUkraineListing(job)) {
-      if (Number(job.service_charge) !== UKRAINE_SERVICE_CHARGE_INR) {
+      if (Number(job.service_charge) !== feeSettings.ukraineInr) {
         await admin
           .from("jobs")
-          .update({ service_charge: UKRAINE_SERVICE_CHARGE_INR })
+          .update({ service_charge: feeSettings.ukraineInr })
           .eq("id", job.id);
       }
-      return UKRAINE_SERVICE_CHARGE_INR;
+      return feeSettings.ukraineInr;
     }
     if (job && isEuropeListing(job)) {
-      if (Number(job.service_charge) !== EUROPE_SERVICE_CHARGE_INR) {
+      if (Number(job.service_charge) !== feeSettings.europeInr) {
         await admin
           .from("jobs")
-          .update({ service_charge: EUROPE_SERVICE_CHARGE_INR })
+          .update({ service_charge: feeSettings.europeInr })
           .eq("id", job.id);
       }
-      return EUROPE_SERVICE_CHARGE_INR;
+      return feeSettings.europeInr;
     }
     if (job && isDeliveryListing(job)) {
-      if (Number(job.service_charge) !== DELIVERY_SERVICE_CHARGE_INR) {
+      if (Number(job.service_charge) !== feeSettings.deliveryInr) {
         await admin
           .from("jobs")
-          .update({ service_charge: DELIVERY_SERVICE_CHARGE_INR })
+          .update({ service_charge: feeSettings.deliveryInr })
           .eq("id", job.id);
       }
-      return DELIVERY_SERVICE_CHARGE_INR;
+      return feeSettings.deliveryInr;
     }
     if (job && isUaeListing(job)) {
-      if (Number(job.service_charge) !== UAE_SERVICE_CHARGE_INR) {
+      if (Number(job.service_charge) !== feeSettings.uaeInr) {
         await admin
           .from("jobs")
-          .update({ service_charge: UAE_SERVICE_CHARGE_INR })
+          .update({ service_charge: feeSettings.uaeInr })
           .eq("id", job.id);
       }
-      return UAE_SERVICE_CHARGE_INR;
+      return feeSettings.uaeInr;
     }
-    return resolveFeeInr(job?.service_charge);
+    return resolveFeeInr(job?.service_charge, feeSettings.defaultInr);
   }
 
   async function completePayment(paymentId: string, orderId: string, payerId: string, amountInr: number) {
@@ -279,7 +325,7 @@ serve(async (req) => {
       }
 
       if (action === "create_job_change_order") {
-        const { base, fee, charged } = withGatewayFee(due);
+        const { base, fee, charged } = withGatewayFee(due, feeSettings);
         const amountPaise = charged * 100;
         const receipt = `jchg_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`.slice(0, 40);
         const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
@@ -411,7 +457,7 @@ serve(async (req) => {
         }
       }
 
-      const { base, fee, charged } = withGatewayFee(assessmentFee);
+      const { base, fee, charged } = withGatewayFee(assessmentFee, feeSettings);
       const amountPaise = charged * 100;
       const receipt = `assess_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`
         .slice(0, 40);
@@ -430,7 +476,7 @@ serve(async (req) => {
             user_id: payerId,
             purpose: "worker_assessment_fee",
             base_fee_inr: String(base),
-            gateway_fee_pct: String(RAZORPAY_GATEWAY_FEE_PCT),
+            gateway_fee_pct: String(feeSettings.gatewayPct),
             charged_inr: String(charged),
           },
         }),
@@ -459,7 +505,7 @@ serve(async (req) => {
         amount_paise: amountPaise,
         base_fee_inr: base,
         gateway_fee_inr: fee,
-        gateway_fee_pct: RAZORPAY_GATEWAY_FEE_PCT,
+        gateway_fee_pct: feeSettings.gatewayPct,
         currency: "INR",
         key_id: keyId,
       });

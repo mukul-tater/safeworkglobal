@@ -16,6 +16,7 @@ import {
 import { Loader2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getDefaultServiceChargeInr } from '@/lib/platformPaymentSettings';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
 import {
@@ -34,7 +35,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  ASSESSMENT_FEE_INR,
   VERIFICATION_STAGE_LABELS,
   workerHasProgressPastInterview,
   type VerificationStage,
@@ -261,8 +261,8 @@ export default function AdminJourneyOps() {
             const fees = await getServiceChargesForJobs(jobIds);
             list.forEach((r) => {
               r.service_charge = r.journey_job_id
-                ? fees.get(r.journey_job_id) ?? ASSESSMENT_FEE_INR
-                : ASSESSMENT_FEE_INR;
+                ? fees.get(r.journey_job_id) ?? getDefaultServiceChargeInr()
+                : getDefaultServiceChargeInr();
             });
           }
         }
@@ -600,11 +600,11 @@ export default function AdminJourneyOps() {
     }
 
     if (tab === 'payment') {
-      const fee = r.service_charge ?? ASSESSMENT_FEE_INR;
+      const fee = r.service_charge ?? getDefaultServiceChargeInr();
       return (
         <AdminBankTransferReview
           userId={r.user_id}
-          expectedFee={Number(fee) || ASSESSMENT_FEE_INR}
+          expectedFee={Number(fee) || getDefaultServiceChargeInr()}
           busy={busy}
           onDone={async () => {
             await load();

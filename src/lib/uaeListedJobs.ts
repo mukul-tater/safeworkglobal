@@ -1,5 +1,6 @@
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
 import { annotateEuropePayDescription, formatJobSalaryAedAndInr } from '@/lib/jobSalaryUtils';
+import { getPlatformPaymentSettings } from '@/lib/platformPaymentSettings';
 
 /** Categories we currently list under UAE on Find jobs / Choose a job. */
 export const UAE_LISTED_JOBS = [
@@ -226,12 +227,13 @@ export function getPublicJobServiceCharge(
   stored?: number | null,
   country?: string | null,
 ): number | null {
+  const fees = getPlatformPaymentSettings();
   const listed = inferUaeListedJob(title, description, country);
-  if (listed === 'Delivery') return UAE_DELIVERY_SERVICE_CHARGE_INR;
+  if (listed === 'Delivery') return fees.uaeDeliveryServiceChargeInr;
   const normalized = (country ?? '').trim().toLowerCase();
-  if (normalized === 'ukraine') return UKRAINE_SERVICE_CHARGE_INR;
-  if (normalized === 'europe') return EUROPE_SERVICE_CHARGE_INR;
-  if (normalized === 'uae' || listed) return UAE_SERVICE_CHARGE_INR;
+  if (normalized === 'ukraine') return fees.ukraineServiceChargeInr;
+  if (normalized === 'europe') return fees.europeServiceChargeInr;
+  if (normalized === 'uae' || listed) return fees.uaeServiceChargeInr;
   return stored ?? null;
 }
 

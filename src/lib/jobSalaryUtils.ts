@@ -1,3 +1,5 @@
+import { getInrPerUnit } from '@/lib/platformPaymentSettings';
+
 /** Display symbols for supported job salary currencies. */
 export const CURRENCY_SYMBOLS: Record<string, string> = {
   INR: '₹',
@@ -23,8 +25,16 @@ export const INR_PER_AED = 23;
 export const CZK_TO_INR_NUMERATOR = 665;
 export const CZK_TO_INR_DENOMINATOR = 150;
 
+function aedInrRate(): number {
+  return getInrPerUnit('AED') ?? INR_PER_AED;
+}
+
+function czkInrRate(): number {
+  return getInrPerUnit('CZK') ?? CZK_TO_INR_NUMERATOR / CZK_TO_INR_DENOMINATOR;
+}
+
 export function czkToInr(czk: number): number {
-  return Math.round((czk * CZK_TO_INR_NUMERATOR) / CZK_TO_INR_DENOMINATOR);
+  return Math.round(czk * czkInrRate());
 }
 
 function formatInrFromCzk(czk: number): string {
@@ -109,10 +119,11 @@ export function formatJobSalaryAedAndInr(
   if (min == null && max == null) return null;
   if (currency !== 'INR' && currency !== 'AED') return null;
 
+  const rate = aedInrRate();
   const toAed = (amount: number) =>
-    currency === 'AED' ? Math.round(amount) : Math.round(amount / INR_PER_AED);
+    currency === 'AED' ? Math.round(amount) : Math.round(amount / rate);
   const toInr = (amount: number) =>
-    currency === 'INR' ? Math.round(amount) : Math.round(amount * INR_PER_AED);
+    currency === 'INR' ? Math.round(amount) : Math.round(amount * rate);
 
   const aedLabel = (amount: number) => `AED ${formatGrouped(toAed(amount))}`;
   const inrLabel = (amount: number) => `₹${formatGrouped(toInr(amount))}`;

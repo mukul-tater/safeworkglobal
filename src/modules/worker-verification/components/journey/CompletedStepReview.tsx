@@ -20,11 +20,11 @@ import { appliedJobSkillLabel } from '@/lib/inferWorkerSkillFromJob';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
 import type { AssessmentRow } from '@/modules/trade-test/types';
 import {
-  ASSESSMENT_FEE_INCLUSIONS,
   type GccNavStepId,
 } from '@/modules/worker-verification/constants';
 import { describeQuizResult, quizPassScoreForSkill } from '@/modules/worker-verification/quiz-data/quizResult';
 import { resolveQuizSkillCode } from '@/modules/worker-verification/quiz-data/quizSkill';
+import { getAssessmentFeeInclusions } from '@/lib/platformPaymentSettings';
 import InsuranceCoverageInfo from '@/components/worker/InsuranceCoverageInfo';
 import { MedicalRequiredTestsNote } from '@/modules/worker-verification/components/journey/MedicalTestStage';
 import IndemnityBondAgreement from '@/modules/worker-verification/components/agreement/IndemnityBondAgreement';
@@ -684,7 +684,7 @@ export default function CompletedStepReview({
               <div>
                 <SectionLabel>What this fee covers</SectionLabel>
                 <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                  {ASSESSMENT_FEE_INCLUSIONS.map((item) => (
+                  {getAssessmentFeeInclusions().map((item) => (
                     <li key={item} className="flex items-start gap-2 text-sm text-foreground">
                       <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
                       <span className="inline-flex items-center gap-1.5">

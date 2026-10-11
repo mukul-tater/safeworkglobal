@@ -16,8 +16,8 @@ import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { getBankTransferAccount } from '@/lib/platformPaymentSettings';
 import {
-  BANK_TRANSFER_ACCOUNT,
   BANK_TRANSFER_METHODS,
   formatInr,
   razorpayChargedAmountInr,
@@ -49,6 +49,7 @@ export default function JobChangeFeeDialog({
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState<'razorpay' | 'bank' | null>(null);
   const razorpayTotal = razorpayChargedAmountInr(amount);
+  const bank = getBankTransferAccount();
 
   const payRazorpay = async () => {
     setBusy('razorpay');
@@ -100,8 +101,8 @@ export default function JobChangeFeeDialog({
               </p>
               <p className="break-words">
                 Razorpay total is <span className="font-medium text-foreground">{formatInr(razorpayTotal)}</span>.
-                Bank transfer is {formatInr(amount)} to {BANK_TRANSFER_ACCOUNT.beneficiary}, account{' '}
-                {BANK_TRANSFER_ACCOUNT.accountNumber}, IFSC {BANK_TRANSFER_ACCOUNT.ifsc}.
+                Bank transfer is {formatInr(amount)} to {bank.beneficiary}, account{' '}
+                {bank.accountNumber}, IFSC {bank.ifsc}.
               </p>
             </div>
           </AlertDialogDescription>

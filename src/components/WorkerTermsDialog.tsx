@@ -12,6 +12,7 @@ import {
   WORKER_TERMS_SECTIONS,
   WORKER_TERMS_VERSION,
 } from '@/modules/worker-verification/constants';
+import { withConfiguredStamp } from '@/lib/platformPaymentSettings';
 
 type WorkerTermsDialogProps = {
   open: boolean;
@@ -64,7 +65,7 @@ export default function WorkerTermsDialog({
                   </span>
                   <div className="min-w-0 space-y-1">
                     <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
-                    <p className="text-sm leading-relaxed text-muted-foreground">{section.body}</p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{withConfiguredStamp(section.body)}</p>
                   </div>
                 </div>
               </li>

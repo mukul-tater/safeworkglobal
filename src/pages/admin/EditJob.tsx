@@ -19,6 +19,7 @@ import { firstFormErrorMessage, invalidFieldClass, revealInvalidField } from "@/
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES } from "@/lib/constants";
 import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
+import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
 import { adminUpdateJob } from "@/services/AdminService";
@@ -62,6 +63,7 @@ export default function EditJob() {
   const countryMax = watch("salary_max");
   const visaSponsorship = watch("visa_sponsorship");
   const remoteAllowed = watch("remote_allowed");
+  const paymentSettings = usePlatformPaymentSettings();
 
   useEffect(() => {
     if (jobId) {
@@ -415,7 +417,7 @@ export default function EditJob() {
                     {...register("service_charge", { valueAsNumber: true })}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Workers see this as the amount plus GST. Enter the total they pay, including GST. Default is ₹{DEFAULT_SERVICE_CHARGE_INR.toLocaleString("en-IN")}.
+                    Workers see this as the amount plus GST. Enter the total they pay, including GST. Default is ₹{paymentSettings.defaultServiceChargeInr.toLocaleString("en-IN")}.
                   </p>
                   {errors.service_charge && (
                     <p className="text-sm text-destructive mt-1">{errors.service_charge.message}</p>

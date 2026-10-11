@@ -1,4 +1,6 @@
-/** AGRIFOX current account — UPI-to-account via IFSC until a VPA is added. */
+import { getRazorpayGatewayFeePct } from '@/lib/platformPaymentSettings';
+
+/** Fallback account until admin payment settings load. Checkout uses the saved account. */
 export const BANK_TRANSFER_ACCOUNT = {
   beneficiary: 'AGRIFOX SMART SOLUTIONS PVT LTD',
   accountNumber: '0897002100019045',
@@ -6,7 +8,7 @@ export const BANK_TRANSFER_ACCOUNT = {
   ifsc: 'PUNB0089700',
 } as const;
 
-/** Keep in sync with supabase/functions/razorpay-assessment. */
+/** Fallback until admin payment settings load. Checkout uses the saved percent. */
 export const RAZORPAY_GATEWAY_FEE_PCT = 2.5;
 
 export const BANK_TRANSFER_METHODS = [
@@ -20,7 +22,7 @@ export type BankTransferMethod = (typeof BANK_TRANSFER_METHODS)[number]['id'];
 
 export function razorpayChargedAmountInr(baseFee: number): number {
   const base = Math.round(Number(baseFee) || 0);
-  return Math.round(base * (1 + RAZORPAY_GATEWAY_FEE_PCT / 100));
+  return Math.round(base * (1 + getRazorpayGatewayFeePct() / 100));
 }
 
 export function razorpayGatewayFeeInr(baseFee: number): number {

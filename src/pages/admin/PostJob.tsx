@@ -19,6 +19,7 @@ import { firstFormErrorMessage, invalidFieldClass, revealInvalidField } from "@/
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES } from "@/lib/constants";
 import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
+import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
 import { PUBLIC_JOB_BENEFITS_TEXT } from "@/lib/jobBenefits";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
@@ -75,6 +76,17 @@ export default function AdminPostJob() {
   const visaSponsorship = watch("visa_sponsorship");
   const remoteAllowed = watch("remote_allowed");
   const employerId = watch("employer_id");
+  const serviceCharge = watch("service_charge");
+  const paymentSettings = usePlatformPaymentSettings();
+
+  useEffect(() => {
+    if (
+      serviceCharge === DEFAULT_SERVICE_CHARGE_INR &&
+      paymentSettings.defaultServiceChargeInr !== DEFAULT_SERVICE_CHARGE_INR
+    ) {
+      setValue("service_charge", paymentSettings.defaultServiceChargeInr);
+    }
+  }, [paymentSettings.defaultServiceChargeInr, serviceCharge, setValue]);
 
   useEffect(() => {
     const loadEmployers = async () => {
@@ -421,7 +433,7 @@ export default function AdminPostJob() {
                   {...register("service_charge", { valueAsNumber: true })}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Workers see this as the amount plus GST. Enter the total they pay, including GST. Default is ₹{DEFAULT_SERVICE_CHARGE_INR.toLocaleString("en-IN")}.
+                  Workers see this as the amount plus GST. Enter the total they pay, including GST. Default is ₹{paymentSettings.defaultServiceChargeInr.toLocaleString("en-IN")}.
                 </p>
                 {errors.service_charge && (
                   <p className="text-sm text-destructive mt-1">{errors.service_charge.message}</p>

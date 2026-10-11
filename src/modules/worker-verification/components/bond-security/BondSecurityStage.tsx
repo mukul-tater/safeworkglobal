@@ -14,10 +14,8 @@ import type { BondTemplate, WorkerVerification } from '@/modules/worker-verifica
 import { BOND_SECURITY_COPY, type EnHi } from '@/modules/worker-verification/bond-security/copy';
 import { formatStampInr } from '@/modules/worker-verification/bond-security/stampPaper';
 import IndemnityBondAgreement from '@/modules/worker-verification/components/agreement/IndemnityBondAgreement';
-import {
-  INDEMNITY_BOND_EXECUTION,
-  INDEMNITY_BOND_STAMP_INR,
-} from '@/modules/worker-verification/agreement/indemnityBondContent';
+import { INDEMNITY_BOND_EXECUTION } from '@/modules/worker-verification/agreement/indemnityBondContent';
+import { getIndemnityBondStampInr, withConfiguredStamp } from '@/lib/platformPaymentSettings';
 import { bondChecklist, checklistComplete, displayBondStatus, isBondLockedForEdit } from '@/modules/worker-verification/bond-security/status';
 import type { BondFileKind, BondSecurityDraftPayload, BondSecurityRow, StampPaperValue } from '@/modules/worker-verification/bond-security/types';
 import {
@@ -39,8 +37,8 @@ const C = BOND_SECURITY_COPY;
 function Dual({ copy, className, as: Tag = 'p' }: { copy: EnHi; className?: string; as?: 'p' | 'h2' | 'h3' | 'span' }) {
   return (
     <Tag className={className}>
-      <span className="block">{copy.en}</span>
-      <span className="mt-0.5 block text-[0.92em] font-normal opacity-80">{copy.hi}</span>
+      <span className="block">{withConfiguredStamp(copy.en)}</span>
+      <span className="mt-0.5 block text-[0.92em] font-normal opacity-80">{withConfiguredStamp(copy.hi)}</span>
     </Tag>
   );
 }
@@ -288,7 +286,8 @@ export default function BondSecurityStage({
     () => stampForRegisteredState(verification.state, catalog),
     [catalog, verification.state],
   );
-  const requiredStamp = Math.max(INDEMNITY_BOND_STAMP_INR, stamp?.minimum_stamp_value ?? INDEMNITY_BOND_STAMP_INR);
+  const bondStampInr = getIndemnityBondStampInr();
+  const requiredStamp = Math.max(bondStampInr, stamp?.minimum_stamp_value ?? bondStampInr);
   const locked = isBondLockedForEdit(row?.status);
   const display = displayBondStatus({
     journeyStage: verification.stage,
@@ -446,16 +445,16 @@ export default function BondSecurityStage({
               <li key={en} className="flex items-start gap-2 text-sm">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <span>
-                  <span className="block">{en}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    {INDEMNITY_BOND_EXECUTION.bullets.hi[i]}
-                  </span>
+                    <span className="block">{withConfiguredStamp(en)}</span>
+                    <span className="block text-xs text-muted-foreground">
+                    {withConfiguredStamp(INDEMNITY_BOND_EXECUTION.bullets.hi[i])}
+                    </span>
                 </span>
               </li>
             ))}
           </ul>
           <p className="text-xs text-muted-foreground">
-            Stamp paper: {formatStampInr(INDEMNITY_BOND_STAMP_INR)} · ₹100 स्टाम्प पेपर
+            Stamp paper: {formatStampInr(bondStampInr)} · {withConfiguredStamp('₹100 स्टाम्प पेपर')}
           </p>
         </CardContent>
       </Card>
@@ -481,8 +480,8 @@ export default function BondSecurityStage({
               <Dual copy={C.stampValueLabel} className="text-sm text-muted-foreground" />
               <p className="mt-1 text-3xl font-bold tracking-tight">{formatStampInr(requiredStamp)}</p>
               <p className="mt-1 text-sm">
-                Indemnity Bond · {formatStampInr(INDEMNITY_BOND_STAMP_INR)} stamp paper
-                {stamp.minimum_stamp_value > INDEMNITY_BOND_STAMP_INR
+                Indemnity Bond · {formatStampInr(bondStampInr)} stamp paper
+                {stamp.minimum_stamp_value > bondStampInr
                   ? ` · ${stamp.state_name} minimum ${formatStampInr(stamp.minimum_stamp_value)}`
                   : ` · ${stamp.state_name}`}
                 {stamp.name_hi ? <span className="ml-2 text-muted-foreground">{stamp.name_hi}</span> : null}
@@ -491,7 +490,7 @@ export default function BondSecurityStage({
           ) : (
             <div className="rounded-xl border border-border bg-muted/30 p-4">
               <Dual copy={C.stampValueLabel} className="text-sm text-muted-foreground" />
-              <p className="mt-1 text-3xl font-bold tracking-tight">{formatStampInr(INDEMNITY_BOND_STAMP_INR)}</p>
+              <p className="mt-1 text-3xl font-bold tracking-tight">{formatStampInr(bondStampInr)}</p>
               <p className="mt-1 text-sm text-amber-800">{C.missingState.en}</p>
             </div>
           )}
@@ -728,8 +727,8 @@ export default function BondSecurityStage({
                   {list[key] ? '✓' : ''}
                 </span>
                 <span>
-                  <span className="block">{C.checklist[key].en}</span>
-                  <span className="block text-xs text-muted-foreground">{C.checklist[key].hi}</span>
+                  <span className="block">{withConfiguredStamp(C.checklist[key].en)}</span>
+                  <span className="block text-xs text-muted-foreground">{withConfiguredStamp(C.checklist[key].hi)}</span>
                 </span>
               </li>
             ))}

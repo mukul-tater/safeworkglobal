@@ -11,8 +11,8 @@ import type {
   VerificationStage,
   WorkerVerification,
 } from '../types';
+import { getDefaultServiceChargeInr, loadPlatformPaymentSettings } from '@/lib/platformPaymentSettings';
 import {
-  ASSESSMENT_FEE_INR,
   QUIZ_QUESTIONS_TO_SHOW,
   VERIFICATION_STAGE_ORDER,
   WORKER_TERMS_VERSION,
@@ -65,7 +65,8 @@ export async function getOrCreateVerification(userId: string): Promise<WorkerVer
 }
 
 export async function getServiceChargeForJob(jobId: string | null | undefined): Promise<number> {
-  if (!jobId) return ASSESSMENT_FEE_INR;
+  await loadPlatformPaymentSettings();
+  if (!jobId) return getDefaultServiceChargeInr();
   const { data, error } = await supabase
     .from('jobs')
     .select('title, description, country, service_charge')
@@ -78,6 +79,7 @@ export async function getServiceChargeForJob(jobId: string | null | undefined): 
 }
 
 export async function getServiceChargesForJobs(jobIds: string[]): Promise<Map<string, number>> {
+  await loadPlatformPaymentSettings();
   const unique = [...new Set(jobIds.filter(Boolean))];
   const map = new Map<string, number>();
   if (unique.length === 0) return map;
@@ -1066,7 +1068,7 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
   }
 
   const orderId = String(orderData?.order_id || '');
-  const amountInr = Number(orderData?.amount_inr || ASSESSMENT_FEE_INR);
+  const amountInr = Number(orderData?.amount_inr || getDefaultServiceChargeInr());
   const keyId = String(orderData?.key_id || '');
   if (!orderId) throw new Error('Razorpay order was not created');
   if (!keyId.startsWith('rzp_')) {
