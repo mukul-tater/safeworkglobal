@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, CheckCircle, XCircle, Trash2, Pencil, Plus, IndianRupee, Loader2 } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Trash2, Pencil, Plus, IndianRupee, Loader2, Share2, Users } from "lucide-react";
+import ShareJobDialog, { type ShareJobTarget } from "@/components/jobs/ShareJobDialog";
+import { listAdminJobShares, type JobShareRow } from "@/lib/jobShare";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { adminDeleteJob, adminUpdateJob } from "@/services/AdminService";
@@ -58,6 +60,9 @@ export default function JobVerification() {
   const [feeJob, setFeeJob] = useState<Job | null>(null);
   const [feeValue, setFeeValue] = useState("");
   const [savingFee, setSavingFee] = useState(false);
+  const [shareJob, setShareJob] = useState<ShareJobTarget | null>(null);
+  const [shares, setShares] = useState<JobShareRow[]>([]);
+  const [sharesJob, setSharesJob] = useState<Job | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -97,6 +102,13 @@ export default function JobVerification() {
       });
 
       setJobs(jobsWithCompany);
+
+      try {
+        setShares(await listAdminJobShares());
+      } catch (shareError) {
+        console.error("Error fetching job shares:", shareError);
+        setShares([]);
+      }
     } catch (error: any) {
       console.error("Error fetching jobs:", error);
       toast.error("Failed to load jobs");
@@ -190,6 +202,10 @@ export default function JobVerification() {
     }
   };
 
+  const sharesFor = (jobId: string) => shares.filter((row) => row.job_id === jobId);
+  const openCount = (jobId: string) => sharesFor(jobId).reduce((sum, row) => sum + row.open_count, 0);
+  const roleLabel = (role: string) => role.charAt(0).toUpperCase() + role.slice(1);
+
   const visibleJobs = jobs.filter((job) => {
     if (postedByFilter === "all") return true;
     return (job.posted_by_role || "employer") === postedByFilter;
@@ -256,6 +272,9 @@ export default function JobVerification() {
                     <p className="text-xs md:text-sm text-foreground mt-1">
                       Service charge {formatServiceChargePlusGst(job.service_charge)}
                     </p>
+                    <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                      {openCount(job.id)} {openCount(job.id) === 1 ? "open" : "opens"} from shared links
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2 shrink-0">
                   <Button
@@ -265,6 +284,24 @@ export default function JobVerification() {
                     title="View details"
                   >
                     <Eye className="h-4 w-4" />
+                  </Button>
+                  {job.status === "ACTIVE" ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShareJob({ id: job.id, slug: job.slug, title: job.title })}
+                      title="Share job"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSharesJob(job)}
+                    title="Who shared this job"
+                  >
+                    <Users className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
@@ -349,6 +386,47 @@ export default function JobVerification() {
               Save
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ShareJobDialog
+        open={shareJob != null}
+        onOpenChange={(open) => {
+          if (!open) setShareJob(null);
+        }}
+        job={shareJob}
+      />
+
+      <Dialog open={!!sharesJob} onOpenChange={(open) => { if (!open) setSharesJob(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Who shared this job</DialogTitle>
+            <DialogDescription>
+              {sharesJob
+                ? `${sharesJob.title} — ${openCount(sharesJob.id)} ${openCount(sharesJob.id) === 1 ? "open" : "opens"}`
+                : "Shared links for this job."}
+            </DialogDescription>
+          </DialogHeader>
+          {sharesJob && sharesFor(sharesJob.id).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No one has shared this job yet.</p>
+          ) : (
+            <ul className="space-y-3">
+              {sharesJob ? sharesFor(sharesJob.id).map((row) => (
+                <li key={row.share_id} className="flex items-start justify-between gap-3 text-sm">
+                  <div>
+                    <p className="font-medium">{row.sharer_name}</p>
+                    <p className="text-muted-foreground">
+                      {roleLabel(row.sharer_role)}
+                      {row.partner_code ? ` · ${row.partner_code}` : ""}
+                    </p>
+                  </div>
+                  <p className="shrink-0 text-muted-foreground">
+                    {row.open_count} {row.open_count === 1 ? "open" : "opens"}
+                  </p>
+                </li>
+              )) : null}
+            </ul>
+          )}
         </DialogContent>
       </Dialog>
 

@@ -33,6 +33,12 @@ export interface PartnerNavItem {
   icon: LucideIcon;
 }
 
+const shareJobsNavItem: PartnerNavItem = {
+  label: "Share jobs",
+  to: "/jobs",
+  icon: Share2,
+};
+
 export interface PartnerTypeConfig {
   code: PartnerTypeCode;
   landing: string;
@@ -49,6 +55,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/emitra/dashboard",
     navItems: [
       { label: "Dashboard", to: "/emitra/dashboard", icon: LayoutDashboard },
+      shareJobsNavItem,
       { label: "My Workers", to: "/emitra/my-workers", icon: Users },
       { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "Rewards", to: "/emitra/rewards", icon: Award },
@@ -62,6 +69,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/ssvn/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/ssvn/dashboard", icon: LayoutDashboard },
+      shareJobsNavItem,
       { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "My Workers", to: "/partner/my-workers", icon: Users },
       { label: "Inbox (Accept)", to: "/partner/ssvn/inbox", icon: ClipboardCheck },
@@ -82,6 +90,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/iti/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/iti/dashboard", icon: LayoutDashboard },
+      shareJobsNavItem,
       { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "My Workers", to: "/partner/my-workers", icon: Users },
       { label: "Wallet", to: "/partner/wallet", icon: Wallet },
@@ -96,6 +105,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/srn/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/srn/dashboard", icon: LayoutDashboard },
+      shareJobsNavItem,
       { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "My Workers", to: "/partner/my-workers", icon: Users },
       { label: "Assigned Workers", to: "/partner/srn/workers", icon: Users },
@@ -115,6 +125,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/consultant/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/consultant/dashboard", icon: LayoutDashboard },
+      shareJobsNavItem,
       { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "My Workers", to: "/partner/my-workers", icon: Users },
       { label: "Wallet", to: "/partner/wallet", icon: Wallet },
@@ -129,6 +140,7 @@ export const partnerTypeConfig: Record<string, PartnerTypeConfig> = {
     landing: "/partner/sen-global/dashboard",
     navItems: [
       { label: "Dashboard", to: "/partner/sen-global/dashboard", icon: LayoutDashboard },
+      shareJobsNavItem,
       { label: "Add Worker", to: "/partner/add-worker", icon: UserPlus },
       { label: "My Workers", to: "/partner/my-workers", icon: Users },
       { label: "Employer Leads", to: "/partner/sen-global/leads", icon: Building2 },

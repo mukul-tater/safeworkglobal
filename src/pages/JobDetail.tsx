@@ -1,4 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
+import ShareJobDialog from '@/components/jobs/ShareJobDialog';
+import { recordJobShareOpen } from '@/lib/jobShare';
 import { createPortal } from 'react-dom';
 import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
@@ -110,6 +112,14 @@ export default function JobDetail() {
   const [changeOpen, setChangeOpen] = useState(false);
   const [feeOpen, setFeeOpen] = useState(false);
   const [feeDue, setFeeDue] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareCode = searchParams.get('s');
+
+  useEffect(() => {
+    if (!shareCode) return;
+    void recordJobShareOpen(shareCode);
+  }, [shareCode]);
+
   useEffect(() => {
     let cancelled = false;
     // Safety net: never let the page sit in "loading" forever.
@@ -322,22 +332,6 @@ export default function JobDetail() {
       }
     } finally {
       setApplying(false);
-    }
-  };
-
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: job?.title,
-        text: `Check out this job: ${job?.title}`,
-        url: window.location.href
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: 'Link Copied',
-        description: 'Job link has been copied to clipboard',
-      });
     }
   };
 
@@ -737,10 +731,12 @@ export default function JobDetail() {
                   )}
 
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={handleShare}>
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </Button>
+                    {job.status === 'ACTIVE' ? (
+                      <Button variant="outline" className="flex-1" onClick={() => setShareOpen(true)}>
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share
+                      </Button>
+                    ) : null}
                     <Button 
                       variant="outline" 
                       className={`flex-1 ${isSaved ? 'bg-primary/10 border-primary text-primary' : ''}`}
@@ -811,6 +807,11 @@ export default function JobDetail() {
             nextJobTitle={displayTitle}
             onOpenChange={setChangeOpen}
             onConfirm={() => void handleApply(true)}
+          />
+          <ShareJobDialog
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            job={job.status === 'ACTIVE' ? { id: job.id, slug: job.slug, title: displayTitle } : null}
           />
           {user && (
             <JobChangeFeeDialog

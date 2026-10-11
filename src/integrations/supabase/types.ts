@@ -1547,6 +1547,77 @@ export type Database = {
           },
         ]
       }
+      job_share_opens: {
+        Row: {
+          id: string
+          opened_at: string
+          share_id: string
+        }
+        Insert: {
+          id?: string
+          opened_at?: string
+          share_id: string
+        }
+        Update: {
+          id?: string
+          opened_at?: string
+          share_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_share_opens_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "job_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_shares: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          job_id: string
+          partner_id: string | null
+          shared_by: string
+          sharer_role: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          job_id: string
+          partner_id?: string | null
+          shared_by: string
+          sharer_role: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          partner_id?: string | null
+          shared_by?: string
+          sharer_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_shares_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_shares_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_skills: {
         Row: {
           created_at: string | null
@@ -6125,6 +6196,18 @@ export type Database = {
           rules: number
         }[]
       }
+      admin_list_job_shares: {
+        Args: never
+        Returns: {
+          created_at: string
+          job_id: string
+          open_count: number
+          partner_code: string | null
+          share_id: string
+          sharer_name: string
+          sharer_role: string
+        }[]
+      }
       admin_list_share_recipients: {
         Args: { p_query?: string }
         Returns: {
@@ -6630,6 +6713,7 @@ export type Database = {
         Args: { p_email: string; p_full_name: string; p_password: string }
         Returns: string
       }
+      create_job_share: { Args: { p_job_id: string }; Returns: string }
       create_phone_verified_partner_account: {
         Args: {
           p_email: string
@@ -7061,6 +7145,7 @@ export type Database = {
       public_employer_by_slug: { Args: { p_slug: string }; Returns: Json }
       public_job_by_slug: { Args: { p_slug: string }; Returns: Json }
       public_seo_snapshot: { Args: never; Returns: Json }
+      record_job_share_open: { Args: { p_code: string }; Returns: undefined }
       record_site_visit: { Args: never; Returns: undefined }
       request_journey_step_email: {
         Args: { p_notification_id: string }

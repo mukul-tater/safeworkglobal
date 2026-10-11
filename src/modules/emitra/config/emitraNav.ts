@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Users, UserPlus, IndianRupee, Bell, ShieldCheck, FileEdit, Wallet, ClipboardList,
+  LayoutDashboard, Users, UserPlus, IndianRupee, Bell, ShieldCheck, FileEdit, Wallet, ClipboardList, Share2,
 } from 'lucide-react';
 import type { NavGroup } from '@/components/layout/DashboardSidebar';
 
@@ -9,6 +9,7 @@ export const emitraNavGroups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { path: '/emitra/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { path: '/jobs', icon: Share2, label: 'Share jobs' },
       { path: '/emitra/notifications', icon: Bell, label: 'Notifications' },
     ],
   },

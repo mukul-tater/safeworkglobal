@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatJobPlace, usesStoredPayText } from '@/lib/jobsBrowse';
 import { adminRangeSalaryDisplay } from '@/lib/jobSalaryUtils';
 import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from '@/lib/uaeListedJobs';
+import ShareJobDialog, { type ShareJobTarget } from '@/components/jobs/ShareJobDialog';
 
 interface FeaturedJob {
   id: string;
@@ -126,25 +127,7 @@ export default function FeaturedJobs() {
     setSavedJobs(newSavedJobs);
   };
 
-  const handleShareJob = async (job: FeaturedJob) => {
-    const shareData = {
-      title: job.title,
-      text: `Check out this job: ${job.title}`,
-      url: `${globalThis.location.origin}/jobs/${job.slug || job.id}`,
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-        toast({ title: "Shared successfully!", description: "Job has been shared" });
-      } catch {
-        // user cancelled share
-      }
-    } else {
-      navigator.clipboard.writeText(shareData.url);
-      toast({ title: "Link copied!", description: "Job link copied to clipboard" });
-    }
-  };
+  const [shareJob, setShareJob] = useState<ShareJobTarget | null>(null);
 
   const handleQuickApply = (jobSlug: string) => {
     navigate(`/jobs/${jobSlug}`);
@@ -284,7 +267,14 @@ export default function FeaturedJobs() {
                     size="icon"
                     variant="outline"
                     className="shrink-0 rounded-xl"
-                    onClick={(e) => { e.stopPropagation(); handleShareJob(job); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShareJob({
+                        id: job.id,
+                        slug: job.slug,
+                        title: job.title,
+                      });
+                    }}
                   >
                     <Share2 className="h-4 w-4" />
                   </Button>
@@ -304,6 +294,13 @@ export default function FeaturedJobs() {
           </Link>
         </div>
       </div>
+      <ShareJobDialog
+        open={shareJob != null}
+        onOpenChange={(open) => {
+          if (!open) setShareJob(null);
+        }}
+        job={shareJob}
+      />
     </section>
   );
 }
