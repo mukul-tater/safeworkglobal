@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { adminSetUserEnabled } from "@/services/AdminService";
+import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
 
 interface BankDetails {
   holder?: string | null;
@@ -47,6 +49,7 @@ interface PartnerExt {
 
 interface PartnerRow {
   id: string;
+  user_id: string | null;
   partner_code: string | null;
   status: string;
   verification_status: string;
@@ -79,7 +82,13 @@ function maskAccount(account: string | null | undefined): string {
 function statusClass(status: string): string {
   if (status === "approved") return "bg-green-500/10 text-green-700 border-green-200";
   if (status === "pending") return "bg-amber-500/10 text-amber-700 border-amber-200";
+  if (status === "suspended") return "bg-destructive/10 text-destructive border-destructive/30";
   return "bg-red-500/10 text-red-700 border-red-200";
+}
+
+function statusLabel(status: string): string {
+  if (status === "suspended") return "disabled";
+  return status;
 }
 
 export default function AdminPartnersV2() {
@@ -101,10 +110,10 @@ export default function AdminPartnersV2() {
 
   const load = async () => {
     setLoading(true);
-    const columns = `id, partner_code, status, verification_status, can_add_workers, rejection_reason, state, district, city, rating, created_at,
+    const columns = `id, user_id, partner_code, status, verification_status, can_add_workers, rejection_reason, state, district, city, rating, created_at,
                partner_types:partner_type_id(code, name),
                partner_profiles_ext(${EXT_COLUMNS})`;
-    const withoutFlag = `id, partner_code, status, verification_status, rejection_reason, state, district, city, rating, created_at,
+    const withoutFlag = `id, user_id, partner_code, status, verification_status, rejection_reason, state, district, city, rating, created_at,
                partner_types:partner_type_id(code, name),
                partner_profiles_ext(${EXT_COLUMNS})`;
 
@@ -156,6 +165,29 @@ export default function AdminPartnersV2() {
       toast.success(enabled ? "Add worker turned on" : "Add worker turned off");
       load();
     }
+  };
+
+  const setAccess = async (partner: PartnerRow, enabled: boolean) => {
+    if (!partner.user_id) {
+      toast.error("This centre has no login account.");
+      return;
+    }
+    setActing(true);
+    const { error } = await adminSetUserEnabled(
+      partner.user_id,
+      enabled,
+      enabled ? "Enabled by admin" : "Disabled by admin",
+    );
+    setActing(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    toast.success(enabled ? "Centre enabled. They can sign in again." : "Centre disabled. They cannot sign in.");
+    setRejecting(false);
+    setReason("");
+    setSelected(null);
+    load();
   };
 
   const setStatus = async (id: string, status: "approved" | "rejected" | "suspended", note?: string) => {
@@ -257,7 +289,7 @@ export default function AdminPartnersV2() {
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="suspended">Disabled</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -283,7 +315,7 @@ export default function AdminPartnersV2() {
                       </div>
                       <Badge variant="outline">{r.partner_types?.name}</Badge>
                       <Badge className={statusClass(r.status)} variant="outline">
-                        {r.status}
+                        {statusLabel(r.status)}
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
@@ -307,6 +339,25 @@ export default function AdminPartnersV2() {
                       >
                         {r.can_add_workers ? "Turn off add worker" : "Turn on add worker"}
                       </Button>
+                    )}
+                    {r.user_id && (
+                      r.status === "suspended" ? (
+                        <Button size="sm" disabled={acting} onClick={() => void setAccess(r, true)}>
+                          Enable
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" disabled={acting} onClick={() => void setAccess(r, false)}>
+                          Disable
+                        </Button>
+                      )
+                    )}
+                    {r.user_id && (
+                      <AdminDeleteUserButton
+                        userId={r.user_id}
+                        userRole="partner"
+                        userLabel={r.partner_profiles_ext?.company_name || r.partner_code || "this centre"}
+                        onDeleted={() => void load()}
+                      />
                     )}
                   </div>
                 </div>
@@ -387,17 +438,38 @@ export default function AdminPartnersV2() {
                   </>
                 ) : (
                   <>
-                    {selected.status === "approved" ? (
-                      <Button variant="outline" disabled={acting} onClick={() => setStatus(selected.id, "suspended")}>
-                        Suspend
+                    {selected.status === "suspended" ? (
+                      <Button disabled={acting} onClick={() => void setAccess(selected, true)}>
+                        {acting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                        Enable
                       </Button>
                     ) : (
-                      <Button disabled={acting} onClick={() => setStatus(selected.id, "approved")}>
-                        {acting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-                        Approve
-                      </Button>
+                      <>
+                        {selected.status !== "approved" && (
+                          <Button disabled={acting} onClick={() => setStatus(selected.id, "approved")}>
+                            {acting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                            Approve
+                          </Button>
+                        )}
+                        <Button variant="outline" disabled={acting} onClick={() => void setAccess(selected, false)}>
+                          Disable
+                        </Button>
+                      </>
                     )}
-                    {selected.status !== "rejected" && (
+                    {selected.user_id && (
+                      <AdminDeleteUserButton
+                        userId={selected.user_id}
+                        userRole="partner"
+                        userLabel={ext?.company_name || selected.partner_code || "this centre"}
+                        variant="destructive"
+                        label="Delete"
+                        onDeleted={() => {
+                          closeReview();
+                          void load();
+                        }}
+                      />
+                    )}
+                    {selected.status !== "rejected" && selected.status !== "suspended" && (
                       <Button variant="outline" disabled={acting} onClick={() => setRejecting(true)}>
                         Reject
                       </Button>

@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { adminSetUserRole } from "@/services/AdminService";
+import { adminSetUserEnabled, adminSetUserRole } from "@/services/AdminService";
 import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
 
 const BANNED_ACTIONS = new Set(["banned", "blocked", "suspended"]);
@@ -25,8 +25,39 @@ interface User {
   full_name: string | null;
   phone: string | null;
   role: string;
+  kind: string;
+  kindLabel: string;
   is_banned: boolean;
   joined: string;
+}
+
+const KIND_OPTIONS = [
+  { value: "all", label: "All accounts" },
+  { value: "worker", label: "Worker" },
+  { value: "employer", label: "Employer" },
+  { value: "emitra", label: "e-Mitra" },
+  { value: "trade_test", label: "Trade test" },
+  { value: "ra", label: "RA" },
+  { value: "partner", label: "Other partner" },
+  { value: "agent", label: "Agent" },
+  { value: "interviewer", label: "Interviewer" },
+  { value: "admin", label: "Admin" },
+] as const;
+
+function accountKind(role: string, partnerTypeCode: string | null): { kind: string; kindLabel: string } {
+  const code = partnerTypeCode?.toUpperCase() ?? "";
+  if (code === "SEN") return { kind: "emitra", kindLabel: "e-Mitra" };
+  if (code === "SSVN") return { kind: "trade_test", kindLabel: "Trade test" };
+  if (code === "SRN") return { kind: "ra", kindLabel: "RA" };
+  if (code === "ITI") return { kind: "partner", kindLabel: "ITI partner" };
+  if (code === "CONSULTANT") return { kind: "partner", kindLabel: "Consultant" };
+  if (code === "SEN_GLOBAL") return { kind: "partner", kindLabel: "Employer network" };
+  if (role === "partner") return { kind: "partner", kindLabel: "Partner" };
+  if (role === "employer") return { kind: "employer", kindLabel: "Employer" };
+  if (role === "admin") return { kind: "admin", kindLabel: "Admin" };
+  if (role === "agent") return { kind: "agent", kindLabel: "Agent" };
+  if (role === "interviewer") return { kind: "interviewer", kindLabel: "Interviewer" };
+  return { kind: "worker", kindLabel: "Worker" };
 }
 
 export default function UserManagement() {
@@ -39,7 +70,7 @@ export default function UserManagement() {
   const [showDialog, setShowDialog] = useState(false);
   const [roleUpdating, setRoleUpdating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [kindFilter, setKindFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewUser, setViewUser] = useState<User | null>(null);
   const [viewProfile, setViewProfile] = useState<any>(null);
@@ -61,15 +92,32 @@ export default function UserManagement() {
         .from("user_moderation").select("user_id, action, is_active").eq("is_active", true);
       if (moderationsError) throw moderationsError;
 
+      const partnerTypeByUser = new Map<string, string>();
+      const { data: partnerLinks, error: partnerError } = await supabase
+        .from("partners")
+        .select("user_id, partner_types(code)");
+      if (partnerError) {
+        console.error("Error loading partner types:", partnerError);
+      }
+      for (const link of partnerLinks ?? []) {
+        const typeRow = link.partner_types as { code: string } | { code: string }[] | null;
+        const code = Array.isArray(typeRow) ? typeRow[0]?.code : typeRow?.code;
+        if (link.user_id && code) partnerTypeByUser.set(link.user_id, code);
+      }
+
       const usersData: User[] = profiles.map((profile) => {
         const userRole = roles.find((r) => r.user_id === profile.id);
         const moderation = moderations.find((m) => m.user_id === profile.id);
+        const role = userRole?.role || "worker";
+        const kind = accountKind(role, partnerTypeByUser.get(profile.id) ?? null);
         return {
           id: profile.id,
           email: displayableEmail(profile.email) || "",
           full_name: profile.full_name,
           phone: profile.phone,
-          role: userRole?.role || "worker",
+          role,
+          kind: kind.kind,
+          kindLabel: kind.kindLabel,
           is_banned: moderation ? BANNED_ACTIONS.has(moderation.action) : false,
           joined: new Date(profile.created_at).toISOString().split("T")[0],
         };
@@ -84,31 +132,24 @@ export default function UserManagement() {
   };
 
   const handleBanUnban = async () => {
-    if (!selectedUser || !actionType || !reason.trim()) {
+    if (!selectedUser || !actionType) return;
+    if (actionType === "ban" && !reason.trim()) {
       toast.error("Please provide a reason");
       return;
     }
     try {
-      const adminId = (await supabase.auth.getUser()).data.user?.id;
-      if (!adminId) throw new Error("Not authenticated");
-
-      if (actionType === "ban") {
-        const { error } = await supabase.from("user_moderation").insert({
-          user_id: selectedUser.id,
-          action: "banned",
-          reason: reason.trim(),
-          actioned_by: adminId,
-          is_active: true,
-        });
-        if (error) throw error;
-        toast.success(`${selectedUser.full_name || selectedUser.email} has been banned`);
-      } else {
-        const { error } = await supabase.from("user_moderation")
-          .update({ is_active: false })
-          .eq("user_id", selectedUser.id).eq("is_active", true);
-        if (error) throw error;
-        toast.success(`${selectedUser.full_name || selectedUser.email} has been unbanned`);
-      }
+      const enabling = actionType === "unban";
+      const { error } = await adminSetUserEnabled(
+        selectedUser.id,
+        enabling,
+        reason.trim(),
+      );
+      if (error) throw new Error(error);
+      toast.success(
+        enabling
+          ? `${selectedUser.full_name || selectedUser.email || "User"} can sign in again`
+          : `${selectedUser.full_name || selectedUser.email || "User"} is disabled and cannot sign in`,
+      );
       setShowDialog(false); setReason(""); setSelectedUser(null); setActionType(null);
       fetchUsers();
     } catch (error: any) {
@@ -161,7 +202,7 @@ export default function UserManagement() {
       user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+    const matchesRole = kindFilter === "all" || user.kind === kindFilter;
     const matchesStatus = statusFilter === "all" ||
       (statusFilter === "active" && !user.is_banned) ||
       (statusFilter === "banned" && user.is_banned);
@@ -181,8 +222,8 @@ export default function UserManagement() {
     <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
       <h1 className="text-2xl md:text-3xl font-bold mb-2">User Management</h1>
       <p className="text-muted-foreground text-sm mb-6">
-        Manage all workers, employers, and agents — {users.length} total users.
-        Delete permanently removes the account and related data.
+        Disable, enable, or delete any account — workers, employers, e-Mitra, trade test centres, RAs, and other partners.
+        {" "}{users.length} total. Disable blocks sign-in. Delete permanently removes the account.
       </p>
 
       {/* Filters */}
@@ -192,14 +233,12 @@ export default function UserManagement() {
           <Input placeholder="Search by name, email, or phone..." className="pl-9"
             value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         </div>
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Role" /></SelectTrigger>
+        <Select value={kindFilter} onValueChange={setKindFilter}>
+          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Account type" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="worker">Worker</SelectItem>
-            <SelectItem value="employer">Employer</SelectItem>
-            <SelectItem value="partner">Partner (e-Mitra)</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
+            {KIND_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -207,18 +246,20 @@ export default function UserManagement() {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="banned">Banned</SelectItem>
+            <SelectItem value="banned">Disabled</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         {[
           { label: "Total", value: users.length, color: "text-primary" },
-          { label: "Workers", value: users.filter(u => u.role === "worker").length, color: "text-success" },
-          { label: "Employers", value: users.filter(u => u.role === "employer").length, color: "text-primary" },
-          { label: "Banned", value: users.filter(u => u.is_banned).length, color: "text-destructive" },
+          { label: "Workers", value: users.filter(u => u.kind === "worker").length, color: "text-success" },
+          { label: "e-Mitra", value: users.filter(u => u.kind === "emitra").length, color: "text-primary" },
+          { label: "Trade test", value: users.filter(u => u.kind === "trade_test").length, color: "text-primary" },
+          { label: "RA", value: users.filter(u => u.kind === "ra").length, color: "text-primary" },
+          { label: "Disabled", value: users.filter(u => u.is_banned).length, color: "text-destructive" },
         ].map(s => (
           <Card key={s.label} className="p-3 text-center">
             <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -237,11 +278,11 @@ export default function UserManagement() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h3 className="text-base font-semibold truncate">{user.full_name || "No Name"}</h3>
-                  <Badge variant={user.role === "worker" ? "default" : user.role === "employer" ? "secondary" : "outline"}>
-                    {user.role}
+                  <Badge variant={user.kind === "worker" ? "default" : user.kind === "employer" ? "secondary" : "outline"}>
+                    {user.kindLabel}
                   </Badge>
                   <Badge variant={user.is_banned ? "destructive" : "default"} className="text-xs">
-                    {user.is_banned ? "Banned" : "Active"}
+                    {user.is_banned ? "Disabled" : "Active"}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground text-sm truncate">
@@ -256,14 +297,16 @@ export default function UserManagement() {
                 <Button variant="outline" size="icon" onClick={() => handleViewUser(user)} title="View details">
                   <Eye className="h-4 w-4" />
                 </Button>
-                {user.is_banned ? (
-                  <Button variant="outline" size="icon" onClick={() => { setSelectedUser(user); setActionType("unban"); setShowDialog(true); }} title="Enable user">
-                    <UserCheck className="h-4 w-4 text-success" />
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="icon" onClick={() => { setSelectedUser(user); setActionType("ban"); setShowDialog(true); }} title="Disable user">
-                    <UserX className="h-4 w-4 text-destructive" />
-                  </Button>
+                {user.role !== "admin" && user.id !== currentUser?.id && (
+                  user.is_banned ? (
+                    <Button variant="outline" size="icon" onClick={() => { setSelectedUser(user); setActionType("unban"); setShowDialog(true); }} title="Enable user">
+                      <UserCheck className="h-4 w-4 text-success" />
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="icon" onClick={() => { setSelectedUser(user); setActionType("ban"); setShowDialog(true); }} title="Disable user">
+                      <UserX className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )
                 )}
                 <AdminDeleteUserButton
                   userId={user.id}
@@ -284,19 +327,19 @@ export default function UserManagement() {
             <DialogTitle>{actionType === "ban" ? "Disable User" : "Enable User"}</DialogTitle>
             <DialogDescription>
               {actionType === "ban"
-                ? `This will ban ${selectedUser?.full_name || selectedUser?.email} from accessing the platform.`
-                : `This will restore access for ${selectedUser?.full_name || selectedUser?.email}.`}
+                ? `This signs ${selectedUser?.full_name || selectedUser?.email || "this user"} out and blocks future sign-in. Their data stays in place.`
+                : `This restores sign-in for ${selectedUser?.full_name || selectedUser?.email || "this user"}.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div>
-              <Label htmlFor="reason">Reason *</Label>
+              <Label htmlFor="reason">Reason{actionType === "ban" ? " *" : " (optional)"}</Label>
               <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)}
                 placeholder="Provide a reason for this action..." className="mt-2" />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
-              <Button onClick={handleBanUnban} disabled={!reason.trim()}
+              <Button onClick={handleBanUnban} disabled={actionType === "ban" && !reason.trim()}
                 variant={actionType === "ban" ? "destructive" : "default"}>
                 {actionType === "ban" ? "Disable User" : "Enable User"}
               </Button>
@@ -340,7 +383,8 @@ export default function UserManagement() {
                   )}
                 </div>
                 <div><Label className="text-xs text-muted-foreground">Status</Label>
-                  <Badge variant={viewUser.is_banned ? "destructive" : "default"}>{viewUser.is_banned ? "Banned" : "Active"}</Badge>
+                  <Badge variant={viewUser.is_banned ? "destructive" : "default"}>{viewUser.is_banned ? "Disabled" : "Active"}</Badge>
+                  <p className="text-xs text-muted-foreground mt-1">{viewUser.kindLabel}</p>
                 </div>
                 <div><Label className="text-xs text-muted-foreground">Joined</Label><p className="font-medium">{viewUser.joined}</p></div>
               </div>
@@ -384,14 +428,16 @@ export default function UserManagement() {
               )}
 
               <div className="flex justify-end gap-2 pt-2">
-                {viewUser.is_banned ? (
-                  <Button size="sm" onClick={() => { setViewUser(null); setSelectedUser(viewUser); setActionType("unban"); setShowDialog(true); }}>
-                    <UserCheck className="h-4 w-4 mr-1" /> Enable User
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="destructive" onClick={() => { setViewUser(null); setSelectedUser(viewUser); setActionType("ban"); setShowDialog(true); }}>
-                    <UserX className="h-4 w-4 mr-1" /> Disable User
-                  </Button>
+                {viewUser.role !== "admin" && viewUser.id !== currentUser?.id && (
+                  viewUser.is_banned ? (
+                    <Button size="sm" onClick={() => { setViewUser(null); setSelectedUser(viewUser); setActionType("unban"); setShowDialog(true); }}>
+                      <UserCheck className="h-4 w-4 mr-1" /> Enable User
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="destructive" onClick={() => { setViewUser(null); setSelectedUser(viewUser); setActionType("ban"); setShowDialog(true); }}>
+                      <UserX className="h-4 w-4 mr-1" /> Disable User
+                    </Button>
+                  )
                 )}
                 <AdminDeleteUserButton
                   userId={viewUser.id}

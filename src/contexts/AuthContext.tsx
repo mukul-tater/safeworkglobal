@@ -5,6 +5,25 @@ import type { User, Session } from '@supabase/supabase-js';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import { clearPendingOAuthRedirect, clearPendingOAuthRole, hasOAuthCallbackInUrl } from '@/lib/oauthRedirect';
 import { passwordSignupIssue } from '@/lib/validations/password';
+import { toast } from 'sonner';
+
+const DISABLED_ACTIONS = new Set(['banned', 'blocked', 'suspended']);
+
+async function signOutIfAccountDisabled(userId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('user_moderation')
+    .select('action')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .in('action', ['banned', 'blocked', 'suspended'])
+    .limit(1);
+
+  if (error || !data?.some((row) => DISABLED_ACTIONS.has(row.action))) return false;
+
+  toast.error('This account has been disabled. Contact SafeWork support if this is a mistake.');
+  await supabase.auth.signOut();
+  return true;
+}
 
 export type AppRole = 'admin' | 'employer' | 'worker' | 'partner' | 'interviewer';
 
@@ -274,6 +293,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      if (await signOutIfAccountDisabled(currentUser.id)) {
+        if (generation === loadGenerationRef.current) {
+          loadedUserIdRef.current = null;
+          setProfileLoading(false);
+        }
+        return;
+      }
       await Promise.all([
         fetchOrCreateProfile(currentUser, generation),
         fetchUserRole(currentUser.id, generation),

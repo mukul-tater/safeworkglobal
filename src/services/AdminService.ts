@@ -96,6 +96,24 @@ export async function adminDeleteUser(userId: string): Promise<{ error: string |
   return { error: error ? formatError(error, "Failed to delete user") : null };
 }
 
+export async function adminSetUserEnabled(
+  userId: string,
+  enabled: boolean,
+  reason?: string | null
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc("admin_set_user_enabled", {
+    p_user_id: userId,
+    p_enabled: enabled,
+    p_reason: reason ?? undefined,
+  });
+  if (!error) return { error: null };
+  const message = formatError(error, enabled ? "Failed to enable user" : "Failed to disable user");
+  if (/could not find the function|schema cache/i.test(message)) {
+    return { error: "Account access is not available yet. Apply the latest database migration." };
+  }
+  return { error: message };
+}
+
 export async function adminSetPartnerPassword(
   partnerId: string,
   password: string

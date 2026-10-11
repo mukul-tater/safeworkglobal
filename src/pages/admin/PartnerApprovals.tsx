@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Eye, Search, ShieldOff, ShieldCheck, Store, Loader2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import PartnerApprovalFlow from "@/components/admin/PartnerApprovalFlow";
-import { adminSetPartnerPassword } from "@/services/AdminService";
+import { adminSetPartnerPassword, adminSetUserEnabled } from "@/services/AdminService";
+import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
 import { PASSWORD_HINT, passwordSignupIssue, sanitizePasswordInput } from "@/lib/validations/password";
 
 type Partner = any;
@@ -91,6 +92,15 @@ export default function PartnerApprovals() {
     }
     setActing(true);
     try {
+      if (partner.user_id) {
+        const { error: accessError } = await adminSetUserEnabled(
+          partner.user_id,
+          action === "enable",
+          action === "disable" ? reason.trim() : (reason.trim() || "Enabled by admin"),
+        );
+        if (accessError) throw new Error(accessError);
+      }
+
       const patch: Record<string, any> = { reviewed_by: user.id, reviewed_at: new Date().toISOString() };
       if (action === "disable") {
         patch.status = "suspended";
@@ -327,6 +337,19 @@ export default function PartnerApprovals() {
                   <Button onClick={() => setActionDialog({ action: "enable", partner: selected })}>
                     <ShieldCheck className="h-4 w-4 mr-1" /> Enable
                   </Button>
+                )}
+                {selected.user_id && (
+                  <AdminDeleteUserButton
+                    userId={selected.user_id}
+                    userRole="partner"
+                    userLabel={selected.center_name || selected.owner_name || selected.mobile || "this centre"}
+                    variant="destructive"
+                    label="Delete"
+                    onDeleted={() => {
+                      setSelected(null);
+                      void fetchRows();
+                    }}
+                  />
                 )}
               </DialogFooter>
             </>

@@ -6424,6 +6424,10 @@ export type Database = {
         Args: { p_mode: string }
         Returns: string
       }
+      admin_set_user_enabled: {
+        Args: { p_enabled: boolean; p_reason?: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_set_user_role: {
         Args: {
           p_role: Database["public"]["Enums"]["app_role"]
