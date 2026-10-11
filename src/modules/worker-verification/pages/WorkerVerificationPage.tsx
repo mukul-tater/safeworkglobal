@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import WorkerPortalLayout from '@/components/layout/WorkerPortalLayout';
-import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
+import { WhatsAppSupportNote } from '@/components/WhatsAppSupportNote';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -335,7 +335,12 @@ function JourneyShell({
   if (embedded) return <>{children}</>;
   return (
     <WorkerPortalLayout>
-      <WhatsAppDocumentsNote className="mb-4" />
+      <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+        <WhatsAppSupportNote
+          kind="error"
+          errorText="I need help on my worker journey."
+        />
+      </div>
       {children}
     </WorkerPortalLayout>
   );

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { WhatsAppDocumentsNote } from "@/components/WhatsAppSupportNote";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -69,10 +68,7 @@ export function PublicOrWorkerPortalLayout({
 
   if (shell.usePortalLayout) {
     return (
-      <DashboardLayout {...shell.layoutProps}>
-        {page === "jobs" && <WhatsAppDocumentsNote className="mb-4" />}
-        {children}
-      </DashboardLayout>
+      <DashboardLayout {...shell.layoutProps}>{children}</DashboardLayout>
     );
   }
 

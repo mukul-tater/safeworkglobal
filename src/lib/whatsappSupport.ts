@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import { SAFEWORK_CONTACT } from "@/config/workerSupport";
+import { shouldOfferWhatsAppErrorHelp } from "@/lib/whatsappErrorAudience";
 
 export const WHATSAPP_ERROR_PROMPT = "Please forward this error on WhatsApp";
 export const WHATSAPP_DOCUMENTS_PROMPT =
@@ -38,6 +39,8 @@ export function installWhatsAppErrorToasts() {
   ) => string | number;
 
   toast.error = ((message: unknown, data?: ErrorToastData) => {
+    if (!shouldOfferWhatsAppErrorHelp()) return original(message, data);
+
     const messageText = typeof message === "string" ? message : "";
     const descriptionText = typeof data?.description === "string" ? data.description : "";
     if (

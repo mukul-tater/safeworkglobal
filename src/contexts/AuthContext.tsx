@@ -5,6 +5,7 @@ import type { User, Session } from '@supabase/supabase-js';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import { clearPendingOAuthRedirect, clearPendingOAuthRole, hasOAuthCallbackInUrl } from '@/lib/oauthRedirect';
 import { passwordSignupIssue } from '@/lib/validations/password';
+import { setWhatsAppErrorAudienceRole } from '@/lib/whatsappErrorAudience';
 import { toast } from 'sonner';
 
 const DISABLED_ACTIONS = new Set(['banned', 'blocked', 'suspended']);
@@ -142,6 +143,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+
+  useEffect(() => {
+    setWhatsAppErrorAudienceRole(role);
+  }, [role]);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [hasResolvedRole, setHasResolvedRole] = useState(false);

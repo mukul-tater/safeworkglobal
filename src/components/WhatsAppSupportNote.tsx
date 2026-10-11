@@ -1,4 +1,5 @@
 import { SAFEWORK_CONTACT } from "@/config/workerSupport";
+import { shouldOfferWhatsAppErrorHelp } from "@/lib/whatsappErrorAudience";
 import {
   WHATSAPP_DOCUMENTS_PROMPT,
   WHATSAPP_ERROR_PROMPT,
@@ -18,6 +19,8 @@ export function WhatsAppSupportNote({
   compact?: boolean;
   className?: string;
 }) {
+  if (kind === "error" && !shouldOfferWhatsAppErrorHelp()) return null;
+
   const prompt = kind === "error" ? WHATSAPP_ERROR_PROMPT : WHATSAPP_DOCUMENTS_PROMPT;
   const hindi =
     kind === "error"

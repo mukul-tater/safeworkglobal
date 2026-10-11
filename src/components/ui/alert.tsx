@@ -2,6 +2,7 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { WhatsAppSupportNote } from "@/components/WhatsAppSupportNote";
+import { shouldOfferWhatsAppErrorHelp } from "@/lib/whatsappErrorAudience";
 import { WHATSAPP_ERROR_PROMPT } from "@/lib/whatsappSupport";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,10 @@ const Alert = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
 >(({ className, variant, children, ...props }, ref) => {
   const errorText = nodeText(children).replace(/\s+/g, " ").trim();
-  const showWhatsApp = variant === "destructive" && !errorText.includes(WHATSAPP_ERROR_PROMPT);
+  const showWhatsApp =
+    variant === "destructive" &&
+    !errorText.includes(WHATSAPP_ERROR_PROMPT) &&
+    shouldOfferWhatsAppErrorHelp();
   return (
     <div ref={ref} role="alert" className={cn(alertVariants({ variant }), className)} {...props}>
       {children}

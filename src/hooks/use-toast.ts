@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { WhatsAppSupportNote } from "@/components/WhatsAppSupportNote";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
+import { shouldOfferWhatsAppErrorHelp } from "@/lib/whatsappErrorAudience";
 import { WHATSAPP_ERROR_PROMPT } from "@/lib/whatsappSupport";
 
 const TOAST_LIMIT = 1;
@@ -137,7 +138,7 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, "id">;
 
 function withWhatsAppError(props: Toast): Toast {
-  if (props.variant !== "destructive") return props;
+  if (props.variant !== "destructive" || !shouldOfferWhatsAppErrorHelp()) return props;
   const titleText = typeof props.title === "string" ? props.title : "";
   const descriptionText = typeof props.description === "string" ? props.description : "";
   if (`${titleText} ${descriptionText}`.includes(WHATSAPP_ERROR_PROMPT)) return props;
