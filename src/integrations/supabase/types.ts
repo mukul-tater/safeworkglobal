@@ -3394,6 +3394,60 @@ export type Database = {
           },
         ]
       }
+      platform_payment_settings: {
+        Row: {
+          bank_account_number: string
+          bank_beneficiary: string
+          bank_ifsc: string
+          bank_name: string
+          default_service_charge_inr: number
+          europe_service_charge_inr: number
+          fee_inclusions: string[]
+          gst_rate_pct: number
+          id: number
+          indemnity_bond_stamp_inr: number
+          razorpay_gateway_fee_pct: number
+          uae_delivery_service_charge_inr: number
+          uae_service_charge_inr: number
+          ukraine_service_charge_inr: number
+          updated_at: string
+        }
+        Insert: {
+          bank_account_number?: string
+          bank_beneficiary?: string
+          bank_ifsc?: string
+          bank_name?: string
+          default_service_charge_inr?: number
+          europe_service_charge_inr?: number
+          fee_inclusions?: string[]
+          gst_rate_pct?: number
+          id: number
+          indemnity_bond_stamp_inr?: number
+          razorpay_gateway_fee_pct?: number
+          uae_delivery_service_charge_inr?: number
+          uae_service_charge_inr?: number
+          ukraine_service_charge_inr?: number
+          updated_at?: string
+        }
+        Update: {
+          bank_account_number?: string
+          bank_beneficiary?: string
+          bank_ifsc?: string
+          bank_name?: string
+          default_service_charge_inr?: number
+          europe_service_charge_inr?: number
+          fee_inclusions?: string[]
+          gst_rate_pct?: number
+          id?: number
+          indemnity_bond_stamp_inr?: number
+          razorpay_gateway_fee_pct?: number
+          uae_delivery_service_charge_inr?: number
+          uae_service_charge_inr?: number
+          ukraine_service_charge_inr?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -6275,6 +6329,25 @@ export type Database = {
         Returns: undefined
       }
       admin_rotate_lsp_secret: { Args: { p_lsp_id: string }; Returns: Json }
+      admin_save_platform_payment_settings: {
+        Args: {
+          p_bank_account_number: string
+          p_bank_beneficiary: string
+          p_bank_ifsc: string
+          p_bank_name: string
+          p_default_service_charge_inr: number
+          p_europe_service_charge_inr: number
+          p_fee_inclusions: string[]
+          p_fx: Json
+          p_gst_rate_pct: number
+          p_indemnity_bond_stamp_inr: number
+          p_razorpay_gateway_fee_pct: number
+          p_uae_delivery_service_charge_inr: number
+          p_uae_service_charge_inr: number
+          p_ukraine_service_charge_inr: number
+        }
+        Returns: undefined
+      }
       admin_schedule_worker_assessment: {
         Args: {
           p_instructions?: string
@@ -6992,6 +7065,10 @@ export type Database = {
           video_url: string
           years_of_experience: number
         }[]
+      }
+      listed_delivery_job: {
+        Args: { p_id: string; p_slug: string; p_title: string }
+        Returns: boolean
       }
       lookup_stamp_paper: {
         Args: { p_state: string }
