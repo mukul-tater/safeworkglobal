@@ -17,6 +17,7 @@ import { Loader2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { getDefaultServiceChargeInr } from '@/lib/platformPaymentSettings';
+import { deploymentItemStatus, getDeploymentChecklist, isBuiltinDeploymentKey } from '@/lib/journeyRules';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
 import {
@@ -832,14 +833,11 @@ export default function AdminJourneyOps() {
     }
 
     // deployment
-    const stepKeys = [
-      { key: 'offer', label: 'Offer letter', current: r.deploy_offer_status },
-      { key: 'contract', label: 'Contract signed', current: r.deploy_contract_status },
-      { key: 'emigration', label: 'Emigration / PoE', current: r.deploy_emigration_status },
-      { key: 'visa', label: 'Visa', current: r.deploy_visa_status },
-      { key: 'insurance', label: 'Insurance', current: r.deploy_insurance_status },
-      { key: 'ticket', label: 'Ticket', current: r.deploy_ticket_status },
-    ];
+    const stepKeys = getDeploymentChecklist().map((item) => ({
+      key: item.key,
+      label: item.label,
+      current: deploymentItemStatus(r, item.key),
+    }));
     return (
       <div className="space-y-2">
         <div className="grid sm:grid-cols-2 gap-2">
@@ -888,6 +886,11 @@ export default function AdminJourneyOps() {
                   visa: field(r.user_id, 'visa'),
                   insurance: field(r.user_id, 'insurance'),
                   ticket: field(r.user_id, 'ticket'),
+                  extra: Object.fromEntries(
+                    getDeploymentChecklist()
+                      .filter((item) => !isBuiltinDeploymentKey(item.key))
+                      .map((item) => [item.key, field(r.user_id, item.key) || deploymentItemStatus(r, item.key)]),
+                  ),
                   deployed:
                     form[r.user_id]?.deployed === undefined
                       ? undefined

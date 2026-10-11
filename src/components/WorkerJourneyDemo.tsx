@@ -31,6 +31,7 @@ import PassportRequirementInfo from "@/components/worker/PassportRequirementInfo
 import InsuranceCoverageInfo from "@/components/worker/InsuranceCoverageInfo";
 import { ASSESSMENT_FEE_INCLUSIONS, MEDICAL_REQUIRED_TESTS, MEDICAL_TEST_INTRO } from "@/modules/worker-verification/constants";
 import { getAssessmentFeeInclusions, getRazorpayGatewayFeePct, withConfiguredStamp } from "@/lib/platformPaymentSettings";
+import { getMedicalIntro, getMedicalTests } from "@/lib/journeyRules";
 import IndemnityBondAgreement from "@/modules/worker-verification/components/agreement/IndemnityBondAgreement";
 import { INDEMNITY_BOND_HIGHLIGHTS } from "@/modules/worker-verification/agreement/indemnityBondContent";
 import { cn } from "@/lib/utils";
@@ -381,6 +382,16 @@ function liveJourneySteps(): JourneyStep[] {
         ...step,
         description: `The fee varies by job. Pay the exact amount by bank transfer, or pay instantly with Razorpay (${gateway}% extra).`,
         bullets: [...getAssessmentFeeInclusions()],
+      };
+    }
+    if (step.id === 'medical') {
+      return {
+        ...step,
+        description: getMedicalIntro(),
+        bullets: [
+          ...getMedicalTests().map((test) => `${test.title}: ${test.body}`),
+          'Upload multiple reports on the portal',
+        ],
       };
     }
     if (step.id === 'agreement') {

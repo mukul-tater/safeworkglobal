@@ -8,10 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  WORKER_TERMS_SECTIONS,
-  WORKER_TERMS_VERSION,
-} from '@/modules/worker-verification/constants';
+import { getTermsSections, getTermsVersion } from '@/lib/journeyRules';
 import { withConfiguredStamp } from '@/lib/platformPaymentSettings';
 
 type WorkerTermsDialogProps = {
@@ -48,13 +45,13 @@ export default function WorkerTermsDialog({
           </div>
           <div className="inline-flex items-center gap-1.5 self-start rounded-md border border-border bg-muted/40 px-2 py-1 text-[11px] font-medium text-muted-foreground">
             <FileText className="h-3 w-3" />
-            Version {WORKER_TERMS_VERSION}
+            Version {getTermsVersion()}
           </div>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
           <ol className="space-y-4">
-            {WORKER_TERMS_SECTIONS.map((section, index) => (
+            {getTermsSections().map((section, index) => (
               <li
                 key={section.id}
                 className="rounded-xl border border-border/70 bg-muted/20 p-3.5 sm:p-4"

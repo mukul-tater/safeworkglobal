@@ -134,9 +134,16 @@ export const TRADE_TEST_REQUIRED_SKILLS = [
   'Aluminium Fixer/Fabricator',
 ] as const;
 
+let readTradeTestSkills = (): readonly string[] => TRADE_TEST_REQUIRED_SKILLS;
+
+/** Journey rules replace this reader once admin settings have loaded. */
+export function bindTradeTestSkills(reader: () => readonly string[]) {
+  readTradeTestSkills = reader;
+}
+
 export function skillRequiresTradeTest(skill: string | null | undefined): boolean {
   if (!skill) return true;
-  return (TRADE_TEST_REQUIRED_SKILLS as readonly string[]).includes(skill);
+  return readTradeTestSkills().includes(skill);
 }
 
 /** Fee (INR) shown on the Payment step. */

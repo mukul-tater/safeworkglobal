@@ -12,10 +12,10 @@ import type {
   WorkerVerification,
 } from '../types';
 import { getDefaultServiceChargeInr, loadPlatformPaymentSettings } from '@/lib/platformPaymentSettings';
+import { getTermsVersion, loadJourneyRules } from '@/lib/journeyRules';
 import {
   QUIZ_QUESTIONS_TO_SHOW,
   VERIFICATION_STAGE_ORDER,
-  WORKER_TERMS_VERSION,
   ecrFromTenthPass,
   normalizeVerificationStage,
   skillRequiresTradeTest,
@@ -98,12 +98,13 @@ export async function getServiceChargesForJobs(jobIds: string[]): Promise<Map<st
 }
 
 export async function acceptTerms(userId: string): Promise<void> {
+  await loadJourneyRules();
   const row = await getOrCreateVerification(userId);
   const { error } = await supabase
     .from('worker_verification')
     .update({
       terms_accepted_at: new Date().toISOString(),
-      terms_version: WORKER_TERMS_VERSION,
+      terms_version: getTermsVersion(),
       updated_at: new Date().toISOString(),
     })
     .eq('id', row.id);
@@ -862,6 +863,7 @@ export async function updateDeploymentChecklist(input: {
   ticket?: string;
   deployed?: boolean;
   notes?: string;
+  extra?: Record<string, string>;
 }): Promise<void> {
   await rpc('admin_update_deployment_checklist', {
     p_user_id: input.userId,
@@ -874,6 +876,12 @@ export async function updateDeploymentChecklist(input: {
     p_deployed: input.deployed ?? null,
     p_notes: input.notes || null,
   });
+  if (input.extra && Object.keys(input.extra).length > 0) {
+    await rpc('admin_set_deploy_extra', {
+      p_user_id: input.userId,
+      p_extra: input.extra,
+    });
+  }
 }
 
 /** Admin only — score interview and open payment stage (RLS/trigger enforced). */
@@ -883,6 +891,7 @@ export async function recordInterviewScore(
   notes?: string,
 ): Promise<WorkerVerification> {
   const row = await getOrCreateVerification(userId);
+  await loadJourneyRules();
   const tradeRequired = skillRequiresTradeTest(row.primary_skill);
   const alreadyPaid = row.payment_status === 'paid' || Boolean(row.paid_at);
   const current = normalizeVerificationStage(row.stage, row.trade_test_required);

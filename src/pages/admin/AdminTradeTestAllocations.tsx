@@ -15,7 +15,7 @@ import {
 import { Loader2, CheckCircle2, XCircle, AlertTriangle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRADE_TEST_REPORTING_WINDOW } from '@/data/tradeTestCenters';
-import { TRADE_TEST_REQUIRED_SKILLS } from '@/modules/worker-verification/constants';
+import { getJourneyRules } from '@/lib/journeyRules';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -473,7 +473,7 @@ export default function AdminTradeTestAllocations() {
                                 <div className="space-y-1.5 sm:col-span-2">
                                   <Label>Trades this centre can test</Label>
                                   <div className="grid gap-2 sm:grid-cols-2">
-                                    {TRADE_TEST_REQUIRED_SKILLS.map((skill) => {
+                                    {getJourneyRules().tradeTestSkills.map((skill) => {
                                       const checked = draft.trades.includes(skill);
                                       return (
                                         <label key={skill} className="flex items-center gap-2 text-sm">

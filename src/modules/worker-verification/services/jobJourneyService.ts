@@ -1,6 +1,7 @@
 import { supabase as supabaseTyped } from '@/integrations/supabase/client';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { skillRequiresTradeTest } from '../constants';
+import { loadJourneyRules } from '@/lib/journeyRules';
 import type { WorkerVerification } from '../types';
 import {
   ensureWorkerSkillRow,
@@ -60,6 +61,7 @@ async function syncSkillFromJob(
     opts.skills || [],
     opts.country,
   );
+  await loadJourneyRules();
   const tradeRequired = skillRequiresTradeTest(nextSkill);
   const patch: Record<string, unknown> = {
     journey_job_id: opts.jobId,
@@ -139,6 +141,7 @@ export async function changeJourneyJob(opts: {
   }
 
   const skill = inferWorkerSkillFromJob(opts.title || '', opts.description || '', opts.skills || [], opts.country);
+  await loadJourneyRules();
   const { data, error } = await supabase.rpc('change_journey_job', {
     p_job_id: opts.jobId,
     p_user_id: opts.workerUserId,

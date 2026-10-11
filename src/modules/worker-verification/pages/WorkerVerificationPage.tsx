@@ -24,11 +24,11 @@ import { findIndiaDistrict } from '@/lib/indiaLocations';
 import { WORKER_LANGUAGES } from '@/lib/constants';
 import { displayableEmail, isValidContactEmail } from '@/lib/workerAuthEmail';
 import { getDefaultServiceChargeInr, loadPlatformPaymentSettings } from '@/lib/platformPaymentSettings';
+import { deploymentItemStatus, getDeploymentChecklist } from '@/lib/journeyRules';
 import {
   educationOptionsForTenthPass,
   ecrFromTenthPass,
   gccJourneyNavSteps,
-  DEPLOYMENT_CHECKLIST,
   VERIFICATION_STAGE_LABELS,
   WORKER_GENDER_OPTIONS,
   isJourneyResetEnabled,
@@ -2420,8 +2420,8 @@ export default function WorkerVerificationPage({
                 </div>
               </div>
               <ul className="space-y-2">
-                {DEPLOYMENT_CHECKLIST.map((item) => {
-                  const value = String((row as any)[item.key] || 'pending');
+                {getDeploymentChecklist().map((item) => {
+                  const value = deploymentItemStatus(row as unknown as Record<string, unknown>, item.key);
                   const done = value === 'completed' || value === 'approved' || value === 'issued';
                   return (
                     <li

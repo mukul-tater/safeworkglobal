@@ -24,7 +24,7 @@ import {
   WORKER_OTP_RECAPTCHA_BTN_ID,
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { createVerifiedWorkerAccount } from '@/modules/worker-registration/lib/createVerifiedWorkerAccount';
-import { WORKER_TERMS_SUMMARY } from '@/modules/worker-verification/constants';
+import { getTermsSummary } from '@/lib/journeyRules';
 import WorkerTermsDialog from '@/components/WorkerTermsDialog';
 
 type Step = 'form' | 'otp' | 'done';
@@ -304,7 +304,7 @@ function Inner() {
               </div>
 
               <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
-                <p className="text-xs text-muted-foreground leading-relaxed">{WORKER_TERMS_SUMMARY}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{getTermsSummary()}</p>
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <Checkbox
                     checked={acceptedTerms}

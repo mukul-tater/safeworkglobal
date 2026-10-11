@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
+import { useJourneyRules } from "@/lib/journeyRules";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { recordSiteVisitOnce } from "@/lib/recordSiteVisit";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -83,6 +84,7 @@ import DisputeResolution from "./pages/admin/DisputeResolution";
 import ContactSubmissions from "./pages/admin/ContactSubmissions";
 import AdminPartnerRewards from "./pages/admin/AdminPartnerRewards";
 import AdminPaymentSettings from "./pages/admin/AdminPaymentSettings";
+import AdminJourneyRules from "./pages/admin/AdminJourneyRules";
 import AdminWorkers from "./pages/admin/AdminWorkers";
 import SharedWorkerPage from "./pages/shared/SharedWorkerPage";
 import AdminEmployers from "./pages/admin/AdminEmployers";
@@ -155,6 +157,7 @@ function EmitraRoute({ children }: { children: React.ReactNode }) {
 
 function AppShell() {
   usePlatformPaymentSettings();
+  useJourneyRules();
   const { pathname } = useLocation();
   useEffect(() => {
     recordSiteVisitOnce();
@@ -425,6 +428,7 @@ function AppShell() {
           <Route path="/admin/messages" element={<AdminRoute><AdminMessages /></AdminRoute>} />
           <Route path="/admin/verification-queue" element={<AdminRoute><AdminVerificationQueue /></AdminRoute>} />
           <Route path="/admin/journey-ops" element={<AdminRoute><AdminJourneyOps /></AdminRoute>} />
+          <Route path="/admin/journey-rules" element={<AdminRoute><AdminJourneyRules /></AdminRoute>} />
           <Route path="/admin/quiz-cms" element={<AdminRoute><AdminQuizCms /></AdminRoute>} />
           {!USERS_ONLY_LAUNCH && (
             <Route path="/interviewer/login" element={<InterviewerLoginPage />} />

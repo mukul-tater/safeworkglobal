@@ -4,10 +4,7 @@ import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  MEDICAL_REQUIRED_TESTS,
-  MEDICAL_TEST_INTRO,
-} from '@/modules/worker-verification/constants';
+import { getMedicalIntro, getMedicalTests } from '@/lib/journeyRules';
 import type { MedicalReport, WorkerVerification } from '@/modules/worker-verification/types';
 import { appliedJobSkillLabel } from '@/lib/inferWorkerSkillFromJob';
 import {
@@ -68,9 +65,9 @@ async function uploadReport(userId: string, file: File, index: number): Promise<
 export function MedicalRequiredTestsNote() {
   return (
     <div className="space-y-3 rounded-xl border border-border bg-muted/30 px-3.5 py-3.5">
-      <p className="text-sm text-foreground">{MEDICAL_TEST_INTRO}</p>
+      <p className="text-sm text-foreground">{getMedicalIntro()}</p>
       <ul className="space-y-3">
-        {MEDICAL_REQUIRED_TESTS.map((test) => (
+        {getMedicalTests().map((test) => (
           <li key={test.title} className="text-sm">
             <p className="font-semibold text-foreground">{test.title}</p>
             <p className="mt-0.5 text-muted-foreground leading-relaxed">{test.body}</p>
