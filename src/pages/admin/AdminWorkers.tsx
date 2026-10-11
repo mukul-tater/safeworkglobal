@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Eye, MapPin, Briefcase, Share2, Store } from "lucide-react";
+import { Search, Eye, MapPin, Briefcase, Share2, Store, Download } from "lucide-react";
 import WorkerShareDialog from "@/components/admin/WorkerShareDialog";
+import WorkerExportDialog from "@/components/admin/WorkerExportDialog";
+import type { WorkerExportSource } from "@/lib/exportWorkersCsv";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatSalaryINR } from "@/lib/utils";
@@ -141,6 +143,19 @@ function creatorSummary(creator: WorkerCreator): string {
   return details ? `${creator.label} · ${details}` : creator.label;
 }
 
+function toExportSource(worker: WorkerRow): WorkerExportSource {
+  return {
+    id: worker.id,
+    email: worker.email,
+    fullName: worker.full_name,
+    phone: worker.phone,
+    joined: worker.joined,
+    applicationCount: worker.application_count,
+    createdBy: worker.createdBy ? creatorSummary(worker.createdBy) : "",
+    profile: worker.profile,
+  };
+}
+
 interface PartnerCentreRow {
   id: string;
   center_name: string | null;
@@ -228,6 +243,7 @@ export default function AdminWorkers() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewWorker, setViewWorker] = useState<WorkerRow | null>(null);
   const [shareWorker, setShareWorker] = useState<WorkerRow | null>(null);
+  const [exportWorkers, setExportWorkers] = useState<WorkerRow[] | null>(null);
   const [applications, setApplications] = useState<WorkerApplicationDetail[]>([]);
   const [changes, setChanges] = useState<WorkerChangeDetail[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -447,6 +463,9 @@ export default function AdminWorkers() {
             <SelectItem value="pending">Pending Onboarding</SelectItem>
           </SelectContent>
         </Select>
+        <Button variant="outline" disabled={filtered.length === 0} onClick={() => setExportWorkers(filtered)}>
+          <Download className="h-4 w-4 mr-2" /> Export
+        </Button>
       </div>
 
       {loading ? (
@@ -496,6 +515,9 @@ export default function AdminWorkers() {
                   )}
                 </div>
                 <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={() => setExportWorkers([w])}>
+                    <Download className="h-4 w-4 mr-1" /> Export
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => setShareWorker(w)}>
                     <Share2 className="h-4 w-4 mr-1" /> Share
                   </Button>
@@ -523,6 +545,12 @@ export default function AdminWorkers() {
         onOpenChange={(next) => { if (!next) setShareWorker(null); }}
         workerId={shareWorker?.id || ''}
         workerName={shareWorker?.full_name || shareWorker?.phone || 'this worker'}
+      />
+
+      <WorkerExportDialog
+        open={!!exportWorkers}
+        onOpenChange={(next) => { if (!next) setExportWorkers(null); }}
+        workers={(exportWorkers || []).map(toExportSource)}
       />
 
       <Dialog open={!!viewWorker} onOpenChange={() => setViewWorker(null)}>

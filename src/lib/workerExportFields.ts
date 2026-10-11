@@ -1,0 +1,137 @@
+export const WORKER_EXPORT_GROUPS = [
+  { id: "contact", label: "Contact" },
+  { id: "identity", label: "Identity numbers" },
+  { id: "documents", label: "Uploaded documents" },
+  { id: "media", label: "Face and skill media" },
+  { id: "skills", label: "Skills and work" },
+  { id: "preferences", label: "Job preferences" },
+  { id: "account", label: "Account and review" },
+  { id: "journey", label: "Journey" },
+] as const;
+
+export type WorkerExportGroupId = (typeof WORKER_EXPORT_GROUPS)[number]["id"];
+
+export interface WorkerExportField {
+  id: string;
+  label: string;
+  group: WorkerExportGroupId;
+}
+
+export const WORKER_EXPORT_FIELDS: WorkerExportField[] = [
+  { id: "full_name", label: "Full name", group: "contact" },
+  { id: "phone", label: "Phone", group: "contact" },
+  { id: "email", label: "Email", group: "contact" },
+  { id: "gender", label: "Gender", group: "contact" },
+  { id: "nationality", label: "Nationality", group: "contact" },
+  { id: "country", label: "Country", group: "contact" },
+  { id: "current_city", label: "Current city", group: "contact" },
+  { id: "current_location", label: "Current location", group: "contact" },
+  { id: "state", label: "State", group: "contact" },
+  { id: "district", label: "District", group: "contact" },
+  { id: "verification_city", label: "City (verification)", group: "contact" },
+
+  { id: "aadhaar_number", label: "Aadhaar number", group: "identity" },
+  { id: "aadhaar_last4", label: "Aadhaar last 4 digits", group: "identity" },
+  { id: "pan_number", label: "PAN number", group: "identity" },
+  { id: "passport_number", label: "Passport number", group: "identity" },
+  { id: "passport_expiry", label: "Passport expiry", group: "identity" },
+  { id: "has_passport", label: "Has passport", group: "identity" },
+  { id: "has_visa", label: "Has visa", group: "identity" },
+  { id: "visa_countries", label: "Visa countries", group: "identity" },
+  { id: "kyc_status", label: "KYC status", group: "identity" },
+  { id: "kyc_submitted_at", label: "KYC submitted date", group: "identity" },
+  { id: "kyc_verified_at", label: "KYC verified date", group: "identity" },
+  { id: "kyc_rejection_reason", label: "KYC rejection reason", group: "identity" },
+
+  { id: "doc_aadhaar_front", label: "Aadhaar front", group: "documents" },
+  { id: "doc_aadhaar_back", label: "Aadhaar back", group: "documents" },
+  { id: "doc_aadhaar", label: "Aadhaar card", group: "documents" },
+  { id: "doc_pan", label: "PAN card", group: "documents" },
+  { id: "doc_passport_front", label: "Passport front page", group: "documents" },
+  { id: "doc_passport_last", label: "Passport last page", group: "documents" },
+  { id: "doc_passport", label: "Passport", group: "documents" },
+  { id: "doc_visa", label: "Visa", group: "documents" },
+  { id: "doc_tenth_marksheet", label: "10th marksheet", group: "documents" },
+  { id: "doc_resume", label: "Resume", group: "documents" },
+  { id: "doc_certificate", label: "Certificate", group: "documents" },
+  { id: "doc_id_proof", label: "Other ID proof", group: "documents" },
+  { id: "doc_other", label: "Other document", group: "documents" },
+
+  { id: "face_selfie", label: "Face selfie", group: "media" },
+  { id: "work_photos", label: "Work photos", group: "media" },
+  { id: "work_videos", label: "Work videos", group: "media" },
+
+  { id: "bio", label: "Bio", group: "skills" },
+  { id: "primary_skill", label: "Primary skill", group: "skills" },
+  { id: "secondary_skills", label: "Secondary skills", group: "skills" },
+  { id: "skill_level", label: "Skill level", group: "skills" },
+  { id: "years_of_experience", label: "Years of experience", group: "skills" },
+  { id: "experience_range", label: "Experience range", group: "skills" },
+  { id: "languages", label: "Languages", group: "skills" },
+  { id: "skills_detail", label: "Skills (name, proficiency, years)", group: "skills" },
+  { id: "work_history", label: "Work history", group: "skills" },
+  { id: "certifications", label: "Certifications", group: "skills" },
+  { id: "project_types_worked", label: "Project types worked", group: "skills" },
+  { id: "tenth_pass_confirmed", label: "10th pass confirmed", group: "skills" },
+  { id: "education_level", label: "Education level", group: "skills" },
+
+  { id: "availability", label: "Availability", group: "preferences" },
+  { id: "open_to_relocation", label: "Open to relocation", group: "preferences" },
+  { id: "preferred_work_city", label: "Preferred work city", group: "preferences" },
+  { id: "preferred_shift", label: "Preferred shift", group: "preferences" },
+  { id: "primary_work_type", label: "Work type", group: "preferences" },
+  { id: "work_preference", label: "Work preference", group: "preferences" },
+  { id: "expected_salary_min", label: "Expected salary min", group: "preferences" },
+  { id: "expected_salary_max", label: "Expected salary max", group: "preferences" },
+  { id: "currency", label: "Currency", group: "preferences" },
+  { id: "expected_wage_amount", label: "Expected wage amount", group: "preferences" },
+  { id: "expected_wage_type", label: "Expected wage type", group: "preferences" },
+
+  { id: "review_status", label: "Review status", group: "account" },
+  { id: "onboarding_completed", label: "Onboarding completed", group: "account" },
+  { id: "ecr_status", label: "ECR status", group: "account" },
+  { id: "ecr_category", label: "ECR category", group: "account" },
+  { id: "source_type", label: "How they joined", group: "account" },
+  { id: "created_by", label: "Partner name", group: "account" },
+  { id: "joined", label: "Joined date", group: "account" },
+  { id: "application_count", label: "Number of applications", group: "account" },
+
+  { id: "stage", label: "Current stage", group: "journey" },
+  { id: "quiz_score", label: "Quiz score", group: "journey" },
+  { id: "interview_status", label: "Interview status", group: "journey" },
+  { id: "interview_score", label: "Interview score", group: "journey" },
+  { id: "trade_test_status", label: "Trade test status", group: "journey" },
+  { id: "medical_status", label: "Medical status", group: "journey" },
+  { id: "pdot_status", label: "PDOT status", group: "journey" },
+  { id: "payment_status", label: "Assessment payment status", group: "journey" },
+  { id: "payment_amount", label: "Assessment payment amount", group: "journey" },
+  { id: "bond_status", label: "Bond status", group: "journey" },
+  { id: "deploy_offer_status", label: "Deployment offer", group: "journey" },
+  { id: "deploy_visa_status", label: "Deployment visa", group: "journey" },
+  { id: "deploy_ticket_status", label: "Deployment ticket", group: "journey" },
+  { id: "deploy_contract_status", label: "Deployment contract", group: "journey" },
+  { id: "deploy_insurance_status", label: "Deployment insurance", group: "journey" },
+  { id: "deploy_emigration_status", label: "Deployment emigration", group: "journey" },
+  { id: "deployed_at", label: "Deployed date", group: "journey" },
+];
+
+export const DOCUMENT_EXPORT_TYPES: Record<string, string[]> = {
+  doc_aadhaar_front: ["aadhaar_front"],
+  doc_aadhaar_back: ["aadhaar_back"],
+  doc_aadhaar: ["aadhaar"],
+  doc_pan: ["pan"],
+  doc_passport_front: ["passport_front"],
+  doc_passport_last: ["passport_last"],
+  doc_passport: ["passport"],
+  doc_visa: ["visa"],
+  doc_tenth_marksheet: ["tenth_marksheet"],
+  doc_resume: ["resume"],
+  doc_certificate: ["certificate"],
+  doc_id_proof: ["id_proof"],
+  doc_other: ["other"],
+  face_selfie: ["selfie"],
+};
+
+export function fieldsInGroup(group: WorkerExportGroupId): WorkerExportField[] {
+  return WORKER_EXPORT_FIELDS.filter((field) => field.group === group);
+}
