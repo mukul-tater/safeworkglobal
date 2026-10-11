@@ -1834,6 +1834,42 @@ export type Database = {
         }
         Relationships: []
       }
+      journey_rules: {
+        Row: {
+          deployment_checklist: Json
+          id: number
+          medical_intro: string
+          medical_tests: Json
+          terms_sections: Json
+          terms_summary: string
+          terms_version: string
+          trade_test_skills: string[]
+          updated_at: string
+        }
+        Insert: {
+          deployment_checklist: Json
+          id: number
+          medical_intro: string
+          medical_tests: Json
+          terms_sections: Json
+          terms_summary: string
+          terms_version: string
+          trade_test_skills: string[]
+          updated_at?: string
+        }
+        Update: {
+          deployment_checklist?: Json
+          id?: number
+          medical_intro?: string
+          medical_tests?: Json
+          terms_sections?: Json
+          terms_summary?: string
+          terms_version?: string
+          trade_test_skills?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lsp_launch_logs: {
         Row: {
           created_at: string
@@ -5795,6 +5831,7 @@ export type Database = {
           created_at: string
           deploy_contract_status: string
           deploy_emigration_status: string
+          deploy_extra: Json
           deploy_insurance_status: string
           deploy_offer_status: string
           deploy_ticket_status: string
@@ -5875,6 +5912,7 @@ export type Database = {
           created_at?: string
           deploy_contract_status?: string
           deploy_emigration_status?: string
+          deploy_extra?: Json
           deploy_insurance_status?: string
           deploy_offer_status?: string
           deploy_ticket_status?: string
@@ -5955,6 +5993,7 @@ export type Database = {
           created_at?: string
           deploy_contract_status?: string
           deploy_emigration_status?: string
+          deploy_extra?: Json
           deploy_insurance_status?: string
           deploy_offer_status?: string
           deploy_ticket_status?: string
@@ -6256,7 +6295,7 @@ export type Database = {
           created_at: string
           job_id: string
           open_count: number
-          partner_code: string | null
+          partner_code: string
           share_id: string
           sharer_name: string
           sharer_role: string
@@ -6320,6 +6359,7 @@ export type Database = {
           created_at: string
           deploy_contract_status: string
           deploy_emigration_status: string
+          deploy_extra: Json
           deploy_insurance_status: string
           deploy_offer_status: string
           deploy_ticket_status: string
@@ -6412,6 +6452,18 @@ export type Database = {
         Returns: undefined
       }
       admin_rotate_lsp_secret: { Args: { p_lsp_id: string }; Returns: Json }
+      admin_save_journey_rules: {
+        Args: {
+          p_deployment_checklist: Json
+          p_medical_intro: string
+          p_medical_tests: Json
+          p_terms_sections: Json
+          p_terms_summary: string
+          p_terms_version: string
+          p_trade_test_skills: string[]
+        }
+        Returns: undefined
+      }
       admin_save_platform_payment_settings: {
         Args: {
           p_bank_account_number: string
@@ -6450,6 +6502,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      admin_set_deploy_extra: {
+        Args: { p_extra: Json; p_user_id: string }
+        Returns: undefined
       }
       admin_set_field_visibility: {
         Args: { p_field_key: string; p_org: string; p_visible: boolean }
@@ -6496,10 +6552,6 @@ export type Database = {
       admin_set_trade_test_assignment_mode: {
         Args: { p_mode: string }
         Returns: string
-      }
-      admin_set_user_enabled: {
-        Args: { p_enabled: boolean; p_reason?: string; p_user_id: string }
-        Returns: undefined
       }
       admin_set_user_role: {
         Args: {
@@ -6607,6 +6659,7 @@ export type Database = {
           created_at: string
           deploy_contract_status: string
           deploy_emigration_status: string
+          deploy_extra: Json
           deploy_insurance_status: string
           deploy_offer_status: string
           deploy_ticket_status: string
@@ -6696,6 +6749,7 @@ export type Database = {
           created_at: string
           deploy_contract_status: string
           deploy_emigration_status: string
+          deploy_extra: Json
           deploy_insurance_status: string
           deploy_offer_status: string
           deploy_ticket_status: string
@@ -7339,6 +7393,7 @@ export type Database = {
           created_at: string
           deploy_contract_status: string
           deploy_emigration_status: string
+          deploy_extra: Json
           deploy_insurance_status: string
           deploy_offer_status: string
           deploy_ticket_status: string
@@ -7428,6 +7483,7 @@ export type Database = {
           created_at: string
           deploy_contract_status: string
           deploy_emigration_status: string
+          deploy_extra: Json
           deploy_insurance_status: string
           deploy_offer_status: string
           deploy_ticket_status: string
