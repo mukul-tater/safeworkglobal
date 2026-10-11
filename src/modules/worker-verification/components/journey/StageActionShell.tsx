@@ -27,8 +27,8 @@ export default function StageActionShell({
   footer,
 }: Props) {
   return (
-    <Card className="shadow-sm">
-      <CardContent className="space-y-5 p-5 sm:p-6">
+    <Card className="min-w-0 overflow-hidden shadow-sm">
+      <CardContent className="min-w-0 space-y-5 p-5 sm:p-6">
         <div className="flex items-start gap-3 border-b border-border/60 pb-4">
           <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
             <Icon className="h-5 w-5" />
@@ -49,7 +49,7 @@ export default function StageActionShell({
           </div>
         </div>
 
-        <div className="space-y-4">{children}</div>
+        <div className="min-w-0 space-y-4">{children}</div>
 
         {footer ? (
           <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row">{footer}</div>

@@ -185,10 +185,10 @@ function KycPhotoField({
   onChange: (file: File | null) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const shown = file ? displayFileName(file.name) : null;
+  const shown = file ? displayFileName(file.name, 28) : null;
   return (
     <div className="min-w-0 space-y-1.5">
-      <Label>
+      <Label className="block leading-snug">
         {label}
         {required ? ' *' : ''}
       </Label>
@@ -203,17 +203,18 @@ function KycPhotoField({
       <Button
         type="button"
         variant="outline"
-        className="h-11 w-full min-w-0 justify-start font-normal"
+        title={file?.name}
+        className="h-10 w-full min-w-0 max-w-full justify-start overflow-hidden px-3 font-normal"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
       >
-        <Upload className="mr-2 h-4 w-4 shrink-0" />
-        <span className="truncate">{shown || 'Choose file'}</span>
+        <Upload className="h-4 w-4 shrink-0" />
+        <span className="min-w-0 flex-1 truncate text-left font-normal">{shown || 'Choose file'}</span>
       </Button>
       {file && (
-        <p className="flex min-w-0 items-start gap-1 text-xs text-success">
-          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span className="min-w-0 break-all">{shown}</span>
+        <p className="flex min-w-0 items-center gap-1 text-xs text-success">
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate">{shown}</span>
         </p>
       )}
     </div>
@@ -2065,8 +2066,8 @@ export default function WorkerVerificationPage({
                 </div>
               )}
 
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="min-w-0 space-y-1.5">
                   <Label className="inline-flex items-center gap-1">
                     PAN Number{strictIdentityDocs ? ' *' : ''}
                     {!strictIdentityDocs ? <PanUploadLaterInfo /> : null}
@@ -2105,7 +2106,7 @@ export default function WorkerVerificationPage({
                       : 'Stored securely and used only for emigration paperwork'}
                   </p>
                 </div>
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
                   <KycPhotoField
                     label="Aadhaar Card Front Photo"
                     required
@@ -2139,7 +2140,7 @@ export default function WorkerVerificationPage({
                   Passport{strictIdentityDocs ? ' *' : ''}
                   <PassportRequirementInfo />
                 </p>
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label>Passport Number{strictIdentityDocs ? ' *' : ''}</Label>
                     <Input
@@ -2168,7 +2169,7 @@ export default function WorkerVerificationPage({
                     ) : null}
                   </div>
                 </div>
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
                   <KycPhotoField
                     label="Passport First Page Photo"
                     required={strictIdentityDocs}
