@@ -16,7 +16,6 @@ import {
 import { Loader2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { getDefaultServiceChargeInr } from '@/lib/platformPaymentSettings';
 import { deploymentItemStatus, getDeploymentChecklist, isBuiltinDeploymentKey } from '@/lib/journeyRules';
 import { displayableEmail } from '@/lib/workerAuthEmail';
 import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
@@ -261,9 +260,7 @@ export default function AdminJourneyOps() {
           if (jobIds.length) {
             const fees = await getServiceChargesForJobs(jobIds);
             list.forEach((r) => {
-              r.service_charge = r.journey_job_id
-                ? fees.get(r.journey_job_id) ?? getDefaultServiceChargeInr()
-                : getDefaultServiceChargeInr();
+              r.service_charge = r.journey_job_id ? fees.get(r.journey_job_id) ?? 0 : 0;
             });
           }
         }
@@ -601,11 +598,11 @@ export default function AdminJourneyOps() {
     }
 
     if (tab === 'payment') {
-      const fee = r.service_charge ?? getDefaultServiceChargeInr();
+      const fee = Number(r.service_charge);
       return (
         <AdminBankTransferReview
           userId={r.user_id}
-          expectedFee={Number(fee) || getDefaultServiceChargeInr()}
+          expectedFee={Number.isFinite(fee) && fee > 0 ? fee : 0}
           busy={busy}
           onDone={async () => {
             await load();

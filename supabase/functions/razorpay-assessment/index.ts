@@ -8,8 +8,6 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const DELIVERY_JOB_ID = "a1e10000-2026-4000-8000-000000000030";
-
 type FeeSettings = {
   defaultInr: number;
   uaeInr: number;
@@ -63,44 +61,6 @@ async function loadFeeSettings(admin: ReturnType<typeof createClient>): Promise<
   } catch {
     return FEE_FALLBACK;
   }
-}
-
-function isUkraineListing(job: {
-  country?: string | null;
-  slug?: string | null;
-}): boolean {
-  if (String(job.country || "").trim().toLowerCase() === "ukraine") return true;
-  return String(job.slug || "").startsWith("ukraine-listed-");
-}
-
-function isEuropeListing(job: {
-  country?: string | null;
-  slug?: string | null;
-}): boolean {
-  if (String(job.country || "").trim().toLowerCase() === "europe") return true;
-  return String(job.slug || "").startsWith("europe-listed-");
-}
-
-function isUaeListing(job: {
-  country?: string | null;
-  slug?: string | null;
-}): boolean {
-  if (String(job.country || "").trim().toLowerCase() === "uae") return true;
-  return String(job.slug || "").startsWith("uae-listed-");
-}
-
-function isDeliveryListing(job: {
-  id?: string | null;
-  title?: string | null;
-  slug?: string | null;
-}): boolean {
-  if (job.id === DELIVERY_JOB_ID) return true;
-  if (String(job.slug || "").includes("bike-rider")) return true;
-  const title = String(job.title || "").toLowerCase().trim();
-  if (title === "delivery" || title === "bike rider") return true;
-  return ["bike rider", "delivery rider", "bike delivery", "delivery boy"].some((needle) =>
-    title.includes(needle)
-  );
 }
 
 function withGatewayFee(
@@ -252,50 +212,16 @@ serve(async (req) => {
       .eq("user_id", payerId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!row?.journey_job_id) return feeSettings.defaultInr;
+    if (!row?.journey_job_id) return 0;
     const { data: job, error: jobErr } = await admin
       .from("jobs")
-      .select("id, title, slug, country, service_charge")
+      .select("service_charge")
       .eq("id", row.journey_job_id)
       .maybeSingle();
     if (jobErr) throw new Error(jobErr.message);
-    if (job && isUkraineListing(job)) {
-      if (Number(job.service_charge) !== feeSettings.ukraineInr) {
-        await admin
-          .from("jobs")
-          .update({ service_charge: feeSettings.ukraineInr })
-          .eq("id", job.id);
-      }
-      return feeSettings.ukraineInr;
-    }
-    if (job && isEuropeListing(job)) {
-      if (Number(job.service_charge) !== feeSettings.europeInr) {
-        await admin
-          .from("jobs")
-          .update({ service_charge: feeSettings.europeInr })
-          .eq("id", job.id);
-      }
-      return feeSettings.europeInr;
-    }
-    if (job && isDeliveryListing(job)) {
-      if (Number(job.service_charge) !== feeSettings.deliveryInr) {
-        await admin
-          .from("jobs")
-          .update({ service_charge: feeSettings.deliveryInr })
-          .eq("id", job.id);
-      }
-      return feeSettings.deliveryInr;
-    }
-    if (job && isUaeListing(job)) {
-      if (Number(job.service_charge) !== feeSettings.uaeInr) {
-        await admin
-          .from("jobs")
-          .update({ service_charge: feeSettings.uaeInr })
-          .eq("id", job.id);
-      }
-      return feeSettings.uaeInr;
-    }
-    return resolveFeeInr(job?.service_charge, feeSettings.defaultInr);
+    const n = Number(job?.service_charge);
+    if (!Number.isFinite(n) || n < 0) return 0;
+    return Math.round(n);
   }
 
   async function completePayment(paymentId: string, orderId: string, payerId: string, amountInr: number) {
@@ -457,6 +383,9 @@ serve(async (req) => {
         }
       }
 
+      if (assessmentFee < 1) {
+        return json(400, { error: "This job has no service charge" });
+      }
       const { base, fee, charged } = withGatewayFee(assessmentFee, feeSettings);
       const amountPaise = charged * 100;
       const receipt = `assess_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`

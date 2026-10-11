@@ -11,7 +11,7 @@ import type {
   VerificationStage,
   WorkerVerification,
 } from '../types';
-import { getDefaultServiceChargeInr, loadPlatformPaymentSettings } from '@/lib/platformPaymentSettings';
+import { getDefaultServiceChargeInr } from '@/lib/platformPaymentSettings';
 import { getTermsVersion, loadJourneyRules } from '@/lib/journeyRules';
 import {
   QUIZ_QUESTIONS_TO_SHOW,
@@ -21,7 +21,6 @@ import {
   skillRequiresTradeTest,
 } from '../constants';
 import { resolveServiceChargeInr } from '@/lib/jobServiceCharge';
-import { getPublicJobServiceCharge } from '@/lib/uaeListedJobs';
 import { getWorkerDocumentSignedUrl } from '@/lib/storage';
 import {
   type BankTransferMethod,
@@ -65,34 +64,27 @@ export async function getOrCreateVerification(userId: string): Promise<WorkerVer
 }
 
 export async function getServiceChargeForJob(jobId: string | null | undefined): Promise<number> {
-  await loadPlatformPaymentSettings();
-  if (!jobId) return getDefaultServiceChargeInr();
+  if (!jobId) return 0;
   const { data, error } = await supabase
     .from('jobs')
-    .select('title, description, country, service_charge')
+    .select('service_charge')
     .eq('id', jobId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return resolveServiceChargeInr(
-    getPublicJobServiceCharge(data?.title ?? '', data?.description ?? '', data?.service_charge, data?.country),
-  );
+  return resolveServiceChargeInr(data?.service_charge);
 }
 
 export async function getServiceChargesForJobs(jobIds: string[]): Promise<Map<string, number>> {
-  await loadPlatformPaymentSettings();
   const unique = [...new Set(jobIds.filter(Boolean))];
   const map = new Map<string, number>();
   if (unique.length === 0) return map;
   const { data, error } = await supabase
     .from('jobs')
-    .select('id, title, description, country, service_charge')
+    .select('id, service_charge')
     .in('id', unique);
   if (error) throw new Error(error.message);
-  (data || []).forEach((row: { id: string; title: string | null; description: string | null; country: string | null; service_charge: number | null }) => {
-    map.set(
-      row.id,
-      resolveServiceChargeInr(getPublicJobServiceCharge(row.title ?? '', row.description ?? '', row.service_charge, row.country)),
-    );
+  (data || []).forEach((row: { id: string; service_charge: number | null }) => {
+    map.set(row.id, resolveServiceChargeInr(row.service_charge));
   });
   return map;
 }

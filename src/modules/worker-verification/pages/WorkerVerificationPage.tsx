@@ -23,7 +23,6 @@ import SearchSelect from '@/components/SearchSelect';
 import { findIndiaDistrict } from '@/lib/indiaLocations';
 import { WORKER_LANGUAGES } from '@/lib/constants';
 import { displayableEmail, isValidContactEmail } from '@/lib/workerAuthEmail';
-import { getDefaultServiceChargeInr, loadPlatformPaymentSettings } from '@/lib/platformPaymentSettings';
 import { deploymentItemStatus, getDeploymentChecklist } from '@/lib/journeyRules';
 import {
   educationOptionsForTenthPass,
@@ -355,7 +354,7 @@ export default function WorkerVerificationPage({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [row, setRow] = useState<WorkerVerification | null>(null);
-  const [assessmentFee, setAssessmentFee] = useState(getDefaultServiceChargeInr);
+  const [assessmentFee, setAssessmentFee] = useState(0);
   const [journeyJobTitle, setJourneyJobTitle] = useState<string | null>(null);
   const [journeyJobDescription, setJourneyJobDescription] = useState<string | null>(null);
   const [journeyJobCountry, setJourneyJobCountry] = useState<string | null>(null);
@@ -681,9 +680,7 @@ export default function WorkerVerificationPage({
     let cancelled = false;
     const jobId = row?.journey_job_id;
     if (!jobId) {
-      void loadPlatformPaymentSettings().then(() => {
-        if (!cancelled) setAssessmentFee(getDefaultServiceChargeInr());
-      });
+      setAssessmentFee(0);
       setJourneyJobTitle(null);
       setJourneyJobDescription(null);
       setJourneyJobCountry(null);
@@ -694,7 +691,7 @@ export default function WorkerVerificationPage({
         if (!cancelled) setAssessmentFee(fee);
       })
       .catch(() => {
-        if (!cancelled) setAssessmentFee(getDefaultServiceChargeInr());
+        if (!cancelled) setAssessmentFee(0);
       });
     void supabase
       .from('jobs')

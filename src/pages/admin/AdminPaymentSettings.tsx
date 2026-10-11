@@ -167,8 +167,7 @@ export default function AdminPaymentSettings() {
         <div>
           <h1 className="text-2xl font-bold mb-2">Fees & payments</h1>
           <p className="text-sm text-muted-foreground">
-            These amounts are what workers pay. Every job shows that amount with “+ GST” written next to it. GST is not calculated.
-            Saving also updates the service charge on current UAE, Ukraine, and Europe listings.
+            Each job shows the service charge saved on that job, with “+ GST” written next to it. GST is not calculated. A job with no service charge shows ₹0. The default below is filled in when posting a new job.
             Razorpay API keys stay in the edge function settings.
           </p>
         </div>

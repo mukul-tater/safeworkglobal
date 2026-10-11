@@ -1,6 +1,5 @@
 import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
 import { annotateEuropePayDescription, formatJobSalaryAedAndInr } from '@/lib/jobSalaryUtils';
-import { getPlatformPaymentSettings } from '@/lib/platformPaymentSettings';
 
 /** Categories we currently list under UAE on Find jobs / Choose a job. */
 export const UAE_LISTED_JOBS = [
@@ -221,20 +220,16 @@ export const UKRAINE_SERVICE_CHARGE_INR = 236000;
 /** Czech Republic listings (country Europe). Stored total is ₹3,00,000 + 18% GST. */
 export const EUROPE_SERVICE_CHARGE_INR = 354000;
 
+/** Service charge saved on the job. Missing or invalid amounts are 0. */
 export function getPublicJobServiceCharge(
-  title: string,
-  description = '',
+  _title: string,
+  _description = '',
   stored?: number | null,
-  country?: string | null,
-): number | null {
-  const fees = getPlatformPaymentSettings();
-  const listed = inferUaeListedJob(title, description, country);
-  if (listed === 'Delivery') return fees.uaeDeliveryServiceChargeInr;
-  const normalized = (country ?? '').trim().toLowerCase();
-  if (normalized === 'ukraine') return fees.ukraineServiceChargeInr;
-  if (normalized === 'europe') return fees.europeServiceChargeInr;
-  if (normalized === 'uae' || listed) return fees.uaeServiceChargeInr;
-  return stored ?? null;
+  _country?: string | null,
+): number {
+  const n = Number(stored);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.round(n);
 }
 
 export function getPublicJobSalary(title: string, description = '', country?: string | null) {
