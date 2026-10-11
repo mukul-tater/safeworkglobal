@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { buildWorkersCsv, downloadWorkersCsv, type WorkerExportSource } from "@/lib/exportWorkersCsv";
+import { buildWorkersPdf, downloadWorkersPdf, type WorkerExportSource } from "@/lib/exportWorkersPdf";
 import { WORKER_EXPORT_FIELDS, WORKER_EXPORT_GROUPS, fieldsInGroup } from "@/lib/workerExportFields";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -38,8 +38,8 @@ export default function WorkerExportDialog({ open, onOpenChange, workers }: Prop
     }
     setExporting(true);
     try {
-      const csv = await buildWorkersCsv(workers, selected);
-      downloadWorkersCsv(csv, workers);
+      const pdf = await buildWorkersPdf(workers, selected);
+      downloadWorkersPdf(pdf, workers);
       toast.success(`Exported ${workers.length} worker${workers.length === 1 ? "" : "s"}`);
       onOpenChange(false);
     } catch (error) {
@@ -61,7 +61,7 @@ export default function WorkerExportDialog({ open, onOpenChange, workers }: Prop
         <DialogHeader>
           <DialogTitle>Export worker data</DialogTitle>
           <DialogDescription>
-            Choose the fields to include for {subject}, then download a spreadsheet. Photos, videos, and document scans are links that open the file. Those links work for 7 days.
+            Choose the fields to include for {subject}, then download a PDF. Each worker starts on a new page. Photos, videos, and document scans are links that open the file. Those links work for 7 days.
           </DialogDescription>
         </DialogHeader>
 
@@ -116,7 +116,7 @@ export default function WorkerExportDialog({ open, onOpenChange, workers }: Prop
 
         <Button className="w-full" onClick={() => void handleExport()} disabled={exporting || selected.length === 0 || workers.length === 0}>
           {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-          {exporting ? "Preparing file…" : "Export CSV"}
+          {exporting ? "Preparing file…" : "Export PDF"}
         </Button>
       </DialogContent>
     </Dialog>

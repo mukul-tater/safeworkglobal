@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search, Eye, MapPin, Briefcase, Share2, Store, Download } from "lucide-react";
 import WorkerShareDialog from "@/components/admin/WorkerShareDialog";
 import WorkerExportDialog from "@/components/admin/WorkerExportDialog";
-import type { WorkerExportSource } from "@/lib/exportWorkersCsv";
+import type { WorkerExportSource } from "@/lib/exportWorkersPdf";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatSalaryINR } from "@/lib/utils";
