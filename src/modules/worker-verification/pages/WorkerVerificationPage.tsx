@@ -65,6 +65,7 @@ import {
 } from '@/modules/worker-verification/services/verificationService';
 import BondSecurityStage from '@/modules/worker-verification/components/bond-security/BondSecurityStage';
 import PaymentStage from '@/modules/worker-verification/components/payment/PaymentStage';
+import OfferLetterStage from '@/modules/worker-verification/components/journey/OfferLetterStage';
 import { getWorkerActiveAssessment } from '@/modules/trade-test/services/assessmentService';
 import WorkerTradeTestStage from '@/modules/trade-test/components/WorkerTradeTestStage';
 import type { AssessmentRow } from '@/modules/trade-test/types';
@@ -2315,6 +2316,20 @@ export default function WorkerVerificationPage({
             </Button>
             )}
           </StageWaitingShell>
+        )}
+
+        {!viewingCompletedStep && stage === 'awaiting_offer' && subjectId && (
+          <OfferLetterStage
+            userId={subjectId}
+            phone={displayProfile?.phone}
+            onAccepted={(next) => {
+              setRow({
+                ...next,
+                stage: normalizeVerificationStage(next.stage, next.trade_test_required),
+              });
+              notifyVerificationUpdated();
+            }}
+          />
         )}
 
         {!viewingCompletedStep && stage === 'awaiting_payment' && subjectId && (

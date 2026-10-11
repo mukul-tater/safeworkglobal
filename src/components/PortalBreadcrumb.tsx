@@ -22,6 +22,7 @@ const routeLabels: BreadcrumbConfig = {
   applications: "Applications",
   interviews: "Interviews",
   offers: "Offers",
+  "offer-letters": "Offer letters",
   contracts: "Contracts",
   "contract-history": "Contract History",
   training: "Training",

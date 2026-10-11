@@ -11,7 +11,6 @@ import type {
   VerificationStage,
   WorkerVerification,
 } from '../types';
-import { getDefaultServiceChargeInr } from '@/lib/platformPaymentSettings';
 import { getTermsVersion, loadJourneyRules } from '@/lib/journeyRules';
 import {
   QUIZ_QUESTIONS_TO_SHOW,
@@ -876,7 +875,7 @@ export async function updateDeploymentChecklist(input: {
   }
 }
 
-/** Admin only — score interview and open payment stage (RLS/trigger enforced). */
+/** Admin only — score interview and open the offer-letter step (RLS/trigger enforced). */
 export async function recordInterviewScore(
   userId: string,
   score: number,
@@ -887,7 +886,7 @@ export async function recordInterviewScore(
   const tradeRequired = skillRequiresTradeTest(row.primary_skill);
   const alreadyPaid = row.payment_status === 'paid' || Boolean(row.paid_at);
   const current = normalizeVerificationStage(row.stage, row.trade_test_required);
-  let nextStage: VerificationStage = 'awaiting_payment';
+  let nextStage: VerificationStage = 'awaiting_offer';
   if (alreadyPaid) {
     if (tradeRequired && row.trade_test_status !== 'passed' && row.trade_test_status !== 'not_required') {
       nextStage = 'trade_test';
@@ -929,7 +928,7 @@ export async function recordInterviewScore(
 
 /**
  * Pilot path — skip waiting for admin video-interview score.
- * Advances awaiting_interview (or identity after KYC) → awaiting_payment.
+ * Advances awaiting_interview (or identity after KYC) → awaiting_offer, then payment after the letter is accepted.
  */
 export async function waiveAssessmentInterviewPilot(_userId: string): Promise<WorkerVerification> {
   throw new Error('Interview cannot be skipped. An interviewer must score this worker.');
@@ -1069,9 +1068,12 @@ export async function payAssessmentFeeWithRazorpay(opts?: {
   }
 
   const orderId = String(orderData?.order_id || '');
-  const amountInr = Number(orderData?.amount_inr || getDefaultServiceChargeInr());
+  const amountInr = Number(orderData?.amount_inr);
   const keyId = String(orderData?.key_id || '');
   if (!orderId) throw new Error('Razorpay order was not created');
+  if (!Number.isFinite(amountInr) || amountInr < 1) {
+    throw new Error('Razorpay did not return the service charge saved on this job');
+  }
   if (!keyId.startsWith('rzp_')) {
     throw new Error(
       'Razorpay key missing from server. Set RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET on the razorpay-assessment edge function (not VITE_).',
@@ -1523,6 +1525,7 @@ export function stageIndex(stage: VerificationStage): number {
     'media',
     'identity',
     'awaiting_interview',
+    'awaiting_offer',
     'awaiting_payment',
     'trade_test',
     'medical',

@@ -6,6 +6,7 @@ export type VerificationStage =
   | 'media'
   | 'identity'
   | 'awaiting_interview'
+  | 'awaiting_offer'
   | 'awaiting_payment'
   | 'trade_test'
   | 'medical'

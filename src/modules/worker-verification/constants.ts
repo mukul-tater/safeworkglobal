@@ -187,6 +187,7 @@ export type VerificationStage =
   | 'media'
   | 'identity'
   | 'awaiting_interview'
+  | 'awaiting_offer'
   | 'awaiting_payment'
   | 'trade_test'
   | 'medical'
@@ -204,6 +205,7 @@ export const VERIFICATION_STAGE_ORDER: VerificationStage[] = [
   'media',
   'identity',
   'awaiting_interview',
+  'awaiting_offer',
   'awaiting_payment',
   'trade_test',
   'medical',
@@ -222,6 +224,7 @@ export const VERIFICATION_STAGE_LABELS: Record<VerificationStage, string> = {
   media: 'Skill proof upload',
   identity: 'Identity (KYC)',
   awaiting_interview: 'Test 2 — Video interview',
+  awaiting_offer: 'Offer letter',
   awaiting_payment: 'Payment',
   trade_test: 'Test 3 — Physical trade test',
   medical: 'Medical test',
@@ -247,6 +250,7 @@ export type GccNavStepId =
   | 'skill_proof'
   | 'identity'
   | 'test2'
+  | 'offer'
   | 'payment'
   | 'test3'
   | 'medical'
@@ -322,6 +326,13 @@ const GCC_JOURNEY_NAV_STEPS_CORE: GccNavStepMeta[] = [
     shortLabel: 'Test 2',
     navLabel: 'Test 2 — Interview',
     stages: ['awaiting_interview'],
+  },
+  {
+    id: 'offer',
+    label: 'Offer letter',
+    shortLabel: 'Offer letter',
+    navLabel: 'Offer letter',
+    stages: ['awaiting_offer'],
   },
   {
     id: 'payment',
@@ -411,6 +422,7 @@ export function normalizeVerificationStage(
 }
 
 const STAGES_AFTER_INTERVIEW = new Set<string>([
+  'awaiting_offer',
   'awaiting_payment',
   'trade_test',
   'medical',

@@ -30,6 +30,7 @@ export const employerNavGroups: NavGroup[] = [
       { path: "/employer/shortlist", icon: Star, label: "Shortlist" },
       { path: "/employer/interviews", icon: Calendar, label: "Interviews" },
       { path: "/employer/offers", icon: FileSignature, label: "Offers" },
+      { path: "/employer/offer-letters", icon: FileSignature, label: "Offer letters" },
     ],
   },
   {

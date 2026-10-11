@@ -63,12 +63,14 @@ import type { BondTemplate } from '@/modules/worker-verification/types';
 import AdminBondSecurityReview from '@/pages/admin/AdminBondSecurityReview';
 import AdminBankTransferReview from '@/pages/admin/AdminBankTransferReview';
 import AdminJobSwitchPanel from '@/pages/admin/AdminJobSwitchPanel';
+import JobOfferLetterUpload from '@/components/offers/JobOfferLetterUpload';
 
-type OpsTab = 'kyc' | 'interview' | 'payment' | 'trade_test' | 'medical' | 'bond' | 'pdot' | 'deployment';
+type OpsTab = 'kyc' | 'interview' | 'offer' | 'payment' | 'trade_test' | 'medical' | 'bond' | 'pdot' | 'deployment';
 
 const TABS: { value: OpsTab; label: string }[] = [
   { value: 'kyc', label: 'KYC' },
   { value: 'interview', label: 'Interviews' },
+  { value: 'offer', label: 'Offer letters' },
   { value: 'payment', label: 'Payments' },
   { value: 'trade_test', label: 'Trade test' },
   { value: 'medical', label: 'Medical' },
@@ -231,6 +233,7 @@ export default function AdminJourneyOps() {
 
       if (tab === 'kyc') query = query.eq('kyc_status', 'submitted');
       else if (tab === 'interview') query = query.in('stage', ['kyc', 'interview', 'awaiting_interview']);
+      else if (tab === 'offer') query = query.eq('stage', 'awaiting_offer');
       else if (tab === 'payment') query = query.eq('stage', 'awaiting_payment');
       else if (tab === 'trade_test') query = query.eq('stage', 'trade_test');
       else if (tab === 'medical') query = query.eq('stage', 'medical');
@@ -585,7 +588,7 @@ export default function AdminJourneyOps() {
                         Number(field(r.user_id, 'score') || 75),
                         field(r.user_id, 'scoreNotes'),
                       ),
-                    'Interview scored — moved to payment',
+                    'Interview scored — offer letter is next',
                   )
                 }
               >
@@ -594,6 +597,16 @@ export default function AdminJourneyOps() {
             </div>
           )}
         </div>
+      );
+    }
+
+    if (tab === 'offer') {
+      return (
+        <JobOfferLetterUpload
+          userId={r.user_id}
+          jobId={r.journey_job_id}
+          onChanged={() => void load()}
+        />
       );
     }
 

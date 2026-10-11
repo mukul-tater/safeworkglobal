@@ -29,6 +29,8 @@ project_id = "etpiadoqryvtlpmiuxia"
     verify_jwt = false
   [functions.upload]
     verify_jwt = false
+  [functions.accept-job-offer]
+    verify_jwt = false
   [functions.worker-otp-login]
     verify_jwt = false
   [functions.worker-portal]

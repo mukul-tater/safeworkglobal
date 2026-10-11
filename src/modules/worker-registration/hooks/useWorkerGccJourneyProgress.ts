@@ -41,6 +41,7 @@ const STEP_ICONS: Record<GccNavStepId, LucideIcon> = {
   skill_proof: ImagePlus,
   identity: ShieldCheck,
   test2: Video,
+  offer: FileSignature,
   payment: CreditCard,
   test3: Wrench,
   medical: Stethoscope,

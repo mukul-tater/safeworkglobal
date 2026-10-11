@@ -513,6 +513,13 @@ export default function CompletedStepReview({
           </div>
         )}
 
+        {stepId === 'offer' && (
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>The offer letter for this job was downloaded and accepted with the mobile OTP.</p>
+            <p>The service fee opened only after that acceptance.</p>
+          </div>
+        )}
+
         {stepId === 'test3' && (() => {
           const centreName =
             tradeAssessment?.center_name ||

@@ -23,6 +23,7 @@ const STAGE_LABELS: Record<string, string> = {
   media: 'Skill proof upload',
   identity: 'Identity (KYC)',
   awaiting_interview: 'Test 2 — Video interview',
+  awaiting_offer: 'Offer letter',
   awaiting_payment: 'Payment',
   trade_test: 'Test 3 — Physical trade test',
   tests: 'Test 3 — Physical trade test',

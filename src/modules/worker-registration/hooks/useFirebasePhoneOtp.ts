@@ -87,6 +87,7 @@ export function useFirebasePhoneOtp(recaptchaButtonId = WORKER_OTP_RECAPTCHA_BTN
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const recaptchaRef = useRef<RecaptchaVerifier | null>(null);
   const pendingDevPhoneRef = useRef<string | null>(null);
+  const requireRealSmsRef = useRef(false);
 
   const clearVerifierOnly = useCallback(() => {
     try {
@@ -127,8 +128,9 @@ export function useFirebasePhoneOtp(recaptchaButtonId = WORKER_OTP_RECAPTCHA_BTN
   }, [clearVerifierOnly, recaptchaButtonId]);
 
   const sendOtp = useCallback(
-    async (mobileNumber: string) => {
-      if (isDevOtpBypassEnabled()) {
+    async (mobileNumber: string, options?: { requireRealSms?: boolean }) => {
+      requireRealSmsRef.current = options?.requireRealSms === true;
+      if (!requireRealSmsRef.current && isDevOtpBypassEnabled()) {
         pendingDevPhoneRef.current = mobileNumber.replace(/\D/g, '').slice(-10) || mobileNumber;
         confirmationRef.current = null;
         return;
@@ -167,7 +169,7 @@ export function useFirebasePhoneOtp(recaptchaButtonId = WORKER_OTP_RECAPTCHA_BTN
   const verifyOtp = useCallback(
     async (otp: string): Promise<string> => {
       const code = otp.replace(/\s/g, '');
-      if (isDevOtpBypassEnabled()) {
+      if (!requireRealSmsRef.current && isDevOtpBypassEnabled()) {
         if (!pendingDevPhoneRef.current) {
           throw new Error('This page lost the SMS session. Tap Resend SMS and enter the new code.');
         }
