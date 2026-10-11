@@ -101,6 +101,7 @@ export function useFirebasePhoneOtp(recaptchaButtonId = WORKER_OTP_RECAPTCHA_BTN
   const resetRecaptcha = useCallback(() => {
     clearVerifierOnly();
     confirmationRef.current = null;
+    pendingDevPhoneRef.current = null;
   }, [clearVerifierOnly]);
 
   const ensureRecaptcha = useCallback(async () => {
