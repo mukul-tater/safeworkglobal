@@ -1359,6 +1359,48 @@ export type Database = {
           },
         ]
       }
+      job_application_answers: {
+        Row: {
+          application_id: string
+          created_at: string
+          field_id: string
+          file_path: string | null
+          id: string
+          text_value: string | null
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          field_id: string
+          file_path?: string | null
+          id?: string
+          text_value?: string | null
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          field_id?: string
+          file_path?: string | null
+          id?: string
+          text_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_application_answers_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_application_answers_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "job_extra_fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_applications: {
         Row: {
           applied_at: string | null
@@ -1399,6 +1441,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_extra_fields: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          label: string
+          sort_order: number
+          value_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          label: string
+          sort_order?: number
+          value_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          label?: string
+          sort_order?: number
+          value_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_extra_fields_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"

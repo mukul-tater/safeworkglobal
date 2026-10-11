@@ -22,6 +22,14 @@ import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
 import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
+import JobExtraFieldsEditor from "@/components/admin/JobExtraFieldsEditor";
+import {
+  draftsFromFields,
+  listJobExtraFields,
+  saveJobExtraFields,
+  validateJobExtraFieldDrafts,
+  type JobExtraFieldDraft,
+} from "@/lib/jobExtraFields";
 import { adminUpdateJob } from "@/services/AdminService";
 import AdminSalaryRanges from "@/components/admin/AdminSalaryRanges";
 import { adminSalarySaveFields, currencyForDestination } from "@/lib/jobSalaryUtils";
@@ -35,6 +43,7 @@ export default function EditJob() {
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
+  const [extraFields, setExtraFields] = useState<JobExtraFieldDraft[]>([]);
   const [companyName, setCompanyName] = useState<string>("");
   const [postedByRole, setPostedByRole] = useState<string>("employer");
   const hadLocalRange = useRef(false);
@@ -101,6 +110,8 @@ export default function EditJob() {
       const skillNames = jobSkills?.map(s => s.skill_name) || [];
       setSkills(skillNames);
       setYoutubeUrls(Array.isArray(job.youtube_urls) ? job.youtube_urls : []);
+      const extra = await listJobExtraFields(job.id);
+      setExtraFields(draftsFromFields(extra));
       hadLocalRange.current = job.local_salary_min != null || job.local_salary_max != null;
 
       // Set form values
@@ -160,6 +171,11 @@ export default function EditJob() {
 
   const onSubmit = async (data: AdminJobEditFormData) => {
     if (!jobId) return;
+    const extraProblem = validateJobExtraFieldDrafts(extraFields);
+    if (extraProblem) {
+      toast.error(extraProblem);
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -187,6 +203,8 @@ export default function EditJob() {
 
       const { error: jobError } = await adminUpdateJob(jobId, jobData, skills);
       if (jobError) throw new Error(jobError);
+
+      await saveJobExtraFields(jobId, extraFields);
 
       toast.success("Job updated successfully");
       navigate("/admin/jobs");
@@ -284,6 +302,8 @@ export default function EditJob() {
                     <p className="text-sm text-destructive mt-1">{errors.requirements.message}</p>
                   )}
                 </div>
+
+                <JobExtraFieldsEditor value={extraFields} onChange={setExtraFields} />
 
                 <div data-field="benefits">
                   <JobBenefitsField

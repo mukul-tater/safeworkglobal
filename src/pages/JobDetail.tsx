@@ -32,6 +32,8 @@ import { JobDetailSkeleton } from '@/components/ui/page-skeleton';
 import { withRetry } from '@/lib/retry';
 import PostedByBadge from '@/components/jobs/PostedByBadge';
 import JobRoleVideo from '@/components/jobs/JobRoleVideo';
+import JobExtraAnswersDialog, { type JobExtraAnswerInput } from '@/components/jobs/JobExtraAnswersDialog';
+import { listJobExtraFields, saveJobApplicationAnswers, uploadJobExtraPhoto, type JobExtraField } from '@/lib/jobExtraFields';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import JobChangeFeeDialog from '@/modules/worker-verification/components/journey/JobChangeFeeDialog';
 import {
@@ -113,6 +115,9 @@ export default function JobDetail() {
   const [feeOpen, setFeeOpen] = useState(false);
   const [feeDue, setFeeDue] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [extraFields, setExtraFields] = useState<JobExtraField[]>([]);
+  const [answersOpen, setAnswersOpen] = useState(false);
+  const [applyChange, setApplyChange] = useState(false);
   const shareCode = searchParams.get('s');
 
   useEffect(() => {
@@ -178,6 +183,12 @@ export default function JobDetail() {
 
         if (cancelled) return;
         setJob(jobData as any);
+        try {
+          const fields = await listJobExtraFields(jobData.id);
+          if (!cancelled) setExtraFields(fields);
+        } catch {
+          if (!cancelled) setExtraFields([]);
+        }
 
         // Check if user has already applied and if job is saved
         if (!cancelled && user) {
@@ -292,33 +303,88 @@ export default function JobDetail() {
       setChangeOpen(true);
       return;
     }
-    void handleApply(false);
+    beginApply(false);
+  };
+
+  const beginApply = (change: boolean) => {
+    if (extraFields.length > 0 && !hasApplied) {
+      setApplyChange(change);
+      setChangeOpen(false);
+      setAnswersOpen(true);
+      return;
+    }
+    void handleApply(change);
+  };
+
+  const handleExtraAnswers = async (answers: JobExtraAnswerInput[]) => {
+    if (!job || !user) return;
+    setApplying(true);
+    try {
+      const applicationId = await submitApplication(applyChange);
+      const prepared = [];
+      for (const answer of answers) {
+        if (answer.file) {
+          const filePath = await uploadJobExtraPhoto({
+            workerUserId: user.id,
+            jobId: job.id,
+            fieldId: answer.fieldId,
+            file: answer.file,
+          });
+          prepared.push({ fieldId: answer.fieldId, filePath });
+        } else {
+          prepared.push({ fieldId: answer.fieldId, textValue: answer.text });
+        }
+      }
+      await saveJobApplicationAnswers(applicationId, prepared);
+      finishApplication(applyChange);
+      setAnswersOpen(false);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to submit application';
+      if (message === 'CHANGE_JOB_REQUIRED') {
+        setAnswersOpen(false);
+        setChangeOpen(true);
+      } else {
+        toast({
+          title: 'Error',
+          description: message,
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const submitApplication = async (change: boolean) => {
+    if (!job || !user) throw new Error('Sign in to apply');
+    const fn = change ? changeJourneyJob : applyToJobForJourney;
+    const { applicationId } = await fn({
+      jobId: job.id,
+      workerUserId: user.id,
+      title: job.title,
+      description: job.description || '',
+      skills: job.job_skills?.map((s) => s.skill_name) || [],
+    });
+    if (!applicationId) throw new Error('Failed to submit application');
+    return applicationId;
+  };
+
+  const finishApplication = (change: boolean) => {
+    setHasApplied(true);
+    toast({
+      title: change ? 'Job changed' : 'Application submitted',
+      description: 'Continue your GCC journey — Test 1 matches this job.',
+    });
+    navigate('/worker/journey');
   };
 
   const handleApply = async (change: boolean) => {
-    if (!job || applying) return;
+    if (!job || applying || !user) return;
     setApplying(true);
 
     try {
-      if (!user) return;
-
-      const fn = change ? changeJourneyJob : applyToJobForJourney;
-      const { applicationId } = await fn({
-        jobId: job.id,
-        workerUserId: user.id,
-        title: job.title,
-        description: job.description || '',
-        skills: job.job_skills?.map((s) => s.skill_name) || [],
-      });
-
-      setHasApplied(true);
-      toast({
-        title: change ? 'Job changed' : 'Application submitted',
-        description: 'Continue your GCC journey — Test 1 matches this job.',
-      });
-      if (applicationId) {
-        navigate('/worker/journey');
-      }
+      await submitApplication(change);
+      finishApplication(change);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to submit application';
       if (message === 'CHANGE_JOB_REQUIRED') {
@@ -594,20 +660,37 @@ export default function JobDetail() {
                 youtubeUrls={job.youtube_urls}
               />
 
-              {requirementLines.length > 0 && (
+              {(requirementLines.length > 0 || extraFields.length > 0) && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Requirements</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {requirementLines.map((item) => (
-                        <li key={item} className="flex items-start gap-2 text-muted-foreground">
-                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                          <span className="break-words">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <CardContent className="space-y-4">
+                    {requirementLines.length > 0 && (
+                      <ul className="space-y-2">
+                        {requirementLines.map((item) => (
+                          <li key={item} className="flex items-start gap-2 text-muted-foreground">
+                            <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                            <span className="break-words">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {extraFields.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">You will need to provide</p>
+                        <ul className="space-y-2">
+                          {extraFields.map((field) => (
+                            <li key={field.id} className="flex items-start gap-2 text-muted-foreground">
+                              <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                              <span className="break-words">
+                                {field.label} ({field.value_type === 'photo' ? 'photo' : 'text'})
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -806,7 +889,14 @@ export default function JobDetail() {
             currentJobTitle={null}
             nextJobTitle={displayTitle}
             onOpenChange={setChangeOpen}
-            onConfirm={() => void handleApply(true)}
+            onConfirm={() => beginApply(true)}
+          />
+          <JobExtraAnswersDialog
+            open={answersOpen}
+            onOpenChange={setAnswersOpen}
+            fields={extraFields}
+            submitting={applying}
+            onSubmit={handleExtraAnswers}
           />
           <ShareJobDialog
             open={shareOpen}

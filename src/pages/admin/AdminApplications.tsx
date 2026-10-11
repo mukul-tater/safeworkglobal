@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Eye, FileText, ExternalLink } from "lucide-react";
+import { Search, FileText, ExternalLink } from "lucide-react";
+import JobApplicationAnswersDialog from "@/components/admin/JobApplicationAnswersDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +33,7 @@ export default function AdminApplications() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [answersTarget, setAnswersTarget] = useState<ApplicationRow | null>(null);
 
   useEffect(() => { fetchApplications(); }, []);
 
@@ -194,6 +196,9 @@ export default function AdminApplications() {
                       </a>
                     </Button>
                   )}
+                  <Button variant="outline" size="sm" onClick={() => setAnswersTarget(a)}>
+                    <FileText className="h-4 w-4 mr-1" /> Details
+                  </Button>
                   <Button variant="outline" size="sm" onClick={() => navigate(`/jobs/${a.job_id}`)}>
                     <ExternalLink className="h-4 w-4 mr-1" /> Job
                   </Button>
@@ -209,6 +214,14 @@ export default function AdminApplications() {
           ))}
         </div>
       )}
+      <JobApplicationAnswersDialog
+        open={!!answersTarget}
+        onOpenChange={(open) => { if (!open) setAnswersTarget(null); }}
+        applicationId={answersTarget?.id ?? null}
+        jobId={answersTarget?.job_id ?? null}
+        workerName={answersTarget?.worker_name ?? ""}
+        jobTitle={answersTarget?.job_title ?? ""}
+      />
     </DashboardLayout>
   );
 }

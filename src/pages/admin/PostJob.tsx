@@ -23,6 +23,8 @@ import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
 import { PUBLIC_JOB_BENEFITS_TEXT } from "@/lib/jobBenefits";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
+import JobExtraFieldsEditor from "@/components/admin/JobExtraFieldsEditor";
+import { saveJobExtraFields, validateJobExtraFieldDrafts, type JobExtraFieldDraft } from "@/lib/jobExtraFields";
 import JobTitleAutocomplete from "@/components/employer/JobTitleAutocomplete";
 import { adminCreateJob } from "@/services/AdminService";
 import AdminSalaryRanges from "@/components/admin/AdminSalaryRanges";
@@ -40,6 +42,7 @@ export default function AdminPostJob() {
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
+  const [extraFields, setExtraFields] = useState<JobExtraFieldDraft[]>([]);
   const [employers, setEmployers] = useState<EmployerOption[]>([]);
   const [loadingEmployers, setLoadingEmployers] = useState(true);
 
@@ -155,6 +158,12 @@ export default function AdminPostJob() {
   };
 
   const onSubmit = async (data: AdminJobPostFormData) => {
+    const extraProblem = validateJobExtraFieldDrafts(extraFields);
+    if (extraProblem) {
+      toast.error(extraProblem);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -182,6 +191,14 @@ export default function AdminPostJob() {
       const { data: jobId, error } = await adminCreateJob(data.employer_id, jobData, skills);
       if (error) throw new Error(error);
       if (!jobId) throw new Error("Failed to create job");
+
+      try {
+        await saveJobExtraFields(jobId, extraFields);
+      } catch (extraError) {
+        toast.error(extraError instanceof Error ? extraError.message : "Job was created, but extra requirements were not saved");
+        navigate(`/admin/edit-job/${jobId}`);
+        return;
+      }
 
       toast.success(data.status === "ACTIVE" ? "Job posted and published" : "Job created");
       navigate("/admin/jobs");
@@ -300,6 +317,8 @@ export default function AdminPostJob() {
                   <p className="text-sm text-destructive mt-1">{errors.requirements.message}</p>
                 )}
               </div>
+
+              <JobExtraFieldsEditor value={extraFields} onChange={setExtraFields} />
 
               <div data-field="benefits">
                 <JobBenefitsField

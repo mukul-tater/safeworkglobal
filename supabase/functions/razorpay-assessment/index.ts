@@ -8,68 +8,45 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type FeeSettings = {
-  defaultInr: number;
-  uaeInr: number;
-  deliveryInr: number;
-  ukraineInr: number;
-  europeInr: number;
-  gatewayPct: number;
-};
+/** Used only when platform_payment_settings cannot be read. Not a service charge. */
+const GATEWAY_FEE_FALLBACK_PCT = 2.5;
 
-/** Used only when platform_payment_settings cannot be read. */
-const FEE_FALLBACK: FeeSettings = {
-  defaultInr: 35400,
-  uaeInr: 35400,
-  deliveryInr: 94400,
-  ukraineInr: 236000,
-  europeInr: 354000,
-  gatewayPct: 2.5,
-};
-
-function resolveFeeInr(value: unknown, fallback = FEE_FALLBACK.defaultInr): number {
-  const n = Number(value);
-  if (!Number.isFinite(n) || n < 1) return fallback;
-  return Math.round(n);
+function roundInr(value: unknown): number | null {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n) || n < 1) return null;
+  return n;
 }
 
-async function loadFeeSettings(admin: ReturnType<typeof createClient>): Promise<FeeSettings> {
+async function loadGatewayFeePct(admin: ReturnType<typeof createClient>): Promise<number> {
   try {
     const { data, error } = await admin
       .from("platform_payment_settings")
-      .select(
-        "default_service_charge_inr, uae_service_charge_inr, uae_delivery_service_charge_inr, ukraine_service_charge_inr, europe_service_charge_inr, razorpay_gateway_fee_pct",
-      )
+      .select("razorpay_gateway_fee_pct")
       .eq("id", 1)
       .maybeSingle();
-    if (error || !data) return FEE_FALLBACK;
-    const charge = (value: unknown, fallback: number) => {
-      const n = Math.round(Number(value));
-      return Number.isFinite(n) && n >= 1 ? n : fallback;
-    };
+    if (error || !data) return GATEWAY_FEE_FALLBACK_PCT;
     const gateway = Number(data.razorpay_gateway_fee_pct);
-    return {
-      defaultInr: charge(data.default_service_charge_inr, FEE_FALLBACK.defaultInr),
-      uaeInr: charge(data.uae_service_charge_inr, FEE_FALLBACK.uaeInr),
-      deliveryInr: charge(data.uae_delivery_service_charge_inr, FEE_FALLBACK.deliveryInr),
-      ukraineInr: charge(data.ukraine_service_charge_inr, FEE_FALLBACK.ukraineInr),
-      europeInr: charge(data.europe_service_charge_inr, FEE_FALLBACK.europeInr),
-      gatewayPct: Number.isFinite(gateway) && gateway >= 0 && gateway <= 15
-        ? gateway
-        : FEE_FALLBACK.gatewayPct,
-    };
+    return Number.isFinite(gateway) && gateway >= 0 && gateway <= 15
+      ? gateway
+      : GATEWAY_FEE_FALLBACK_PCT;
   } catch {
-    return FEE_FALLBACK;
+    return GATEWAY_FEE_FALLBACK_PCT;
   }
 }
 
+/** Service charge is the amount saved on the job. Gateway % is added on top. */
 function withGatewayFee(
   baseFee: number,
-  settings: FeeSettings,
+  gatewayPct: number,
 ): { base: number; fee: number; charged: number } {
-  const base = resolveFeeInr(baseFee, settings.defaultInr);
-  const charged = Math.round(base * (1 + settings.gatewayPct / 100));
+  const base = roundInr(baseFee);
+  if (base == null) return { base: 0, fee: 0, charged: 0 };
+  const charged = Math.round(base * (1 + gatewayPct / 100));
   return { base, fee: charged - base, charged };
+}
+
+function expectedChargedInr(stored: unknown, baseFee: number, gatewayPct: number): number | null {
+  return roundInr(stored) ?? (withGatewayFee(baseFee, gatewayPct).charged || null);
 }
 
 function json(status: number, body: Record<string, unknown>) {
@@ -150,7 +127,7 @@ serve(async (req) => {
   if (userErr || !user) return json(401, { error: "Not authenticated" });
 
   const admin = createClient(supabaseUrl, serviceKey);
-  const feeSettings = await loadFeeSettings(admin);
+  const gatewayPct = await loadGatewayFeePct(admin);
 
   async function resolvePayerUserId(requested?: string): Promise<string> {
     const requestedId = String(requested || "").trim();
@@ -251,7 +228,7 @@ serve(async (req) => {
       }
 
       if (action === "create_job_change_order") {
-        const { base, fee, charged } = withGatewayFee(due, feeSettings);
+        const { base, fee, charged } = withGatewayFee(due, gatewayPct);
         const amountPaise = charged * 100;
         const receipt = `jchg_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`.slice(0, 40);
         const orderRes = await fetch("https://api.razorpay.com/v1/orders", {
@@ -362,7 +339,11 @@ serve(async (req) => {
         if (payment) {
           const { ok, json: full } = await rzpGet(`/payments/${payment.id}`);
           const { ok: orderOk, json: order } = await rzpGet(`/orders/${row.razorpay_order_id}`);
-          const expectedPaise = resolveFeeInr(row.payment_amount ?? assessmentFee) * 100;
+          const expectedInr = expectedChargedInr(row.payment_amount, assessmentFee, gatewayPct);
+          if (!expectedInr) {
+            return json(400, { error: "This job has no service charge" });
+          }
+          const expectedPaise = expectedInr * 100;
           const noteUser = String(full?.notes?.user_id || order?.notes?.user_id || "").trim();
           if (
             ok &&
@@ -376,7 +357,7 @@ serve(async (req) => {
               payment.id,
               row.razorpay_order_id,
               payerId,
-              resolveFeeInr(row.payment_amount ?? assessmentFee),
+              expectedInr,
             );
             return json(200, { recovered: true, verification, already_paid: true });
           }
@@ -386,7 +367,7 @@ serve(async (req) => {
       if (assessmentFee < 1) {
         return json(400, { error: "This job has no service charge" });
       }
-      const { base, fee, charged } = withGatewayFee(assessmentFee, feeSettings);
+      const { base, fee, charged } = withGatewayFee(assessmentFee, gatewayPct);
       const amountPaise = charged * 100;
       const receipt = `assess_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`
         .slice(0, 40);
@@ -405,7 +386,7 @@ serve(async (req) => {
             user_id: payerId,
             purpose: "worker_assessment_fee",
             base_fee_inr: String(base),
-            gateway_fee_pct: String(feeSettings.gatewayPct),
+            gateway_fee_pct: String(gatewayPct),
             charged_inr: String(charged),
           },
         }),
@@ -434,7 +415,7 @@ serve(async (req) => {
         amount_paise: amountPaise,
         base_fee_inr: base,
         gateway_fee_inr: fee,
-        gateway_fee_pct: feeSettings.gatewayPct,
+        gateway_fee_pct: gatewayPct,
         currency: "INR",
         key_id: keyId,
       });
@@ -506,14 +487,16 @@ serve(async (req) => {
         return json(400, { error: "Order does not match this assessment" });
       }
 
-      const expectedPaise = resolveFeeInr(row.payment_amount ?? assessmentFee) * 100;
+      const expectedInr = expectedChargedInr(row.payment_amount, assessmentFee, gatewayPct);
+      if (!expectedInr) return json(400, { error: "This job has no service charge" });
+      const expectedPaise = expectedInr * 100;
       try {
         const { verifiedBy } = await assertPaymentOwned(paymentId, orderId, expectedPaise);
         const completed = await completePayment(
           paymentId,
           orderId,
           payerId,
-          resolveFeeInr(row.payment_amount ?? assessmentFee),
+          expectedInr,
         );
         return json(200, { verification: completed, already_paid: false, verified_by: verifiedBy });
       } catch (err) {
@@ -556,7 +539,9 @@ serve(async (req) => {
         paymentId = payment.id;
       }
 
-      const expectedPaise = resolveFeeInr(row.payment_amount ?? assessmentFee) * 100;
+      const expectedInr = expectedChargedInr(row.payment_amount, assessmentFee, gatewayPct);
+      if (!expectedInr) return json(400, { error: "This job has no service charge" });
+      const expectedPaise = expectedInr * 100;
       try {
         await assertPaymentOwned(paymentId, targetOrder, expectedPaise);
       } catch (err) {
@@ -568,7 +553,7 @@ serve(async (req) => {
         paymentId,
         targetOrder,
         payerId,
-        resolveFeeInr(row.payment_amount ?? assessmentFee),
+        expectedInr,
       );
       return json(200, { verification, recovered: true });
     }
