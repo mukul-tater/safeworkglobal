@@ -52,6 +52,7 @@ export default function JobChangeFeeDialog({
   const bank = getBankTransferAccount();
 
   const payRazorpay = async () => {
+    onOpenChange(false);
     setBusy('razorpay');
     try {
       await payJobChangeFee({ workerUserId });

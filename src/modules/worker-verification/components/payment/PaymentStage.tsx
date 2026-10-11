@@ -18,7 +18,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -161,6 +160,9 @@ export default function PaymentStage({
   };
 
   const payRazorpay = async () => {
+    // Close the confirm dialog first. While it is open, the page blocks clicks
+    // outside the dialog, so the Razorpay Pay button cannot be used.
+    setConfirmRazorpay(false);
     setSaving(true);
     try {
       const next = await payAssessmentFeeWithRazorpay({
@@ -181,7 +183,6 @@ export default function PaymentStage({
       else toast.error(msg);
     } finally {
       setSaving(false);
-      setConfirmRazorpay(false);
     }
   };
 
@@ -444,7 +445,7 @@ export default function PaymentStage({
                 </li>
               </ul>
             </div>
-            <Button className="w-full" disabled={saving} onClick={() => setConfirmRazorpay(true)}>
+            <Button type="button" className="w-full" disabled={saving || assessmentFee < 1} onClick={() => setConfirmRazorpay(true)}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Lock className="h-4 w-4 mr-1.5" />}
               Pay {formatInr(razorpayTotal)} with Razorpay
             </Button>
@@ -518,16 +519,10 @@ export default function PaymentStage({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={saving}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={saving}
-              onClick={(e) => {
-                e.preventDefault();
-                void payRazorpay();
-              }}
-            >
+            <Button type="button" className="w-full sm:w-auto" disabled={saving || assessmentFee < 1} onClick={() => void payRazorpay()}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
               Continue to Razorpay
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
