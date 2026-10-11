@@ -6451,6 +6451,10 @@ export type Database = {
         Args: { p_job_id: string; p_user_id?: string }
         Returns: string
       }
+      assert_signup_identity_available: {
+        Args: { p_email: string; p_except_user_id?: string; p_phone: string }
+        Returns: undefined
+      }
       assessment_fee_for_worker: {
         Args: { p_user_id: string }
         Returns: number
@@ -7152,6 +7156,10 @@ export type Database = {
       seed_demo_users: { Args: { p_users: Json }; Returns: number }
       seed_officials_demo: { Args: never; Returns: Json }
       seo_health_summary: { Args: never; Returns: Json }
+      signup_email_taken: {
+        Args: { p_email: string; p_except_user_id?: string }
+        Returns: boolean
+      }
       signup_mobile_taken: {
         Args: { p_except_user_id?: string; p_phone: string }
         Returns: boolean

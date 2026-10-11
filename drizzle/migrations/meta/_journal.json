@@ -64,6 +64,13 @@
       "when": 1791561583195,
       "tag": "0008_restore_mobile_binding_identity_check",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791713267439,
+      "tag": "0009_unique_signup_identity",
+      "breakpoints": true
     }
   ]
 }
