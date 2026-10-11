@@ -496,7 +496,7 @@ export function downloadWorkersPdf(bytes: Uint8Array, workers: WorkerExportSourc
       .slice(0, 40);
     name = `worker-${slug || "export"}-${day}.pdf`;
   }
-  const blob = new Blob([bytes], { type: "application/pdf" });
+  const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

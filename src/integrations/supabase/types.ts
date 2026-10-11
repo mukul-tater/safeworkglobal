@@ -5174,6 +5174,71 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_job_offer_letters: {
+        Row: {
+          accepted_at: string | null
+          accepted_phone: string | null
+          accepted_version: number | null
+          created_at: string
+          declined_at: string | null
+          downloaded_version: number | null
+          file_name: string
+          id: string
+          job_id: string
+          status: string
+          storage_path: string
+          updated_at: string
+          uploaded_by: string
+          uploaded_role: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_phone?: string | null
+          accepted_version?: number | null
+          created_at?: string
+          declined_at?: string | null
+          downloaded_version?: number | null
+          file_name: string
+          id?: string
+          job_id: string
+          status?: string
+          storage_path: string
+          updated_at?: string
+          uploaded_by: string
+          uploaded_role: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_phone?: string | null
+          accepted_version?: number | null
+          created_at?: string
+          declined_at?: string | null
+          downloaded_version?: number | null
+          file_name?: string
+          id?: string
+          job_id?: string
+          status?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string
+          uploaded_role?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_job_offer_letters_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worker_journey_job_changes: {
         Row: {
           change_number: number
@@ -7248,9 +7313,15 @@ export type Database = {
         }
         Returns: Json
       }
+      job_offer_is_accepted: {
+        Args: { p_job_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      job_offer_letter_payload: { Args: { p_user_id: string }; Returns: Json }
       job_switch_policy: { Args: { p_user_id?: string }; Returns: Json }
       job_youtube_urls_valid: { Args: { urls: string[] }; Returns: boolean }
       journey_email_webhook_secret: { Args: never; Returns: string }
+      list_job_offer_queue: { Args: never; Returns: Json }
       list_my_shared_workers: {
         Args: never
         Returns: {
@@ -7363,6 +7434,10 @@ export type Database = {
       public_seo_snapshot: { Args: never; Returns: Json }
       record_job_share_open: { Args: { p_code: string }; Returns: undefined }
       record_site_visit: { Args: never; Returns: undefined }
+      register_job_offer_letter: {
+        Args: { p_file_name: string; p_path: string; p_user_id: string }
+        Returns: Json
+      }
       request_journey_step_email: {
         Args: { p_notification_id: string }
         Returns: undefined
@@ -7636,6 +7711,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      worker_accept_job_offer: {
+        Args: { p_phone: string; p_user_id: string }
+        Returns: Json
+      }
       worker_attach_bond_security_file: {
         Args: {
           p_file_name: string
@@ -7797,6 +7876,12 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      worker_decline_job_offer: { Args: { p_user_id?: string }; Returns: Json }
+      worker_get_job_offer: { Args: { p_user_id?: string }; Returns: Json }
+      worker_mark_offer_downloaded: {
+        Args: { p_user_id?: string }
+        Returns: Json
       }
       worker_on_bond_stage: { Args: { p_user_id: string }; Returns: boolean }
       worker_submit_bond_security: {
