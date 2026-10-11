@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Video } from 'lucide-react';
 import ForgotPasswordControl from '@/components/ForgotPasswordControl';
+import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 
 export default function InterviewerLoginPage() {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ export default function InterviewerLoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md">
         <CardContent className="p-6 space-y-4">
           <div className="text-center space-y-1">
@@ -111,6 +112,7 @@ export default function InterviewerLoginPage() {
           </form>
         </CardContent>
       </Card>
+      <WhatsAppDocumentsNote className="mt-4 w-full max-w-md" />
     </main>
   );
 }

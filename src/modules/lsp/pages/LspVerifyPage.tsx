@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 import { getFirebaseAuth } from '@/lib/firebase';
 import {
   useFirebasePhoneOtp,
@@ -175,7 +176,7 @@ export default function LspVerifyPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 p-6">
       <Card className="max-w-md w-full border-border/60 shadow-lg">
         <CardContent className="p-6 md:p-8 space-y-5">
           <div className="flex items-start gap-3">
@@ -319,6 +320,7 @@ export default function LspVerifyPage() {
           </button>
         </CardContent>
       </Card>
+      <WhatsAppDocumentsNote className="mt-4 w-full max-w-md" />
     </div>
   );
 }

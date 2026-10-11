@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { WhatsAppSupportNote } from '@/components/WhatsAppSupportNote';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 interface Props {
@@ -54,13 +55,19 @@ export class ErrorBoundary extends Component<Props, State> {
               </p>
             </div>
 
-            {import.meta.env.DEV && this.state.error && (
-              <div className="mb-6 p-4 bg-muted rounded-lg text-left overflow-auto max-h-40">
+            {this.state.error && (
+              <div className="mb-4 p-4 bg-muted rounded-lg text-left overflow-auto max-h-40">
                 <p className="text-sm font-mono text-destructive">
                   {this.state.error.message}
                 </p>
               </div>
             )}
+
+            <WhatsAppSupportNote
+              kind="error"
+              errorText={this.state.error?.message}
+              className="mb-6 text-left"
+            />
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button onClick={this.handleRetry} variant="outline">
@@ -100,6 +107,7 @@ export function ErrorFallback({
       <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       <p className="text-muted-foreground mb-4">{message}</p>
+      <WhatsAppSupportNote kind="error" errorText={error?.message} className="mb-4 text-left" />
       {resetError && (
         <Button onClick={resetError} variant="outline" size="sm">
           <RefreshCw className="h-4 w-4 mr-2" />

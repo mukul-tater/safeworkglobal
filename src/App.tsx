@@ -7,6 +7,9 @@ import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
 import { useJourneyRules } from "@/lib/journeyRules";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { recordSiteVisitOnce } from "@/lib/recordSiteVisit";
+import { installWhatsAppErrorToasts } from "@/lib/whatsappSupport";
+
+installWhatsAppErrorToasts();
 import { AuthProvider } from "./contexts/AuthContext";
 import OAuthLandingHandler from "./components/OAuthLandingHandler";
 import ProtectedRoute from "./components/ProtectedRoute";

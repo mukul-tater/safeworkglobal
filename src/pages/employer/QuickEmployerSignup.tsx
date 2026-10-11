@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { WhatsAppDocumentsNote } from "@/components/WhatsAppSupportNote";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { validateSchema } from "@/lib/validations/common";
 import {
@@ -772,6 +773,7 @@ export default function QuickEmployerSignup() {
                 </div>
               )}
             </div>
+            <WhatsAppDocumentsNote className="mt-4" />
           </div>
         </main>
       </div>

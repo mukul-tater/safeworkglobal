@@ -15,6 +15,7 @@ import ForgotPasswordControl from '@/components/ForgotPasswordControl';
 import { resolveWorkerAuthEmail } from '@/lib/resolveWorkerAuthEmail';
 import GoogleAuthButton from '@/modules/worker-registration/components/GoogleAuthButton';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 import AuthContinueIdentifier from '@/components/auth/AuthContinueIdentifier';
 import AuthConflictPanel from '@/components/auth/AuthConflictPanel';
 import DevOtpHint from '@/components/DevOtpHint';
@@ -540,6 +541,7 @@ export default function EmployerAuthEntry({ embedded = false }: { embedded?: boo
           <div className="h-1 bg-gradient-to-r from-primary via-primary/80 to-info" />
           <CardContent className="p-6">{body}</CardContent>
         </Card>
+        <WhatsAppDocumentsNote className="mt-4" />
       </div>
       <MobileBottomNav />
     </div>

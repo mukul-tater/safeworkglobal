@@ -9,6 +9,7 @@ import { useCurrentPartner } from "../hooks/useCurrentPartner";
 import { partnerTypeConfig } from "../config/partnerTypes";
 import { useAuth } from "@/contexts/AuthContext";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
+import { WhatsAppDocumentsNote } from "@/components/WhatsAppSupportNote";
 import { PARTNER_ADD_WORKER_PATH, partnerCanAddWorkers } from "../lib/partnerAssistedWorker";
 
 function PartnerNav({
@@ -183,7 +184,10 @@ export default function PartnerLayout({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6">
+          <WhatsAppDocumentsNote className="mb-4" />
+          {children}
+        </main>
       </div>
     </div>
   );

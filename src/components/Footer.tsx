@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { SAFEWORK_CONTACT, SAFEWORK_SOCIAL_LINKS } from "@/config/workerSupport";
+import { whatsappSupportUrl } from "@/lib/whatsappSupport";
 import { useI18n } from "@/i18n";
 import AboutLanguageToggle from "@/components/AboutLanguageToggle";
 import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH, showEmployerChrome } from "@/lib/launchGate";
@@ -187,13 +188,13 @@ const Footer = () => {
                   <span className="break-all">{SAFEWORK_CONTACT.email}</span>
                 </a>
                 <a
-                  href={SAFEWORK_CONTACT.whatsappUrl}
+                  href={whatsappSupportUrl("documents")}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors"
                 >
                   <MessageCircle className="h-3.5 w-3.5 shrink-0" />
-                  <span>WhatsApp {SAFEWORK_CONTACT.whatsappDisplay}</span>
+                  <span>Send documents and details on WhatsApp {SAFEWORK_CONTACT.whatsappDisplay}</span>
                 </a>
                 <span className="flex items-start gap-1.5 text-white/50 max-w-sm">
                   <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />

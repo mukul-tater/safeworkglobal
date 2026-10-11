@@ -18,6 +18,7 @@ import {
 } from '@/lib/validations/password';
 import { CheckCircle, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 
 function hasRecoveryHint(): boolean {
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -145,7 +146,7 @@ export default function ResetPassword() {
 
   if (!isValidSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4 pb-24 md:pb-8">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4 pb-24 md:pb-8">
         <Card className="w-full max-w-md shadow-xl border-border/50">
           <CardHeader className="text-center">
             <KeyRound className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
@@ -160,6 +161,7 @@ export default function ResetPassword() {
             </Button>
           </CardContent>
         </Card>
+        <WhatsAppDocumentsNote className="mt-4 w-full max-w-md" />
       </div>
     );
   }
@@ -181,7 +183,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4 pb-24 md:pb-8 pt-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-muted/30 to-background p-4 pb-24 md:pb-8 pt-8">
       <Card className="w-full max-w-md shadow-xl border-border/50 backdrop-blur-sm">
         <CardHeader>
           <CardTitle>Set new password</CardTitle>
@@ -259,6 +261,7 @@ export default function ResetPassword() {
           </form>
         </CardContent>
       </Card>
+      <WhatsAppDocumentsNote className="mt-4 w-full max-w-md" />
     </div>
   );
 }

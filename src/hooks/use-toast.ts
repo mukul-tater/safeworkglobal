@@ -1,6 +1,8 @@
 import * as React from "react";
 
+import { WhatsAppSupportNote } from "@/components/WhatsAppSupportNote";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
+import { WHATSAPP_ERROR_PROMPT } from "@/lib/whatsappSupport";
 
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;
@@ -134,7 +136,30 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">;
 
+function withWhatsAppError(props: Toast): Toast {
+  if (props.variant !== "destructive") return props;
+  const titleText = typeof props.title === "string" ? props.title : "";
+  const descriptionText = typeof props.description === "string" ? props.description : "";
+  if (`${titleText} ${descriptionText}`.includes(WHATSAPP_ERROR_PROMPT)) return props;
+  return {
+    ...props,
+    description: React.createElement(
+      "span",
+      { className: "grid gap-1" },
+      props.description
+        ? React.createElement("span", { className: "block" }, props.description)
+        : null,
+      React.createElement(WhatsAppSupportNote, {
+        kind: "error",
+        errorText: descriptionText || titleText || undefined,
+        compact: true,
+      }),
+    ),
+  };
+}
+
 function toast({ ...props }: Toast) {
+  const next = withWhatsAppError(props);
   const id = genId();
 
   const update = (props: ToasterToast) =>
@@ -147,7 +172,7 @@ function toast({ ...props }: Toast) {
   dispatch({
     type: "ADD_TOAST",
     toast: {
-      ...props,
+      ...next,
       id,
       open: true,
       onOpenChange: (open) => {

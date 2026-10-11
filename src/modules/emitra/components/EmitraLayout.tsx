@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Home, LogIn, Menu, Store, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AboutLanguageToggle from '@/components/AboutLanguageToggle';
+import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -159,6 +160,7 @@ export default function EmitraLayout({
                 )}
               </div>
             )}
+            <WhatsAppDocumentsNote className="mb-4" />
             {children}
           </div>
         </main>
