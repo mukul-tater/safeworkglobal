@@ -12,9 +12,9 @@ const corsHeaders = {
 const GATEWAY_FEE_FALLBACK_PCT = 2.5;
 
 function roundInr(value: unknown): number | null {
-  const n = Math.round(Number(value));
+  const n = Number(value);
   if (!Number.isFinite(n) || n < 1) return null;
-  return n;
+  return Math.round(n);
 }
 
 async function loadGatewayFeePct(admin: ReturnType<typeof createClient>): Promise<number> {
@@ -26,10 +26,12 @@ async function loadGatewayFeePct(admin: ReturnType<typeof createClient>): Promis
       .maybeSingle();
     if (error || !data) return GATEWAY_FEE_FALLBACK_PCT;
     const gateway = Number(data.razorpay_gateway_fee_pct);
-    return Number.isFinite(gateway) && gateway >= 0 && gateway <= 15
-      ? gateway
-      : GATEWAY_FEE_FALLBACK_PCT;
-  } catch {
+    if (!Number.isFinite(gateway) || gateway < 0 || gateway > 15) {
+      throw new Error("Razorpay extra percentage is invalid");
+    }
+    return gateway;
+  } catch (error) {
+    if (error instanceof Error && error.message === "Razorpay extra percentage is invalid") throw error;
     return GATEWAY_FEE_FALLBACK_PCT;
   }
 }
@@ -39,14 +41,10 @@ function withGatewayFee(
   baseFee: number,
   gatewayPct: number,
 ): { base: number; fee: number; charged: number } {
-  const base = roundInr(baseFee);
-  if (base == null) return { base: 0, fee: 0, charged: 0 };
+  const base = Number(baseFee);
+  if (!Number.isFinite(base) || base < 1) return { base: 0, fee: 0, charged: 0 };
   const charged = Math.round(base * (1 + gatewayPct / 100));
   return { base, fee: charged - base, charged };
-}
-
-function expectedChargedInr(stored: unknown, baseFee: number, gatewayPct: number): number | null {
-  return roundInr(stored) ?? (withGatewayFee(baseFee, gatewayPct).charged || null);
 }
 
 function json(status: number, body: Record<string, unknown>) {
@@ -127,7 +125,6 @@ serve(async (req) => {
   if (userErr || !user) return json(401, { error: "Not authenticated" });
 
   const admin = createClient(supabaseUrl, serviceKey);
-  const gatewayPct = await loadGatewayFeePct(admin);
 
   async function resolvePayerUserId(requested?: string): Promise<string> {
     const requestedId = String(requested || "").trim();
@@ -197,8 +194,8 @@ serve(async (req) => {
       .maybeSingle();
     if (jobErr) throw new Error(jobErr.message);
     const n = Number(job?.service_charge);
-    if (!Number.isFinite(n) || n < 0) return 0;
-    return Math.round(n);
+    if (!Number.isFinite(n) || n < 1) return 0;
+    return n;
   }
 
   async function completePayment(paymentId: string, orderId: string, payerId: string, amountInr: number) {
@@ -214,6 +211,7 @@ serve(async (req) => {
 
   try {
     if (action === "create_job_change_order" || action === "verify_job_change_payment") {
+      const gatewayPct = await loadGatewayFeePct(admin);
       const payerId = await resolvePayerUserId(body.worker_user_id);
       const { data: feeRow, error: feeErr } = await admin
         .from("worker_verification")
@@ -313,7 +311,6 @@ serve(async (req) => {
     }
 
     const payerId = await resolvePayerUserId(body.worker_user_id);
-    const assessmentFee = await resolveAssessmentFee(payerId);
 
     if (action === "create_order") {
       const { data: row, error: rowErr } = await admin
@@ -339,9 +336,9 @@ serve(async (req) => {
         if (payment) {
           const { ok, json: full } = await rzpGet(`/payments/${payment.id}`);
           const { ok: orderOk, json: order } = await rzpGet(`/orders/${row.razorpay_order_id}`);
-          const expectedInr = expectedChargedInr(row.payment_amount, assessmentFee, gatewayPct);
+          const expectedInr = roundInr(row.payment_amount);
           if (!expectedInr) {
-            return json(400, { error: "This job has no service charge" });
+            return json(400, { error: "Payment amount is missing" });
           }
           const expectedPaise = expectedInr * 100;
           const noteUser = String(full?.notes?.user_id || order?.notes?.user_id || "").trim();
@@ -364,9 +361,11 @@ serve(async (req) => {
         }
       }
 
+      const assessmentFee = await resolveAssessmentFee(payerId);
       if (assessmentFee < 1) {
         return json(400, { error: "This job has no service charge" });
       }
+      const gatewayPct = await loadGatewayFeePct(admin);
       const { base, fee, charged } = withGatewayFee(assessmentFee, gatewayPct);
       const amountPaise = charged * 100;
       const receipt = `assess_${payerId.replace(/-/g, "").slice(0, 12)}_${Date.now()}`
@@ -487,8 +486,8 @@ serve(async (req) => {
         return json(400, { error: "Order does not match this assessment" });
       }
 
-      const expectedInr = expectedChargedInr(row.payment_amount, assessmentFee, gatewayPct);
-      if (!expectedInr) return json(400, { error: "This job has no service charge" });
+      const expectedInr = roundInr(row.payment_amount);
+      if (!expectedInr) return json(400, { error: "Payment amount is missing" });
       const expectedPaise = expectedInr * 100;
       try {
         const { verifiedBy } = await assertPaymentOwned(paymentId, orderId, expectedPaise);
@@ -529,6 +528,9 @@ serve(async (req) => {
       }
       const targetOrder = boundOrder;
 
+      const expectedInr = roundInr(row.payment_amount);
+      if (!expectedInr) return json(400, { error: "Payment amount is missing" });
+
       if (!paymentId) {
         const { payment, error: findErr } = await findSettledPayment(targetOrder);
         if (!payment) {
@@ -539,8 +541,6 @@ serve(async (req) => {
         paymentId = payment.id;
       }
 
-      const expectedInr = expectedChargedInr(row.payment_amount, assessmentFee, gatewayPct);
-      if (!expectedInr) return json(400, { error: "This job has no service charge" });
       const expectedPaise = expectedInr * 100;
       try {
         await assertPaymentOwned(paymentId, targetOrder, expectedPaise);

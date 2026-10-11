@@ -78,6 +78,13 @@
       "when": 1791713288651,
       "tag": "0010_reload_signup_identity_schema_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791740683769,
+      "tag": "0011_enforce_saved_assessment_payment_amount",
+      "breakpoints": true
     }
   ]
 }
