@@ -21,3 +21,6 @@
 
 ## Admin Firebase Account Cleanup
 - [x] Release a user's Firebase phone identity before admin account deletion, with Firebase Admin credentials stored securely and the protected function deployed.
+
+## Signup Email Identity Check
+- [x] Restore the existing unique-signup migration, match RPC arguments, reload the schema cache, and verify service-only access and safe signup errors.

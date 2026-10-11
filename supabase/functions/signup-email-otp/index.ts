@@ -56,8 +56,14 @@ async function emailAlreadyRegistered(
   admin: ReturnType<typeof createClient>,
   email: string,
 ): Promise<boolean> {
-  const { data, error } = await admin.rpc('signup_email_taken', { p_email: email })
-  if (error) throw new Error(error.message)
+  const { data, error } = await admin.rpc('signup_email_taken', {
+    p_email: email,
+    p_except_user_id: null,
+  })
+  if (error) {
+    console.error('Signup email identity check failed', { code: error.code, message: error.message })
+    throw new Error("We couldn't verify this email. Please try again.")
+  }
   return data === true
 }
 
