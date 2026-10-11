@@ -29,4 +29,4 @@
 - [x] Preserve pending SMS confirmation on resend failure, reject redirect-only sends, audit all web callers, and verify recovery behavior with simulated Firebase responses and the worker login page.
 
 ## Razorpay Saved Job Service Charge
-- [ ] Enforce saved job charges plus the configured Razorpay percentage, reject missing amounts, preserve service-only completion, deploy and test pricing and recovery.
+- [x] Enforce saved job charges plus the configured Razorpay percentage, reject missing amounts, preserve service-only completion, deploy and test pricing and recovery (mocked orders; no real payment charged).
