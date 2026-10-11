@@ -254,7 +254,7 @@ export default function PartnerRegisterLegacy() {
       setMobileVerified(false);
       toast.success(`Verification code sent to +91 ${digits}`);
     } catch (e) {
-      firebaseOtp.resetRecaptcha();
+      firebaseOtp.clearVerifierOnly();
       toast.error(e instanceof Error ? e.message : "Failed to send OTP");
     } finally {
       setOtpBusy(false);

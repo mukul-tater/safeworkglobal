@@ -199,7 +199,7 @@ export default function SsvnLoginPage() {
       setStep('otp');
       setOtp('');
     } catch (err) {
-      firebaseOtp.resetRecaptcha();
+      firebaseOtp.clearVerifierOnly();
       setError(err instanceof Error ? err.message : 'Failed to send OTP');
     } finally {
       setLoading(false);
