@@ -433,7 +433,7 @@ export default function AdminPostJob() {
                   {...register("service_charge", { valueAsNumber: true })}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Workers see this as the amount plus GST. Enter the total they pay, including GST. Default is ₹{paymentSettings.defaultServiceChargeInr.toLocaleString("en-IN")}.
+                  Workers see this amount with “+ GST” written next to it. GST is not calculated. Default is ₹{paymentSettings.defaultServiceChargeInr.toLocaleString("en-IN")}.
                 </p>
                 {errors.service_charge && (
                   <p className="text-sm text-destructive mt-1">{errors.service_charge.message}</p>

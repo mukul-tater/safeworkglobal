@@ -167,7 +167,7 @@ export default function AdminPaymentSettings() {
         <div>
           <h1 className="text-2xl font-bold mb-2">Fees & payments</h1>
           <p className="text-sm text-muted-foreground">
-            These amounts are what workers pay. GST % only changes the “base + GST” label.
+            These amounts are what workers pay. Every job shows that amount with “+ GST” written next to it. GST is not calculated.
             Saving also updates the service charge on current UAE, Ukraine, and Europe listings.
             Razorpay API keys stay in the edge function settings.
           </p>
@@ -185,7 +185,7 @@ export default function AdminPaymentSettings() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Service charges (₹, GST included)</CardTitle>
+                <CardTitle className="text-lg">Service charges (₹)</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <Field label="Default for other jobs" value={defaultCharge} onChange={setDefaultCharge} />
@@ -200,9 +200,14 @@ export default function AdminPaymentSettings() {
               <CardHeader>
                 <CardTitle className="text-lg">GST and Razorpay</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <Field label="GST %" value={gst} onChange={setGst} step="0.01" />
-                <Field label="Razorpay extra %" value={gateway} onChange={setGateway} step="0.01" />
+              <CardContent className="space-y-3">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="GST %" value={gst} onChange={setGst} step="0.01" />
+                  <Field label="Razorpay extra %" value={gateway} onChange={setGateway} step="0.01" />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  GST % is not added to the service charge. Jobs show the entered amount with “+ GST”. Razorpay extra % is still added only on Razorpay checkout.
+                </p>
               </CardContent>
             </Card>
 

@@ -18,16 +18,8 @@ export function formatServiceChargeInr(amount?: number | string | null): string 
   return `₹${resolveServiceChargeInr(amount).toLocaleString('en-IN')}`;
 }
 
-export function serviceChargeGstSplit(amount?: number | string | null) {
-  const total = resolveServiceChargeInr(amount);
-  const rate = getPlatformPaymentSettings().gstRatePct;
-  const base = rate <= 0 ? total : Math.round(total / (1 + rate / 100));
-  return { base, gst: total - base, total, rate };
-}
-
-/** Worker-facing label. The stored amount includes GST; the label shows only the base. */
+/** Worker-facing label. Shows the admin-entered amount with “+ GST” as text. GST is not calculated. */
 export function formatServiceChargePlusGst(amount?: number | string | null): string {
-  const { base, total, rate } = serviceChargeGstSplit(amount);
-  if (rate <= 0) return `₹${total.toLocaleString('en-IN')}`;
-  return `₹${base.toLocaleString('en-IN')} + GST`;
+  const total = resolveServiceChargeInr(amount);
+  return `₹${total.toLocaleString('en-IN')} + GST`;
 }
