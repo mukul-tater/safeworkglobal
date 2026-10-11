@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { WhatsAppDocumentsNote } from "@/components/WhatsAppSupportNote";
 import DashboardSidebar, { NavItem, NavGroup, itemIsActive } from "./DashboardSidebar";
 import DashboardHeader from "./DashboardHeader";
 import { LucideIcon } from "lucide-react";
@@ -83,7 +82,6 @@ export default function DashboardLayout({
           ref={mainRef}
           className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 animate-in fade-in duration-300 md:p-6 lg:p-8"
         >
-          <WhatsAppDocumentsNote className="mb-4" />
           {children}
         </main>
       </div>

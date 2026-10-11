@@ -18,7 +18,6 @@ import {
 } from '@/modules/worker-registration/hooks/useFirebasePhoneOtp';
 import { bindMobileLoginPath, afterMobileVerifiedPath, MOBILE_OTP_ROLES } from '@/lib/mobileVerification';
 import DevOtpHint from '@/components/DevOtpHint';
-import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 
 type Step = 'form' | 'otp';
 
@@ -311,7 +310,6 @@ export default function WorkerBindMobilePage() {
             )}
           </CardContent>
         </Card>
-        <WhatsAppDocumentsNote className="mt-4" />
       </div>
     </div>
   );

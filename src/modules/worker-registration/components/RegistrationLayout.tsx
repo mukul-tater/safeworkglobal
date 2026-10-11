@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { Briefcase, LogIn, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AboutLanguageToggle from '@/components/AboutLanguageToggle';
-import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 import { useWorkerLanguage } from '../context/WorkerLanguageContext';
 
 interface RegistrationLayoutProps {
@@ -118,7 +117,6 @@ export default function RegistrationLayout({
                 {subtitle}
               </p>
             </div>
-            <WhatsAppDocumentsNote className="mb-4" />
             {children}
             {footer && (
               <div className={cn('mt-6 text-sm text-muted-foreground', centered && 'text-center')}>

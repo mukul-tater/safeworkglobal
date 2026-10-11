@@ -17,7 +17,6 @@ import {
   hasOAuthCallbackInUrl,
 } from '@/lib/oauthRedirect';
 import Header from '@/components/Header';
-import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import { GET_STARTED_PATHS, PARTNER_EXISTING_ACCOUNT_PATH } from '@/lib/getStarted';
 import { USERS_ONLY_LAUNCH, comingSoonPathForRole, isGatedLaunchRole } from '@/lib/launchGate';
@@ -592,8 +591,6 @@ export default function Auth() {
             )}
           </CardContent>
         </Card>
-
-        <WhatsAppDocumentsNote className="mt-4" />
 
         <p className="text-xs text-center text-muted-foreground mt-6">
           By continuing, you agree to our{' '}

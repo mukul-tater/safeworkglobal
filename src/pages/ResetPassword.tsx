@@ -18,7 +18,6 @@ import {
 } from '@/lib/validations/password';
 import { CheckCircle, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 
 function hasRecoveryHint(): boolean {
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -161,7 +160,6 @@ export default function ResetPassword() {
             </Button>
           </CardContent>
         </Card>
-        <WhatsAppDocumentsNote className="mt-4 w-full max-w-md" />
       </div>
     );
   }
@@ -261,7 +259,6 @@ export default function ResetPassword() {
           </form>
         </CardContent>
       </Card>
-      <WhatsAppDocumentsNote className="mt-4 w-full max-w-md" />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import WorkerPortalLayout from '@/components/layout/WorkerPortalLayout';
+import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -330,7 +331,12 @@ function JourneyShell({
   children: ReactNode;
 }) {
   if (embedded) return <>{children}</>;
-  return <WorkerPortalLayout>{children}</WorkerPortalLayout>;
+  return (
+    <WorkerPortalLayout>
+      <WhatsAppDocumentsNote className="mb-4" />
+      {children}
+    </WorkerPortalLayout>
+  );
 }
 
 /**

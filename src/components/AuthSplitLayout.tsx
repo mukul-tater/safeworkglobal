@@ -5,7 +5,6 @@ import SignupJourneyPanel, {
   type SignupVariant,
 } from '@/components/SignupJourneyPanel';
 import MobileBottomNav from '@/components/MobileBottomNav';
-import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 
 /** Split auth shell used by worker / employer / partner signup & login. */
 export default function AuthSplitLayout({
@@ -52,7 +51,6 @@ export default function AuthSplitLayout({
                 {children}
               </div>
             )}
-            <WhatsAppDocumentsNote className="mt-4" />
           </div>
         </main>
       </div>

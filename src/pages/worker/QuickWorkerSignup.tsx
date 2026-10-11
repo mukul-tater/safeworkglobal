@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { WhatsAppDocumentsNote } from '@/components/WhatsAppSupportNote';
 import {
   Loader2, Phone, Lock, Eye, EyeOff, Mail, ShieldCheck,
 } from 'lucide-react';
@@ -1035,7 +1034,6 @@ export default function QuickWorkerSignup({
                 </form>
               )}
             </div>
-            {!embedded && <WhatsAppDocumentsNote className="mt-4" />}
           </div>
         </main>
       </div>
