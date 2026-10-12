@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, CheckCircle, XCircle, Trash2, Pencil, Plus, IndianRupee, Loader2, Share2, Users } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Trash2, Pencil, Plus, IndianRupee, Loader2, Share2, Users, Search } from "lucide-react";
 import ShareJobDialog, { type ShareJobTarget } from "@/components/jobs/ShareJobDialog";
 import { listAdminJobShares, type JobShareRow } from "@/lib/jobShare";
 import { toast } from "sonner";
@@ -57,6 +57,7 @@ export default function JobVerification() {
   const [loading, setLoading] = useState(true);
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [postedByFilter, setPostedByFilter] = useState<"all" | "employer" | "admin">("all");
+  const [search, setSearch] = useState("");
   const [feeJob, setFeeJob] = useState<Job | null>(null);
   const [feeValue, setFeeValue] = useState("");
   const [savingFee, setSavingFee] = useState(false);
@@ -207,8 +208,15 @@ export default function JobVerification() {
   const roleLabel = (role: string) => role.charAt(0).toUpperCase() + role.slice(1);
 
   const visibleJobs = jobs.filter((job) => {
-    if (postedByFilter === "all") return true;
-    return (job.posted_by_role || "employer") === postedByFilter;
+    const matchesPostedBy =
+      postedByFilter === "all" || (job.posted_by_role || "employer") === postedByFilter;
+    const query = search.trim().toLowerCase();
+    const matchesSearch =
+      !query ||
+      [job.title, job.company_name, job.location, job.status, job.slug].some((value) =>
+        (value || "").toLowerCase().includes(query),
+      );
+    return matchesPostedBy && matchesSearch;
   });
 
   if (loading) {
@@ -232,6 +240,15 @@ export default function JobVerification() {
           <p className="text-muted-foreground text-sm mb-4">
             Complete job listings — review, approve, edit, change service charge, and manage employer and admin postings
           </p>
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by title, company, or location..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <div className="flex flex-wrap gap-2 mb-6 md:mb-8">
             {([
               { id: "all", label: "All" },
@@ -251,7 +268,11 @@ export default function JobVerification() {
 
           {visibleJobs.length === 0 ? (
             <Card className="p-8 text-center text-muted-foreground">
-              {jobs.length === 0 ? "No jobs yet." : "No jobs match this filter."}
+              {jobs.length === 0
+                ? "No jobs yet."
+                : search.trim()
+                  ? "No jobs match your search."
+                  : "No jobs match this filter."}
             </Card>
           ) : (
           <div className="space-y-4">
