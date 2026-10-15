@@ -649,9 +649,6 @@ export default function JobDetail() {
                   </div>
 
                   <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{displayTitle}</h1>
-                  {showApply ? (
-                    <JobApplyWhatsAppNote jobTitle={displayTitle} className="mb-4 lg:hidden" />
-                  ) : null}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
@@ -893,6 +890,9 @@ export default function JobDetail() {
                   </div>
                 </CardContent>
               </Card>
+              {showApply ? (
+                <JobApplyWhatsAppNote jobTitle={displayTitle} className="px-1 lg:hidden" />
+              ) : null}
             </div>
           </div>
           {showApply && (
