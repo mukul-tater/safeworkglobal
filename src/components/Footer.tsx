@@ -186,11 +186,14 @@ const Footer = () => {
                   <Mail className="h-3.5 w-3.5 shrink-0" />
                   <span className="break-all">{SAFEWORK_CONTACT.email}</span>
                 </a>
-                <span className="flex items-start gap-1.5 text-white/50 max-w-sm">
+                <span className="flex items-start gap-1.5 text-white/50 max-w-xl lg:max-w-2xl">
                   <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                   <span className="leading-relaxed">
-                    <span className="block">Registered address: {SAFEWORK_CONTACT.officeAddress}</span>
-                    <span className="block">Office address: {SAFEWORK_CONTACT.workingAddress}</span>
+                    {SAFEWORK_CONTACT.vestaOfficeAddresses.map((address) => (
+                      <span key={address} className="block">
+                        SafeWorkGlobal-Vesta Office address: {address}
+                      </span>
+                    ))}
                   </span>
                 </span>
               </div>
