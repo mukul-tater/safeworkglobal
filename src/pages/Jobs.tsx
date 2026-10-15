@@ -35,6 +35,7 @@ import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, adminRangeSalaryDisplay, convertS
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
 import { devCompareListItem } from '@/lib/devCompareJob';
+import { JOB_COMPARE_ENABLED } from '@/lib/jobCompareFeature';
 import { scrollToTop } from '@/lib/scrollToTop';
 
 const JOBS_PER_PAGE = 20;
@@ -265,7 +266,7 @@ export default function Jobs() {
           };
         });
 
-        const devJob = devCompareListItem();
+        const devJob = JOB_COMPARE_ENABLED ? devCompareListItem() : null;
         const withDevJob = devJob ? [...formatted.filter((job) => job.slug !== devJob.slug), devJob] : formatted;
         if (!cancelled) setAllJobs(withDevJob);
       } catch (error) {
@@ -315,6 +316,7 @@ export default function Jobs() {
   }, [allJobs, filters, jobSelected]);
 
   const compareAvailable = useMemo(() => {
+    if (!JOB_COMPARE_ENABLED) return false;
     const countries = new Set(sameTradeJobs.map((job) => job.country.toLowerCase()));
     return countries.size >= 2;
   }, [sameTradeJobs]);

@@ -9,6 +9,7 @@ import PublicJobBenefitsList from '@/components/jobs/PublicJobBenefitsList';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
 import { formatJobPlace, jobsBrowsePath, usesStoredPayText } from '@/lib/jobsBrowse';
 import { devCompareJobRecord, isDevCompareJob } from '@/lib/devCompareJob';
+import { JOB_COMPARE_ENABLED } from '@/lib/jobCompareFeature';
 import { adminRangeSalaryDisplay, convertSalaryToINR } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -174,7 +175,7 @@ export default function JobDetail() {
         return;
       }
 
-      if (isDevCompareJob(slug)) {
+      if (JOB_COMPARE_ENABLED && isDevCompareJob(slug)) {
         if (!import.meta.env.DEV) {
           if (!cancelled) {
             toast({
