@@ -26,6 +26,7 @@ import {
   CheckCircle2, ArrowLeft, Shield, Calendar,
   Share2, Bookmark, Loader2, Pencil
 } from 'lucide-react';
+import { SAFEWORK_CONTACT } from '@/config/workerSupport';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { JobDetailSkeleton } from '@/components/ui/page-skeleton';
@@ -63,6 +64,41 @@ function MobileJobActionBar({ aboveNav, children }: { aboveNav: boolean; childre
       {children}
     </div>,
     document.body,
+  );
+}
+
+function jobApplyWhatsAppUrl(jobTitle: string) {
+  const body = `Hello SafeWork Global, I want to share my details for this job: ${jobTitle}`;
+  return `${SAFEWORK_CONTACT.whatsappUrl}?text=${encodeURIComponent(body)}`;
+}
+
+function JobApplyWhatsAppNote({ jobTitle, className }: { jobTitle: string; className?: string }) {
+  const href = jobApplyWhatsAppUrl(jobTitle);
+  return (
+    <p className={`text-sm leading-relaxed text-muted-foreground ${className ?? ''}`}>
+      For the job you want to apply for, you can also send your details on{' '}
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-foreground underline underline-offset-2"
+      >
+        WhatsApp
+      </a>
+      .
+      <span className="mt-1 block text-xs">
+        जिस नौकरी के लिए आप आवेदन करना चाहते हैं, अपना विवरण आप{' '}
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-foreground underline underline-offset-2"
+        >
+          WhatsApp
+        </a>{' '}
+        पर भी भेज सकते हैं।
+      </span>
+    </p>
   );
 }
 
@@ -613,6 +649,9 @@ export default function JobDetail() {
                   </div>
 
                   <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{displayTitle}</h1>
+                  {showApply ? (
+                    <JobApplyWhatsAppNote jobTitle={displayTitle} className="mb-4 lg:hidden" />
+                  ) : null}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
@@ -795,6 +834,7 @@ export default function JobDetail() {
                           Complete Essentials, then apply so Test 1 matches this job.
                         </p>
                       )}
+                      <JobApplyWhatsAppNote jobTitle={displayTitle} className="hidden lg:block" />
                     </>
                   ) : (
                     <Alert>
