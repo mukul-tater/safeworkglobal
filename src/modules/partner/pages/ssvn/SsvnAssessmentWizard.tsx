@@ -16,7 +16,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   Camera,
-  Video,
   FileSpreadsheet,
   ShieldCheck,
 } from 'lucide-react';
@@ -39,7 +38,6 @@ import {
   rejectAssessment,
   saveArrivalCheck,
   saveAssessmentScores,
-  saveVideoKyc,
   signedEvidenceUrl,
   submitCentreAssessment,
   uploadAssessmentEvidence,
@@ -52,16 +50,11 @@ import {
   type WorkerIdentityPack,
 } from '@/modules/trade-test/types';
 import {
-  MIN_KYC_VIDEO_SECONDS,
   MIN_PRACTICAL_PHOTOS,
   MIN_PRACTICAL_VIDEO_SECONDS,
   MIN_PRACTICAL_VIDEOS,
   TEST_ANGLES,
-  VIDEO_KYC_CHALLENGES,
-  VIDEO_KYC_LABEL,
-  VIDEO_KYC_MEDIA_TYPE,
   formatAuditTs,
-  videoKycLogLabel,
 } from '@/modules/trade-test/constants';
 import { getMediaDurationSeconds } from '@/modules/trade-test/lib/mediaDuration';
 import { appliedForLine, slipIntroLine, testTodayLine, tradeLabel } from '@/modules/trade-test/lib/slipCopy';
@@ -78,13 +71,6 @@ const emptyScores = (): AssessmentScoresInput => ({
   workplace_behaviour: 7,
   remarks: '',
 });
-
-type LocalKycClip = {
-  file: File;
-  startedAt: string;
-  completedAt: string;
-  durationSeconds: number;
-};
 
 function WizardFrame({
   isAdmin,
@@ -140,9 +126,6 @@ export default function SsvnAssessmentWizard() {
   const [faceMatch, setFaceMatch] = useState(false);
   const [operatorName, setOperatorName] = useState(defaultOperator);
   const [arrivalPhoto, setArrivalPhoto] = useState<File | null>(null);
-
-  const [kycClip, setKycClip] = useState<LocalKycClip | null>(null);
-  const [kycStartedAt, setKycStartedAt] = useState<string | null>(null);
 
   const [media, setMedia] = useState<AssessmentMediaRow[]>([]);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
@@ -219,7 +202,7 @@ export default function SsvnAssessmentWizard() {
 
   const locked = !!row && ['centre_submitted', 'under_review', 'completed'].includes(row.status);
   const evidence = useMemo(() => evidenceHint(media), [media]);
-  const kycDone = (row?.video_kyc_log?.length || 0) > 0 || !!row?.kyc_completed_at;
+  const testCaptureOpen = !!row && ['checked_in', 'kyc_done', 'running'].includes(row.status);
 
   const uploadFile = async (
     file: File,
@@ -483,122 +466,7 @@ export default function SsvnAssessmentWizard() {
           </Card>
         )}
 
-        {['checked_in', 'kyc_done', 'running'].includes(row.status) && !locked && (
-          <Card>
-            <CardContent className="p-5 space-y-4">
-              <h2 className="font-semibold flex items-center gap-2">
-                <Video className="h-4 w-4" /> Video KYC (liveness)
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Record one clip of at least {MIN_KYC_VIDEO_SECONDS} seconds. In that same video: blink,
-                turn head left, then turn head right. Face must stay in frame.
-              </p>
-              {kycDone && (
-                <div className="text-xs space-y-1 text-muted-foreground">
-                  <p>
-                    Completed {formatAuditTs(row.kyc_completed_at)} by{' '}
-                    {row.video_kyc_operator_name || 'staff'}
-                  </p>
-                  {(row.video_kyc_log || []).map((entry, idx) => (
-                    <p key={`${entry.challenge}-${idx}`}>
-                      {videoKycLogLabel(entry.challenge)} · {formatAuditTs(entry.started_at)} →{' '}
-                      {formatAuditTs(entry.completed_at)}
-                      {entry.duration_seconds != null
-                        ? ` · ${Math.round(entry.duration_seconds)}s`
-                        : ''}
-                    </p>
-                  ))}
-                </div>
-              )}
-              {!kycDone && (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    {VIDEO_KYC_CHALLENGES.map((c, idx) => (
-                      <Badge key={c.id} variant="outline">
-                        {idx + 1}. {c.label}
-                      </Badge>
-                    ))}
-                  </div>
-                  <Alert>
-                    <AlertDescription>
-                      <span className="font-medium">One video — {VIDEO_KYC_LABEL}. </span>
-                      Prompts will change on screen while you record. Do all three actions before
-                      stopping.
-                    </AlertDescription>
-                  </Alert>
-                  <div className="space-y-1.5">
-                    <Label>Staff conducting video KYC *</Label>
-                    <Input
-                      value={operatorName}
-                      onChange={(e) => setOperatorName(e.target.value)}
-                    />
-                  </div>
-                  <CameraCapture
-                    mode="video"
-                    minDurationSec={MIN_KYC_VIDEO_SECONDS}
-                    disabled={saving}
-                    recordingPrompts={VIDEO_KYC_CHALLENGES.map((c) => ({
-                      startSec: c.startSec,
-                      title: c.label,
-                      instruction: c.instruction,
-                    }))}
-                    onRecordingStart={() => setKycStartedAt(new Date().toISOString())}
-                    onCapture={(file, meta) => {
-                      const started =
-                        kycStartedAt ||
-                        new Date(
-                          Date.now() - Math.round((meta.durationSeconds || MIN_KYC_VIDEO_SECONDS) * 1000),
-                        ).toISOString();
-                      setKycClip({
-                        file,
-                        startedAt: started,
-                        completedAt: meta.capturedAt,
-                        durationSeconds: meta.durationSeconds || MIN_KYC_VIDEO_SECONDS,
-                      });
-                      setKycStartedAt(null);
-                      toast.success('Liveness video recorded');
-                    }}
-                  />
-                  {kycClip && (
-                    <p className="text-xs text-muted-foreground">
-                      Ready · {formatAuditTs(kycClip.startedAt)} → {formatAuditTs(kycClip.completedAt)} ·{' '}
-                      {Math.round(kycClip.durationSeconds)}s
-                    </p>
-                  )}
-                  <Button
-                    disabled={saving || !kycClip}
-                    onClick={async () => {
-                      if (!kycClip) return;
-                      setSaving(true);
-                      try {
-                        const storagePath = await uploadFile(kycClip.file, VIDEO_KYC_MEDIA_TYPE);
-                        const next = await saveVideoKyc(row.id, {
-                          storagePath,
-                          startedAt: kycClip.startedAt,
-                          completedAt: kycClip.completedAt,
-                          durationSeconds: kycClip.durationSeconds,
-                          operatorName,
-                        });
-                        setRow(next);
-                        setKycClip(null);
-                        toast.success('Video KYC saved');
-                        await load();
-                      } catch (e) {
-                        toast.error(e instanceof Error ? e.message : 'Video KYC failed');
-                      } finally {
-                        setSaving(false);
-                      }
-                    }}
-                  >
-                    Save video KYC
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {['kyc_done', 'running'].includes(row.status) && !locked && (
+        {testCaptureOpen && !locked && (
           <Card>
             <CardContent className="p-5 space-y-4">
               <h2 className="font-semibold">Trade test evidence — photos & videos</h2>
@@ -806,7 +674,7 @@ export default function SsvnAssessmentWizard() {
           </Card>
         )}
 
-        {['kyc_done', 'running'].includes(row.status) && !locked && (
+        {testCaptureOpen && !locked && (
           <Card>
             <CardContent className="p-5 space-y-4">
               <h2 className="font-semibold flex items-center gap-2">
@@ -897,14 +765,14 @@ export default function SsvnAssessmentWizard() {
           </Card>
         )}
 
-        {['kyc_done', 'running'].includes(row.status) && !locked && (
+        {testCaptureOpen && !locked && (
           <Card>
             <CardContent className="p-5 space-y-3">
               <h2 className="font-semibold">Confirm submission to SafeWork</h2>
               <p className="text-sm text-muted-foreground">
-                Requires arrival check, video KYC, {MIN_PRACTICAL_PHOTOS} photos,{' '}
-                {MIN_PRACTICAL_VIDEOS} videos of {MIN_PRACTICAL_VIDEO_SECONDS}s+, and the scorecard.
-                You can wait until the scorecard is ready.
+                Requires the arrival check, {MIN_PRACTICAL_PHOTOS} photos, {MIN_PRACTICAL_VIDEOS}{' '}
+                videos of {MIN_PRACTICAL_VIDEO_SECONDS}s+, and the scorecard. You can wait until the
+                scorecard is ready.
               </p>
               <Button
                 disabled={saving}

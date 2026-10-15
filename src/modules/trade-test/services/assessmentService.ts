@@ -6,8 +6,6 @@ import {
   MIN_PRACTICAL_PHOTOS,
   MIN_PRACTICAL_VIDEOS,
   MIN_PRACTICAL_VIDEO_SECONDS,
-  VIDEO_KYC_LABEL,
-  VIDEO_KYC_MEDIA_TYPE,
 } from '../constants';
 import {
   averageSopScore,
@@ -783,102 +781,6 @@ async function upsertTypedMedia(
   if (error) throw new Error(error.message);
 }
 
-export async function saveVideoKyc(
-  assessmentId: string,
-  input: {
-    storagePath: string;
-    startedAt: string;
-    completedAt: string;
-    durationSeconds: number;
-    operatorName: string;
-  },
-): Promise<AssessmentRow> {
-  if (!input.storagePath) {
-    throw new Error('Record one video KYC clip with blink, turn left, and turn right');
-  }
-  const operator = input.operatorName.trim();
-  if (!operator) throw new Error('Record who conducted video KYC');
-
-  const userId = await currentUserId();
-  const log: VideoKycLogEntry[] = [
-    {
-      challenge: 'liveness',
-      started_at: input.startedAt,
-      completed_at: input.completedAt,
-      storage_path: input.storagePath,
-      duration_seconds: input.durationSeconds,
-      operator_name: operator,
-    },
-  ];
-
-  await upsertTypedMedia(assessmentId, {
-    mediaType: VIDEO_KYC_MEDIA_TYPE,
-    storagePath: input.storagePath,
-    label: VIDEO_KYC_LABEL,
-    capturedByName: operator,
-    capturedAt: input.completedAt,
-    durationSeconds: input.durationSeconds,
-    replaceExisting: true,
-  });
-
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from('assessments')
-    .update({
-      kyc_video_path: input.storagePath,
-      video_kyc_log: log,
-      video_kyc_operator_id: userId,
-      video_kyc_operator_name: operator,
-      kyc_completed_at: now,
-      status: 'kyc_done',
-      updated_at: now,
-    })
-    .eq('id', assessmentId)
-    .in('status', ['checked_in', 'kyc_done', 'running'])
-    .select('*')
-    .single();
-  if (error) throw new Error(error.message);
-
-  const [row] = await enrichAssessments([data as AssessmentRow]);
-  return row;
-}
-
-/** @deprecated Use saveArrivalCheck + saveVideoKyc */
-export async function saveCentreKyc(
-  assessmentId: string,
-  input: {
-    aadhaarVerified: boolean;
-    faceMatchConfirmed: boolean;
-    attendanceConfirmed: boolean;
-    kycPhotoPath?: string | null;
-    kycVideoPath?: string | null;
-  },
-): Promise<AssessmentRow> {
-  if (!input.aadhaarVerified || !input.faceMatchConfirmed || !input.attendanceConfirmed) {
-    throw new Error('Confirm Aadhaar card, face match, and attendance');
-  }
-  if (!input.kycPhotoPath || !input.kycVideoPath) {
-    throw new Error('Upload candidate photograph and live video recording');
-  }
-  await saveArrivalCheck(assessmentId, {
-    aadhaarMatch: true,
-    panMatch: true,
-    passportMatch: null,
-    samePerson: true,
-    faceMatch: true,
-    arrivalPhotoPath: input.kycPhotoPath,
-    capturedByName: 'Centre staff',
-  });
-  const nowIso = new Date().toISOString();
-  return saveVideoKyc(assessmentId, {
-    storagePath: input.kycVideoPath as string,
-    startedAt: nowIso,
-    completedAt: nowIso,
-    durationSeconds: 0,
-    operatorName: 'Centre staff',
-  });
-}
-
 export async function saveDocChecks(
   assessmentId: string,
   input: {
@@ -1086,7 +988,7 @@ export async function markTestEvidenceComplete(assessmentId: string): Promise<As
       updated_at: now,
     })
     .eq('id', assessmentId)
-    .in('status', ['kyc_done', 'running'])
+    .in('status', ['checked_in', 'kyc_done', 'running'])
     .select('*')
     .single();
   if (error) throw new Error(error.message);
@@ -1112,10 +1014,6 @@ export async function submitCentreAssessment(assessmentId: string): Promise<Asse
   if (!a.kyc_photo_path && !a.arrival_photo_path) {
     throw new Error('Arrival live photo is required');
   }
-  const kycLog = asVideoKycLog(a.video_kyc_log);
-  if (kycLog.length < 1 && !a.kyc_video_path) {
-    throw new Error('Complete video KYC (blink, turn left, and turn right in one clip) before submitting');
-  }
 
   const media = await listAssessmentMedia(assessmentId);
   const summary = practicalEvidenceSummary(media);
@@ -1134,7 +1032,7 @@ export async function submitCentreAssessment(assessmentId: string): Promise<Asse
       updated_at: new Date().toISOString(),
     })
     .eq('id', assessmentId)
-    .in('status', ['kyc_done', 'running', 'centre_submitted'])
+    .in('status', ['checked_in', 'kyc_done', 'running', 'centre_submitted'])
     .select('*')
     .single();
   if (error) throw new Error(error.message);
