@@ -1,7 +1,6 @@
 import type { SkillQuizItem } from '../types';
 import { isMcqQuizItem } from '../types';
-import { BASIC_TRADE_KNOWLEDGE_BANK } from './basic-trade-knowledge';
-import { isUaeListedQuizSkill } from './quizSkill';
+import { bundledMcqBank } from './mcqBank';
 
 export type LocalQuizGrade = {
   score: number;
@@ -26,8 +25,7 @@ export function gradeLocalQuiz(
     if (given === undefined) return null;
 
     if (isMcqQuizItem(item)) {
-      if (!isUaeListedQuizSkill(item.skill_code)) return null;
-      const bankQ = BASIC_TRADE_KNOWLEDGE_BANK[item.skill_code].find(
+      const bankQ = bundledMcqBank(item.skill_code)?.find(
         (row) => row.question === item.question,
       );
       if (!bankQ) return null;

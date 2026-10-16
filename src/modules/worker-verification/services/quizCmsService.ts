@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { BASIC_TRADE_KNOWLEDGE_BANK } from '../quiz-data/basic-trade-knowledge';
-import { isUaeListedQuizSkill } from '../quiz-data/quizSkill';
+import { EUROPE_QUIZ_JOBS } from '@/lib/europeQuizJobs';
+import { bundledMcqBank } from '../quiz-data/mcqBank';
 import { QUIZ_QUESTIONS_TO_SHOW } from '../constants';
 import { quizPassScoreForSkill } from '../quiz-data/quizResult';
 import { UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
@@ -95,10 +95,9 @@ export async function saveQuizConfig(input: {
   if (error) throw new Error(error.message);
 }
 
-/** Default bilingual bank for a UAE listed trade (used when CMS has no rows yet). */
+/** Default bilingual bank when the CMS has no rows yet. */
 export function defaultQuizBankForSkill(skill: string) {
-  if (!isUaeListedQuizSkill(skill)) return [];
-  return BASIC_TRADE_KNOWLEDGE_BANK[skill];
+  return bundledMcqBank(skill) ?? [];
 }
 
 /** Copy the bundled 10-question bank into the CMS for a new trade. */
@@ -145,7 +144,7 @@ export async function publishDefaultQuizBank(skill: string): Promise<number> {
   return rows.length;
 }
 
-/** Fill CMS banks for any UAE listed trade that still has zero questions. */
+/** Fill CMS banks for any listed trade that still has zero questions. */
 let missingBanksInflight: Promise<string[]> | null = null;
 let missingBanksDone = false;
 
@@ -157,7 +156,7 @@ export async function publishMissingDefaultBanks(): Promise<string[]> {
       if (error) throw new Error(error.message);
       const have = new Set((data || []).map((row: { skill_code: string }) => row.skill_code));
       const seeded: string[] = [];
-      for (const skill of UAE_LISTED_JOBS) {
+      for (const skill of [...UAE_LISTED_JOBS, ...EUROPE_QUIZ_JOBS]) {
         if (have.has(skill)) continue;
         const added = await publishDefaultQuizBank(skill);
         if (added > 0) seeded.push(skill);

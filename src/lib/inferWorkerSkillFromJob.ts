@@ -1,3 +1,4 @@
+import { inferEuropeQuizJob } from '@/lib/europeQuizJobs';
 import { inferUaeListedJob, listedJobDisplayName, UAE_LISTED_JOB_WORK } from '@/lib/uaeListedJobs';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 
@@ -21,6 +22,9 @@ export function inferWorkerSkillFromJob(
 ): string {
   const listed = inferUaeListedJob(title, description, country);
   if (listed) return listed;
+
+  const europeQuiz = inferEuropeQuizJob(title);
+  if (europeQuiz) return europeQuiz;
 
   for (const skill of jobSkills) {
     const fromSkill = inferUaeListedJob(skill);

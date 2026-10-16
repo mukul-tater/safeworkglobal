@@ -1,8 +1,9 @@
+import { EUROPE_QUIZ_JOBS, inferEuropeQuizJob } from '@/lib/europeQuizJobs';
 import { inferUaeListedJob, UAE_LISTED_JOBS, type UaeListedJob } from '@/lib/uaeListedJobs';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 
-/** Skills that have a Test 1 question bank (UAE listed trades + Driver/Other fallbacks). */
-export const QUIZ_SKILL_CODES = [...UAE_LISTED_JOBS, 'Driver', 'Other'] as const;
+/** Skills that have a Test 1 question bank (UAE trades, Czech papers, Driver/Other fallbacks). */
+export const QUIZ_SKILL_CODES = [...UAE_LISTED_JOBS, ...EUROPE_QUIZ_JOBS, 'Driver', 'Other'] as const;
 export type QuizSkillCode = (typeof QUIZ_SKILL_CODES)[number];
 
 const COARSE_SKILL_TO_QUIZ: Record<(typeof WORKER_SKILLS)[number], QuizSkillCode> = {
@@ -22,15 +23,20 @@ export function isQuizSkillCode(value: string | null | undefined): value is Quiz
 }
 
 /**
- * Pick the Test 1 bank from the applied UAE job when possible.
- * Otherwise map the coarse worker skill (Electrician / Helper / …) onto a bank.
+ * Pick the Test 1 bank from the applied job when possible.
+ * Czech listings with their own paper win first. Otherwise map a UAE trade,
+ * then the coarse worker skill (Electrician / Helper / …).
  */
 export function resolveQuizSkillCode(opts: {
   primarySkill?: string | null;
   jobTitle?: string | null;
   jobDescription?: string | null;
+  country?: string | null;
 }): QuizSkillCode {
-  const listed = inferUaeListedJob(opts.jobTitle || '', opts.jobDescription || '');
+  const europe = inferEuropeQuizJob(opts.jobTitle || opts.primarySkill || '');
+  if (europe) return europe;
+
+  const listed = inferUaeListedJob(opts.jobTitle || '', opts.jobDescription || '', opts.country);
   if (listed) return listed;
 
   const skill = (opts.primarySkill || '').trim();

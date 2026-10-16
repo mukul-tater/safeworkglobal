@@ -300,7 +300,7 @@ function parseQuizOptions(raw: SkillQuizItem['options'] | unknown): QuizOption[]
   return options.length >= 2 ? options : null;
 }
 
-/** Resolve the UAE-trade bank from the applied job, then load Test 1 questions. */
+/** Resolve the Test 1 bank from the applied job, then load the questions. */
 export async function loadQuizItemsForWorker(
   row: Pick<WorkerVerification, 'primary_skill' | 'state' | 'journey_job_id'>,
 ): Promise<SkillQuizItem[]> {

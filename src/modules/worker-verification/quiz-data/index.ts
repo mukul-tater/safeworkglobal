@@ -1,8 +1,8 @@
 import type { SkillQuizItem } from '../types';
-import { BASIC_TRADE_KNOWLEDGE_BANK } from './basic-trade-knowledge';
 import driver from './driver.questions.json';
+import { bundledMcqBank } from './mcqBank';
 import other from './other.questions.json';
-import { isUaeListedQuizSkill, resolveQuizSkillCode } from './quizSkill';
+import { resolveQuizSkillCode } from './quizSkill';
 import { shuffleCopy } from './shuffle';
 
 export interface SkillQuizJsonFile {
@@ -46,10 +46,11 @@ function slugSkill(skill: string): string {
 /** Load Test 1 questions from the bundled bank when the CMS has nothing for the skill. */
 export function loadQuizItemsFromJson(skill: string): SkillQuizItem[] {
   const resolved = resolveQuizSkillCode({ primarySkill: skill });
-  if (isUaeListedQuizSkill(resolved)) {
+  const bank = bundledMcqBank(resolved);
+  if (bank) {
     const prefix = slugSkill(resolved);
     return shuffleCopy(
-      BASIC_TRADE_KNOWLEDGE_BANK[resolved].map((q, index) => ({
+      bank.map((q, index) => ({
         id: `${prefix}-${index + 1}`,
         skill_code: resolved,
         question: q.question,
