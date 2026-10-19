@@ -2,7 +2,7 @@
 export const WORKER_SUPPORT_EMAIL = "mukultater@safeworkglobal.com";
 
 export function getWorkerSupportMailtoUrl(subject = "SafeWork Global – Worker Help"): string {
-  return `mailto:${WORKER_SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
+  return `mailto:${SAFEWORK_CONTACT.email}?subject=${encodeURIComponent(subject)}`;
 }
 
 /** Verified SafeWork Global contact details used on public pages. Do not invent numbers. */
@@ -27,10 +27,12 @@ export const SAFEWORK_CONTACT = {
   mobileTel: "tel:+918320111413",
   whatsappDisplay: "+91 83201 11413",
   whatsappUrl: "https://wa.me/918320111413",
+  /** Digits used for wa.me and tel links, including the country code. */
+  whatsappDigits: "918320111413",
   instagramUrl: "https://www.instagram.com/safeworkofficial",
   facebookUrl: "https://www.facebook.com/safeworkglobal",
   linkedinUrl: "https://www.linkedin.com/company/safeworkglobal",
-} as const;
+};
 
 export const SAFEWORK_SOCIAL_LINKS = [
   { label: "Instagram", href: SAFEWORK_CONTACT.instagramUrl },

@@ -1954,6 +1954,7 @@ export type Database = {
         Row: {
           deployment_checklist: Json
           id: number
+          journey_copy: Json | null
           medical_intro: string
           medical_tests: Json
           terms_sections: Json
@@ -1966,6 +1967,7 @@ export type Database = {
         Insert: {
           deployment_checklist: Json
           id: number
+          journey_copy?: Json | null
           medical_intro: string
           medical_tests: Json
           terms_sections: Json
@@ -1978,6 +1980,7 @@ export type Database = {
         Update: {
           deployment_checklist?: Json
           id?: number
+          journey_copy?: Json | null
           medical_intro?: string
           medical_tests?: Json
           terms_sections?: Json
@@ -6692,6 +6695,7 @@ export type Database = {
           p_medical_tests: Json
           p_terms_sections: Json
           p_terms_summary: string
+          p_journey_copy?: Json
           p_stage_expectations?: Json
           p_terms_version: string
           p_trade_test_skills: string[]

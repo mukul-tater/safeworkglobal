@@ -26,10 +26,10 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import HindiText from '@/components/indian-workforce/HindiText';
+import { useJourneyRules } from '@/lib/journeyRules';
 import { useSiteContent } from '@/lib/siteContent';
 import PassportRequirementInfo from '@/components/worker/PassportRequirementInfo';
 import {
-  ORIGINAL_DOCS_READY_NOTICE,
   PARTNER_TELL_WORKER_DOCS,
   type EnHi,
   type MedicalFitnessDeclaration,
@@ -109,6 +109,7 @@ export default function WorkerPreJourneyScreeningModal({
 }: Props) {
   const screeningCopy = useSiteContent().preJourney;
   const acknowledgementItems = useSiteContent().acknowledgements;
+  const docsNotice = useJourneyRules().copy.documents;
   const [step, setStep] = useState<Step>(0);
   const [medical, setMedical] = useState<MedicalFitnessDeclaration>(INITIAL_MEDICAL);
   const [overseas, setOverseas] = useState<PreviousOverseasEmploymentDeclaration>(INITIAL_OVERSEAS);
@@ -204,10 +205,10 @@ export default function WorkerPreJourneyScreeningModal({
                 <>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-semibold">
-                      {ORIGINAL_DOCS_READY_NOTICE.badgeEn}
+                      {docsNotice.badge.en}
                     </Badge>
                     <span className="text-xs font-medium text-muted-foreground">
-                      {ORIGINAL_DOCS_READY_NOTICE.badgeHi}
+                      {docsNotice.badge.hi}
                     </span>
                   </div>
                   {tellWorker ? (
@@ -219,10 +220,10 @@ export default function WorkerPreJourneyScreeningModal({
                     </p>
                   ) : null}
                   <CardTitle className="mt-2 break-words text-xl font-bold leading-snug tracking-tight text-foreground sm:text-2xl">
-                    {tellWorker ? PARTNER_TELL_WORKER_DOCS.titleEn : ORIGINAL_DOCS_READY_NOTICE.titleEn}
+                    {tellWorker ? PARTNER_TELL_WORKER_DOCS.titleEn : docsNotice.title.en}
                   </CardTitle>
                   <HindiText className="mt-1 text-base font-semibold text-muted-foreground">
-                    {tellWorker ? PARTNER_TELL_WORKER_DOCS.titleHi : ORIGINAL_DOCS_READY_NOTICE.titleHi}
+                    {tellWorker ? PARTNER_TELL_WORKER_DOCS.titleHi : docsNotice.title.hi}
                   </HindiText>
                 </>
               ) : (
@@ -318,20 +319,20 @@ export default function WorkerPreJourneyScreeningModal({
               <Alert className="border-primary/30 bg-primary/5">
                 <Info className="h-4 w-4 text-primary" />
                 <AlertTitle className="text-sm font-semibold text-foreground">
-                  {tellWorker ? PARTNER_TELL_WORKER_DOCS.bodyEn : ORIGINAL_DOCS_READY_NOTICE.bodyEn}
+                  {tellWorker ? PARTNER_TELL_WORKER_DOCS.bodyEn : docsNotice.body.en}
                 </AlertTitle>
                 <AlertDescription className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   <HindiText>
-                    {tellWorker ? PARTNER_TELL_WORKER_DOCS.bodyHi : ORIGINAL_DOCS_READY_NOTICE.bodyHi}
+                    {tellWorker ? PARTNER_TELL_WORKER_DOCS.bodyHi : docsNotice.body.hi}
                   </HindiText>
                 </AlertDescription>
               </Alert>
 
               <ul className="space-y-2">
                 {[
-                  { icon: CreditCard, ...ORIGINAL_DOCS_READY_NOTICE.items[0] },
-                  { icon: Fingerprint, ...ORIGINAL_DOCS_READY_NOTICE.items[1] },
-                  { icon: BookOpen, ...ORIGINAL_DOCS_READY_NOTICE.items[2] },
+                  { icon: CreditCard, ...docsNotice.items[0] },
+                  { icon: Fingerprint, ...docsNotice.items[1] },
+                  { icon: BookOpen, ...docsNotice.items[2] },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (
@@ -1100,10 +1101,10 @@ export default function WorkerPreJourneyScreeningModal({
                 className="h-auto w-full flex-col gap-0.5 bg-primary px-4 py-2.5 text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm sm:w-auto"
               >
                 <span className="text-sm">
-                  {tellWorker ? PARTNER_TELL_WORKER_DOCS.continueEn : ORIGINAL_DOCS_READY_NOTICE.continueEn}
+                  {tellWorker ? PARTNER_TELL_WORKER_DOCS.continueEn : docsNotice.continue.en}
                 </span>
                 <span className="text-xs font-medium opacity-90">
-                  {tellWorker ? PARTNER_TELL_WORKER_DOCS.continueHi : ORIGINAL_DOCS_READY_NOTICE.continueHi}
+                  {tellWorker ? PARTNER_TELL_WORKER_DOCS.continueHi : docsNotice.continue.hi}
                 </span>
               </Button>
             ) : step < 4 ? (

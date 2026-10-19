@@ -1,3 +1,4 @@
+import { getJourneyRules } from '@/lib/journeyRules';
 import { QUIZ_PASS_SCORE } from '../constants';
 
 export type QuizResultBand = {
@@ -28,7 +29,7 @@ export function quizPassScoreForSkill(
 
 /**
  * Screening labels only — never “Certified Electrician” / “Skilled Welder”.
- * Default 10-question paper: 9–10 strong / 6–8 pass / 5 needs review / 0–4 insufficient.
+ * 9–10 strong. Between the pass mark and 90 is a pass. 50 up to the pass mark needs review.
  */
 export function describeQuizResult(
   scorePercent: number,
@@ -38,45 +39,19 @@ export function describeQuizResult(
 ): QuizResultBand {
   const passScore = quizPassScoreForSkill(skill, jobPassScore, cmsPassScore);
   const passed = scorePercent >= passScore;
-  const screeningEn = passed
-    ? 'Basic Trade Knowledge Screening: PASSED'
-    : 'Basic Trade Knowledge Screening: NOT PASSED';
-  const screeningHi = passed
-    ? 'बेसिक ट्रेड नॉलेज स्क्रीनिंग: पास'
-    : 'बेसिक ट्रेड नॉलेज स्क्रीनिंग: पास नहीं';
+  const quiz = getJourneyRules().copy.quiz;
+  const screening = passed ? quiz.screeningPassed : quiz.screeningFailed;
+  const screeningEn = screening.en;
+  const screeningHi = screening.hi;
 
-  if (scorePercent >= 90) {
-    return {
-      passed,
-      bandEn: 'Strong Basic Knowledge',
-      bandHi: 'अच्छा बुनियादी ज्ञान',
-      screeningEn,
-      screeningHi,
-    };
+  if (scorePercent >= quiz.strongMin) {
+    return { passed, bandEn: quiz.strong.en, bandHi: quiz.strong.hi, screeningEn, screeningHi };
   }
   if (scorePercent >= passScore) {
-    return {
-      passed,
-      bandEn: 'Basic Knowledge — Pass',
-      bandHi: 'बुनियादी ज्ञान — पास',
-      screeningEn,
-      screeningHi,
-    };
+    return { passed, bandEn: quiz.pass.en, bandHi: quiz.pass.hi, screeningEn, screeningHi };
   }
-  if (scorePercent >= 50) {
-    return {
-      passed,
-      bandEn: 'Needs Review',
-      bandHi: 'समीक्षा आवश्यक',
-      screeningEn,
-      screeningHi,
-    };
+  if (scorePercent >= quiz.reviewMin) {
+    return { passed, bandEn: quiz.review.en, bandHi: quiz.review.hi, screeningEn, screeningHi };
   }
-  return {
-    passed,
-    bandEn: 'Basic Knowledge Insufficient',
-    bandHi: 'बुनियादी ज्ञान अपर्याप्त',
-    screeningEn,
-    screeningHi,
-  };
+  return { passed, bandEn: quiz.insufficient.en, bandHi: quiz.insufficient.hi, screeningEn, screeningHi };
 }

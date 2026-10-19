@@ -21,6 +21,8 @@ import {
   type MedicalTestCopy,
 } from '@/lib/journeyRules';
 import type { WorkerTermsSection } from '@/modules/worker-verification/constants';
+import JourneyCopyFields from '@/components/admin/JourneyCopyFields';
+import { defaultJourneyCopy, type JourneyCopy } from '@/lib/journeyCopy';
 
 export default function AdminJourneyRules() {
   const catalog = useMemo(() => tradeTestSkillCatalog(), []);
@@ -41,6 +43,7 @@ export default function AdminJourneyRules() {
   const [interviewWait, setInterviewWait] = useState('');
   const [pdotWait, setPdotWait] = useState('');
   const [offerWait, setOfferWait] = useState('');
+  const [journeyCopy, setJourneyCopy] = useState<JourneyCopy>(() => defaultJourneyCopy());
 
   const skillOptions = useMemo(
     () => [...catalog, ...skills.filter((skill) => !catalog.includes(skill))],
@@ -63,6 +66,7 @@ export default function AdminJourneyRules() {
         setInterviewWait(rules.stageExpectations.interview);
         setPdotWait(rules.stageExpectations.pdot);
         setOfferWait(rules.stageExpectations.offer);
+        setJourneyCopy(rules.copy);
         setLoadedVersion(rules.termsVersion);
         setLoadedContent(JSON.stringify({ summary: rules.termsSummary, sections: rules.termsSections }));
         setStored(journeyRulesFromDatabase());
@@ -106,6 +110,15 @@ export default function AdminJourneyRules() {
       if (nextSections.length < 1 || !termsSummary.trim()) {
         throw new Error('Terms need a summary and at least one section');
       }
+      const strongMin = Number(journeyCopy.quiz.strongMin);
+      const reviewMin = Number(journeyCopy.quiz.reviewMin);
+      if (!Number.isInteger(strongMin) || !Number.isInteger(reviewMin) || strongMin <= reviewMin || strongMin > 100 || reviewMin < 1) {
+        throw new Error('Test 1 strong score must be higher than the review score, both from 1 to 100');
+      }
+      const digits = journeyCopy.support.whatsappDigits.replace(/\D/g, '');
+      if (digits.length < 8 || !journeyCopy.support.email.trim().includes('@')) {
+        throw new Error('Enter a support email and a WhatsApp number with the country code');
+      }
       const content = JSON.stringify({ summary: termsSummary.trim(), sections: nextSections });
       let version = termsVersion.trim();
       if (content !== loadedContent && version === loadedVersion) {
@@ -127,8 +140,14 @@ export default function AdminJourneyRules() {
           pdot: pdotWait.trim(),
           offer: offerWait.trim(),
         },
+        journeyCopy: {
+          ...journeyCopy,
+          support: { ...journeyCopy.support, whatsappDigits: digits, email: journeyCopy.support.email.trim() },
+          quiz: { ...journeyCopy.quiz, strongMin, reviewMin },
+        },
       });
       const saved = getJourneyRules();
+      setJourneyCopy(saved.copy);
       setTermsVersion(saved.termsVersion);
       setLoadedVersion(saved.termsVersion);
       setLoadedContent(JSON.stringify({ summary: saved.termsSummary, sections: saved.termsSections }));
@@ -154,6 +173,7 @@ export default function AdminJourneyRules() {
           <p className="text-sm text-muted-foreground">
             These rules apply the next time a worker is checked. Someone already past a step keeps the decision stored on their journey.
             Changing the terms text starts a new version so the next agreement is the updated text.
+            Screening questions and acknowledgements are edited on Site content. Stage timing stays in the card below.
           </p>
         </div>
 
@@ -416,6 +436,8 @@ export default function AdminJourneyRules() {
                 </Button>
               </CardContent>
             </Card>
+
+            <JourneyCopyFields value={journeyCopy} onChange={setJourneyCopy} />
 
             <Button onClick={() => void save()} disabled={saving}>
               {saving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}

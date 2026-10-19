@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 import { UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { defaultJourneyCopy, installJourneyCopy, mapJourneyCopy, type JourneyCopy } from '@/lib/journeyCopy';
 import {
   bindTradeTestSkills,
   DEPLOYMENT_CHECKLIST,
@@ -53,6 +54,7 @@ export const DEFAULT_JOURNEY_RULES = {
   termsSummary: WORKER_TERMS_SUMMARY,
   termsSections: WORKER_TERMS_SECTIONS.map((section) => ({ ...section })) as WorkerTermsSection[],
   stageExpectations: { ...DEFAULT_STAGE_EXPECTATIONS },
+  copy: defaultJourneyCopy(),
 };
 
 export type JourneyRules = typeof DEFAULT_JOURNEY_RULES;
@@ -95,6 +97,7 @@ function cloneRules(rules: JourneyRules): JourneyRules {
     deploymentChecklist: rules.deploymentChecklist.map((item) => ({ ...item })),
     termsSections: rules.termsSections.map((section) => ({ ...section })),
     stageExpectations: { ...rules.stageExpectations },
+    copy: mapJourneyCopy(rules.copy),
   };
 }
 
@@ -114,6 +117,7 @@ function mapStageExpectations(value: unknown): StageExpectations {
 
 function publish(next: JourneyRules, stored: boolean) {
   current = cloneRules(next);
+  installJourneyCopy(current.copy);
   fromDatabase = stored;
   listeners.forEach((listener) => listener());
 }
@@ -165,6 +169,7 @@ function mapRow(row: Record<string, unknown>): JourneyRules {
     termsSummary: String(row.terms_summary || defaults.termsSummary),
     termsSections: sections.length ? sections : defaults.termsSections.map((section) => ({ ...section })),
     stageExpectations: mapStageExpectations(row.stage_expectations),
+    copy: mapJourneyCopy(row.journey_copy),
   };
 }
 
@@ -253,6 +258,7 @@ export type JourneyRulesInput = {
   termsSummary: string;
   termsSections: WorkerTermsSection[];
   stageExpectations: StageExpectations;
+  journeyCopy: JourneyCopy;
 };
 
 export async function saveJourneyRules(input: JourneyRulesInput): Promise<void> {
@@ -266,6 +272,7 @@ export async function saveJourneyRules(input: JourneyRulesInput): Promise<void> 
     p_terms_summary: input.termsSummary,
     p_terms_sections: input.termsSections,
     p_stage_expectations: input.stageExpectations,
+    p_journey_copy: input.journeyCopy,
   });
   if (error) throw new Error(error.message);
   await loadJourneyRules();

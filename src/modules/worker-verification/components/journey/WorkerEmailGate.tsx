@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { useJourneyRules } from '@/lib/journeyRules';
 import { isValidContactEmail } from '@/lib/workerAuthEmail';
 import StageActionShell from '@/modules/worker-verification/components/journey/StageActionShell';
 
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function WorkerEmailGate({ initialEmail = '', saving = false, onSave }: Props) {
+  const emailGateSentence = useJourneyRules().copy.emailGateSentence;
   const [value, setValue] = useState(initialEmail);
   const [busy, setBusy] = useState(false);
   const pending = busy || saving;
@@ -64,7 +66,7 @@ export default function WorkerEmailGate({ initialEmail = '', saving = false, onS
           }}
         />
         <p className="text-xs text-muted-foreground">
-          Do not use a temporary mobile-login address. We send step updates from SafeWork Global.
+          {emailGateSentence}
         </p>
       </div>
     </StageActionShell>

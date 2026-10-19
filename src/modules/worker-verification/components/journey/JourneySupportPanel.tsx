@@ -1,5 +1,6 @@
 import { HelpCircle, ShieldCheck, ListChecks } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { useJourneyRules } from '@/lib/journeyRules';
 import {
   GCC_JOURNEY_NAV_STEPS,
   navStepForStage,
@@ -12,8 +13,10 @@ import {
  * Keeps the worker oriented without crowding the task itself.
  */
 export default function JourneySupportPanel({ stage }: { stage: VerificationStage }) {
+  const support = useJourneyRules().copy.support;
   const currentIdx = navStepIndex(navStepForStage(stage));
   const upcoming = GCC_JOURNEY_NAV_STEPS.slice(currentIdx + 1, currentIdx + 4);
+  const whatsappUrl = `https://wa.me/${support.whatsappDigits}`;
 
   return (
     <>
@@ -22,7 +25,7 @@ export default function JourneySupportPanel({ stage }: { stage: VerificationStag
           <CardContent className="p-4">
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <ListChecks className="h-3.5 w-3.5" />
-              Coming up
+              {support.comingUp}
             </p>
             <ol className="mt-3 space-y-2.5">
               {upcoming.map((step, i) => (
@@ -44,12 +47,12 @@ export default function JourneySupportPanel({ stage }: { stage: VerificationStag
         <CardContent className="p-4">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <ShieldCheck className="h-4 w-4 text-success" />
-            Your data is safe
+            {support.dataSafeTitle}
           </p>
           <ul className="mt-2.5 space-y-1.5 text-xs text-muted-foreground">
-            <li>Documents are stored encrypted</li>
-            <li>Used only for your emigration paperwork</li>
-            <li>Never shared without your consent</li>
+            {support.dataSafeBullets.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
           </ul>
         </CardContent>
       </Card>
@@ -58,12 +61,19 @@ export default function JourneySupportPanel({ stage }: { stage: VerificationStag
         <CardContent className="p-4">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <HelpCircle className="h-4 w-4 text-primary" />
-            Need help?
+            {support.helpTitle}
           </p>
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            Stuck on this step? Your nearest E-Mitra partner can complete it with you, or contact
-            SafeWork support from the Profile menu.
-          </p>
+          <p className="mt-1.5 text-xs text-muted-foreground">{support.helpBody}</p>
+          <div className="mt-3 space-y-1 text-xs">
+            <a className="block text-primary hover:underline" href={`mailto:${support.email}`}>
+              {support.email}
+            </a>
+            <a className="block text-primary hover:underline" href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+              WhatsApp {support.whatsappDisplay}
+            </a>
+            <p className="text-muted-foreground">{support.officeAddress}</p>
+            <p className="text-muted-foreground">{support.workingAddress}</p>
+          </div>
         </CardContent>
       </Card>
     </>
