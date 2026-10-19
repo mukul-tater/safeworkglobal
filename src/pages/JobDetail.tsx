@@ -751,11 +751,12 @@ export default function JobDetail() {
                 </Card>
               ) : null}
 
-              <JobRoleVideo>
+              <JobRoleVideo
                 title={job.title}
                 description={job.description}
                 country={job.country}
                 youtubeUrls={job.youtube_urls}
+                useSavedCopy={Boolean(job.use_saved_copy)}
               />
 
               {(requirementLines.length > 0 || extraFields.length > 0) && (

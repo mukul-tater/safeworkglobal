@@ -1,4 +1,4 @@
-import { jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
+import { benefitCatalogItem, getBenefitCatalog, jobBenefitInfo, listPublicJobBenefits } from '@/lib/jobBenefits';
 import { annotateEuropePayDescription, formatJobSalaryAedAndInr } from '@/lib/jobSalaryUtils';
 
 /** Categories we currently list under UAE on Find jobs / Choose a job. */
@@ -81,7 +81,7 @@ export const UAE_LISTED_JOB_WORK: Record<UaeListedJob, string> = {
   Delivery: 'bike delivery',
 };
 
-const MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
+export const UAE_LISTED_JOB_MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
   { job: 'Delivery', needles: ['bike rider', 'delivery rider', 'bike delivery', 'delivery boy'] },
   { job: 'Aluminium Fixer/Fabricator', needles: ['aluminium fixer', 'aluminum fixer', 'aluminium fabricator', 'aluminum fabricator', 'glazing fabricator'] },
   { job: 'Shuttering Carpenter', needles: ['shuttering carpenter', 'shuttering', 'formwork carpenter', 's. carpenter'] },
@@ -121,13 +121,13 @@ export function inferUaeListedJob(title: string, description = '', country?: str
   const exact = UAE_LISTED_JOBS.find((job) => job.toLowerCase() === titleLower);
   if (exact) return exact;
 
-  const titleMatch = MATCHERS.find(({ needles }) =>
+  const titleMatch = UAE_LISTED_JOB_MATCHERS.find(({ needles }) =>
     needles.some((needle) => titleLower.includes(needle)),
   );
   if (titleMatch) return titleMatch.job;
 
   const haystack = `${title} ${description}`.toLowerCase();
-  const match = MATCHERS.find(({ needles }) => needles.some((needle) => haystack.includes(needle)));
+  const match = UAE_LISTED_JOB_MATCHERS.find(({ needles }) => needles.some((needle) => haystack.includes(needle)));
   return match?.job ?? null;
 }
 
@@ -353,54 +353,27 @@ export type DisplayedJobBenefit = {
   infoHi?: string;
 };
 
-/** Bike delivery perks. English on the first line, Hindi under it. */
-const BIKE_DELIVERY_BENEFITS: DisplayedJobBenefit[] = [
-  { en: 'Flight tickets', hi: 'फ्लाइट टिकट' },
-  {
-    en: 'Accommodation (till the license is issued)',
-    hi: 'आवास (लाइसेंस जारी होने तक)',
-  },
-  {
-    en: 'Food (usually included in salary) - Minimum 200 and kitchen facilities (2 Wheeler license milne tak)',
-    hi: 'खाना (आमतौर पर सैलरी में शामिल) — न्यूनतम 200 और किचन की सुविधा (2 व्हीलर लाइसेंस मिलने तक)',
-  },
-  { en: 'Local transport', hi: 'लोकल ट्रांसपोर्ट' },
-  { en: 'MOL', hi: 'एमओएल (श्रम मंत्रालय)' },
-  { en: 'Work visa and Emirates ID', hi: 'वर्क वीज़ा और एमिरेट्स आईडी' },
-  { en: 'Legal contract and job security', hi: 'कानूनी अनुबंध और नौकरी की सुरक्षा' },
-  { en: 'Airport pickup', hi: 'एयरपोर्ट पिकअप' },
-  {
-    en: '8-10 hours of duty + overtime (extra pay)',
-    hi: '8-10 घंटे की ड्यूटी + ओवरटाइम (अतिरिक्त पगार)',
-  },
-  { en: 'Medical facility + Insurance in Dubai', hi: 'दुबई में मेडिकल सुविधा और बीमा' },
-  {
-    en: 'PBBY Insurance in India',
-    hi: 'भारत में PBBY बीमा',
-    info: 'Pravasi Bharatiya Bima Yojana (PBBY) cover in India.',
-    infoHi: 'प्रवासी भारतीय बीमा योजना (PBBY) का भारत में कवर।',
-  },
-  {
-    en: 'Uniform provided by company',
-    hi: 'कंपनी द्वारा यूनिफॉर्म',
-    info: 'Company-issued work uniform.',
-    infoHi: 'कंपनी की ओर से दी गई वर्क यूनिफॉर्म।',
-  },
-  {
-    en: '2-year contract',
-    hi: '2 साल का कॉन्ट्रैक्ट',
-    info: 'Standard employment period of 2 years.',
-    infoHi: 'नौकरी की सामान्य अवधि 2 साल।',
-  },
-];
+function deliveryBenefits(): DisplayedJobBenefit[] {
+  return getBenefitCatalog().delivery.map((item) => ({
+    en: item.en,
+    hi: item.hi,
+    info: item.info,
+    infoHi: item.infoHi,
+  }));
+}
 
 function benefitsFromLines(english: string[], hindi?: string | null): DisplayedJobBenefit[] {
-  const hindiLines = (hindi || '').split(/\n+/).map((line) => line.trim()).filter(Boolean);
-  return english.map((en, index) => ({
-    en,
-    hi: hindiLines[index] || undefined,
-    info: jobBenefitInfo(en),
-  }));
+  const hindiText = hindi?.trim() || '';
+  const hindiLines = hindiText.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  return english.map((en, index) => {
+    const item = benefitCatalogItem(en);
+    return {
+      en,
+      hi: hindiLines[index] || (hindiText ? undefined : item?.hi),
+      info: item?.info || jobBenefitInfo(en),
+      infoHi: item?.infoHi,
+    };
+  });
 }
 
 export function listDisplayedJobBenefits(
@@ -413,12 +386,15 @@ export function listDisplayedJobBenefits(
   if (options?.useSavedCopy) return benefitsFromLines(listPublicJobBenefits(raw), options.benefitsHi);
   if (options?.benefitsHi?.trim()) {
     const english = inferUaeListedJob(title, description, country) === 'Delivery'
-      ? BIKE_DELIVERY_BENEFITS.map((benefit) => benefit.en)
+      ? deliveryBenefits().map((benefit) => benefit.en)
       : listPublicJobBenefits(raw);
     return benefitsFromLines(english, options.benefitsHi);
   }
-  if (inferUaeListedJob(title, description, country) === 'Delivery') return BIKE_DELIVERY_BENEFITS;
-  return listPublicJobBenefits(raw).map((en) => ({ en, info: jobBenefitInfo(en) }));
+  if (inferUaeListedJob(title, description, country) === 'Delivery') return deliveryBenefits();
+  return listPublicJobBenefits(raw).map((en) => {
+    const item = benefitCatalogItem(en);
+    return { en, hi: item?.hi, info: item?.info || jobBenefitInfo(en), infoHi: item?.infoHi };
+  });
 }
 
 /** Newline benefits text used by compare and stored listings. */
@@ -431,7 +407,7 @@ export function publicJobBenefitsText(
 ): string | null {
   if (options?.useSavedCopy) return stored ?? null;
   if (inferUaeListedJob(title, description, country) === 'Delivery') {
-    return BIKE_DELIVERY_BENEFITS.map((benefit) => benefit.en).join('\n');
+    return deliveryBenefits().map((benefit) => benefit.en).join('\n');
   }
   return stored ?? null;
 }

@@ -334,6 +334,7 @@ export default function EditJob() {
 
                 <div data-field="benefits">
                   <JobBenefitsField
+                    title={watch("title")}
                     value={watch("benefits") || ""}
                     onChange={(v) => setValue("benefits", v, { shouldValidate: true })}
                     error={errors.benefits?.message}

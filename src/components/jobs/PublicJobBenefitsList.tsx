@@ -1,6 +1,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import HindiText from '@/components/indian-workforce/HindiText';
 import { listDisplayedJobBenefits } from '@/lib/uaeListedJobs';
+import { useSiteContent } from '@/lib/siteContent';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -26,6 +27,7 @@ export default function PublicJobBenefitsList({
   itemClassName,
   showIcon = false,
 }: Props) {
+  useSiteContent();
   const lines = listDisplayedJobBenefits(title, description, country, benefits, {
     useSavedCopy,
     benefitsHi,

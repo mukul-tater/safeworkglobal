@@ -25,8 +25,100 @@ export const JOB_BENEFIT_INFO: Partial<Record<StandardJobBenefit, string>> = {
   'Uniform provided by company': 'Company-issued work uniform.',
 };
 
+export type BenefitCatalogItem = {
+  en: string;
+  hi?: string;
+  info?: string;
+  infoHi?: string;
+};
+
+export type BenefitCatalog = {
+  standard: BenefitCatalogItem[];
+  delivery: BenefitCatalogItem[];
+};
+
+/** Bike-delivery lines. Hindi sits under the English line on the job page. */
+export const DELIVERY_JOB_BENEFITS: BenefitCatalogItem[] = [
+  { en: 'Flight tickets', hi: 'फ्लाइट टिकट' },
+  {
+    en: 'Accommodation (till the license is issued)',
+    hi: 'आवास (लाइसेंस जारी होने तक)',
+  },
+  {
+    en: 'Food (usually included in salary) - Minimum 200 and kitchen facilities (2 Wheeler license milne tak)',
+    hi: 'खाना (आमतौर पर सैलरी में शामिल) — न्यूनतम 200 और किचन की सुविधा (2 व्हीलर लाइसेंस मिलने तक)',
+  },
+  { en: 'Local transport', hi: 'लोकल ट्रांसपोर्ट' },
+  { en: 'MOL', hi: 'एमओएल (श्रम मंत्रालय)' },
+  { en: 'Work visa and Emirates ID', hi: 'वर्क वीज़ा और एमिरेट्स आईडी' },
+  { en: 'Legal contract and job security', hi: 'कानूनी अनुबंध और नौकरी की सुरक्षा' },
+  { en: 'Airport pickup', hi: 'एयरपोर्ट पिकअप' },
+  {
+    en: '8-10 hours of duty + overtime (extra pay)',
+    hi: '8-10 घंटे की ड्यूटी + ओवरटाइम (अतिरिक्त पगार)',
+  },
+  { en: 'Medical facility + Insurance in Dubai', hi: 'दुबई में मेडिकल सुविधा और बीमा' },
+  {
+    en: 'PBBY Insurance in India',
+    hi: 'भारत में PBBY बीमा',
+    info: 'Pravasi Bharatiya Bima Yojana (PBBY) cover in India.',
+    infoHi: 'प्रवासी भारतीय बीमा योजना (PBBY) का भारत में कवर।',
+  },
+  {
+    en: 'Uniform provided by company',
+    hi: 'कंपनी द्वारा यूनिफॉर्म',
+    info: 'Company-issued work uniform.',
+    infoHi: 'कंपनी की ओर से दी गई वर्क यूनिफॉर्म।',
+  },
+  {
+    en: '2-year contract',
+    hi: '2 साल का कॉन्ट्रैक्ट',
+    info: 'Standard employment period of 2 years.',
+    infoHi: 'नौकरी की सामान्य अवधि 2 साल।',
+  },
+];
+
+/** Built-in lists used until the admin catalog loads, and when an admin resets to built-in. */
+export function builtinBenefitCatalog(): BenefitCatalog {
+  return {
+    standard: STANDARD_JOB_BENEFITS.map((en) => ({
+      en,
+      info: JOB_BENEFIT_INFO[en],
+    })),
+    delivery: DELIVERY_JOB_BENEFITS.map((item) => ({ ...item })),
+  };
+}
+
+let liveBenefitCatalog: BenefitCatalog | null = null;
+
+/** Called when site content loads so job forms and public pages share the admin list. */
+export function installBenefitCatalog(catalog: BenefitCatalog | null) {
+  liveBenefitCatalog = catalog;
+}
+
+export function getBenefitCatalog(): BenefitCatalog {
+  return liveBenefitCatalog ?? builtinBenefitCatalog();
+}
+
+export function catalogBenefitLines(items: BenefitCatalogItem[]): string {
+  return items.map((item) => item.en.trim()).filter(Boolean).join('\n');
+}
+
+/** Delivery jobs use the bike-delivery benefit list. */
+export function benefitsCatalogForTitle(title?: string | null): 'standard' | 'delivery' {
+  const value = (title || '').trim().toLowerCase();
+  return /\b(delivery|bike rider|bike delivery)\b/.test(value) ? 'delivery' : 'standard';
+}
+
+export function benefitCatalogItem(benefit: string): BenefitCatalogItem | undefined {
+  const key = benefit.trim().toLowerCase();
+  if (!key) return undefined;
+  const catalog = getBenefitCatalog();
+  return [...catalog.standard, ...catalog.delivery].find((item) => item.en.trim().toLowerCase() === key);
+}
+
 export interface ParsedJobBenefits {
-  selected: StandardJobBenefit[];
+  selected: string[];
   additional: string;
 }
 
@@ -63,21 +155,28 @@ function resolveStandardBenefit(value: string): StandardJobBenefit | undefined {
 }
 
 export function jobBenefitInfo(benefit: string): string | undefined {
-  return JOB_BENEFIT_INFO[benefit as StandardJobBenefit];
+  return benefitCatalogItem(benefit)?.info ?? JOB_BENEFIT_INFO[benefit as StandardJobBenefit];
 }
 
-export function parseJobBenefits(raw: string | null | undefined): ParsedJobBenefits {
+export function parseJobBenefits(raw: string | null | undefined, knownLines?: readonly string[]): ParsedJobBenefits {
   if (!raw?.trim()) {
     return { selected: [], additional: '' };
   }
 
-  const selected: StandardJobBenefit[] = [];
+  const known = (knownLines ?? getBenefitCatalog().standard.map((item) => item.en))
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const lookup = new Map(known.map((line) => [line.toLowerCase(), line]));
+  const selected: string[] = [];
   const extras: string[] = [];
 
   for (const part of raw.split(/\n+/)) {
     const trimmed = part.trim();
     if (!trimmed || isDroppedBenefit(trimmed)) continue;
-    const match = resolveStandardBenefit(trimmed);
+    const canonical = resolveStandardBenefit(trimmed);
+    const match =
+      lookup.get(trimmed.toLowerCase()) ??
+      (canonical && lookup.has(canonical.toLowerCase()) ? lookup.get(canonical.toLowerCase()) : undefined);
     if (match) {
       if (!selected.includes(match)) selected.push(match);
     } else {
@@ -105,7 +204,7 @@ export function serializeJobBenefits(parsed: ParsedJobBenefits): string {
 export function listPublicJobBenefits(raw?: string | null): string[] {
   const fromJob = listJobBenefits(raw);
   if (fromJob.length > 0) return fromJob;
-  return [...STANDARD_JOB_BENEFITS];
+  return getBenefitCatalog().standard.map((item) => item.en);
 }
 
 export const PUBLIC_JOB_BENEFITS_TEXT = STANDARD_JOB_BENEFITS.join('\n');
@@ -137,20 +236,25 @@ function extraBenefitLine(additional: string, pattern: RegExp): string | null {
 /** Short compare-sheet labels taken only from benefits the job actually lists. */
 export function jobCompareBenefitRows(raw: string | null | undefined): JobCompareBenefitRows {
   const { selected, additional } = parseJobBenefits(raw);
-  const has = (benefit: StandardJobBenefit) => selected.includes(benefit);
+  const has = (benefit: string) => selected.some((line) => line.toLowerCase() === benefit.toLowerCase());
+  const listed = (pattern: RegExp) => selected.some((line) => pattern.test(line));
 
   const hourParts = [
-    has(HOURS_BENEFIT) ? '8–10 + OT' : null,
-    has(WEEK_BENEFIT) ? '6-day week' : null,
+    has(HOURS_BENEFIT) || listed(/8-10 hours|overtime/i) ? '8–10 + OT' : null,
+    has(WEEK_BENEFIT) || listed(/6-day work week/i) ? '6-day week' : null,
   ].filter((part): part is string => Boolean(part));
 
   return {
-    stay: has('Accommodation') ? 'Accommodation' : extraBenefitLine(additional, /accommodat|housing/i) ?? COMPARE_EMPTY,
-    food: has(FOOD_BENEFIT) ? 'Included' : extraBenefitLine(additional, /\bfood\b|meal/i) ?? COMPARE_EMPTY,
+    stay: has('Accommodation') || listed(/accommodat/i)
+      ? 'Accommodation'
+      : extraBenefitLine(additional, /accommodat|housing/i) ?? COMPARE_EMPTY,
+    food: has(FOOD_BENEFIT) || listed(/\bfood\b/i)
+      ? 'Included'
+      : extraBenefitLine(additional, /\bfood\b|meal/i) ?? COMPARE_EMPTY,
     hours: hourParts.join(' · ') || extraBenefitLine(additional, /hour|overtime|shift/i) || COMPARE_EMPTY,
-    contract: has(CONTRACT_BENEFIT)
+    contract: has(CONTRACT_BENEFIT) || listed(/2-year contract/i)
       ? '2 years'
-      : has(LEGAL_CONTRACT_BENEFIT)
+      : has(LEGAL_CONTRACT_BENEFIT) || listed(/legal contract/i)
         ? 'Legal contract'
         : extraBenefitLine(additional, /contract/i) ?? COMPARE_EMPTY,
   };

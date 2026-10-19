@@ -7,6 +7,8 @@ interface JobRoleVideoProps {
   description?: string;
   country?: string | null;
   youtubeUrls?: readonly string[] | null;
+  /** Saved job copy does not pull in the trade-template clips. */
+  useSavedCopy?: boolean;
 }
 
 function embedSrc(youtubeId: string, startSeconds?: number) {
@@ -16,9 +18,15 @@ function embedSrc(youtubeId: string, startSeconds?: number) {
   return `https://www.youtube-nocookie.com/embed/${youtubeId}${query ? `?${query}` : ''}`;
 }
 
-export default function JobRoleVideo({ title, description = '', country, youtubeUrls }: JobRoleVideoProps) {
+export default function JobRoleVideo({
+  title,
+  description = '',
+  country,
+  youtubeUrls,
+  useSavedCopy = false,
+}: JobRoleVideoProps) {
   const saved = (youtubeUrls ?? []).filter((url) => url.trim());
-  const videos = saved.length
+  const videos = useSavedCopy || saved.length
     ? mergeJobVideos(saved, [])
     : mergeJobVideos(null, getPublicJobVideos(title, description, country));
   if (videos.length === 0) return null;

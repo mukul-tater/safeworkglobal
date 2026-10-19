@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { POPULAR_JOB_TITLES } from '@/lib/constants';
 import type { JobTemplate } from '@/lib/jobTemplates';
+import { builtinBenefitCatalog, installBenefitCatalog, type BenefitCatalog } from '@/lib/jobBenefits';
 import { UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import {
   INDEMNITY_BOND_CLAUSES,
@@ -78,6 +79,7 @@ export type SiteContent = {
   preJourney: PreJourneyCopy;
   acknowledgements: AcknowledgementItem[];
   indemnity: IndemnityContent;
+  benefitCatalog: BenefitCatalog;
   fromDatabase: boolean;
 };
 
@@ -215,6 +217,7 @@ export function defaultSiteContent(): SiteContent {
     preJourney: structuredClone(PRE_JOURNEY_COPY) as PreJourneyCopy,
     acknowledgements: CANDIDATE_ACKNOWLEDGEMENT_ITEMS.map((item) => ({ ...item })),
     indemnity: defaultIndemnity(),
+    benefitCatalog: builtinBenefitCatalog(),
     fromDatabase: false,
   };
 }
@@ -394,6 +397,37 @@ function mapTradeImages(value: unknown): Record<string, string> {
   return images;
 }
 
+function mapBenefitItem(value: unknown): BenefitCatalog['standard'][number] | null {
+  if (!value || typeof value !== 'object') return null;
+  const row = value as Record<string, unknown>;
+  const en = String(row.en || '').trim();
+  if (!en) return null;
+  const hi = String(row.hi || '').trim();
+  const info = String(row.info || '').trim();
+  const infoHi = String(row.infoHi || row.info_hi || '').trim();
+  return {
+    en,
+    ...(hi ? { hi } : {}),
+    ...(info ? { info } : {}),
+    ...(infoHi ? { infoHi } : {}),
+  };
+}
+
+function mapBenefitList(value: unknown, fallback: BenefitCatalog['standard']): BenefitCatalog['standard'] {
+  if (!Array.isArray(value)) return fallback.map((item) => ({ ...item }));
+  return value.map(mapBenefitItem).filter((item): item is BenefitCatalog['standard'][number] => item != null);
+}
+
+function mapBenefitCatalog(value: unknown): BenefitCatalog {
+  const builtin = builtinBenefitCatalog();
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return builtin;
+  const row = value as Record<string, unknown>;
+  return {
+    standard: mapBenefitList(row.standard, builtin.standard),
+    delivery: mapBenefitList(row.delivery, builtin.delivery),
+  };
+}
+
 function mapRow(row: Record<string, unknown> | null): SiteContent {
   const defaults = defaultSiteContent();
   if (!row) return defaults;
@@ -408,6 +442,7 @@ function mapRow(row: Record<string, unknown> | null): SiteContent {
     preJourney: mergeCopy(defaults.preJourney, row.pre_journey),
     acknowledgements: mapAcknowledgements(row.acknowledgements),
     indemnity: mapIndemnity(row.indemnity_bond),
+    benefitCatalog: mapBenefitCatalog(row.benefit_catalog),
     fromDatabase: true,
   };
 }
@@ -418,6 +453,7 @@ const listeners = new Set<() => void>();
 
 function publish(next: SiteContent) {
   current = next;
+  installBenefitCatalog(next.benefitCatalog);
   listeners.forEach((listener) => listener());
 }
 
@@ -464,7 +500,8 @@ export type SiteSection =
   | 'job_templates'
   | 'pre_journey'
   | 'acknowledgements'
-  | 'indemnity_bond';
+  | 'indemnity_bond'
+  | 'benefit_catalog';
 
 export async function saveSiteSection(section: SiteSection, value: unknown): Promise<void> {
   const { error } = await supabase.rpc('admin_save_site_content', {

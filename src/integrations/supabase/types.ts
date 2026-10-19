@@ -4215,6 +4215,7 @@ export type Database = {
       site_content: {
         Row: {
           acknowledgements: Json | null
+          benefit_catalog: Json | null
           country_cards: Json | null
           id: number
           indemnity_bond: Json | null
@@ -4226,6 +4227,7 @@ export type Database = {
         }
         Insert: {
           acknowledgements?: Json | null
+          benefit_catalog?: Json | null
           country_cards?: Json | null
           id?: number
           indemnity_bond?: Json | null
@@ -4237,6 +4239,7 @@ export type Database = {
         }
         Update: {
           acknowledgements?: Json | null
+          benefit_catalog?: Json | null
           country_cards?: Json | null
           id?: number
           indemnity_bond?: Json | null

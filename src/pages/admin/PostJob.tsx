@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { adminNavGroups, adminProfileMenu } from "@/config/adminNav";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,13 @@ import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES } from "@/lib/constants";
 import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
 import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
-import { PUBLIC_JOB_BENEFITS_TEXT } from "@/lib/jobBenefits";
+import {
+  benefitsCatalogForTitle,
+  catalogBenefitLines,
+  getBenefitCatalog,
+  PUBLIC_JOB_BENEFITS_TEXT,
+} from "@/lib/jobBenefits";
+import { useSiteContent } from "@/lib/siteContent";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
 import JobExtraFieldsEditor from "@/components/admin/JobExtraFieldsEditor";
@@ -88,7 +94,12 @@ export default function AdminPostJob() {
   const remoteAllowed = watch("remote_allowed");
   const employerId = watch("employer_id");
   const serviceCharge = watch("service_charge");
+  const title = watch("title");
+  const benefits = watch("benefits");
   const paymentSettings = usePlatformPaymentSettings();
+  useSiteContent();
+  const appliedBenefits = useRef<string | null>(null);
+  const benefitPreset = catalogBenefitLines(getBenefitCatalog()[benefitsCatalogForTitle(title)]);
 
   useEffect(() => {
     if (
@@ -98,6 +109,15 @@ export default function AdminPostJob() {
       setValue("service_charge", paymentSettings.defaultServiceChargeInr);
     }
   }, [paymentSettings.defaultServiceChargeInr, serviceCharge, setValue]);
+
+  useEffect(() => {
+    const current = benefits ?? "";
+    const canReplace = appliedBenefits.current == null || current === appliedBenefits.current;
+    if (canReplace && current !== benefitPreset) {
+      setValue("benefits", benefitPreset, { shouldValidate: true });
+    }
+    appliedBenefits.current = benefitPreset;
+  }, [benefitPreset, benefits, setValue]);
 
   useEffect(() => {
     const loadEmployers = async () => {
@@ -332,6 +352,7 @@ export default function AdminPostJob() {
 
               <div data-field="benefits">
                 <JobBenefitsField
+                  title={title}
                   value={watch("benefits") || ""}
                   onChange={(v) => setValue("benefits", v, { shouldValidate: true })}
                   error={errors.benefits?.message}

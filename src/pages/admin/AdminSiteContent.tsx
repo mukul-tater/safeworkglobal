@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import type { BenefitCatalogItem } from '@/lib/jobBenefits';
 import { UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import '@/lib/jobTemplates';
 import {
@@ -32,6 +33,71 @@ function linesText(lines: string[]) {
 
 function readLines(text: string) {
   return text.replace(/\r/g, '').split('\n').map((line) => line.trim()).filter(Boolean);
+}
+
+function cleanBenefitItems(items: BenefitCatalogItem[]): BenefitCatalogItem[] {
+  return items
+    .map((item) => ({
+      en: item.en.trim(),
+      hi: item.hi?.trim() || undefined,
+      info: item.info?.trim() || undefined,
+      infoHi: item.infoHi?.trim() || undefined,
+    }))
+    .filter((item) => item.en);
+}
+
+function BenefitListEditor({
+  title,
+  hint,
+  items,
+  onChange,
+}: {
+  title: string;
+  hint: string;
+  items: BenefitCatalogItem[];
+  onChange: (items: BenefitCatalogItem[]) => void;
+}) {
+  const update = (index: number, patch: Partial<BenefitCatalogItem>) => {
+    onChange(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">{hint}</p>
+        {items.map((item, index) => (
+          <div key={`${title}-${index}`} className="space-y-2 rounded-lg border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <Label>Benefit {index + 1}</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Remove benefit ${index + 1}`}
+                onClick={() => onChange(items.filter((_, i) => i !== index))}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <Input value={item.en} placeholder="English" onChange={(event) => update(index, { en: event.target.value })} />
+            <Input value={item.hi || ''} placeholder="Hindi" onChange={(event) => update(index, { hi: event.target.value })} />
+            <Input value={item.info || ''} placeholder="Short note" onChange={(event) => update(index, { info: event.target.value })} />
+            <Input
+              value={item.infoHi || ''}
+              placeholder="Hindi note"
+              onChange={(event) => update(index, { infoHi: event.target.value })}
+            />
+          </div>
+        ))}
+        <Button type="button" variant="outline" onClick={() => onChange([...items, { en: '' }])}>
+          <Plus className="mr-2 h-4 w-4" /> Add benefit
+        </Button>
+      </CardContent>
+    </Card>
+  );
 }
 
 function placesText(places: CountryCardConfig['places']) {
@@ -119,7 +185,7 @@ export default function AdminSiteContent() {
         <div>
           <h1 className="text-2xl font-bold mb-2">Site content</h1>
           <p className="text-sm text-muted-foreground">
-            Country cards, trade photos, job titles, screening text, and the indemnity bond. A blank field keeps the built-in sentence. Saving here updates what workers see next.
+            Country cards, trade photos, job titles, the benefits lists, screening text, and the indemnity bond. A blank field keeps the built-in sentence. Saving here updates what workers see next.
           </p>
         </div>
         {loading ? (
@@ -131,6 +197,7 @@ export default function AdminSiteContent() {
               <TabsTrigger value="trades">Trade photos</TabsTrigger>
               <TabsTrigger value="titles">Titles</TabsTrigger>
               <TabsTrigger value="templates">Quick post</TabsTrigger>
+              <TabsTrigger value="benefits">Benefits</TabsTrigger>
               <TabsTrigger value="screening">Screening</TabsTrigger>
               <TabsTrigger value="acks">Declarations</TabsTrigger>
               <TabsTrigger value="bond">Indemnity bond</TabsTrigger>
@@ -744,6 +811,51 @@ export default function AdminSiteContent() {
                 </Button>
                 <Button type="button" variant="outline" onClick={() => void persist('indemnity_bond', null, 'Indemnity bond')}>
                   Use built-in bond
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="benefits" className="space-y-4">
+              <BenefitListEditor
+                title="Standard benefits"
+                hint="Checkboxes on a new job, and the list workers see when a job has no benefits of its own."
+                items={content.benefitCatalog.standard}
+                onChange={(standard) =>
+                  setContent((current) => ({
+                    ...current,
+                    benefitCatalog: { ...current.benefitCatalog, standard },
+                  }))
+                }
+              />
+              <BenefitListEditor
+                title="Bike delivery benefits"
+                hint="Used for bike delivery jobs. Hindi is shown under each English line."
+                items={content.benefitCatalog.delivery}
+                onChange={(delivery) =>
+                  setContent((current) => ({
+                    ...current,
+                    benefitCatalog: { ...current.benefitCatalog, delivery },
+                  }))
+                }
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  onClick={() =>
+                    void persist(
+                      'benefit_catalog',
+                      {
+                        standard: cleanBenefitItems(content.benefitCatalog.standard),
+                        delivery: cleanBenefitItems(content.benefitCatalog.delivery),
+                      },
+                      'Benefits',
+                    )
+                  }
+                >
+                  {saving === 'benefit_catalog' ? 'Saving…' : 'Save benefits'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => void persist('benefit_catalog', null, 'Benefits')}>
+                  Use built-in lists
                 </Button>
               </div>
             </TabsContent>
