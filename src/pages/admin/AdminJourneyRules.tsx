@@ -37,6 +37,10 @@ export default function AdminJourneyRules() {
   const [termsVersion, setTermsVersion] = useState('');
   const [termsSummary, setTermsSummary] = useState('');
   const [sections, setSections] = useState<WorkerTermsSection[]>([]);
+  const [identityWait, setIdentityWait] = useState('');
+  const [interviewWait, setInterviewWait] = useState('');
+  const [pdotWait, setPdotWait] = useState('');
+  const [offerWait, setOfferWait] = useState('');
 
   const skillOptions = useMemo(
     () => [...catalog, ...skills.filter((skill) => !catalog.includes(skill))],
@@ -55,6 +59,10 @@ export default function AdminJourneyRules() {
         setTermsVersion(rules.termsVersion);
         setTermsSummary(rules.termsSummary);
         setSections(rules.termsSections);
+        setIdentityWait(rules.stageExpectations.identity);
+        setInterviewWait(rules.stageExpectations.interview);
+        setPdotWait(rules.stageExpectations.pdot);
+        setOfferWait(rules.stageExpectations.offer);
         setLoadedVersion(rules.termsVersion);
         setLoadedContent(JSON.stringify({ summary: rules.termsSummary, sections: rules.termsSections }));
         setStored(journeyRulesFromDatabase());
@@ -113,6 +121,12 @@ export default function AdminJourneyRules() {
         termsVersion: version,
         termsSummary: termsSummary.trim(),
         termsSections: nextSections,
+        stageExpectations: {
+          identity: identityWait.trim(),
+          interview: interviewWait.trim(),
+          pdot: pdotWait.trim(),
+          offer: offerWait.trim(),
+        },
       });
       const saved = getJourneyRules();
       setTermsVersion(saved.termsVersion);
@@ -152,6 +166,30 @@ export default function AdminJourneyRules() {
                 Showing the built-in rules. Saving needs the journey rules migration applied on the database.
               </p>
             )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Stage timing</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Identity review</Label>
+                  <Input value={identityWait} onChange={(e) => setIdentityWait(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Interview scheduling</Label>
+                  <Input value={interviewWait} onChange={(e) => setInterviewWait(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>PDOT batch</Label>
+                  <Input value={pdotWait} onChange={(e) => setPdotWait(e.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Offer letter</Label>
+                  <Input value={offerWait} onChange={(e) => setOfferWait(e.target.value)} />
+                </div>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>

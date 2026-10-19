@@ -65,12 +65,12 @@ export default function WorkerDiscover() {
         // Show featured jobs (top destinations matter more than personalization here)
         const { data } = await supabase
           .from('jobs')
-          .select('id, title, slug, location, country, salary_min, salary_max, currency, experience_level, visa_sponsorship, service_charge')
+          .select('id, title, slug, location, country, salary_min, salary_max, currency, experience_level, visa_sponsorship, service_charge, hidden_from_public')
           .eq('status', 'ACTIVE')
           .order('posted_at', { ascending: false })
           .limit(6);
 
-        setJobs(((data as Job[]) || []).filter((job) => !isHiddenPublicJob(job.title, job.slug)));
+        setJobs(((data as Job[]) || []).filter((job) => !isHiddenPublicJob(job.title, job.slug, (job as { hidden_from_public?: boolean }).hidden_from_public)));
       } catch (err) {
         console.error('Failed to load discover jobs', err);
       } finally {

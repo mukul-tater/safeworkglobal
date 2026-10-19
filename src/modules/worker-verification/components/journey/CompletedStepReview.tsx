@@ -69,6 +69,7 @@ interface Props {
   appliedJobTitle?: string | null;
   appliedJobDescription?: string | null;
   appliedJobCountry?: string | null;
+  quizSkillCode?: string | null;
   onGoToCurrent: () => void;
   /** Shown on the finished Find jobs card so a worker can switch after leaving that step. */
   onChangeJob?: () => void;
@@ -270,6 +271,7 @@ export default function CompletedStepReview({
   appliedJobTitle,
   appliedJobDescription,
   appliedJobCountry,
+  quizSkillCode,
   onGoToCurrent,
   onChangeJob,
   children,
@@ -284,6 +286,8 @@ export default function CompletedStepReview({
     primarySkill: row.primary_skill,
     jobTitle: appliedJobTitle,
     jobDescription: appliedJobDescription,
+    country: appliedJobCountry,
+    quizSkillCode,
   });
   const quizPassScore = quizPassScoreForSkill(quizSkill);
   const quizResult = row.quiz_score == null ? null : describeQuizResult(row.quiz_score, quizSkill);

@@ -28,6 +28,12 @@ import { saveJobExtraFields, validateJobExtraFieldDrafts, type JobExtraFieldDraf
 import JobTitleAutocomplete from "@/components/employer/JobTitleAutocomplete";
 import { adminCreateJob } from "@/services/AdminService";
 import AdminSalaryRanges from "@/components/admin/AdminSalaryRanges";
+import AdminJobConfigurationFields, {
+  EMPTY_JOB_CONFIG,
+  configValues,
+  jobConfigPatch,
+  type JobConfigValues,
+} from "@/components/admin/AdminJobConfigurationFields";
 import { adminSalarySaveFields, currencyForDestination } from "@/lib/jobSalaryUtils";
 import SearchSelect from "@/components/SearchSelect";
 
@@ -65,6 +71,8 @@ export default function AdminPostJob() {
       employer_id: "",
       benefits: PUBLIC_JOB_BENEFITS_TEXT,
       service_charge: DEFAULT_SERVICE_CHARGE_INR,
+      ...EMPTY_JOB_CONFIG,
+      use_saved_copy: true,
     },
   });
 
@@ -167,6 +175,7 @@ export default function AdminPostJob() {
     setIsSubmitting(true);
 
     try {
+      const pay = adminSalarySaveFields(data, false);
       const jobData = {
         title: data.title,
         description: data.description,
@@ -177,7 +186,7 @@ export default function AdminPostJob() {
         country: data.country,
         job_type: data.job_type,
         experience_level: data.experience_level,
-        ...adminSalarySaveFields(data, false),
+        ...pay,
         openings: Number.isFinite(data.openings) ? data.openings : 1,
         visa_sponsorship: data.visa_sponsorship,
         remote_allowed: data.remote_allowed,
@@ -186,6 +195,7 @@ export default function AdminPostJob() {
         posted_at: data.status === "ACTIVE" ? new Date().toISOString() : null,
         service_charge: data.service_charge,
         youtube_urls: youtubeUrls,
+        ...jobConfigPatch(configValues(data), pay.salary_display),
       };
 
       const { data: jobId, error } = await adminCreateJob(data.employer_id, jobData, skills);
@@ -534,6 +544,17 @@ export default function AdminPostJob() {
               </div>
             </CardContent>
           </Card>
+
+          <AdminJobConfigurationFields
+            values={configValues(watch())}
+            onChange={(patch) => {
+              (Object.keys(patch) as (keyof JobConfigValues)[]).forEach((key) => {
+                setValue(key, patch[key] as never, { shouldValidate: true });
+              });
+            }}
+            cardImageError={errors.card_image_url?.message}
+            slugError={errors.slug?.message}
+          />
 
           <JobYoutubeLinksField urls={youtubeUrls} onChange={setYoutubeUrls} />
 

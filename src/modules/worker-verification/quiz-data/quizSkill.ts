@@ -32,7 +32,10 @@ export function resolveQuizSkillCode(opts: {
   jobTitle?: string | null;
   jobDescription?: string | null;
   country?: string | null;
+  quizSkillCode?: string | null;
 }): QuizSkillCode {
+  if (isQuizSkillCode(opts.quizSkillCode)) return opts.quizSkillCode;
+
   const europe = inferEuropeQuizJob(opts.jobTitle || opts.primarySkill || '');
   if (europe) return europe;
 

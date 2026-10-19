@@ -24,7 +24,7 @@ import PortalBreadcrumb from "@/components/PortalBreadcrumb";
 import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
 import PublicJobBenefitsList from "@/components/jobs/PublicJobBenefitsList";
-import { getPublicJobAbout, getPublicJobServiceCharge, listPublicJobResponsibilities } from "@/lib/uaeListedJobs";
+import { getPublicJobAbout, getPublicJobServiceCharge, listPublicJobResponsibilities, listingOptions } from "@/lib/uaeListedJobs";
 
 interface ApplicationData {
   id: string;
@@ -48,6 +48,8 @@ interface JobData {
   salary_max: number | null;
   currency: string;
   benefits: string | null;
+  benefits_hi?: string | null;
+  use_saved_copy?: boolean | null;
   requirements: string | null;
   responsibilities: string | null;
   employer_id: string;
@@ -237,15 +239,15 @@ export default function WorkerApplicationDetail() {
                   <div>
                     <h3 className="font-medium mb-2">Description</h3>
                     <p className="text-sm text-muted-foreground whitespace-pre-line">
-                      {getPublicJobAbout(job.title, job.description, '', job.country)}
+                      {getPublicJobAbout(job.title, job.description, '', job.country, listingOptions(job))}
                     </p>
                   </div>
                   
-                  {listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country).length > 0 && (
+                  {listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country, listingOptions(job)).length > 0 && (
                     <div>
                       <h3 className="font-medium mb-2">Responsibilities</h3>
                       <ul className="space-y-1">
-                        {listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country).map((item) => (
+                        {listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country, listingOptions(job)).map((item) => (
                           <li key={item} className="text-sm text-muted-foreground">
                             {item}
                           </li>
@@ -261,6 +263,8 @@ export default function WorkerApplicationDetail() {
                       description={job.description}
                       country={job.country}
                       benefits={job.benefits}
+                      benefitsHi={job.benefits_hi}
+                      useSavedCopy={Boolean(job.use_saved_copy)}
                       className="space-y-2"
                       itemClassName="text-sm text-muted-foreground"
                     />

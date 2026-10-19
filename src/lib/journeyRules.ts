@@ -16,6 +16,19 @@ import {
 
 export type MedicalTestCopy = { title: string; body: string };
 export type DeploymentChecklistItem = { key: string; label: string };
+export type StageExpectations = {
+  identity: string;
+  interview: string;
+  pdot: string;
+  offer: string;
+};
+
+export const DEFAULT_STAGE_EXPECTATIONS: StageExpectations = {
+  identity: 'Usually within a few hours',
+  interview: 'Usually scheduled within 1–2 days',
+  pdot: 'Batch usually confirmed within a few days',
+  offer: 'SafeWork or the employer uploads the PDF',
+};
 
 export const BUILTIN_DEPLOYMENT_KEYS = ['offer', 'contract', 'emigration', 'visa', 'insurance', 'ticket'] as const;
 
@@ -39,6 +52,7 @@ export const DEFAULT_JOURNEY_RULES = {
   termsVersion: WORKER_TERMS_VERSION,
   termsSummary: WORKER_TERMS_SUMMARY,
   termsSections: WORKER_TERMS_SECTIONS.map((section) => ({ ...section })) as WorkerTermsSection[],
+  stageExpectations: { ...DEFAULT_STAGE_EXPECTATIONS },
 };
 
 export type JourneyRules = typeof DEFAULT_JOURNEY_RULES;
@@ -80,6 +94,21 @@ function cloneRules(rules: JourneyRules): JourneyRules {
     medicalTests: rules.medicalTests.map((test) => ({ ...test })),
     deploymentChecklist: rules.deploymentChecklist.map((item) => ({ ...item })),
     termsSections: rules.termsSections.map((section) => ({ ...section })),
+    stageExpectations: { ...rules.stageExpectations },
+  };
+}
+
+function mapStageExpectations(value: unknown): StageExpectations {
+  const raw = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+  const pick = (key: keyof StageExpectations) => {
+    const text = String(raw[key] || '').trim();
+    return text || DEFAULT_STAGE_EXPECTATIONS[key];
+  };
+  return {
+    identity: pick('identity'),
+    interview: pick('interview'),
+    pdot: pick('pdot'),
+    offer: pick('offer'),
   };
 }
 
@@ -135,6 +164,7 @@ function mapRow(row: Record<string, unknown>): JourneyRules {
     termsVersion: String(row.terms_version || defaults.termsVersion),
     termsSummary: String(row.terms_summary || defaults.termsSummary),
     termsSections: sections.length ? sections : defaults.termsSections.map((section) => ({ ...section })),
+    stageExpectations: mapStageExpectations(row.stage_expectations),
   };
 }
 
@@ -222,6 +252,7 @@ export type JourneyRulesInput = {
   termsVersion: string;
   termsSummary: string;
   termsSections: WorkerTermsSection[];
+  stageExpectations: StageExpectations;
 };
 
 export async function saveJourneyRules(input: JourneyRulesInput): Promise<void> {
@@ -234,6 +265,7 @@ export async function saveJourneyRules(input: JourneyRulesInput): Promise<void> 
     p_terms_version: input.termsVersion,
     p_terms_summary: input.termsSummary,
     p_terms_sections: input.termsSections,
+    p_stage_expectations: input.stageExpectations,
   });
   if (error) throw new Error(error.message);
   await loadJourneyRules();

@@ -1794,6 +1794,15 @@ export type Database = {
           slug: string | null
           status: string
           title: string
+          title_hi: string | null
+          processing_time: string | null
+          processing_time_hi: string | null
+          work_phrase: string | null
+          benefits_hi: string | null
+          quiz_skill_code: string | null
+          card_image_url: string | null
+          hidden_from_public: boolean
+          use_saved_copy: boolean
           updated_at: string | null
           visa_sponsorship: boolean | null
           youtube_urls: string[]
@@ -1835,6 +1844,15 @@ export type Database = {
           slug?: string | null
           status?: string
           title: string
+          title_hi?: string | null
+          processing_time?: string | null
+          processing_time_hi?: string | null
+          work_phrase?: string | null
+          benefits_hi?: string | null
+          quiz_skill_code?: string | null
+          card_image_url?: string | null
+          hidden_from_public?: boolean
+          use_saved_copy?: boolean
           updated_at?: string | null
           visa_sponsorship?: boolean | null
           youtube_urls?: string[]
@@ -1876,6 +1894,15 @@ export type Database = {
           slug?: string | null
           status?: string
           title?: string
+          title_hi?: string | null
+          processing_time?: string | null
+          processing_time_hi?: string | null
+          work_phrase?: string | null
+          benefits_hi?: string | null
+          quiz_skill_code?: string | null
+          card_image_url?: string | null
+          hidden_from_public?: boolean
+          use_saved_copy?: boolean
           updated_at?: string | null
           visa_sponsorship?: boolean | null
           youtube_urls?: string[]
@@ -1919,6 +1946,7 @@ export type Database = {
           medical_tests: Json
           terms_sections: Json
           terms_summary: string
+          stage_expectations: Json
           terms_version: string
           trade_test_skills: string[]
           updated_at: string
@@ -1930,6 +1958,7 @@ export type Database = {
           medical_tests: Json
           terms_sections: Json
           terms_summary: string
+          stage_expectations?: Json
           terms_version: string
           trade_test_skills: string[]
           updated_at?: string
@@ -1941,6 +1970,7 @@ export type Database = {
           medical_tests?: Json
           terms_sections?: Json
           terms_summary?: string
+          stage_expectations?: Json
           terms_version?: string
           trade_test_skills?: string[]
           updated_at?: string
@@ -6601,6 +6631,7 @@ export type Database = {
           p_medical_tests: Json
           p_terms_sections: Json
           p_terms_summary: string
+          p_stage_expectations?: Json
           p_terms_version: string
           p_trade_test_skills: string[]
         }

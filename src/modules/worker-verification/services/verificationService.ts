@@ -306,19 +306,22 @@ export async function loadQuizItemsForWorker(
 ): Promise<SkillQuizItem[]> {
   let jobTitle: string | null = null;
   let jobDescription: string | null = null;
+  let quizSkillCode: string | null = null;
   if (row.journey_job_id) {
     const { data } = await supabase
       .from('jobs')
-      .select('title, description')
+      .select('title, description, quiz_skill_code')
       .eq('id', row.journey_job_id)
       .maybeSingle();
     jobTitle = data?.title ?? null;
     jobDescription = data?.description ?? null;
+    quizSkillCode = data?.quiz_skill_code ?? null;
   }
   const skill = resolveQuizSkillCode({
     primarySkill: row.primary_skill,
     jobTitle,
     jobDescription,
+    quizSkillCode,
   });
   return loadQuizItems(skill, row.state);
 }

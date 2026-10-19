@@ -6,7 +6,7 @@ import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import PublicJobBenefitsList from '@/components/jobs/PublicJobBenefitsList';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly, listingOptions, publicJobHindiTitle } from '@/lib/uaeListedJobs';
 import { formatJobPlace, jobsBrowsePath, usesStoredPayText } from '@/lib/jobsBrowse';
 import { devCompareJobRecord, isDevCompareJob } from '@/lib/devCompareJob';
 import { JOB_COMPARE_ENABLED } from '@/lib/jobCompareFeature';
@@ -24,10 +24,11 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   MapPin, 
-  CheckCircle2, ArrowLeft, Shield, Calendar,
+  CheckCircle2, ArrowLeft, Shield, Calendar, Clock,
   Share2, Bookmark, Loader2, Pencil
 } from 'lucide-react';
 import { SAFEWORK_CONTACT } from '@/config/workerSupport';
+import HindiText from '@/components/indian-workforce/HindiText';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { JobDetailSkeleton } from '@/components/ui/page-skeleton';
@@ -122,6 +123,16 @@ interface JobData {
   visa_sponsorship: boolean;
   posted_at: string;
   slug: string;
+  title_hi?: string | null;
+  processing_time?: string | null;
+  processing_time_hi?: string | null;
+  benefits_hi?: string | null;
+  card_image_url?: string | null;
+  category?: string | null;
+  use_saved_copy?: boolean | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  indexable?: boolean | null;
   posted_by_role?: string | null;
   service_charge?: number | null;
   salary_display?: string | null;
@@ -527,21 +538,23 @@ export default function JobDetail() {
 
   const lockedJobId = journeyRow?.journey_job_id || null;
   const devJob = isDevCompareJob(job.slug);
-  const displayTitle = devJob ? job.title : getPublicJobTitle(job.title, job.description, job.country);
+  const listing = devJob ? undefined : listingOptions(job);
+  const displayTitle = devJob ? job.title : getPublicJobTitle(job.title, job.description, job.country, listing);
+  const hindiTitle = devJob ? null : publicJobHindiTitle(job.title, job.description, job.country, job.title_hi);
   const backToJobs = jobsBrowsePath({
     country: job.country || 'UAE',
-    category: inferUaeListedJob(job.title, job.description, job.country),
+    category: job.category?.trim() || inferUaeListedJob(job.title, job.description, job.country),
   });
-  const aboutTheRole = devJob ? job.description : getPublicJobAbout(job.title, job.description, '', job.country);
+  const aboutTheRole = devJob ? job.description : getPublicJobAbout(job.title, job.description, '', job.country, listing);
   const responsibilities = devJob
     ? (job.responsibilities ?? '').split(/\n+/).map((line) => line.trim()).filter(Boolean)
-    : listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country);
+    : listPublicJobResponsibilities(job.title, job.responsibilities, job.description, job.country, listing);
   const requirementLines = (job.requirements ?? '')
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean);
   const dualSalary = devJob ? null : adminRangeSalaryDisplay(job);
-  const listedSalary = devJob || dualSalary ? null : getPublicJobSalary(job.title, job.description, job.country);
+  const listedSalary = devJob || dualSalary ? null : getPublicJobSalary(job.title, job.description, job.country, listing);
   const serviceCharge = devJob
     ? job.service_charge
     : getPublicJobServiceCharge(job.title, job.description, job.service_charge, job.country);
@@ -649,7 +662,26 @@ export default function JobDetail() {
                     {isAdmin ? <PostedByBadge role={job.posted_by_role} /> : null}
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-bold mb-3 break-words">{displayTitle}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-1 break-words">{displayTitle}</h1>
+                  {hindiTitle ? (
+                    <HindiText className="mb-2 text-lg text-muted-foreground">{hindiTitle}</HindiText>
+                  ) : null}
+                  {job.card_image_url ? (
+                    <img
+                      src={job.card_image_url}
+                      alt=""
+                      className="mb-4 h-48 w-full rounded-xl object-cover"
+                    />
+                  ) : null}
+                  {job.processing_time ? (
+                    <p className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4 shrink-0" />
+                      <span>
+                        Processing time: {job.processing_time}
+                        {job.processing_time_hi ? ` · ${job.processing_time_hi}` : ''}
+                      </span>
+                    </p>
+                  ) : null}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
@@ -664,7 +696,8 @@ export default function JobDetail() {
                         title={job.title}
                         description={job.description}
                         country={job.country}
-                        display={dualSalary || usesStoredPayText(job.country) ? (dualSalary ?? job.salary_display) : undefined}
+                        display={dualSalary || listing?.useSavedCopy || usesStoredPayText(job.country) ? (dualSalary ?? job.salary_display) : undefined}
+                        useSavedCopy={Boolean(listing?.useSavedCopy)}
                         emptyLabel="Salary not specified"
                         className="w-full min-w-0"
                         primaryClassName="break-words font-semibold text-foreground"
@@ -762,6 +795,8 @@ export default function JobDetail() {
                     description={job.description}
                     country={job.country}
                     benefits={job.benefits}
+                    benefitsHi={job.benefits_hi}
+                    useSavedCopy={Boolean(job.use_saved_copy)}
                     showIcon
                     itemClassName="flex items-start gap-2 text-muted-foreground"
                   />
@@ -958,8 +993,9 @@ export default function JobDetail() {
           )}
     </div>,
     <SEOHead
-      title={`${displayTitle} | SafeWork Global`}
-      description={`Apply for ${displayTitle} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${salaryMeta}.`}
+      title={job.seo_title?.trim() || `${displayTitle} | SafeWork Global`}
+      description={job.seo_description?.trim() || `Apply for ${displayTitle} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${salaryMeta}.`}
+      robots={job.indexable === false ? 'noindex, nofollow' : undefined}
       keywords={`${displayTitle}, ${job.location} jobs, ${job.country} jobs, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
       canonicalUrl={`${job.slug ? `https://www.safeworkglobal.com/jobs/${job.slug}` : "https://www.safeworkglobal.com/jobs"}`}
       ogType="article"

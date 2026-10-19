@@ -30,7 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, publicJobBenefitsText, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, listingOptions, publicJobBenefitsText, publicJobHindiTitle, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
@@ -224,11 +224,12 @@ export default function Jobs() {
         if (error) throw error;
 
         const formatted: JobListItem[] = (data || [])
-          .filter((job: any) => !isHiddenPublicJob(job.title, job.slug))
+          .filter((job: any) => !isHiddenPublicJob(job.title, job.slug, job.hidden_from_public))
           .map((job: any) => {
-          const description: string = getPublicJobAbout(job.title, job.description, '', job.country) || job.description || '';
+          const options = listingOptions(job);
+          const description: string = getPublicJobAbout(job.title, job.description, '', job.country, options) || job.description || '';
           const dualSalary = adminRangeSalaryDisplay(job);
-          const listedSalary = dualSalary ? null : getPublicJobSalary(job.title, job.description ?? '', job.country);
+          const listedSalary = dualSalary ? null : getPublicJobSalary(job.title, job.description ?? '', job.country, options);
           const monthlyListed = listedSalaryIsMonthly(listedSalary);
           const rawSalaryMin = monthlyListed ? listedSalary.salary_min : (job.salary_min ?? null);
           const rawSalaryMax = monthlyListed ? listedSalary.salary_max : (job.salary_max ?? null);
@@ -237,13 +238,16 @@ export default function Jobs() {
           return {
             id: job.id,
             slug: job.slug || job.id,
-            title: getPublicJobTitle(job.title, job.description ?? '', job.country),
+            title: getPublicJobTitle(job.title, job.description ?? '', job.country, options),
+            titleHi: publicJobHindiTitle(job.title, job.description ?? '', job.country, job.title_hi),
+            processingTime: job.processing_time || null,
+            processingTimeHi: job.processing_time_hi || null,
             company: '',
             companyLogoUrl: null,
             city: job.location || '',
             location: formatJobPlace(job.location, job.country),
             country: job.country,
-            benefits: publicJobBenefitsText(job.title, job.description ?? '', job.country, typeof job.benefits === 'string' ? job.benefits : null),
+            benefits: publicJobBenefitsText(job.title, job.description ?? '', job.country, typeof job.benefits === 'string' ? job.benefits : null, options),
             salaryDisplay: dualSalary ?? (withCzkAndInrPay(listedSalary?.salary_display ?? job.salary_display) || null),
             useStoredSalary: Boolean(dualSalary),
             rawSalaryMin,
@@ -256,7 +260,7 @@ export default function Jobs() {
               ? (job.local_salary_max ?? job.local_salary_min ?? null)
               : rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
             type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
-            category: inferCategory(job.title, description, job.country),
+            category: (typeof job.category === 'string' && job.category.trim()) || inferCategory(job.title, description, job.country),
             experienceLevel: job.experience_level ?? '',
             visaSponsorship: job.visa_sponsorship || false,
             postedAt: new Date(job.posted_at),

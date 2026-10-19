@@ -12,7 +12,7 @@ import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatJobPlace, usesStoredPayText } from '@/lib/jobsBrowse';
 import { adminRangeSalaryDisplay } from '@/lib/jobSalaryUtils';
-import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob, listingOptions } from '@/lib/uaeListedJobs';
 import ShareJobDialog, { type ShareJobTarget } from '@/components/jobs/ShareJobDialog';
 
 interface FeaturedJob {
@@ -33,6 +33,9 @@ interface FeaturedJob {
   visa_sponsorship: boolean;
   posted_at: string;
   service_charge?: number | null;
+  use_saved_copy?: boolean | null;
+  hidden_from_public?: boolean | null;
+  benefits_hi?: string | null;
   job_skills: {
     skill_name: string;
   }[];
@@ -86,8 +89,8 @@ export default function FeaturedJobs() {
         if (error) throw error;
         setJobs(
           ((data || []) as FeaturedJob[])
-            .filter((job) => isPublicListedJob(job.title, job.description, job.slug, job.country))
-            .map((job) => ({ ...job, title: getPublicJobTitle(job.title, job.description, job.country) }))
+            .filter((job) => isPublicListedJob(job.title, job.description, job.slug, job.country, job.hidden_from_public))
+            .map((job) => ({ ...job, title: getPublicJobTitle(job.title, job.description, job.country, listingOptions(job)) }))
             .slice(0, 6),
         );
       } catch (error) {
@@ -226,7 +229,7 @@ export default function FeaturedJobs() {
                 )}
 
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
-                  {getPublicJobAbout(job.title, job.description, '', job.country)}
+                  {getPublicJobAbout(job.title, job.description, '', job.country, listingOptions(job))}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2 mb-3">

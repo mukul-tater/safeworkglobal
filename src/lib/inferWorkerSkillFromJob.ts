@@ -73,7 +73,11 @@ export function appliedJobWorkPhrase(
   jobTitle?: string | null,
   jobDescription?: string | null,
   country?: string | null,
+  storedPhrase?: string | null,
 ): string {
+  const custom = storedPhrase?.trim();
+  if (custom) return custom;
+
   const listedFromJob = inferUaeListedJob(jobTitle || '', jobDescription || '', country);
   if (listedFromJob) return UAE_LISTED_JOB_WORK[listedFromJob];
 

@@ -24,7 +24,7 @@ import SearchSelect from '@/components/SearchSelect';
 import { findIndiaDistrict } from '@/lib/indiaLocations';
 import { WORKER_LANGUAGES } from '@/lib/constants';
 import { displayableEmail, isValidContactEmail } from '@/lib/workerAuthEmail';
-import { deploymentItemStatus, getDeploymentChecklist } from '@/lib/journeyRules';
+import { deploymentItemStatus, getDeploymentChecklist, useJourneyRules } from '@/lib/journeyRules';
 import {
   educationOptionsForTenthPass,
   ecrFromTenthPass,
@@ -371,6 +371,9 @@ export default function WorkerVerificationPage({
   const [journeyJobTitle, setJourneyJobTitle] = useState<string | null>(null);
   const [journeyJobDescription, setJourneyJobDescription] = useState<string | null>(null);
   const [journeyJobCountry, setJourneyJobCountry] = useState<string | null>(null);
+  const [journeyQuizSkill, setJourneyQuizSkill] = useState<string | null>(null);
+  const [journeyWorkPhrase, setJourneyWorkPhrase] = useState<string | null>(null);
+  const journeyRules = useJourneyRules();
 
   const [email, setEmail] = useState('');
   const [city, setCity] = useState('');
@@ -697,6 +700,8 @@ export default function WorkerVerificationPage({
       setJourneyJobTitle(null);
       setJourneyJobDescription(null);
       setJourneyJobCountry(null);
+      setJourneyQuizSkill(null);
+      setJourneyWorkPhrase(null);
       return;
     }
     void getServiceChargeForJob(jobId)
@@ -708,15 +713,23 @@ export default function WorkerVerificationPage({
       });
     void supabase
       .from('jobs')
-      .select('title, description, country')
+      .select('title, description, country, quiz_skill_code, work_phrase')
       .eq('id', jobId)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        const job = data as { title?: string; description?: string; country?: string } | null;
+        const job = data as {
+          title?: string;
+          description?: string;
+          country?: string;
+          quiz_skill_code?: string | null;
+          work_phrase?: string | null;
+        } | null;
         setJourneyJobTitle(job?.title ?? null);
         setJourneyJobDescription(job?.description ?? null);
         setJourneyJobCountry(job?.country ?? null);
+        setJourneyQuizSkill(job?.quiz_skill_code ?? null);
+        setJourneyWorkPhrase(job?.work_phrase ?? null);
       });
     return () => {
       cancelled = true;
@@ -1223,6 +1236,8 @@ export default function WorkerVerificationPage({
     primarySkill: row.primary_skill,
     jobTitle: journeyJobTitle,
     jobDescription: journeyJobDescription,
+    country: journeyJobCountry,
+    quizSkillCode: journeyQuizSkill,
   });
   const quizPassScore = quizPassScoreForSkill(quizSkill);
   const workPhrase = appliedJobWorkPhrase(
@@ -1230,6 +1245,7 @@ export default function WorkerVerificationPage({
     journeyJobTitle,
     journeyJobDescription,
     journeyJobCountry,
+    journeyWorkPhrase,
   );
 
   if (rawStage === 'gcc_ready' && !forceIdentity) {
@@ -1371,6 +1387,7 @@ export default function WorkerVerificationPage({
             appliedJobTitle={journeyJobTitle}
             appliedJobDescription={journeyJobDescription}
             appliedJobCountry={journeyJobCountry}
+            quizSkillCode={journeyQuizSkill}
             photoCount={photoCount}
             videoCount={videoCount}
             kycStatus={kycStatusValue}
@@ -1983,7 +2000,7 @@ export default function WorkerVerificationPage({
             icon={ShieldCheck}
             title="We're verifying your identity"
             body="Your identity documents are submitted. SafeWork reviews them before scheduling your video interview."
-            expected="Usually within a few hours"
+            expected={journeyRules.stageExpectations.identity}
             notifyNote="You'll get an app notification the moment verification is done — no need to keep this page open."
             timeline={[
               {
@@ -2256,7 +2273,7 @@ export default function WorkerVerificationPage({
                 </>
               )
             }
-            expected={row.interview_scheduled_at ? undefined : 'Usually scheduled within 1–2 days'}
+            expected={row.interview_scheduled_at ? undefined : journeyRules.stageExpectations.interview}
             notifyNote="You'll get an app notification when your interview is approved and you can proceed to the next step."
             timeline={[
               { label: 'Identity verified', status: 'done' },
@@ -2406,7 +2423,7 @@ export default function WorkerVerificationPage({
                 ? `Your PDOT training is scheduled for ${formatWhen(row.pdot_scheduled_at)}${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Attend fully — SafeWork marks you GCC ready after completion.`
                 : `SafeWork will confirm your PDOT training batch${row.pdot_provider ? ` with ${row.pdot_provider}` : ''}. Details appear here.`
             }
-            expected={row.pdot_scheduled_at ? undefined : 'Batch usually confirmed within a few days'}
+            expected={row.pdot_scheduled_at ? undefined : journeyRules.stageExpectations.pdot}
             notifyNote="You'll get an app notification when PDOT is completed and you can proceed to GCC ready."
             timeline={[
               { label: 'Bond received by SafeWork', status: 'done' },

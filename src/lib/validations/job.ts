@@ -153,6 +153,24 @@ const adminJobFieldsSchema = jobPostingBaseSchema
     local_salary_currency: z.enum(jobCurrencyCodes, {
       errorMap: () => ({ message: "Select a local currency" }),
     }).default("INR"),
+    title_hi: z.string().trim().max(200, "Hindi name must be less than 200 characters").optional().or(z.literal("")),
+    processing_time: z.string().trim().max(160, "Processing time must be less than 160 characters").optional().or(z.literal("")),
+    processing_time_hi: z.string().trim().max(160, "Hindi processing time must be less than 160 characters").optional().or(z.literal("")),
+    category: z.string().trim().max(80).optional().or(z.literal("")),
+    city: z.string().trim().max(120).optional().or(z.literal("")),
+    work_phrase: z.string().trim().max(80, "Skill-proof phrase must be less than 80 characters").optional().or(z.literal("")),
+    benefits_hi: z.string().trim().max(2000).optional().or(z.literal("")),
+    quiz_skill_code: z.string().trim().max(80).optional().or(z.literal("")),
+    card_image_url: z.string().trim().max(500).optional().or(z.literal(""))
+      .refine((value) => !value || /^https?:\/\//i.test(value), "Enter a full image URL starting with https://"),
+    salary_display: z.string().trim().max(300).optional().or(z.literal("")),
+    slug: z.string().trim().max(120).optional().or(z.literal(""))
+      .refine((value) => !value || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value), "Use lowercase letters, numbers and hyphens"),
+    seo_title: z.string().trim().max(160).optional().or(z.literal("")),
+    seo_description: z.string().trim().max(300).optional().or(z.literal("")),
+    indexable: z.boolean().default(true),
+    hidden_from_public: z.boolean().default(false),
+    use_saved_copy: z.boolean().default(false),
   });
 
 /** Admin edit form — all job statuses, optional expiry, relaxed requirements */

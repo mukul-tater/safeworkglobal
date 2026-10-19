@@ -11,6 +11,8 @@ interface JobSalaryTextProps {
   country?: string | null;
   /** Exact pay sentence from the vacancy. Shown as written. */
   display?: string | null;
+  /** Skip the shared UAE trade salary band. */
+  useSavedCopy?: boolean;
   emptyLabel?: string;
   /** Shown after a real range. Pass a translation on localized screens. */
   periodLabel?: string;
@@ -27,6 +29,7 @@ export default function JobSalaryText({
   description,
   country,
   display,
+  useSavedCopy = false,
   emptyLabel,
   periodLabel = 'per month',
   primaryClassName,
@@ -41,7 +44,7 @@ export default function JobSalaryText({
       </span>
     );
   }
-  const listed = title ? getPublicJobSalary(title, description, country) : null;
+  const listed = title && !useSavedCopy ? getPublicJobSalary(title, description, country) : null;
   if (listed?.salary_display) {
     const monthly = listed.salary_min != null || listed.salary_max != null;
     return (

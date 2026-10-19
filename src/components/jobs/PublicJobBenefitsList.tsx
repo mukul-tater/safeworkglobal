@@ -8,6 +8,8 @@ interface Props {
   description?: string;
   country?: string | null;
   benefits?: string | null;
+  benefitsHi?: string | null;
+  useSavedCopy?: boolean;
   className?: string;
   itemClassName?: string;
   showIcon?: boolean;
@@ -18,11 +20,16 @@ export default function PublicJobBenefitsList({
   description = '',
   country,
   benefits,
+  benefitsHi,
+  useSavedCopy = false,
   className,
   itemClassName,
   showIcon = false,
 }: Props) {
-  const lines = listDisplayedJobBenefits(title, description, country, benefits);
+  const lines = listDisplayedJobBenefits(title, description, country, benefits, {
+    useSavedCopy,
+    benefitsHi,
+  });
 
   return (
     <ul className={cn('space-y-2', className)}>

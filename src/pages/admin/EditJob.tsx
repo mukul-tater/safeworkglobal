@@ -32,6 +32,11 @@ import {
 } from "@/lib/jobExtraFields";
 import { adminUpdateJob } from "@/services/AdminService";
 import AdminSalaryRanges from "@/components/admin/AdminSalaryRanges";
+import AdminJobConfigurationFields, {
+  configValues,
+  jobConfigPatch,
+  type JobConfigValues,
+} from "@/components/admin/AdminJobConfigurationFields";
 import { adminSalarySaveFields, currencyForDestination } from "@/lib/jobSalaryUtils";
 import PostedByBadge from "@/components/jobs/PostedByBadge";
 
@@ -138,6 +143,22 @@ export default function EditJob() {
         status: job.status as any,
         skills: skillNames,
         service_charge: Number(job.service_charge) || DEFAULT_SERVICE_CHARGE_INR,
+        title_hi: job.title_hi || "",
+        processing_time: job.processing_time || "",
+        processing_time_hi: job.processing_time_hi || "",
+        category: job.category || "",
+        city: job.city || "",
+        work_phrase: job.work_phrase || "",
+        benefits_hi: job.benefits_hi || "",
+        quiz_skill_code: job.quiz_skill_code || "",
+        card_image_url: job.card_image_url || "",
+        salary_display: job.salary_display || "",
+        slug: job.slug || "",
+        seo_title: job.seo_title || "",
+        seo_description: job.seo_description || "",
+        indexable: job.indexable !== false,
+        hidden_from_public: Boolean(job.hidden_from_public),
+        use_saved_copy: Boolean(job.use_saved_copy),
       });
     } catch (error: any) {
       console.error("Error fetching job:", error);
@@ -181,6 +202,7 @@ export default function EditJob() {
 
     try {
       // Update job
+      const pay = adminSalarySaveFields(data, hadLocalRange.current);
       const jobData = {
         title: data.title,
         description: data.description,
@@ -191,7 +213,7 @@ export default function EditJob() {
         country: data.country,
         job_type: data.job_type,
         experience_level: data.experience_level,
-        ...adminSalarySaveFields(data, hadLocalRange.current),
+        ...pay,
         openings: Number.isFinite(data.openings) ? data.openings : 1,
         visa_sponsorship: data.visa_sponsorship,
         remote_allowed: data.remote_allowed,
@@ -199,6 +221,7 @@ export default function EditJob() {
         expires_at: data.expires_at || null,
         service_charge: data.service_charge,
         youtube_urls: youtubeUrls,
+        ...jobConfigPatch(configValues(data), pay.salary_display),
       };
 
       const { error: jobError } = await adminUpdateJob(jobId, jobData, skills);
@@ -522,6 +545,17 @@ export default function EditJob() {
                 </div>
               </CardContent>
             </Card>
+
+            <AdminJobConfigurationFields
+              values={configValues(watch())}
+              onChange={(patch) => {
+                (Object.keys(patch) as (keyof JobConfigValues)[]).forEach((key) => {
+                  setValue(key, patch[key] as never, { shouldValidate: true });
+                });
+              }}
+              cardImageError={errors.card_image_url?.message}
+              slugError={errors.slug?.message}
+            />
 
             <JobYoutubeLinksField urls={youtubeUrls} onChange={setYoutubeUrls} />
 

@@ -20,6 +20,7 @@ import {
   type JobOfferLetter,
 } from '@/modules/worker-verification/services/offerLetterService';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
+import { useJourneyRules } from '@/lib/journeyRules';
 
 const OTP_BUTTON_ID = 'offer-letter-send-otp';
 
@@ -36,6 +37,7 @@ interface Props {
 
 export default function OfferLetterStage({ userId, phone, onAccepted }: Props) {
   const firebaseOtp = useFirebasePhoneOtp(OTP_BUTTON_ID);
+  const journeyRules = useJourneyRules();
   const [letter, setLetter] = useState<JobOfferLetter | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -195,7 +197,7 @@ export default function OfferLetterStage({ userId, phone, onAccepted }: Props) {
             <p className="mt-2">The service fee stays closed until you download that letter and accept it.</p>
           </>
         }
-        expected="SafeWork or the employer uploads the PDF"
+        expected={journeyRules.stageExpectations.offer}
         notifyNote="Refresh this page after you are told the letter is ready. Nothing is payable before you accept it."
         timeline={[
           { label: 'Video interview cleared', status: 'done' },

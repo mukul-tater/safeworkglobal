@@ -136,15 +136,55 @@ export function listedJobDisplayName(job: string): string {
   return job in UAE_LISTED_JOB_LABELS ? UAE_LISTED_JOB_LABELS[job as UaeListedJob].en : job;
 }
 
-/** Public-facing title: listed trade name when we can infer one. */
-export function getPublicJobTitle(title: string, description = '', country?: string | null): string {
+export type PublicListingOptions = {
+  /** Saved title, description, duties, benefits and pay replace the trade template. */
+  useSavedCopy?: boolean;
+  benefitsHi?: string | null;
+};
+
+export function listingOptions(job: {
+  use_saved_copy?: boolean | null;
+  benefits_hi?: string | null;
+}): PublicListingOptions {
+  return {
+    useSavedCopy: Boolean(job.use_saved_copy),
+    benefitsHi: typeof job.benefits_hi === 'string' ? job.benefits_hi : null,
+  };
+}
+
+/** Hindi name saved on the job, otherwise the trade catalog label. */
+export function publicJobHindiTitle(
+  title: string,
+  description = '',
+  country?: string | null,
+  titleHi?: string | null,
+): string | null {
+  const custom = titleHi?.trim();
+  if (custom) return custom;
+  const listed = inferUaeListedJob(title, description, country);
+  return listed ? UAE_LISTED_JOB_LABELS[listed].hi : null;
+}
+
+/** Public-facing title: saved title when the admin opted in, otherwise the trade label. */
+export function getPublicJobTitle(
+  title: string,
+  description = '',
+  country?: string | null,
+  options?: PublicListingOptions,
+): string {
+  if (options?.useSavedCopy) return title;
   const job = inferUaeListedJob(title, description, country);
   if (!job) return title;
   return UAE_LISTED_JOB_LABELS[job].en;
 }
 
-/** Generic Carpenter listing — removed from Find jobs; shuttering / furniture stay. */
-export function isHiddenPublicJob(title: string, slug?: string | null): boolean {
+/** Generic Carpenter listing, or any job an admin hid from Find jobs. */
+export function isHiddenPublicJob(
+  title: string,
+  slug?: string | null,
+  hiddenFromPublic?: boolean | null,
+): boolean {
+  if (hiddenFromPublic) return true;
   if (slug === 'uae-listed-carpenter') return true;
   return title.trim().toLowerCase() === 'carpenter';
 }
@@ -155,8 +195,9 @@ export function isPublicListedJob(
   description = '',
   slug?: string | null,
   country?: string | null,
+  hiddenFromPublic?: boolean | null,
 ): boolean {
-  if (isHiddenPublicJob(title, slug)) return false;
+  if (isHiddenPublicJob(title, slug, hiddenFromPublic)) return false;
   return inferUaeListedJob(title, description, country) != null;
 }
 
@@ -232,7 +273,13 @@ export function getPublicJobServiceCharge(
   return Math.round(n);
 }
 
-export function getPublicJobSalary(title: string, description = '', country?: string | null) {
+export function getPublicJobSalary(
+  title: string,
+  description = '',
+  country?: string | null,
+  options?: PublicListingOptions,
+) {
+  if (options?.useSavedCopy) return null;
   const listed = inferUaeListedJob(title, description, country);
   return listed ? UAE_LISTED_JOB_SALARIES[listed] : null;
 }
@@ -286,10 +333,15 @@ export function getPublicJobAbout(
   stored?: string | null,
   description = '',
   country?: string | null,
+  options?: PublicListingOptions,
 ): string {
+  const text = stored?.trim() || '';
+  if (options?.useSavedCopy) {
+    if ((country ?? '').trim().toLowerCase() === 'europe') return annotateEuropePayDescription(text);
+    return text;
+  }
   const listed = inferUaeListedJob(title, description || stored || '', country);
   if (listed) return UAE_LISTED_JOB_ABOUT[listed];
-  const text = stored?.trim() || '';
   if ((country ?? '').trim().toLowerCase() === 'europe') return annotateEuropePayDescription(text);
   return text;
 }
@@ -342,12 +394,29 @@ const BIKE_DELIVERY_BENEFITS: DisplayedJobBenefit[] = [
   },
 ];
 
+function benefitsFromLines(english: string[], hindi?: string | null): DisplayedJobBenefit[] {
+  const hindiLines = (hindi || '').split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  return english.map((en, index) => ({
+    en,
+    hi: hindiLines[index] || undefined,
+    info: jobBenefitInfo(en),
+  }));
+}
+
 export function listDisplayedJobBenefits(
   title: string,
   description = '',
   country?: string | null,
   raw?: string | null,
+  options?: PublicListingOptions,
 ): DisplayedJobBenefit[] {
+  if (options?.useSavedCopy) return benefitsFromLines(listPublicJobBenefits(raw), options.benefitsHi);
+  if (options?.benefitsHi?.trim()) {
+    const english = inferUaeListedJob(title, description, country) === 'Delivery'
+      ? BIKE_DELIVERY_BENEFITS.map((benefit) => benefit.en)
+      : listPublicJobBenefits(raw);
+    return benefitsFromLines(english, options.benefitsHi);
+  }
   if (inferUaeListedJob(title, description, country) === 'Delivery') return BIKE_DELIVERY_BENEFITS;
   return listPublicJobBenefits(raw).map((en) => ({ en, info: jobBenefitInfo(en) }));
 }
@@ -358,7 +427,9 @@ export function publicJobBenefitsText(
   description = '',
   country?: string | null,
   stored?: string | null,
+  options?: PublicListingOptions,
 ): string | null {
+  if (options?.useSavedCopy) return stored ?? null;
   if (inferUaeListedJob(title, description, country) === 'Delivery') {
     return BIKE_DELIVERY_BENEFITS.map((benefit) => benefit.en).join('\n');
   }
@@ -534,14 +605,16 @@ export function listPublicJobResponsibilities(
   stored?: string | null,
   description = '',
   country?: string | null,
+  options?: PublicListingOptions,
 ): string[] {
-  const listed = inferUaeListedJob(title, description, country);
-  if (listed) return UAE_LISTED_JOB_RESPONSIBILITIES[listed];
-  if (!stored?.trim()) return [];
-  return stored
+  const saved = (stored || '')
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean);
+  if (options?.useSavedCopy) return saved;
+  const listed = inferUaeListedJob(title, description, country);
+  if (listed) return UAE_LISTED_JOB_RESPONSIBILITIES[listed];
+  return saved;
 }
 
 export type ListedJobVideo = { youtubeId: string; startSeconds?: number };

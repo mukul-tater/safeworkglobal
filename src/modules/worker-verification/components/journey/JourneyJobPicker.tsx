@@ -11,7 +11,7 @@ import { adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@
 import { formatJobPlace } from '@/lib/jobsBrowse';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, listingOptions, publicJobHindiTitle } from '@/lib/uaeListedJobs';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import JobChangeFeeDialog from '@/modules/worker-verification/components/journey/JobChangeFeeDialog';
 import {
@@ -53,7 +53,8 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
   if (error) throw new Error(error.message);
 
   const rows = (data || []).filter(
-    (job: { title?: string; slug?: string }) => !isHiddenPublicJob(String(job.title ?? ''), job.slug),
+    (job: { title?: string; slug?: string; hidden_from_public?: boolean | null }) =>
+      !isHiddenPublicJob(String(job.title ?? ''), job.slug, job.hidden_from_public),
   );
   const jobIds = rows.map((job: { id: string }) => job.id);
   const skillsByJob = new Map<string, string[]>();
@@ -73,7 +74,8 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
   return rows.map((job: Record<string, unknown>) => {
     const storedDescription = String(job.description ?? '');
     const country = String(job.country ?? '');
-    const description = getPublicJobAbout(String(job.title), storedDescription, '', country) || storedDescription;
+    const options = listingOptions(job as { use_saved_copy?: boolean | null; benefits_hi?: string | null });
+    const description = getPublicJobAbout(String(job.title), storedDescription, '', country, options) || storedDescription;
     const skills = skillsByJob.get(String(job.id)) ?? [];
     const postedRaw = job.posted_at ?? job.created_at;
     const dualSalary = adminRangeSalaryDisplay({
@@ -84,7 +86,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       local_salary_max: job.local_salary_max as number | null,
       local_salary_currency: job.local_salary_currency as string | null,
     });
-    const listedSalary = dualSalary ? null : getPublicJobSalary(String(job.title), description, country);
+    const listedSalary = dualSalary ? null : getPublicJobSalary(String(job.title), description, country, options);
     const monthlyListed = listedSalaryIsMonthly(listedSalary);
     const rawSalaryMin = monthlyListed ? listedSalary.salary_min : ((job.salary_min as number | null) ?? null);
     const rawSalaryMax = monthlyListed ? listedSalary.salary_max : ((job.salary_max as number | null) ?? null);
@@ -92,7 +94,10 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
     return {
       id: String(job.id),
       slug: String(job.slug || job.id),
-      title: getPublicJobTitle(String(job.title), storedDescription, country),
+      title: getPublicJobTitle(String(job.title), storedDescription, country, options),
+      titleHi: publicJobHindiTitle(String(job.title), storedDescription, country, job.title_hi as string | null),
+      processingTime: (job.processing_time as string | null) || null,
+      processingTimeHi: (job.processing_time_hi as string | null) || null,
       company: '',
       companyLogoUrl: null,
       location: formatJobPlace(String(job.location ?? ''), country),
@@ -109,7 +114,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
         ? ((job.local_salary_max as number | null) ?? (job.local_salary_min as number | null) ?? null)
         : rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
       type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
-      category: inferCategory(String(job.title), description, country),
+      category: (typeof job.category === 'string' && job.category.trim()) || inferCategory(String(job.title), description, country),
       experienceLevel: String(job.experience_level ?? ''),
       visaSponsorship: Boolean(job.visa_sponsorship),
       postedAt: postedRaw ? new Date(String(postedRaw)) : new Date(),
