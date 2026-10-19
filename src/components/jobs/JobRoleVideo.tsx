@@ -7,6 +7,8 @@ interface JobRoleVideoProps {
   description?: string;
   country?: string | null;
   youtubeUrls?: readonly string[] | null;
+  /** Video files uploaded for this job. */
+  videoUrls?: readonly string[] | null;
   /** Saved job copy does not pull in the trade-template clips. */
   useSavedCopy?: boolean;
 }
@@ -23,13 +25,15 @@ export default function JobRoleVideo({
   description = '',
   country,
   youtubeUrls,
+  videoUrls,
   useSavedCopy = false,
 }: JobRoleVideoProps) {
   const saved = (youtubeUrls ?? []).filter((url) => url.trim());
+  const files = (videoUrls ?? []).map((url) => url.trim()).filter(Boolean);
   const videos = useSavedCopy || saved.length
     ? mergeJobVideos(saved, [])
     : mergeJobVideos(null, getPublicJobVideos(title, description, country));
-  if (videos.length === 0) return null;
+  if (videos.length === 0 && files.length === 0) return null;
 
   return (
     <Card>
@@ -51,6 +55,21 @@ export default function JobRoleVideo({
                 referrerPolicy="strict-origin-when-cross-origin"
                 allowFullScreen
                 loading="lazy"
+              />
+            </div>
+          ))}
+          {files.map((src) => (
+            <div
+              key={src}
+              className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-muted"
+            >
+              <video
+                title={`${title} video`}
+                src={src}
+                className="h-full w-full"
+                controls
+                playsInline
+                preload="metadata"
               />
             </div>
           ))}

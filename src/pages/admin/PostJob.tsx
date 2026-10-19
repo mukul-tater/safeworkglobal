@@ -29,10 +29,17 @@ import {
 import { useSiteContent } from "@/lib/siteContent";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
+import JobMediaFilesField from "@/components/admin/JobMediaFilesField";
+import {
+  mediaUrlsFromText,
+  releasePendingJobMedia,
+  uploadPendingJobMedia,
+  type PendingJobMedia,
+} from "@/lib/jobMediaUpload";
 import JobExtraFieldsEditor from "@/components/admin/JobExtraFieldsEditor";
 import { saveJobExtraFields, validateJobExtraFieldDrafts, type JobExtraFieldDraft } from "@/lib/jobExtraFields";
 import JobTitleAutocomplete from "@/components/employer/JobTitleAutocomplete";
-import { adminCreateJob } from "@/services/AdminService";
+import { adminCreateJob, adminUpdateJob } from "@/services/AdminService";
 import AdminSalaryRanges from "@/components/admin/AdminSalaryRanges";
 import AdminJobConfigurationFields, {
   EMPTY_JOB_CONFIG,
@@ -54,6 +61,9 @@ export default function AdminPostJob() {
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingJobMedia[]>([]);
+  const [pendingVideos, setPendingVideos] = useState<PendingJobMedia[]>([]);
   const [extraFields, setExtraFields] = useState<JobExtraFieldDraft[]>([]);
   const [employers, setEmployers] = useState<EmployerOption[]>([]);
   const [loadingEmployers, setLoadingEmployers] = useState(true);
@@ -225,6 +235,26 @@ export default function AdminPostJob() {
       const { data: jobId, error } = await adminCreateJob(data.employer_id, jobData, skills);
       if (error) throw new Error(error);
       if (!jobId) throw new Error("Failed to create job");
+
+      if (pendingPhotos.length || pendingVideos.length) {
+        try {
+          const uploadedPhotos = await uploadPendingJobMedia(jobId, "accommodation", pendingPhotos);
+          const uploadedVideos = await uploadPendingJobMedia(jobId, "videos", pendingVideos);
+          const { error: mediaError } = await adminUpdateJob(jobId, {
+            accommodation_image_urls: [
+              ...mediaUrlsFromText(data.accommodation_image_urls),
+              ...uploadedPhotos,
+            ],
+            video_urls: [...videoUrls, ...uploadedVideos],
+          });
+          if (mediaError) throw new Error(mediaError);
+          releasePendingJobMedia([...pendingPhotos, ...pendingVideos]);
+        } catch (mediaError) {
+          toast.error(mediaError instanceof Error ? mediaError.message : "Job was created, but photos or videos were not saved");
+          navigate(`/admin/edit-job/${jobId}`);
+          return;
+        }
+      }
 
       try {
         await saveJobExtraFields(jobId, extraFields);
@@ -581,7 +611,31 @@ export default function AdminPostJob() {
             slugError={errors.slug?.message}
           />
 
+          <JobMediaFilesField
+            title="Accommodation photos"
+            description="Upload photos of worker accommodation for this job. They are saved when you post the job. JPEG, PNG, or WebP, up to 5 MB each."
+            kind="accommodation"
+            accept="image/jpeg,image/png,image/webp"
+            addLabel="Upload photos"
+            urls={mediaUrlsFromText(watch("accommodation_image_urls"))}
+            onChange={(urls) => setValue("accommodation_image_urls", urls.join("\n"))}
+            pending={pendingPhotos}
+            onPendingChange={setPendingPhotos}
+          />
+
           <JobYoutubeLinksField urls={youtubeUrls} onChange={setYoutubeUrls} />
+
+          <JobMediaFilesField
+            title="Uploaded work videos"
+            description="Upload an MP4 or WebM for this job, up to 50 MB each. Files are saved when you post the job."
+            kind="videos"
+            accept="video/mp4,video/webm"
+            addLabel="Upload videos"
+            urls={videoUrls}
+            onChange={setVideoUrls}
+            pending={pendingVideos}
+            onPendingChange={setPendingVideos}
+          />
 
           <Card>
             <CardHeader>

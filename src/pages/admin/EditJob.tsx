@@ -22,6 +22,8 @@ import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
 import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
 import JobBenefitsField from "@/components/employer/JobBenefitsField";
 import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
+import JobMediaFilesField from "@/components/admin/JobMediaFilesField";
+import { mediaUrlsFromText, type PendingJobMedia } from "@/lib/jobMediaUpload";
 import JobExtraFieldsEditor from "@/components/admin/JobExtraFieldsEditor";
 import {
   draftsFromFields,
@@ -48,6 +50,9 @@ export default function EditJob() {
   const [skillInput, setSkillInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>([]);
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [pendingPhotos, setPendingPhotos] = useState<PendingJobMedia[]>([]);
+  const [pendingVideos, setPendingVideos] = useState<PendingJobMedia[]>([]);
   const [extraFields, setExtraFields] = useState<JobExtraFieldDraft[]>([]);
   const [companyName, setCompanyName] = useState<string>("");
   const [postedByRole, setPostedByRole] = useState<string>("employer");
@@ -115,6 +120,7 @@ export default function EditJob() {
       const skillNames = jobSkills?.map(s => s.skill_name) || [];
       setSkills(skillNames);
       setYoutubeUrls(Array.isArray(job.youtube_urls) ? job.youtube_urls : []);
+      setVideoUrls(Array.isArray(job.video_urls) ? job.video_urls : []);
       const extra = await listJobExtraFields(job.id);
       setExtraFields(draftsFromFields(extra));
       hadLocalRange.current = job.local_salary_min != null || job.local_salary_max != null;
@@ -225,6 +231,7 @@ export default function EditJob() {
         expires_at: data.expires_at || null,
         service_charge: data.service_charge,
         youtube_urls: youtubeUrls,
+        video_urls: videoUrls,
         ...jobConfigPatch(configValues(data), pay.salary_display),
       };
 
@@ -562,7 +569,45 @@ export default function EditJob() {
               slugError={errors.slug?.message}
             />
 
+            <JobMediaFilesField
+              title="Accommodation photos"
+              description="Upload photos of worker accommodation for this job. JPEG, PNG, or WebP, up to 5 MB each. They are saved on this job as soon as the upload finishes."
+              kind="accommodation"
+              accept="image/jpeg,image/png,image/webp"
+              addLabel="Upload photos"
+              jobId={jobId}
+              urls={mediaUrlsFromText(watch("accommodation_image_urls"))}
+              onChange={(urls) => {
+                setValue("accommodation_image_urls", urls.join("\n"));
+                if (!jobId) return;
+                void adminUpdateJob(jobId, { accommodation_image_urls: urls }).then(({ error }) => {
+                  if (error) toast.error(error);
+                });
+              }}
+              pending={pendingPhotos}
+              onPendingChange={setPendingPhotos}
+            />
+
             <JobYoutubeLinksField urls={youtubeUrls} onChange={setYoutubeUrls} />
+
+            <JobMediaFilesField
+              title="Uploaded work videos"
+              description="Upload an MP4 or WebM for this job, up to 50 MB each. YouTube links above stay as they are. Uploaded videos are saved on this job as soon as the upload finishes."
+              kind="videos"
+              accept="video/mp4,video/webm"
+              addLabel="Upload videos"
+              jobId={jobId}
+              urls={videoUrls}
+              onChange={(urls) => {
+                setVideoUrls(urls);
+                if (!jobId) return;
+                void adminUpdateJob(jobId, { video_urls: urls }).then(({ error }) => {
+                  if (error) toast.error(error);
+                });
+              }}
+              pending={pendingVideos}
+              onPendingChange={setPendingVideos}
+            />
 
             <Card>
               <CardHeader>

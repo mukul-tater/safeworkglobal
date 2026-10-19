@@ -139,6 +139,7 @@ interface JobData {
   service_charge?: number | null;
   salary_display?: string | null;
   youtube_urls?: string[] | null;
+  video_urls?: string[] | null;
   job_skills: { skill_name: string }[];
 }
 
@@ -766,6 +767,7 @@ export default function JobDetail() {
                 description={job.description}
                 country={job.country}
                 youtubeUrls={job.youtube_urls}
+                videoUrls={job.video_urls}
                 useSavedCopy={Boolean(job.use_saved_copy)}
               />
 

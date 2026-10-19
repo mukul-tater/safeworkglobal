@@ -171,7 +171,7 @@ const adminJobFieldsSchema = jobPostingBaseSchema
       .refine((value) => !value || (/^\d+$/.test(value) && Number(value) >= 16 && Number(value) <= 70), "Minimum age must be from 16 to 70"),
     age_max: z.string().trim().optional().or(z.literal(""))
       .refine((value) => !value || (/^\d+$/.test(value) && Number(value) >= 16 && Number(value) <= 70), "Maximum age must be from 16 to 70"),
-    accommodation_image_urls: z.string().trim().max(4000).optional().or(z.literal(""))
+    accommodation_image_urls: z.string().trim().max(20000).optional().or(z.literal(""))
       .refine((value) => !value || value.split(/\n+/).every((line) => {
         const item = line.trim();
         return !item || /^https?:\/\//i.test(item) || item.startsWith("/");

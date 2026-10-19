@@ -240,20 +240,6 @@ export default function AdminJobConfigurationFields({ values, onChange, cardImag
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="accommodation_image_urls">Accommodation photos</Label>
-          <Textarea
-            id="accommodation_image_urls"
-            value={values.accommodation_image_urls}
-            onChange={(event) => onChange({ accommodation_image_urls: event.target.value })}
-            rows={4}
-            placeholder={'One image URL per line\nhttps://'}
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            Shown on the job page. Use a full https link, or a path that starts with /.
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="processing_time">Processing time</Label>
