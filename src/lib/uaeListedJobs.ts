@@ -178,15 +178,13 @@ export function getPublicJobTitle(
   return UAE_LISTED_JOB_LABELS[job].en;
 }
 
-/** Generic Carpenter listing, or any job an admin hid from Find jobs. */
+/** True when an admin hid this listing from Find jobs. */
 export function isHiddenPublicJob(
-  title: string,
-  slug?: string | null,
+  _title: string,
+  _slug?: string | null,
   hiddenFromPublic?: boolean | null,
 ): boolean {
-  if (hiddenFromPublic) return true;
-  if (slug === 'uae-listed-carpenter') return true;
-  return title.trim().toLowerCase() === 'carpenter';
+  return hiddenFromPublic === true;
 }
 
 /** True when the listing maps onto a Find-jobs / homepage trade. */

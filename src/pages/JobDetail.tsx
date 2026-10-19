@@ -47,7 +47,6 @@ import {
   canChangeJourneyJob,
   changeJourneyJob,
   getJobSwitchPolicy,
-  JOB_CHANGE_ENABLED,
 } from '@/modules/worker-verification/services/jobJourneyService';
 import { getOrCreateVerification } from '@/modules/worker-verification/services/verificationService';
 import type { WorkerVerification } from '@/modules/worker-verification/types';
@@ -162,6 +161,7 @@ export default function JobDetail() {
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [journeyRow, setJourneyRow] = useState<WorkerVerification | null>(null);
+  const [jobChangeEnabled, setJobChangeEnabled] = useState(false);
   const [changeOpen, setChangeOpen] = useState(false);
   const [feeOpen, setFeeOpen] = useState(false);
   const [feeDue, setFeeDue] = useState(0);
@@ -284,6 +284,24 @@ export default function JobDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, user?.id]);
 
+  useEffect(() => {
+    if (!user?.id || role !== 'worker') {
+      setJobChangeEnabled(false);
+      return;
+    }
+    let cancelled = false;
+    void getJobSwitchPolicy(user.id)
+      .then((policy) => {
+        if (!cancelled) setJobChangeEnabled(policy.enabled && !policy.blocked);
+      })
+      .catch(() => {
+        if (!cancelled) setJobChangeEnabled(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, role]);
+
   const handleApplyClick = async () => {
     if (!job) return;
     if (!isLoggedIn) {
@@ -310,14 +328,6 @@ export default function JobDetail() {
     }
     const lockedId = journeyRow?.journey_job_id;
     if (lockedId && lockedId !== job.id) {
-      if (!JOB_CHANGE_ENABLED) {
-        toast({
-          title: 'Job change is unavailable',
-          description: 'You already have a job. Changing it is turned off for now.',
-          variant: 'destructive',
-        });
-        return;
-      }
       if (journeyRow && !canChangeJourneyJob(journeyRow)) {
         toast({
           title: 'Job is locked',
@@ -572,7 +582,7 @@ export default function JobDetail() {
       : textPay
     : formatSalaryINR(salaryMin, salaryMax, salaryCurrency);
   const isCurrentJourneyJob = Boolean(lockedJobId && lockedJobId === job.id);
-  const otherJobLocked = Boolean(lockedJobId && lockedJobId !== job.id && !JOB_CHANGE_ENABLED);
+  const otherJobLocked = Boolean(lockedJobId && lockedJobId !== job.id && !jobChangeEnabled);
   const applyLabel = applying
     ? 'Applying...'
     : isCurrentJourneyJob

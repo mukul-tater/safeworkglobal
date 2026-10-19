@@ -85,9 +85,6 @@ export function withCzkAndInrPay(text: string | null | undefined): string {
   const trimmed = text?.trim() ?? '';
   if (!trimmed) return '';
   if (/₹|\bINR\b/i.test(trimmed)) return trimmed;
-  if (/180 per hour/i.test(trimmed) && /currency not stated/i.test(trimmed)) {
-    return `180 CZK/hour (${formatInrFromCzk(180)})`;
-  }
   return appendInrToCzkAmounts(trimmed);
 }
 
@@ -96,12 +93,7 @@ export function annotateEuropePayDescription(text: string): string {
   if (!text.trim()) return text;
   if (/₹/.test(text) && !/\bINR\b/i.test(text)) return text;
 
-  const next = text
-    .replace(
-      'The vacancy states 180 per hour. The currency was not stated.',
-      'Pay is 180 CZK per hour.',
-    )
-    .replace(/\s*\([^)]*\bINR\b[^)]*\)/gi, '');
+  const next = text.replace(/\s*\([^)]*\bINR\b[^)]*\)/gi, '');
 
   return appendInrToCzkAmounts(next);
 }

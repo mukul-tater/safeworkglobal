@@ -103,7 +103,7 @@ export default function AdminJobSwitchPanel() {
         <div>
           <h2 className="font-semibold">Job switch</h2>
           <p className="text-sm text-muted-foreground">
-            On by default. Workers keep one active job. A return to an earlier job reopens that application.
+            Off until you turn it on. Workers keep one active job. A return to an earlier job reopens that application.
           </p>
         </div>
         <div className="flex items-center gap-2">

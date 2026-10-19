@@ -226,6 +226,53 @@ export async function saveContactEmail(userId: string, rawEmail: string): Promis
   return email;
 }
 
+export type QuizSkillSettings = {
+  passScore: number | null;
+  disclaimerEn: string | null;
+  disclaimerHi: string | null;
+};
+
+/** Pass mark and optional disclaimer from Quiz CMS for this skill. */
+export async function loadQuizSkillSettings(
+  skill: string | null | undefined,
+  region?: string | null,
+): Promise<QuizSkillSettings> {
+  const empty: QuizSkillSettings = { passScore: null, disclaimerEn: null, disclaimerHi: null };
+  const code = skill?.trim();
+  if (!code) return empty;
+  const full = await supabase
+    .from('skill_quiz_configs')
+    .select('region, pass_score, disclaimer_en, disclaimer_hi')
+    .eq('skill_code', code)
+    .eq('active', true);
+  const data = full.error
+    ? (
+        await supabase
+          .from('skill_quiz_configs')
+          .select('region, pass_score')
+          .eq('skill_code', code)
+          .eq('active', true)
+      ).data
+    : full.data;
+  if (!data?.length) return empty;
+  const rows = data as Array<{
+    region: string | null;
+    pass_score: number;
+    disclaimer_en: string | null;
+    disclaimer_hi: string | null;
+  }>;
+  const config =
+    (region && rows.find((row) => row.region === region)) ||
+    rows.find((row) => !row.region) ||
+    rows[0];
+  if (!config) return empty;
+  return {
+    passScore: config.pass_score,
+    disclaimerEn: config.disclaimer_en?.trim() || null,
+    disclaimerHi: config.disclaimer_hi?.trim() || null,
+  };
+}
+
 /**
  * Test 1 questions come from the admin CMS (`worker_skill_quiz_items` +
  * `skill_quiz_configs`). Region matching is optional: prefer questions for the
@@ -472,7 +519,8 @@ export async function submitQuiz(
       .maybeSingle();
     if (!jobError) passOverride = job?.quiz_pass_score ?? null;
   }
-  const passed = score >= quizPassScoreForSkill(items[0]?.skill_code, passOverride);
+  const quizSettings = await loadQuizSkillSettings(items[0]?.skill_code, row.state);
+  const passed = score >= quizPassScoreForSkill(items[0]?.skill_code, passOverride, quizSettings.passScore);
   const now = new Date().toISOString();
 
   const { data, error } = await supabase

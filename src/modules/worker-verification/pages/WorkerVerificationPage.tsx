@@ -45,7 +45,6 @@ import {
 import type { BondTemplate, SkillQuizItem, WorkerVerification } from '@/modules/worker-verification/types';
 import { isMcqQuizItem } from '@/modules/worker-verification/types';
 import {
-  DELIVERY_QUIZ_DISCLAIMER,
   describeQuizResult,
   quizPassScoreForSkill,
 } from '@/modules/worker-verification/quiz-data/quizResult';
@@ -57,6 +56,7 @@ import {
   getOrCreateVerification,
   loadActiveBondTemplate,
   loadQuizItemsForWorker,
+  loadQuizSkillSettings,
   saveEssentials,
   saveContactEmail,
   submitQuiz,
@@ -96,7 +96,7 @@ import {
   loadWorkerSkillMediaItems,
   type WorkerSkillMediaFile,
 } from '@/lib/workerSkillMedia';
-import { canChangeJourneyJob } from '@/modules/worker-verification/services/jobJourneyService';
+import { canChangeJourneyJob, getJobSwitchPolicy } from '@/modules/worker-verification/services/jobJourneyService';
 import { getWorkerDeclarations } from '@/modules/worker-verification/services/declarationService';
 import type { WorkerPreJourneyDeclaration } from '@/modules/worker-verification/types/declarations.types';
 import PassportRequirementInfo, { PanUploadLaterInfo } from '@/components/worker/PassportRequirementInfo';
@@ -373,6 +373,9 @@ export default function WorkerVerificationPage({
   const [journeyJobCountry, setJourneyJobCountry] = useState<string | null>(null);
   const [journeyQuizSkill, setJourneyQuizSkill] = useState<string | null>(null);
   const [journeyQuizPass, setJourneyQuizPass] = useState<number | null>(null);
+  const [cmsQuizPass, setCmsQuizPass] = useState<number | null>(null);
+  const [quizDisclaimer, setQuizDisclaimer] = useState<{ en: string | null; hi: string | null } | null>(null);
+  const [jobChangeEnabled, setJobChangeEnabled] = useState(false);
   const [journeyWorkPhrase, setJourneyWorkPhrase] = useState<string | null>(null);
   const journeyRules = useJourneyRules();
 
@@ -496,19 +499,32 @@ export default function WorkerVerificationPage({
       if (gen !== loadGen.current) return;
       setRow(v);
       let passOverride: number | null = null;
+      let passSkill = v.primary_skill;
       if (v.journey_job_id) {
         const { data: jobPass, error: passError } = await supabase
           .from('jobs')
-          .select('quiz_pass_score')
+          .select('title, description, country, quiz_skill_code, quiz_pass_score')
           .eq('id', v.journey_job_id)
           .maybeSingle();
-        if (!passError) passOverride = jobPass?.quiz_pass_score ?? null;
+        if (!passError && jobPass) {
+          passOverride = jobPass.quiz_pass_score ?? null;
+          passSkill = resolveQuizSkillCode({
+            primarySkill: v.primary_skill,
+            jobTitle: jobPass.title,
+            jobDescription: jobPass.description,
+            country: jobPass.country,
+            quizSkillCode: jobPass.quiz_skill_code,
+          });
+        }
       }
+      const quizSettings = await loadQuizSkillSettings(passSkill, v.state);
       if (gen !== loadGen.current) return;
+      setCmsQuizPass(quizSettings.passScore);
+      setQuizDisclaimer({ en: quizSettings.disclaimerEn, hi: quizSettings.disclaimerHi });
       if (
         v.quiz_score != null &&
         !v.quiz_completed_at &&
-        Number(v.quiz_score) < quizPassScoreForSkill(v.primary_skill, passOverride)
+        Number(v.quiz_score) < quizPassScoreForSkill(passSkill, passOverride, quizSettings.passScore)
       ) {
         setQuizFailScore(Number(v.quiz_score));
         setQuizNeedsRetake(true);
@@ -749,6 +765,41 @@ export default function WorkerVerificationPage({
       cancelled = true;
     };
   }, [row?.journey_job_id]);
+
+  useEffect(() => {
+    if (!row) return;
+    let cancelled = false;
+    const skill = resolveQuizSkillCode({
+      primarySkill: row.primary_skill,
+      jobTitle: journeyJobTitle,
+      jobDescription: journeyJobDescription,
+      country: journeyJobCountry,
+      quizSkillCode: journeyQuizSkill,
+    });
+    void loadQuizSkillSettings(skill, row.state).then((settings) => {
+      if (cancelled) return;
+      setCmsQuizPass(settings.passScore);
+      setQuizDisclaimer({ en: settings.disclaimerEn, hi: settings.disclaimerHi });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [row, journeyJobTitle, journeyJobDescription, journeyJobCountry, journeyQuizSkill]);
+
+  useEffect(() => {
+    if (!subjectId) return;
+    let cancelled = false;
+    void getJobSwitchPolicy(subjectId)
+      .then((policy) => {
+        if (!cancelled) setJobChangeEnabled(policy.enabled && !policy.blocked);
+      })
+      .catch(() => {
+        if (!cancelled) setJobChangeEnabled(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [subjectId]);
 
   const rawStage: VerificationStage = row
     ? normalizeVerificationStage(row.stage, row.trade_test_required)
@@ -1253,7 +1304,8 @@ export default function WorkerVerificationPage({
     country: journeyJobCountry,
     quizSkillCode: journeyQuizSkill,
   });
-  const quizPassScore = quizPassScoreForSkill(quizSkill, journeyQuizPass);
+  const quizPassScore = quizPassScoreForSkill(quizSkill, journeyQuizPass, cmsQuizPass);
+  const allowJobChange = Boolean(row && jobChangeEnabled && canChangeJourneyJob(row));
   const workPhrase = appliedJobWorkPhrase(
     row.primary_skill,
     journeyJobTitle,
@@ -1358,7 +1410,7 @@ export default function WorkerVerificationPage({
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
           <div className="min-w-0 space-y-5">
-        {row.journey_job_id && canChangeJourneyJob(row) && subjectId && (
+        {row.journey_job_id && allowJobChange && subjectId && (
           <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-medium">Current job</p>
@@ -1371,11 +1423,11 @@ export default function WorkerVerificationPage({
             </Button>
           </div>
         )}
-        {changingJob && row.journey_job_id && canChangeJourneyJob(row) && subjectId && (
+        {changingJob && row.journey_job_id && allowJobChange && subjectId && (
           <JourneyJobPicker
             workerUserId={subjectId}
             journeyJobId={row.journey_job_id}
-            canChangeJob={canChangeJourneyJob(row)}
+            canChangeJob={allowJobChange}
             onAdvanced={async (next) => {
               setChangingJob(false);
               setRow(next);
@@ -1402,7 +1454,7 @@ export default function WorkerVerificationPage({
             appliedJobDescription={journeyJobDescription}
             appliedJobCountry={journeyJobCountry}
             quizSkillCode={journeyQuizSkill}
-            quizPassScore={journeyQuizPass}
+            quizPassScore={quizPassScore}
             photoCount={photoCount}
             videoCount={videoCount}
             kycStatus={kycStatusValue}
@@ -1421,7 +1473,7 @@ export default function WorkerVerificationPage({
               clearJourneyQuery();
             }}
             onChangeJob={
-              row.journey_job_id && canChangeJourneyJob(row)
+              row.journey_job_id && allowJobChange
                 ? () => setChangingJob(true)
                 : undefined
             }
@@ -1679,7 +1731,7 @@ export default function WorkerVerificationPage({
             <JourneyJobPicker
               workerUserId={subjectId}
               journeyJobId={row.journey_job_id}
-              canChangeJob={canChangeJourneyJob(row)}
+              canChangeJob={allowJobChange}
               onAdvanced={async (next) => {
                 setRow(next);
                 notifyVerificationUpdated();
@@ -1745,12 +1797,14 @@ export default function WorkerVerificationPage({
                 <span className="mt-2 block" lang="hi">
                   यह स्क्रीनिंग टेस्ट है, ट्रेड सर्टिफिकेट नहीं। प्रश्न {quizIndex + 1} / {quizItems.length}.
                 </span>
-                {quizSkill === 'Delivery' ? (
+                {quizDisclaimer?.en || quizDisclaimer?.hi ? (
                   <>
-                    <span className="mt-2 block">{DELIVERY_QUIZ_DISCLAIMER.en}</span>
-                    <span className="mt-1 block" lang="hi">
-                      {DELIVERY_QUIZ_DISCLAIMER.hi}
-                    </span>
+                    {quizDisclaimer.en ? <span className="mt-2 block">{quizDisclaimer.en}</span> : null}
+                    {quizDisclaimer.hi ? (
+                      <span className="mt-1 block" lang="hi">
+                        {quizDisclaimer.hi}
+                      </span>
+                    ) : null}
                   </>
                 ) : null}
               </>

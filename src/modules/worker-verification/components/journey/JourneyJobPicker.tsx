@@ -22,7 +22,6 @@ import {
   applyToJobForJourney,
   changeJourneyJob,
   getJobSwitchPolicy,
-  JOB_CHANGE_ENABLED,
   listAppliedJobIds,
   listFavouriteJobIds,
   toggleFavouriteJob,
@@ -141,7 +140,7 @@ interface Props {
 export default function JourneyJobPicker({
   workerUserId,
   journeyJobId,
-  canChangeJob = JOB_CHANGE_ENABLED,
+  canChangeJob = false,
   onAdvanced,
 }: Props) {
   const navigate = useNavigate();

@@ -4256,6 +4256,8 @@ export type Database = {
           active: boolean
           created_at: string
           id: string
+          disclaimer_en: string | null
+          disclaimer_hi: string | null
           pass_score: number
           questions_to_show: number
           region: string | null
@@ -4267,6 +4269,8 @@ export type Database = {
         Insert: {
           active?: boolean
           created_at?: string
+          disclaimer_en?: string | null
+          disclaimer_hi?: string | null
           id?: string
           pass_score?: number
           questions_to_show?: number
@@ -4279,6 +4283,8 @@ export type Database = {
         Update: {
           active?: boolean
           created_at?: string
+          disclaimer_en?: string | null
+          disclaimer_hi?: string | null
           id?: string
           pass_score?: number
           questions_to_show?: number

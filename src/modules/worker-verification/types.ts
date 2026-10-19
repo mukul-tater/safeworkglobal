@@ -149,6 +149,8 @@ export interface SkillQuizConfig {
   selection_mode: 'random_active' | 'explicit_ids';
   selected_ids: string[];
   pass_score: number;
+  disclaimer_en?: string | null;
+  disclaimer_hi?: string | null;
   active: boolean;
 }
 
