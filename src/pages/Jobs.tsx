@@ -30,7 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, listingOptions, publicJobBenefitsText, publicJobHindiTitle, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, listingOptions, publicJobBenefitsText, publicJobHindiTitle, publicSkillName, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, formatAgeRange, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
@@ -250,7 +250,7 @@ export default function Jobs() {
             country: job.country,
             benefits: publicJobBenefitsText(job.title, job.description ?? '', job.country, typeof job.benefits === 'string' ? job.benefits : null, options),
             salaryDisplay: dualSalary ?? (withCzkAndInrPay(listedSalary?.salary_display ?? job.salary_display) || null),
-            useStoredSalary: Boolean(dualSalary),
+            useStoredSalary: Boolean(dualSalary) || (Boolean(options.useSavedCopy) && Boolean(String(job.salary_display || '').trim())),
             rawSalaryMin,
             rawSalaryMax,
             currency,
@@ -266,7 +266,7 @@ export default function Jobs() {
             visaSponsorship: job.visa_sponsorship || false,
             postedAt: new Date(job.posted_at),
             description: description.length > 180 ? `${description.slice(0, 180).trimEnd()}…` : description,
-            skills: job.job_skills?.map((s: any) => s.skill_name) || [],
+            skills: job.job_skills?.map((s: any) => publicSkillName(s.skill_name)) || [],
             serviceCharge: getPublicJobServiceCharge(job.title, job.description ?? '', job.service_charge, job.country),
           };
         });

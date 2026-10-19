@@ -6,11 +6,11 @@ import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import PublicJobBenefitsList from '@/components/jobs/PublicJobBenefitsList';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly, listingOptions, publicJobHindiTitle } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly, listingOptions, publicJobHindiTitle, publicSkillName } from '@/lib/uaeListedJobs';
 import { formatAgeRange, formatJobPlace, jobsBrowsePath, usesStoredPayText } from '@/lib/jobsBrowse';
 import { devCompareJobRecord, isDevCompareJob } from '@/lib/devCompareJob';
 import { JOB_COMPARE_ENABLED } from '@/lib/jobCompareFeature';
-import { adminRangeSalaryDisplay, convertSalaryToINR } from '@/lib/jobSalaryUtils';
+import { adminRangeSalaryDisplay, convertSalaryToINR, withPayPeriod } from '@/lib/jobSalaryUtils';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -578,9 +578,7 @@ export default function JobDetail() {
   const salaryMax = monthlyListed ? listedSalary.salary_max : job.salary_max;
   const salaryCurrency = monthlyListed ? 'INR' : job.currency;
   const salaryMeta = textPay
-    ? monthlyListed
-      ? `${textPay} per month`
-      : textPay
+    ? withPayPeriod(textPay)
     : formatSalaryINR(salaryMin, salaryMax, salaryCurrency);
   const isCurrentJourneyJob = Boolean(lockedJobId && lockedJobId === job.id);
   const otherJobLocked = Boolean(lockedJobId && lockedJobId !== job.id && !jobChangeEnabled);
@@ -854,7 +852,7 @@ export default function JobDetail() {
                     <div className="flex flex-wrap gap-2">
                       {job.job_skills.map((skill, index) => (
                         <Badge key={index} variant="secondary" className="text-sm py-1 px-3">
-                          {skill.skill_name}
+                          {publicSkillName(skill.skill_name)}
                         </Badge>
                       ))}
                     </div>
@@ -1037,7 +1035,7 @@ export default function JobDetail() {
       title={job.seo_title?.trim() || `${displayTitle} | SafeWork Global`}
       description={job.seo_description?.trim() || `Apply for ${displayTitle} in ${job.location}, ${job.country}. ${job.visa_sponsorship ? 'Visa sponsorship available.' : ''} Salary: ${salaryMeta}.`}
       robots={job.indexable === false ? 'noindex, nofollow' : undefined}
-      keywords={`${displayTitle}, ${job.location} jobs, ${job.country} jobs, ${job.job_skills?.map(s => s.skill_name).join(', ')}`}
+      keywords={`${displayTitle}, ${job.location} jobs, ${job.country} jobs, ${job.job_skills?.map(s => publicSkillName(s.skill_name)).join(', ')}`}
       canonicalUrl={`${job.slug ? `https://www.safeworkglobal.com/jobs/${job.slug}` : "https://www.safeworkglobal.com/jobs"}`}
       ogType="article"
       structuredData={jobStructuredData}

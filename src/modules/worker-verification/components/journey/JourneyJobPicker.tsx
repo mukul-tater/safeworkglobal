@@ -19,7 +19,7 @@ import { adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@
 import { formatAgeRange, formatJobPlace } from '@/lib/jobsBrowse';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
-import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, listingOptions, publicJobHindiTitle } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, listingOptions, publicJobHindiTitle, publicSkillName } from '@/lib/uaeListedJobs';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import JobChangeFeeDialog from '@/modules/worker-verification/components/journey/JobChangeFeeDialog';
 import {
@@ -83,7 +83,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
     const country = String(job.country ?? '');
     const options = listingOptions(job as { use_saved_copy?: boolean | null; benefits_hi?: string | null });
     const description = getPublicJobAbout(String(job.title), storedDescription, '', country, options) || storedDescription;
-    const skills = skillsByJob.get(String(job.id)) ?? [];
+    const skills = (skillsByJob.get(String(job.id)) ?? []).map((skill) => publicSkillName(skill));
     const postedRaw = job.posted_at ?? job.created_at;
     const dualSalary = adminRangeSalaryDisplay({
       salary_min: job.salary_min as number | null,
@@ -111,7 +111,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       location: formatJobPlace(String(job.location ?? ''), country),
       country,
       salaryDisplay: dualSalary ?? (withCzkAndInrPay(listedSalary?.salary_display ?? (job.salary_display as string | null)) || null),
-      useStoredSalary: Boolean(dualSalary),
+      useStoredSalary: Boolean(dualSalary) || (Boolean(options.useSavedCopy) && Boolean(String(job.salary_display || '').trim())),
       rawSalaryMin,
       rawSalaryMax,
       currency,
@@ -225,7 +225,7 @@ export default function JourneyJobPicker({
     let cancelled = false;
     void supabase
       .from('jobs')
-      .select('title, description, country')
+      .select('title, description, country, use_saved_copy')
       .eq('id', journeyJobId)
       .maybeSingle()
       .then(({ data }) => {
@@ -233,7 +233,8 @@ export default function JourneyJobPicker({
         const title = (data as { title?: string } | null)?.title;
         const description = (data as { description?: string } | null)?.description ?? '';
         const jobCountry = (data as { country?: string } | null)?.country;
-        setCurrentTitle(title ? getPublicJobTitle(title, description, jobCountry) : null);
+        const savedCopy = Boolean((data as { use_saved_copy?: boolean } | null)?.use_saved_copy);
+        setCurrentTitle(title ? getPublicJobTitle(title, description, jobCountry, { useSavedCopy: savedCopy }) : null);
       });
     return () => {
       cancelled = true;

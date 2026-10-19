@@ -1,4 +1,4 @@
-import { formatJobSalaryAedAndInr, getJobSalaryDisplay, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
+import { formatJobSalaryAedAndInr, getJobSalaryDisplay, withCzkAndInrPay, withPayPeriod } from '@/lib/jobSalaryUtils';
 import { getPublicJobSalary } from '@/lib/uaeListedJobs';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +36,7 @@ export default function JobSalaryText({
   inrClassName,
   className,
 }: JobSalaryTextProps) {
-  const stored = withCzkAndInrPay(display);
+  const stored = withPayPeriod(withCzkAndInrPay(display), periodLabel);
   if (stored) {
     return (
       <span className={cn('inline-flex flex-col', className)}>

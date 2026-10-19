@@ -165,17 +165,29 @@ export function publicJobHindiTitle(
   return listed ? UAE_LISTED_JOB_LABELS[listed].hi : null;
 }
 
-/** Public-facing title: saved title when the admin opted in, otherwise the trade label. */
+/**
+ * Public title. An admin edit is shown as saved.
+ * A title that is still the internal trade id (Pipe Fitter, Delivery, …)
+ * is shown as the display name.
+ */
 export function getPublicJobTitle(
   title: string,
-  description = '',
-  country?: string | null,
-  options?: PublicListingOptions,
+  _description = '',
+  _country?: string | null,
+  _options?: PublicListingOptions,
 ): string {
-  if (options?.useSavedCopy) return title;
-  const job = inferUaeListedJob(title, description, country);
-  if (!job) return title;
-  return UAE_LISTED_JOB_LABELS[job].en;
+  const saved = title.trim();
+  if (!saved) return title;
+  const exact = UAE_LISTED_JOBS.find((job) => job.toLowerCase() === saved.toLowerCase());
+  if (exact && UAE_LISTED_JOB_LABELS[exact].en !== exact) return UAE_LISTED_JOB_LABELS[exact].en;
+  return saved;
+}
+
+/** Skill chip: internal trade ids use the same display name as the job title. */
+export function publicSkillName(skill: string): string {
+  const trimmed = skill.trim();
+  if (!trimmed) return skill;
+  return getPublicJobTitle(trimmed);
 }
 
 /** True when an admin hid this listing from Find jobs. */

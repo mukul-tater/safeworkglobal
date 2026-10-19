@@ -47,6 +47,19 @@ function withGatewayFee(
   return { base, fee: charged - base, charged };
 }
 
+function callbackOrigin(req: Request): string {
+  const origin = (req.headers.get("origin") || "").replace(/\/$/, "");
+  if (/^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(origin)) return origin;
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(?::\d+)?$/i.test(origin)) return origin;
+  return "";
+}
+
+function wholeRupees(value: unknown): number | null {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 500000) return null;
+  return n;
+}
+
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -144,7 +157,9 @@ serve(async (req) => {
     razorpay_payment_id?: string;
     razorpay_order_id?: string;
     razorpay_signature?: string;
+    razorpay_payment_link_id?: string;
     worker_user_id?: string;
+    amount_inr?: number;
   };
   try {
     body = await req.json();
@@ -308,6 +323,122 @@ serve(async (req) => {
       });
       if (doneErr) throw new Error(doneErr.message);
       return json(200, { already_paid: true, amount_inr: due });
+    }
+
+    if (action === "create_payment_link" || action === "confirm_payment_link") {
+      const payerId = await resolvePayerUserId(body.worker_user_id);
+
+      if (action === "create_payment_link") {
+        const amountInr = wholeRupees(body.amount_inr);
+        if (!amountInr) {
+          return json(400, { error: "Enter a whole rupee amount from 1 to 5,00,000" });
+        }
+        const origin = callbackOrigin(req);
+        if (!origin) return json(400, { error: "Open Payments in the browser to pay" });
+
+        const { data: inserted, error: insErr } = await admin
+          .from("custom_amount_payments")
+          .insert({
+            user_id: payerId,
+            amount: amountInr,
+            status: "pending",
+            provider: "razorpay",
+          })
+          .select("id")
+          .single();
+        if (insErr || !inserted?.id) throw new Error(insErr?.message || "Could not save the payment");
+
+        const referenceId = String(inserted.id).replace(/-/g, "");
+        const payload: Record<string, unknown> = {
+          amount: amountInr * 100,
+          currency: "INR",
+          accept_partial: false,
+          description: "SafeWork Global payment",
+          reference_id: referenceId,
+          callback_url: `${origin}/payments/complete`,
+          callback_method: "get",
+          notes: {
+            user_id: payerId,
+            purpose: "custom_amount",
+            amount_inr: String(amountInr),
+            payment_row_id: inserted.id,
+          },
+        };
+        const linkRes = await fetch("https://api.razorpay.com/v1/payment_links", {
+          method: "POST",
+          headers: {
+            Authorization: razorpayAuthHeader(keyId, keySecret),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        const linkJson = await linkRes.json().catch(() => ({}));
+        if (!linkRes.ok || !linkJson?.id || !linkJson?.short_url) {
+          await admin.from("custom_amount_payments").update({ status: "failed" }).eq("id", inserted.id);
+          return json(502, {
+            error: linkJson?.error?.description || "Could not create the Razorpay payment link",
+          });
+        }
+        const { error: updErr } = await admin
+          .from("custom_amount_payments")
+          .update({
+            razorpay_payment_link_id: linkJson.id,
+            short_url: linkJson.short_url,
+          })
+          .eq("id", inserted.id);
+        if (updErr) throw new Error(updErr.message);
+        return json(200, {
+          payment_link_id: linkJson.id,
+          short_url: linkJson.short_url,
+          amount_inr: amountInr,
+        });
+      }
+
+      const linkId = String(body.razorpay_payment_link_id || "").trim();
+      if (!linkId) return json(400, { error: "Missing payment link" });
+      const { data: row, error: rowErr } = await admin
+        .from("custom_amount_payments")
+        .select("id, amount, status, razorpay_payment_link_id")
+        .eq("user_id", payerId)
+        .eq("razorpay_payment_link_id", linkId)
+        .maybeSingle();
+      if (rowErr) throw new Error(rowErr.message);
+      if (!row) return json(400, { error: "No payment link matches this account" });
+      const expectedInr = wholeRupees(row.amount);
+      if (!expectedInr) return json(400, { error: "Saved payment amount is invalid" });
+      if (row.status === "paid") {
+        return json(200, { paid: true, amount_inr: expectedInr, status: "paid" });
+      }
+
+      const { ok, json: link } = await rzpGet(`/payment_links/${linkId}`);
+      if (!ok) {
+        return json(502, { error: link?.error?.description || "Could not read the Razorpay payment link" });
+      }
+      const noteUser = String(link?.notes?.user_id || "").trim();
+      const paidPaise = Number(link?.amount_paid);
+      const linkPaise = Number(link?.amount);
+      const expectedPaise = expectedInr * 100;
+      const settled = link?.status === "paid" && paidPaise === expectedPaise && linkPaise === expectedPaise;
+      if (noteUser && noteUser !== payerId) {
+        return json(400, { error: "Payment link does not belong to this account" });
+      }
+      if (!settled) {
+        return json(200, { paid: false, amount_inr: expectedInr, status: String(link?.status || "pending") });
+      }
+      const paymentId = Array.isArray(link?.payments)
+        ? String(link.payments.find((item: { status?: string }) => item?.status === "captured")?.payment_id || link.payments[0]?.payment_id || "")
+        : "";
+      const { error: doneErr } = await admin
+        .from("custom_amount_payments")
+        .update({
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          razorpay_payment_id: paymentId || null,
+        })
+        .eq("id", row.id)
+        .eq("status", "pending");
+      if (doneErr) throw new Error(doneErr.message);
+      return json(200, { paid: true, amount_inr: expectedInr, status: "paid" });
     }
 
     const payerId = await resolvePayerUserId(body.worker_user_id);

@@ -189,7 +189,8 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
                           currency={job.currency}
                           title={job.title}
                           country={job.country}
-                          display={adminRangeSalaryDisplay(job) ?? (usesStoredPayText(job.country) ? job.salary_display : undefined)}
+                          display={adminRangeSalaryDisplay(job) ?? ((job.use_saved_copy || usesStoredPayText(job.country)) ? job.salary_display : undefined)}
+                          useSavedCopy={Boolean(job.use_saved_copy)}
                           periodLabel={t("jobs.perMonth")}
                           primaryClassName="text-lg font-bold text-primary"
                           inrClassName="text-xs font-normal"

@@ -1,4 +1,5 @@
 import WorkerPortalLayout from "@/components/layout/WorkerPortalLayout";
+import CustomAmountPay from "@/components/payments/CustomAmountPay";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -120,6 +121,8 @@ export default function WorkerPayments() {
                   View your payment history and escrow details
                 </p>
               </div>
+
+              <CustomAmountPay />
 
               {/* Statistics Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

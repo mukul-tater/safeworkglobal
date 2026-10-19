@@ -99,6 +99,7 @@ const Footer = () => {
                     {t("footer.createProfile")}
                   </button>
                 </li>
+                <li><Link to="/payments" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">Payments</Link></li>
                 <li><Link to="/support" className="text-xs sm:text-sm text-white/50 hover:text-white transition-colors">{t("footer.support")}</Link></li>
               </ul>
             </div>

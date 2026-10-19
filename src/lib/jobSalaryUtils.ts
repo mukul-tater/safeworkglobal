@@ -88,6 +88,17 @@ export function withCzkAndInrPay(text: string | null | undefined): string {
   return appendInrToCzkAmounts(trimmed);
 }
 
+const PAY_PERIOD_RE =
+  /per\s+(month|hour|day|week|year|annum)|\/\s*(month|hour|hr|day|week)|monthly|hourly|\bper\s+hr\b/i;
+
+/** Add "per month" when a pay sentence does not already say how often it is paid. */
+export function withPayPeriod(text: string, periodLabel = 'per month'): string {
+  const trimmed = text.trim();
+  const period = periodLabel.trim();
+  if (!trimmed || !period || PAY_PERIOD_RE.test(trimmed)) return trimmed;
+  return `${trimmed} ${period}`;
+}
+
 /** Pay sentences on Czech job descriptions, without rewriting accommodation amounts that already use ₹. */
 export function annotateEuropePayDescription(text: string): string {
   if (!text.trim()) return text;

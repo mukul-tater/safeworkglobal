@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, Search, Globe, User, Bell, X, LogOut, ChevronRight, CircleHelp } from "lucide-react";
+import { Menu, Search, Globe, User, Bell, X, LogOut, ChevronRight, CircleHelp, Wallet } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,6 +61,7 @@ const Header = () => {
       : showEmployerChrome(role)
       ? [{ to: "/employer/search-workers", label: t("nav.findWorkers"), icon: Search }]
       : [{ to: "/jobs", label: t("nav.findJobs"), icon: Search }]),
+    { to: "/payments", label: "Payments", icon: Wallet },
     { to: "/about", label: t("nav.about"), icon: Globe },
     { to: "/faq", label: t("footer.faq"), icon: CircleHelp },
     { to: "/contact", label: t("nav.contact"), icon: Bell },

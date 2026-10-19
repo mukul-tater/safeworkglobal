@@ -25,6 +25,8 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
+import Payments from "./pages/Payments";
+import PaymentComplete from "./pages/PaymentComplete";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import PartnerOnboarding from "./pages/partner/PartnerOnboarding";
@@ -181,6 +183,8 @@ function AppShell() {
           <Route path="/job-categories" element={<JobCategories />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/contact" element={<ContactUs />} />
+          <Route path="/payments" element={<Payments />} />
+          <Route path="/payments/complete" element={<PaymentComplete />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/benefits-for-employers" element={<BenefitsForEmployers />} />

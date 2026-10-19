@@ -12,7 +12,7 @@ import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatAgeRange, formatJobPlace, shuffleItems, usesStoredPayText } from '@/lib/jobsBrowse';
 import { adminRangeSalaryDisplay } from '@/lib/jobSalaryUtils';
-import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isHiddenPublicJob, listingOptions, publicJobHindiTitle } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isHiddenPublicJob, listingOptions, publicJobHindiTitle, publicSkillName } from '@/lib/uaeListedJobs';
 import ShareJobDialog, { type ShareJobTarget } from '@/components/jobs/ShareJobDialog';
 
 interface FeaturedJob {
@@ -239,7 +239,8 @@ export default function FeaturedJobs() {
                       title={job.title}
                       description={job.description}
                       country={job.country}
-                      display={adminRangeSalaryDisplay(job) ?? (usesStoredPayText(job.country) ? job.salary_display : undefined)}
+                      display={adminRangeSalaryDisplay(job) ?? ((job.use_saved_copy || usesStoredPayText(job.country)) ? job.salary_display : undefined)}
+                      useSavedCopy={Boolean(job.use_saved_copy)}
                       primaryClassName="text-lg font-bold text-primary"
                     />
                     <div className="mt-2">
@@ -269,7 +270,7 @@ export default function FeaturedJobs() {
                   )}
                   {job.job_skills?.slice(0, 2).map((skill) => (
                     <Badge key={skill.skill_name} variant="outline" className="text-xs bg-muted/50">
-                      {skill.skill_name}
+                      {publicSkillName(skill.skill_name)}
                     </Badge>
                   ))}
                 </div>

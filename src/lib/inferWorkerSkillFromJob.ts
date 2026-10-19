@@ -1,5 +1,5 @@
 import { inferEuropeQuizJob } from '@/lib/europeQuizJobs';
-import { inferUaeListedJob, listedJobDisplayName, UAE_LISTED_JOB_WORK } from '@/lib/uaeListedJobs';
+import { getPublicJobTitle, inferUaeListedJob, UAE_LISTED_JOB_WORK } from '@/lib/uaeListedJobs';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 
 const SKILL_ALIASES: Array<{ skill: (typeof WORKER_SKILLS)[number]; needles: string[] }> = [
@@ -47,24 +47,20 @@ export function inferWorkerSkillFromJob(
   return alias?.skill ?? 'Other';
 }
 
-/** Public label for the job the worker applied to (never collapse Cleaner to Helper). */
+/** Public label for the job the worker applied to. Admin title edits win over the trade id. */
 export function appliedJobSkillLabel(
   primarySkill?: string | null,
   jobTitle?: string | null,
   jobDescription?: string | null,
   country?: string | null,
 ): string {
-  const listedFromJob = inferUaeListedJob(jobTitle || '', jobDescription || '', country);
-  if (listedFromJob) return listedJobDisplayName(listedFromJob);
+  const title = (jobTitle || '').trim();
+  if (title) return getPublicJobTitle(title, jobDescription || '', country);
 
   const skill = (primarySkill || '').trim();
   if (!skill) return '—';
-  // Helper/Other were a coarse bucket for many trades — don't relabel as labour.
   if (skill === 'Helper' || skill === 'Other') return skill;
-
-  const listedFromSkill = inferUaeListedJob(skill);
-  if (listedFromSkill) return listedJobDisplayName(listedFromSkill);
-  return skill;
+  return getPublicJobTitle(skill);
 }
 
 /** Activity shown in the skill-proof line (“welding”, “painting”). Falls back to “your work”. */

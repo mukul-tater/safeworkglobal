@@ -33,7 +33,25 @@ export function clearPendingJourneyJob(): void {
   sessionStorage.removeItem(STORAGE_KEY);
 }
 
+const PAY_RETURN_KEY = 'swg_pay_return';
+
+/** After sign-in, come back to the public payments page. */
+export function rememberPaymentsReturn(): void {
+  if (!canUseStorage()) return;
+  sessionStorage.setItem(PAY_RETURN_KEY, '/payments');
+}
+
+function takePaymentsReturn(): string | null {
+  if (!canUseStorage()) return null;
+  const value = sessionStorage.getItem(PAY_RETURN_KEY);
+  if (value !== '/payments') return null;
+  sessionStorage.removeItem(PAY_RETURN_KEY);
+  return value;
+}
+
 export function workerPathAfterAuth(gccReady: boolean): string {
   if (getPendingJourneyJob()) return '/worker/journey';
+  const payments = takePaymentsReturn();
+  if (payments) return payments;
   return gccReady ? '/worker/dashboard' : '/worker/journey';
 }

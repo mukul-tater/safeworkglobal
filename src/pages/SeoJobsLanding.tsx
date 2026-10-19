@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
 import { formatJobSalaryNative } from '@/lib/jobSalaryUtils';
+import { getPublicJobTitle, publicSkillName } from '@/lib/uaeListedJobs';
 import { recordSeoEvent } from '@/lib/seoEvents';
 
 const SPECIAL: Record<string, { title: string; description: string; country?: string; city?: string }> = {
@@ -44,13 +45,14 @@ export default function SeoJobsLanding() {
       if (placeName) query = query.or(`city.ilike.${placeName},country.ilike.${placeName}`);
       const { data } = await query;
       setJobs(((data ?? []) as any[]).map((job) => ({
-        id: job.id, slug: job.slug ?? job.id, title: job.title, company: '', companyLogoUrl: null,
+        id: job.id, slug: job.slug ?? job.id, title: getPublicJobTitle(job.title, job.description ?? '', job.country, { useSavedCopy: Boolean(job.use_saved_copy) }), company: '', companyLogoUrl: null,
         location: `${job.location}, ${job.country}`, country: job.country, salaryDisplay: job.salary_display,
+        useStoredSalary: Boolean(job.use_saved_copy) && Boolean(String(job.salary_display || '').trim()),
         rawSalaryMin: job.salary_min, rawSalaryMax: job.salary_max, currency: job.currency,
         salaryMin: job.currency === 'INR' ? job.salary_min : null, salaryMax: job.currency === 'INR' ? job.salary_max : null,
         type: job.job_type?.replace('_', ' '), category: job.category ?? 'Other', experienceLevel: job.experience_level,
         visaSponsorship: Boolean(job.visa_sponsorship), postedAt: new Date(job.posted_at ?? job.created_at),
-        description: job.description, skills: job.job_skills?.map((s: any) => s.skill_name) ?? [], serviceCharge: job.service_charge,
+        description: job.description, skills: job.job_skills?.map((s: any) => publicSkillName(s.skill_name)) ?? [], serviceCharge: job.service_charge,
       })));
       setLoading(false);
     })();
