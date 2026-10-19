@@ -7,7 +7,7 @@ import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { formatSalaryINR } from '@/lib/utils';
 import PublicJobBenefitsList from '@/components/jobs/PublicJobBenefitsList';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, listPublicJobResponsibilities, listedSalaryIsMonthly, listingOptions, publicJobHindiTitle } from '@/lib/uaeListedJobs';
-import { formatJobPlace, jobsBrowsePath, usesStoredPayText } from '@/lib/jobsBrowse';
+import { formatAgeRange, formatJobPlace, jobsBrowsePath, usesStoredPayText } from '@/lib/jobsBrowse';
 import { devCompareJobRecord, isDevCompareJob } from '@/lib/devCompareJob';
 import { JOB_COMPARE_ENABLED } from '@/lib/jobCompareFeature';
 import { adminRangeSalaryDisplay, convertSalaryToINR } from '@/lib/jobSalaryUtils';
@@ -128,6 +128,9 @@ interface JobData {
   processing_time_hi?: string | null;
   benefits_hi?: string | null;
   card_image_url?: string | null;
+  age_min?: number | null;
+  age_max?: number | null;
+  accommodation_image_urls?: string[] | null;
   category?: string | null;
   use_saved_copy?: boolean | null;
   seo_title?: string | null;
@@ -673,6 +676,11 @@ export default function JobDetail() {
                       className="mb-4 h-48 w-full rounded-xl object-cover"
                     />
                   ) : null}
+                  {formatAgeRange(job.age_min, job.age_max) ? (
+                    <p className="mb-3 text-sm text-muted-foreground">
+                      {formatAgeRange(job.age_min, job.age_max)}
+                    </p>
+                  ) : null}
                   {job.processing_time ? (
                     <p className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4 shrink-0" />
@@ -723,7 +731,27 @@ export default function JobDetail() {
                 </CardContent>
               </Card>
 
-              <JobRoleVideo
+              {Array.isArray(job.accommodation_image_urls) && job.accommodation_image_urls.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Accommodation</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {job.accommodation_image_urls.map((src) => (
+                        <img
+                          key={src}
+                          src={src}
+                          alt="Worker accommodation"
+                          className="h-36 w-full rounded-xl object-cover"
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              <JobRoleVideo>
                 title={job.title}
                 description={job.description}
                 country={job.country}

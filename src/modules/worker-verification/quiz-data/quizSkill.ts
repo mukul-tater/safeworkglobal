@@ -34,7 +34,8 @@ export function resolveQuizSkillCode(opts: {
   country?: string | null;
   quizSkillCode?: string | null;
 }): QuizSkillCode {
-  if (isQuizSkillCode(opts.quizSkillCode)) return opts.quizSkillCode;
+  const explicit = opts.quizSkillCode?.trim();
+  if (explicit) return explicit as QuizSkillCode;
 
   const europe = inferEuropeQuizJob(opts.jobTitle || opts.primarySkill || '');
   if (europe) return europe;

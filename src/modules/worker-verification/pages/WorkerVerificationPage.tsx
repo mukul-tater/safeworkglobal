@@ -2020,7 +2020,7 @@ export default function WorkerVerificationPage({
             timeline={[
               {
                 label: 'Identity documents submitted',
-                detail: 'Aadhaar and face photo uploaded. A 10th certificate is optional.',
+                detail: 'Aadhaar and face photo uploaded. A 10th certificate can be added too.',
                 status: 'done',
               },
               { label: 'SafeWork verifying your documents', status: 'current' },
@@ -2054,7 +2054,7 @@ export default function WorkerVerificationPage({
             title={strictIdentityDocs ? 'Complete required identity documents' : 'Identity (KYC)'}
             description={
               strictIdentityDocs
-                ? 'Your skill test is complete. Upload a face photo, PAN, Aadhaar, and a passport that is valid for at least 6 months. A 10th certificate is optional.'
+                ? 'Your skill test is complete. Upload a face photo, PAN, Aadhaar, and a passport that is valid for at least 6 months. You can also add a 10th certificate.'
                 : 'Aadhaar and a face photo are required. PAN, passport, and a 10th certificate can be added now or later.'
             }
             timeEstimate="Takes 5–7 minutes"
@@ -2231,7 +2231,7 @@ export default function WorkerVerificationPage({
               </div>
               {needsTenthMarksheet && (
                 <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
-                  <p className="text-sm font-medium text-foreground">10th or any higher education (optional)</p>
+                  <p className="text-sm font-medium text-foreground">10th or any higher education</p>
                   <KycPhotoField
                     label="10th or higher education certificate photo"
                     file={tenthMarksheetFile}

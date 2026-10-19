@@ -8,7 +8,7 @@ import JobCountryGrid from '@/components/jobs/JobCountryGrid';
 import JobTradeGrid from '@/components/jobs/JobTradeGrid';
 import { supabase } from '@/integrations/supabase/client';
 import { adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
-import { formatJobPlace } from '@/lib/jobsBrowse';
+import { formatAgeRange, formatJobPlace } from '@/lib/jobsBrowse';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, listingOptions, publicJobHindiTitle } from '@/lib/uaeListedJobs';
@@ -98,6 +98,7 @@ async function fetchActiveJobs(): Promise<JobListItem[]> {
       titleHi: publicJobHindiTitle(String(job.title), storedDescription, country, job.title_hi as string | null),
       processingTime: (job.processing_time as string | null) || null,
       processingTimeHi: (job.processing_time_hi as string | null) || null,
+      ageLabel: formatAgeRange(job.age_min as number | null, job.age_max as number | null),
       company: '',
       companyLogoUrl: null,
       location: formatJobPlace(String(job.location ?? ''), country),

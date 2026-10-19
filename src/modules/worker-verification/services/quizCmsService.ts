@@ -1,9 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { EUROPE_QUIZ_JOBS } from '@/lib/europeQuizJobs';
 import { bundledMcqBank } from '../quiz-data/mcqBank';
-import { QUIZ_QUESTIONS_TO_SHOW } from '../constants';
-import { quizPassScoreForSkill } from '../quiz-data/quizResult';
+import { QUIZ_PASS_SCORE, QUIZ_QUESTIONS_TO_SHOW } from '../constants';
 import { UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
+import { QUIZ_SKILL_CODES } from '../quiz-data/quizSkill';
 import type { SkillQuizConfig, SkillQuizItem } from '../types';
 
 const db = supabase as any;
@@ -77,6 +77,8 @@ export async function saveQuizConfig(input: {
   selection_mode: 'random_active' | 'explicit_ids';
   selected_ids: string[];
   pass_score: number;
+  disclaimer_en?: string | null;
+  disclaimer_hi?: string | null;
   active: boolean;
 }): Promise<void> {
   const payload = {
@@ -86,6 +88,8 @@ export async function saveQuizConfig(input: {
     selection_mode: input.selection_mode,
     selected_ids: input.selected_ids,
     pass_score: input.pass_score,
+    disclaimer_en: input.disclaimer_en?.trim() || null,
+    disclaimer_hi: input.disclaimer_hi?.trim() || null,
     active: input.active,
     updated_at: new Date().toISOString(),
   };
@@ -136,12 +140,34 @@ export async function publishDefaultQuizBank(skill: string): Promise<number> {
       questions_to_show: QUIZ_QUESTIONS_TO_SHOW,
       selection_mode: 'random_active',
       selected_ids: [],
-      pass_score: quizPassScoreForSkill(skill),
+      pass_score: QUIZ_PASS_SCORE,
       active: true,
     });
   }
 
   return rows.length;
+}
+
+/** Every Test 1 paper: built-in trades, saved quiz rows, and each live job. */
+export async function listQuizSkillChoices(): Promise<string[]> {
+  const names = new Set<string>(QUIZ_SKILL_CODES);
+  const [{ data: jobs, error: jobError }, { data: items, error: itemError }] = await Promise.all([
+    supabase.from('jobs').select('title, quiz_skill_code').eq('status', 'ACTIVE'),
+    db.from('worker_skill_quiz_items').select('skill_code'),
+  ]);
+  if (jobError) throw new Error(jobError.message);
+  if (itemError) throw new Error(itemError.message);
+  for (const job of jobs || []) {
+    const code = (job.quiz_skill_code || '').trim();
+    const title = (job.title || '').trim();
+    if (code) names.add(code);
+    if (title) names.add(title);
+  }
+  for (const row of items || []) {
+    const code = String((row as { skill_code?: string }).skill_code || '').trim();
+    if (code) names.add(code);
+  }
+  return [...names].sort((a, b) => a.localeCompare(b));
 }
 
 /** Fill CMS banks for any listed trade that still has zero questions. */

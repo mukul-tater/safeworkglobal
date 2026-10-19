@@ -42,7 +42,7 @@ export default function JobYoutubeLinksField({ urls, onChange }: JobYoutubeLinks
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Paste a YouTube link and add it. There is no limit. These play in See the work on the job page, along with the clips already shown for this trade.
+          Paste a YouTube link and add it. There is no limit. This list is what plays in See the work.
         </p>
         <div className="flex gap-2">
           <Input

@@ -23,6 +23,7 @@ import {
   deleteQuizItem,
   listQuizConfigs,
   listQuizItems,
+  listQuizSkillChoices,
   publishDefaultQuizBank,
   publishMissingDefaultBanks,
   saveQuizConfig,
@@ -65,8 +66,8 @@ const emptyDraft = (sort: number): Draft => ({
 });
 
 export default function AdminQuizCms() {
-  const skills = useMemo<string[]>(() => [...QUIZ_SKILL_CODES], []);
-  const [skill, setSkill] = useState<string>(skills[0]);
+  const [skills, setSkills] = useState<string[]>([...QUIZ_SKILL_CODES]);
+  const [skill, setSkill] = useState<string>(QUIZ_SKILL_CODES[0]);
   const [items, setItems] = useState<SkillQuizItem[]>([]);
   const [configs, setConfigs] = useState<SkillQuizConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,8 @@ export default function AdminQuizCms() {
   const [cfgRegion, setCfgRegion] = useState<string>(ALL_REGIONS);
   const [cfgCount, setCfgCount] = useState(String(QUIZ_QUESTIONS_TO_SHOW));
   const [cfgPass, setCfgPass] = useState(String(QUIZ_PASS_SCORE));
+  const [cfgDisclaimerEn, setCfgDisclaimerEn] = useState('');
+  const [cfgDisclaimerHi, setCfgDisclaimerHi] = useState('');
   const [cfgMode, setCfgMode] = useState<'random_active' | 'explicit_ids'>('random_active');
   const [cfgSelected, setCfgSelected] = useState<string[]>([]);
 
@@ -100,6 +103,22 @@ export default function AdminQuizCms() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void listQuizSkillChoices()
+      .then((rows) => {
+        if (cancelled || !rows.length) return;
+        setSkills(rows);
+        setSkill((current) => (rows.includes(current) ? current : rows[0]));
+      })
+      .catch(() => {
+        /* Keep the built-in trade list when the job list cannot be loaded. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,6 +144,8 @@ export default function AdminQuizCms() {
       configs.find((c) => (cfgRegion === ALL_REGIONS ? !c.region : c.region === cfgRegion)) || null;
     setCfgCount(String(cfg?.questions_to_show ?? QUIZ_QUESTIONS_TO_SHOW));
     setCfgPass(String(cfg?.pass_score ?? QUIZ_PASS_SCORE));
+    setCfgDisclaimerEn(cfg?.disclaimer_en ?? '');
+    setCfgDisclaimerHi(cfg?.disclaimer_hi ?? '');
     setCfgMode(cfg?.selection_mode ?? 'random_active');
     setCfgSelected(cfg?.selected_ids ?? []);
   }, [configs, cfgRegion]);
@@ -180,6 +201,8 @@ export default function AdminQuizCms() {
         selection_mode: cfgMode,
         selected_ids: cfgMode === 'explicit_ids' ? cfgSelected : [],
         pass_score: Math.min(100, Math.max(0, Number(cfgPass) || QUIZ_PASS_SCORE)),
+        disclaimer_en: cfgDisclaimerEn,
+        disclaimer_hi: cfgDisclaimerHi,
         active: true,
       });
       toast.success('Test settings saved');
@@ -224,7 +247,7 @@ export default function AdminQuizCms() {
     >
       <h1 className="text-2xl md:text-3xl font-bold mb-2">Test 1 — Skill quiz CMS</h1>
       <p className="text-sm text-muted-foreground mb-4">
-        Manage the bilingual MCQ bank per UAE trade: English + Hindi question and four options.
+        Manage the bilingual MCQ bank for every job: English + Hindi question and four options.
         Workers see shuffled option order. Result is a screening pass, not a trade certificate.
       </p>
 
@@ -273,6 +296,23 @@ export default function AdminQuizCms() {
                   onChange={(e) => setCfgPass(e.target.value)}
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Disclaimer (English)</Label>
+              <Textarea
+                rows={3}
+                value={cfgDisclaimerEn}
+                onChange={(e) => setCfgDisclaimerEn(e.target.value)}
+                placeholder="Shown above Test 1 for this skill. Leave empty to hide."
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Disclaimer (Hindi)</Label>
+              <Textarea
+                rows={3}
+                value={cfgDisclaimerHi}
+                onChange={(e) => setCfgDisclaimerHi(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Selection</Label>

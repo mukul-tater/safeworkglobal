@@ -10,9 +10,9 @@ import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { useToast } from '@/hooks/use-toast';
 import { SkeletonJobGrid } from '@/components/ui/skeleton-card';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatJobPlace, usesStoredPayText } from '@/lib/jobsBrowse';
+import { formatAgeRange, formatJobPlace, shuffleItems, usesStoredPayText } from '@/lib/jobsBrowse';
 import { adminRangeSalaryDisplay } from '@/lib/jobSalaryUtils';
-import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob, listingOptions } from '@/lib/uaeListedJobs';
+import { getPublicJobAbout, getPublicJobServiceCharge, getPublicJobTitle, isHiddenPublicJob, listingOptions, publicJobHindiTitle } from '@/lib/uaeListedJobs';
 import ShareJobDialog, { type ShareJobTarget } from '@/components/jobs/ShareJobDialog';
 
 interface FeaturedJob {
@@ -36,6 +36,11 @@ interface FeaturedJob {
   use_saved_copy?: boolean | null;
   hidden_from_public?: boolean | null;
   benefits_hi?: string | null;
+  title_hi?: string | null;
+  processing_time?: string | null;
+  processing_time_hi?: string | null;
+  age_min?: number | null;
+  age_max?: number | null;
   job_skills: {
     skill_name: string;
   }[];
@@ -57,6 +62,8 @@ function countryFlag(country: string): string {
     Japan: "JP",
     Germany: "DE",
     Australia: "AU",
+    "Czech Republic": "CZ",
+    Ukraine: "UA",
   };
   const code = codeByCountry[country];
   return code
@@ -83,16 +90,13 @@ export default function FeaturedJobs() {
             job_skills (skill_name)
           `)
           .eq('status', 'ACTIVE')
-          .order('posted_at', { ascending: false })
-          .limit(40);
+          .order('posted_at', { ascending: false });
 
         if (error) throw error;
-        setJobs(
-          ((data || []) as FeaturedJob[])
-            .filter((job) => isPublicListedJob(job.title, job.description, job.slug, job.country, job.hidden_from_public))
-            .map((job) => ({ ...job, title: getPublicJobTitle(job.title, job.description, job.country, listingOptions(job)) }))
-            .slice(0, 6),
-        );
+        const listed = ((data || []) as FeaturedJob[])
+          .filter((job) => !isHiddenPublicJob(job.title, job.slug, job.hidden_from_public))
+          .map((job) => ({ ...job, title: getPublicJobTitle(job.title, job.description, job.country, listingOptions(job)) }));
+        setJobs(shuffleItems(listed).slice(0, 6));
       } catch (error) {
         console.error('Error loading jobs:', error);
       } finally {
@@ -164,7 +168,7 @@ export default function FeaturedJobs() {
         <div className="text-center mb-10 lg:mb-14">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-primary/10 text-primary mb-4">
             <Sparkles className="h-3.5 w-3.5" />
-            Latest verified openings
+            Verified openings
           </span>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-heading text-foreground mb-3 tracking-tight">
             Verified Jobs <span className="text-gradient">Abroad</span>
@@ -198,6 +202,16 @@ export default function FeaturedJobs() {
                 <h3 className="text-lg font-semibold font-heading text-foreground line-clamp-2 group-hover:text-primary transition-colors mb-1">
                   {job.title}
                 </h3>
+                {publicJobHindiTitle(job.title, job.description, job.country, job.title_hi) ? (
+                  <p className="mb-1 line-clamp-1 text-sm text-muted-foreground">
+                    {publicJobHindiTitle(job.title, job.description, job.country, job.title_hi)}
+                  </p>
+                ) : null}
+                {formatAgeRange(job.age_min, job.age_max) || job.processing_time ? (
+                  <p className="mb-2 line-clamp-1 text-xs text-muted-foreground">
+                    {[formatAgeRange(job.age_min, job.age_max), job.processing_time].filter(Boolean).join(' · ')}
+                  </p>
+                ) : null}
 
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-3">
                   <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />

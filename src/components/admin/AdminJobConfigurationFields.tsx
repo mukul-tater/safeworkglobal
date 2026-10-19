@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { JOB_CATEGORIES } from '@/lib/constants';
 import { QUIZ_SKILL_CODES } from '@/modules/worker-verification/quiz-data/quizSkill';
+import { listQuizSkillChoices } from '@/modules/worker-verification/services/quizCmsService';
 
 export type JobConfigValues = {
   title_hi: string;
@@ -25,6 +27,9 @@ export type JobConfigValues = {
   indexable: boolean;
   hidden_from_public: boolean;
   use_saved_copy: boolean;
+  age_min: string;
+  age_max: string;
+  accommodation_image_urls: string;
 };
 
 export const EMPTY_JOB_CONFIG: JobConfigValues = {
@@ -44,7 +49,10 @@ export const EMPTY_JOB_CONFIG: JobConfigValues = {
   seo_description: '',
   indexable: true,
   hidden_from_public: false,
-  use_saved_copy: false,
+  use_saved_copy: true,
+  age_min: '',
+  age_max: '',
+  accommodation_image_urls: '',
 };
 
 function blank(value: string | null | undefined): string | null {
@@ -72,7 +80,24 @@ export function configValues(data: Partial<JobConfigValues> | null | undefined):
     indexable: source.indexable !== false,
     hidden_from_public: Boolean(source.hidden_from_public),
     use_saved_copy: Boolean(source.use_saved_copy),
+    age_min: source.age_min || '',
+    age_max: source.age_max || '',
+    accommodation_image_urls: source.accommodation_image_urls || '',
   };
+}
+
+function ageNumber(value: string): number | null {
+  const text = value.trim();
+  if (!text) return null;
+  const parsed = Number(text);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+function photoLines(value: string): string[] {
+  return value
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 /** Columns written with the rest of the admin job patch. A typed pay sentence wins over the generated one. */
@@ -104,6 +129,9 @@ export function jobConfigSaveFields(values: JobConfigValues) {
     indexable: values.indexable !== false,
     hidden_from_public: Boolean(values.hidden_from_public),
     use_saved_copy: Boolean(values.use_saved_copy),
+    age_min: ageNumber(values.age_min),
+    age_max: ageNumber(values.age_max),
+    accommodation_image_urls: photoLines(values.accommodation_image_urls),
   };
 }
 
@@ -118,6 +146,26 @@ interface Props {
 }
 
 export default function AdminJobConfigurationFields({ values, onChange, cardImageError, slugError }: Props) {
+  const [papers, setPapers] = useState<string[]>([...QUIZ_SKILL_CODES]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void listQuizSkillChoices()
+      .then((rows) => {
+        if (!cancelled && rows.length) setPapers(rows);
+      })
+      .catch(() => {
+        /* Built-in trades stay available. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const paperOptions = values.quiz_skill_code && !papers.includes(values.quiz_skill_code)
+    ? [values.quiz_skill_code, ...papers]
+    : papers;
+
   return (
     <Card>
       <CardHeader>
@@ -135,7 +183,7 @@ export default function AdminJobConfigurationFields({ values, onChange, cardImag
               Show the saved job text on Find jobs
             </Label>
             <p className="text-xs text-muted-foreground mt-1">
-              Title, description, duties, benefits and pay on this form are what workers see. Leave this off to keep the standard trade page for a UAE listing.
+              Title, Hindi name, description, duties, benefits and pay on this form are what workers see.
             </p>
           </div>
         </div>
@@ -167,6 +215,43 @@ export default function AdminJobConfigurationFields({ values, onChange, cardImag
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="age_min">Minimum age</Label>
+            <Input
+              id="age_min"
+              inputMode="numeric"
+              value={values.age_min}
+              onChange={(event) => onChange({ age_min: event.target.value })}
+              placeholder="22"
+            />
+          </div>
+          <div>
+            <Label htmlFor="age_max">Maximum age</Label>
+            <Input
+              id="age_max"
+              inputMode="numeric"
+              value={values.age_max}
+              onChange={(event) => onChange({ age_max: event.target.value })}
+              placeholder="37"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="accommodation_image_urls">Accommodation photos</Label>
+          <Textarea
+            id="accommodation_image_urls"
+            value={values.accommodation_image_urls}
+            onChange={(event) => onChange({ accommodation_image_urls: event.target.value })}
+            rows={4}
+            placeholder={'One image URL per line\nhttps://'}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Shown on the job page. Use a full https link, or a path that starts with /.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -249,7 +334,7 @@ export default function AdminJobConfigurationFields({ values, onChange, cardImag
               </SelectTrigger>
               <SelectContent className="max-h-64">
                 <SelectItem value={AUTO}>Automatic from the title</SelectItem>
-                {QUIZ_SKILL_CODES.map((code) => (
+                {paperOptions.map((code) => (
                   <SelectItem key={code} value={code}>{code}</SelectItem>
                 ))}
               </SelectContent>

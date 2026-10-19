@@ -192,7 +192,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (nErr) throw nErr
     const isReupload = notification?.type === 'kyc_reupload_required'
     const isSlip = notification?.type === 'trade_test_slip' || notification?.type === 'trade_test_slip_cancelled'
-    if (!notification || (notification.type !== 'journey_step_cleared' && !isReupload && !isSlip)) {
+    const isJobMail = notification?.type === 'job_selected' || notification?.type === 'interview_scheduled'
+    if (!notification || (notification.type !== 'journey_step_cleared' && !isReupload && !isSlip && !isJobMail)) {
       return new Response(JSON.stringify({ skipped: true, reason: 'not_journey_notification' }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -428,10 +429,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const workerEmail = displayableEmail(verification?.email) || displayableEmail(profile?.email)
     const location = [verification?.city, verification?.state].filter(Boolean).join(', ')
 
+    const tradeLine = (jobTitle || '').trim()
     const workerTemplateData = {
       workerName: displayText(profile?.full_name, 'there'),
       title: notification.title,
-      message: notification.message,
+      message: tradeLine && !String(notification.message || '').includes(tradeLine)
+        ? `Trade: ${tradeLine}\n\n${notification.message}`
+        : notification.message,
       journeyUrl: JOURNEY_URL,
       isTerminal: isReupload ? false : isTerminal,
       isReupload,
@@ -445,8 +449,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       workerPhone: profile?.phone?.trim() || '',
       trade,
       location,
-      clearedStep: stageLabel(clearedStage),
-      nextStep: stageLabel(nextStage || (isTerminal ? 'gcc_ready' : null)),
+      clearedStep: notification.type === 'job_selected'
+        ? 'Job selection'
+        : notification.type === 'interview_scheduled'
+          ? 'Video interview'
+          : stageLabel(clearedStage),
+      nextStep: notification.type === 'job_selected'
+        ? (tradeLine || 'Test 1')
+        : notification.type === 'interview_scheduled'
+          ? 'Join the video interview'
+          : stageLabel(nextStage || (isTerminal ? 'gcc_ready' : null)),
       isTerminal,
       adminUrl: ADMIN_URL,
     }

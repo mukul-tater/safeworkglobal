@@ -17,7 +17,10 @@ function embedSrc(youtubeId: string, startSeconds?: number) {
 }
 
 export default function JobRoleVideo({ title, description = '', country, youtubeUrls }: JobRoleVideoProps) {
-  const videos = mergeJobVideos(youtubeUrls, getPublicJobVideos(title, description, country));
+  const saved = (youtubeUrls ?? []).filter((url) => url.trim());
+  const videos = saved.length
+    ? mergeJobVideos(saved, [])
+    : mergeJobVideos(null, getPublicJobVideos(title, description, country));
   if (videos.length === 0) return null;
 
   return (

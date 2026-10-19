@@ -39,6 +39,7 @@ export interface JobListItem {
   titleHi?: string | null;
   processingTime?: string | null;
   processingTimeHi?: string | null;
+  ageLabel?: string | null;
 }
 
 function relativeTime(date: Date): string {
@@ -117,6 +118,9 @@ export default function JobResultCard({
             </h3>
             {job.titleHi ? (
               <p className="truncate text-sm text-muted-foreground">{job.titleHi}</p>
+            ) : null}
+            {job.ageLabel ? (
+              <p className="mt-1 truncate text-xs text-muted-foreground">{job.ageLabel}</p>
             ) : null}
             {job.processingTime ? (
               <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">

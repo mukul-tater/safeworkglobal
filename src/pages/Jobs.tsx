@@ -33,7 +33,7 @@ import { JOB_CATEGORIES } from '@/lib/constants';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, listingOptions, publicJobBenefitsText, publicJobHindiTitle, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
-import { browseFromSearchParams, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
+import { browseFromSearchParams, formatAgeRange, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
 import { devCompareListItem } from '@/lib/devCompareJob';
 import { JOB_COMPARE_ENABLED } from '@/lib/jobCompareFeature';
 import { scrollToTop } from '@/lib/scrollToTop';
@@ -242,6 +242,7 @@ export default function Jobs() {
             titleHi: publicJobHindiTitle(job.title, job.description ?? '', job.country, job.title_hi),
             processingTime: job.processing_time || null,
             processingTimeHi: job.processing_time_hi || null,
+            ageLabel: formatAgeRange(job.age_min, job.age_max),
             company: '',
             companyLogoUrl: null,
             city: job.location || '',

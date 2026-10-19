@@ -9,9 +9,9 @@ import JobSalaryText from "@/components/JobSalaryText";
 import JobServiceFee from "@/components/jobs/JobServiceFee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkerLanguage } from "../context/WorkerLanguageContext";
-import { formatJobPlace, usesStoredPayText } from "@/lib/jobsBrowse";
+import { formatJobPlace, shuffleItems, usesStoredPayText } from "@/lib/jobsBrowse";
 import { adminRangeSalaryDisplay } from "@/lib/jobSalaryUtils";
-import { getPublicJobServiceCharge, getPublicJobTitle, isPublicListedJob } from "@/lib/uaeListedJobs";
+import { getPublicJobServiceCharge, getPublicJobTitle, isHiddenPublicJob, listingOptions } from "@/lib/uaeListedJobs";
 
 interface JobPreview {
   id: string;
@@ -27,6 +27,8 @@ interface JobPreview {
   local_salary_max?: number | null;
   local_salary_currency?: string | null;
   service_charge?: number | null;
+  use_saved_copy?: boolean | null;
+  hidden_from_public?: boolean | null;
 }
 
 interface Props {
@@ -54,10 +56,9 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
       try {
         let query = supabase
           .from("jobs")
-          .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display, service_charge")
+          .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display, service_charge, use_saved_copy, hidden_from_public")
           .eq("status", "ACTIVE")
-          .order("posted_at", { ascending: false })
-          .limit(20);
+          .order("posted_at", { ascending: false });
 
         if (preferredCountry) {
           query = query.ilike("country", `%${preferredCountry}%`);
@@ -71,19 +72,19 @@ export default function WorkerFeaturedJobsStrip({ preferredCountry, canApply, ca
         if (results.length === 0 && preferredCountry) {
           const { data: fallback } = await supabase
             .from("jobs")
-            .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display, service_charge")
+            .select("id, slug, title, location, country, salary_min, salary_max, currency, salary_display, service_charge, use_saved_copy, hidden_from_public")
             .eq("status", "ACTIVE")
-            .order("posted_at", { ascending: false })
-            .limit(20);
+            .order("posted_at", { ascending: false });
           results = (fallback || []) as JobPreview[];
         }
 
-        setJobs(
-          results
-            .filter((job) => isPublicListedJob(job.title, '', job.slug, job.country))
-            .map((job) => ({ ...job, title: getPublicJobTitle(job.title, '', job.country) }))
-            .slice(0, 3),
-        );
+        const listed = results
+          .filter((job) => !isHiddenPublicJob(job.title, job.slug, job.hidden_from_public))
+          .map((job) => ({
+            ...job,
+            title: getPublicJobTitle(job.title, '', job.country, listingOptions(job)),
+          }));
+        setJobs(shuffleItems(listed).slice(0, 3));
       } catch (error) {
         console.error("Error loading featured jobs:", error);
       } finally {

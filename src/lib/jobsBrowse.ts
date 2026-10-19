@@ -6,6 +6,24 @@ export function usesStoredPayText(country?: string | null): boolean {
   return (country ?? '').trim().toLowerCase() === 'europe';
 }
 
+/** Inclusive age band saved on the job, for cards and the job page. */
+export function formatAgeRange(min?: number | null, max?: number | null): string | null {
+  if (min != null && max != null) return `Age ${min}–${max}`;
+  if (min != null) return `Age ${min}+`;
+  if (max != null) return `Up to age ${max}`;
+  return null;
+}
+
+/** New order on each call. Used so the homepage mix is not always the newest six. */
+export function shuffleItems<T>(items: readonly T[]): T[] {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swap]] = [copy[swap], copy[index]];
+  }
+  return copy;
+}
+
 /** "Rivne Region, Ukraine". Skip a repeated country when the city was not given. */
 export function formatJobPlace(location?: string | null, country?: string | null): string {
   const loc = (location ?? '').trim();

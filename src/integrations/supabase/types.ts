@@ -1801,6 +1801,9 @@ export type Database = {
           benefits_hi: string | null
           quiz_skill_code: string | null
           quiz_pass_score: number | null
+          age_min: number | null
+          age_max: number | null
+          accommodation_image_urls: string[]
           card_image_url: string | null
           hidden_from_public: boolean
           use_saved_copy: boolean
@@ -1852,6 +1855,9 @@ export type Database = {
           benefits_hi?: string | null
           quiz_skill_code?: string | null
           quiz_pass_score?: number | null
+          age_min?: number | null
+          age_max?: number | null
+          accommodation_image_urls?: string[]
           card_image_url?: string | null
           hidden_from_public?: boolean
           use_saved_copy?: boolean
@@ -1903,6 +1909,9 @@ export type Database = {
           benefits_hi?: string | null
           quiz_skill_code?: string | null
           quiz_pass_score?: number | null
+          age_min?: number | null
+          age_max?: number | null
+          accommodation_image_urls?: string[]
           card_image_url?: string | null
           hidden_from_public?: boolean
           use_saved_copy?: boolean

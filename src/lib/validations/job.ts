@@ -160,13 +160,22 @@ const adminJobFieldsSchema = jobPostingBaseSchema
     city: z.string().trim().max(120).optional().or(z.literal("")),
     work_phrase: z.string().trim().max(80, "Skill-proof phrase must be less than 80 characters").optional().or(z.literal("")),
     benefits_hi: z.string().trim().max(2000).optional().or(z.literal("")),
-    quiz_skill_code: z.string().trim().max(80).optional().or(z.literal("")),
+    quiz_skill_code: z.string().trim().max(160).optional().or(z.literal("")),
     quiz_pass_score: z.string().trim().optional().or(z.literal(""))
       .refine((value) => {
         if (!value) return true;
         const score = Number(value);
         return Number.isInteger(score) && score >= 1 && score <= 100;
       }, "Pass score must be a whole number from 1 to 100"),
+    age_min: z.string().trim().optional().or(z.literal(""))
+      .refine((value) => !value || (/^\d+$/.test(value) && Number(value) >= 16 && Number(value) <= 70), "Minimum age must be from 16 to 70"),
+    age_max: z.string().trim().optional().or(z.literal(""))
+      .refine((value) => !value || (/^\d+$/.test(value) && Number(value) >= 16 && Number(value) <= 70), "Maximum age must be from 16 to 70"),
+    accommodation_image_urls: z.string().trim().max(4000).optional().or(z.literal(""))
+      .refine((value) => !value || value.split(/\n+/).every((line) => {
+        const item = line.trim();
+        return !item || /^https?:\/\//i.test(item) || item.startsWith("/");
+      }), "Each photo needs an https link or a path starting with /"),
     card_image_url: z.string().trim().max(500).optional().or(z.literal(""))
       .refine((value) => !value || /^https?:\/\//i.test(value), "Enter a full image URL starting with https://"),
     salary_display: z.string().trim().max(300).optional().or(z.literal("")),
@@ -179,6 +188,11 @@ const adminJobFieldsSchema = jobPostingBaseSchema
     use_saved_copy: z.boolean().default(false),
   });
 
+function ageRangeIsValid(data: { age_min?: string; age_max?: string }): boolean {
+  if (!data.age_min || !data.age_max) return true;
+  return Number(data.age_max) >= Number(data.age_min);
+}
+
 /** Admin edit form — all job statuses, optional expiry, relaxed requirements */
 export const adminJobEditSchema = adminJobFieldsSchema
   .refine(salaryRangeRefine.refine, {
@@ -188,6 +202,10 @@ export const adminJobEditSchema = adminJobFieldsSchema
   .refine(localSalaryRangeRefine.refine, {
     message: localSalaryRangeRefine.message,
     path: localSalaryRangeRefine.path,
+  })
+  .refine(ageRangeIsValid, {
+    message: "Maximum age must be at least the minimum age",
+    path: ["age_max"],
   });
 
 export type AdminJobEditFormData = z.infer<typeof adminJobEditSchema>;
@@ -204,6 +222,10 @@ export const adminJobPostSchema = adminJobFieldsSchema
   .refine(localSalaryRangeRefine.refine, {
     message: localSalaryRangeRefine.message,
     path: localSalaryRangeRefine.path,
+  })
+  .refine(ageRangeIsValid, {
+    message: "Maximum age must be at least the minimum age",
+    path: ["age_max"],
   });
 
 export type AdminJobPostFormData = z.infer<typeof adminJobPostSchema>;
