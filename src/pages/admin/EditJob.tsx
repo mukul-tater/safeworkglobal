@@ -465,7 +465,7 @@ export default function EditJob() {
                     {...register("service_charge", { valueAsNumber: true })}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Workers see this amount with “+ GST” written next to it. GST is not calculated. Default is ₹{paymentSettings.defaultServiceChargeInr.toLocaleString("en-IN")}.
+                    Workers pay this amount. Fees & payments shows {paymentSettings.gstRatePct}% GST next to it. Changing country does not rewrite a charge already saved on this job.
                   </p>
                   {errors.service_charge && (
                     <p className="text-sm text-destructive mt-1">{errors.service_charge.message}</p>

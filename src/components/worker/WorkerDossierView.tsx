@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SkillMediaGallery from '@/components/worker/SkillMediaGallery';
-import { formatExpectedSalary } from '@/lib/utils';
 import { isWorkerKycVerified } from '@/lib/workerKyc';
 import { SOP_SCORE_FIELDS } from '@/modules/trade-test/types';
 import type { WorkerDossier } from '@/services/workerShareService';
@@ -99,16 +98,6 @@ export default function WorkerDossierView({ dossier }: { dossier: WorkerDossier 
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Experience</p>
           <p className="font-semibold">{textField(wp, 'years_of_experience') || '—'} years</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Expected salary</p>
-          <p className="font-semibold text-sm">
-            {formatExpectedSalary(
-              typeof wp?.expected_salary_min === 'number' ? wp.expected_salary_min : null,
-              typeof wp?.expected_salary_max === 'number' ? wp.expected_salary_max : null,
-              textField(wp, 'currency') || 'INR',
-            )}
-          </p>
         </Card>
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Languages</p>

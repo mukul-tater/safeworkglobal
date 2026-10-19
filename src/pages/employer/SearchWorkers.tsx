@@ -1,5 +1,4 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { formatExpectedSalary } from '@/lib/utils';
 import { employerNavGroups, employerProfileMenu } from "@/config/employerNav";
 import { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -575,14 +574,6 @@ export default function SearchWorkers() {
                             <Languages className="h-3 w-3" /> Languages
                           </p>
                           <p className="font-semibold truncate">{worker.languages.slice(0, 3).join(', ')}</p>
-                        </div>
-                      )}
-                      {(worker.expected_salary_min != null || worker.expected_salary_max != null) && (
-                        <div>
-                          <p className="text-muted-foreground">Expected Salary</p>
-                          <p className="font-semibold">
-                            {formatExpectedSalary(worker.expected_salary_min, worker.expected_salary_max, worker.currency)}
-                          </p>
                         </div>
                       )}
                     </div>

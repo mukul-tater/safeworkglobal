@@ -7,6 +7,14 @@ import JobResultCard, { type JobListItem } from '@/components/jobs/JobResultCard
 import JobCountryGrid from '@/components/jobs/JobCountryGrid';
 import JobTradeGrid from '@/components/jobs/JobTradeGrid';
 import { supabase } from '@/integrations/supabase/client';
+
+function notifyJobSelected(userId: string) {
+  void supabase.functions.invoke('email-journey-step-cleared', {
+    body: { kind: 'job_selected', user_id: userId },
+  }).then(({ error }) => {
+    if (error) console.error('job selected email failed', error);
+  });
+}
 import { adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
 import { formatAgeRange, formatJobPlace } from '@/lib/jobsBrowse';
 import { inferWorkerSkillFromJob } from '@/lib/inferWorkerSkillFromJob';
@@ -269,6 +277,7 @@ export default function JourneyJobPicker({
           ? `Applied. Test 1 will check ${listedJobDisplayName(skill)} work.`
           : 'Application submitted. Continue to Test 1.',
       );
+      notifyJobSelected(workerUserId);
       if (verification) onAdvanced(verification);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not apply';
@@ -346,6 +355,7 @@ export default function JourneyJobPicker({
           title: pending.title,
         });
         clearPendingJourneyJob();
+        notifyJobSelected(workerUserId);
         toast.success('Application submitted. Continue to Test 1.');
         if (verification) onAdvanced(verification);
       } catch (err) {

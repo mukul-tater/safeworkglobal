@@ -28,7 +28,7 @@ import { EXPERIENCE_OPTIONS } from '../types/worker.types';
 import type { OnboardingStage, WorkerOnboardingData, WorkerSkillProof } from '../types/onboarding.types';
 import {
   AVAILABILITY_OPTIONS, EDUCATION_OPTIONS, GENDER_OPTIONS,
-  GCC_CITIES, GCC_COUNTRIES, LANGUAGE_OPTIONS, ONBOARDING_STEPS, SALARY_CURRENCIES,
+  GCC_CITIES, GCC_COUNTRIES, LANGUAGE_OPTIONS, ONBOARDING_STEPS,
 } from '../types/onboarding.types';
 import {
   onboardingStep1Schema,
@@ -79,8 +79,6 @@ export default function WorkerOnboardingPage() {
   const [preferredGccCity, setPreferredGccCity] = useState('');
   const [availability, setAvailability] = useState('');
   const [openToRelocation, setOpenToRelocation] = useState(true);
-  const [expectedSalaryMin, setExpectedSalaryMin] = useState('');
-  const [expectedSalaryCurrency, setExpectedSalaryCurrency] = useState('AED');
   const [languages, setLanguages] = useState<string[]>(['Hindi']);
   const [secondarySkillIds, setSecondarySkillIds] = useState<number[]>([]);
   const [previousEmployer, setPreviousEmployer] = useState('');
@@ -164,8 +162,6 @@ export default function WorkerOnboardingPage() {
     if (data.preferredGccCity) setPreferredGccCity(data.preferredGccCity);
     if (data.availability) setAvailability(data.availability);
     setOpenToRelocation(data.openToRelocation);
-    if (data.expectedSalaryMin) setExpectedSalaryMin(String(data.expectedSalaryMin));
-    setExpectedSalaryCurrency(data.expectedSalaryCurrency || 'AED');
     if (data.languages.length) setLanguages(data.languages);
     setSecondarySkillIds(data.secondarySkillIds);
     if (data.previousEmployer) setPreviousEmployer(data.previousEmployer);
@@ -234,8 +230,6 @@ export default function WorkerOnboardingPage() {
         preferredGccCity,
         availability,
         openToRelocation,
-        expectedSalaryMin: expectedSalaryMin || undefined,
-        expectedSalaryCurrency,
         languages,
         secondarySkillIds,
         previousEmployer: previousEmployer.trim() || undefined,
@@ -294,8 +288,6 @@ export default function WorkerOnboardingPage() {
           preferredGccCity,
           availability,
           openToRelocation,
-          expectedSalaryMin: expectedSalaryMin || undefined,
-          expectedSalaryCurrency,
           languages,
           secondarySkillIds,
           previousEmployer: previousEmployer.trim() || undefined,
@@ -657,21 +649,6 @@ export default function WorkerOnboardingPage() {
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <LabelBlock title="Open to Relocation" subtitle="Willing to work overseas in the GCC" />
                 <Switch checked={openToRelocation} onCheckedChange={setOpenToRelocation} />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField label="Expected Salary">
-                  <Input type="number" value={expectedSalaryMin} onChange={(e) => setExpectedSalaryMin(e.target.value)} placeholder="e.g. 1500" />
-                </FormField>
-                <FormField label="Currency">
-                  <Select value={expectedSalaryCurrency} onValueChange={setExpectedSalaryCurrency}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {SALARY_CURRENCIES.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormField>
               </div>
               <FormField label="Other Skills (max 5)">
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto rounded-md border p-3">

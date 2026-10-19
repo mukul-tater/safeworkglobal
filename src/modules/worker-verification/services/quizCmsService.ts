@@ -1,9 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
-import { EUROPE_QUIZ_JOBS } from '@/lib/europeQuizJobs';
+import { inferEuropeQuizJob } from '@/lib/europeQuizJobs';
+import { inferUaeListedJob } from '@/lib/uaeListedJobs';
 import { bundledMcqBank } from '../quiz-data/mcqBank';
 import { QUIZ_PASS_SCORE, QUIZ_QUESTIONS_TO_SHOW } from '../constants';
-import { UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
-import { QUIZ_SKILL_CODES } from '../quiz-data/quizSkill';
+import { isQuizSkillCode, QUIZ_SKILL_CODES } from '../quiz-data/quizSkill';
 import type { SkillQuizConfig, SkillQuizItem } from '../types';
 
 const db = supabase as any;
@@ -99,23 +99,44 @@ export async function saveQuizConfig(input: {
   if (error) throw new Error(error.message);
 }
 
+/** Paper id for a job title. Known trades share one bank; other titles keep their own. */
+export function quizPaperForLabel(
+  title: string,
+  quizSkillCode?: string | null,
+  country?: string | null,
+): string {
+  const explicit = quizSkillCode?.trim() || '';
+  if (explicit && isQuizSkillCode(explicit)) return explicit;
+  const europe = inferEuropeQuizJob(explicit || title);
+  if (europe) return europe;
+  const listed = inferUaeListedJob(title, '', country);
+  if (listed) return listed;
+  const trimmed = title.trim();
+  if (trimmed) return trimmed;
+  return explicit || 'Other';
+}
+
 /** Default bilingual bank when the CMS has no rows yet. */
 export function defaultQuizBankForSkill(skill: string) {
-  return bundledMcqBank(skill) ?? [];
+  const paper = quizPaperForLabel(skill);
+  return bundledMcqBank(paper) ?? bundledMcqBank(skill) ?? [];
 }
 
 /** Copy the bundled 10-question bank into the CMS for a new trade. */
 export async function publishDefaultQuizBank(skill: string): Promise<number> {
-  const bank = defaultQuizBankForSkill(skill);
+  const paper = quizPaperForLabel(skill);
+  const bank = bundledMcqBank(paper) ?? [];
   if (!bank.length) {
     throw new Error('No default questions for this skill');
   }
 
-  const existing = await listQuizItems(skill);
-  if (existing.length > 0) return 0;
+  const existing = await listQuizItems(paper);
+  const have = new Set(existing.map((row) => row.question.trim().toLowerCase()));
+  const missing = bank.filter((q) => !have.has(q.question.trim().toLowerCase()));
+  if (!missing.length) return 0;
 
-  const rows = bank.map((q, index) => ({
-    skill_code: skill,
+  const rows = missing.map((q, index) => ({
+    skill_code: paper,
     question: q.question,
     question_hi: q.question_hi,
     image_url: null,
@@ -124,7 +145,7 @@ export async function publishDefaultQuizBank(skill: string): Promise<number> {
     options: q.options,
     correct_option: q.correct,
     region: null,
-    sort_order: index + 1,
+    sort_order: existing.length + index + 1,
     active: true,
     updated_at: new Date().toISOString(),
   }));
@@ -132,10 +153,10 @@ export async function publishDefaultQuizBank(skill: string): Promise<number> {
   const { error } = await db.from('worker_skill_quiz_items').insert(rows);
   if (error) throw new Error(error.message);
 
-  const configs = await listQuizConfigs(skill);
+  const configs = await listQuizConfigs(paper);
   if (!configs.some((c) => !c.region)) {
     await saveQuizConfig({
-      skill_code: skill,
+      skill_code: paper,
       region: null,
       questions_to_show: QUIZ_QUESTIONS_TO_SHOW,
       selection_mode: 'random_active',
@@ -151,17 +172,22 @@ export async function publishDefaultQuizBank(skill: string): Promise<number> {
 /** Every Test 1 paper: built-in trades, saved quiz rows, and each live job. */
 export async function listQuizSkillChoices(): Promise<string[]> {
   const names = new Set<string>(QUIZ_SKILL_CODES);
-  const [{ data: jobs, error: jobError }, { data: items, error: itemError }] = await Promise.all([
-    supabase.from('jobs').select('title, quiz_skill_code').eq('status', 'ACTIVE'),
-    db.from('worker_skill_quiz_items').select('skill_code'),
-  ]);
-  if (jobError) throw new Error(jobError.message);
+  const titled = await supabase.from('jobs').select('title, country, quiz_skill_code').eq('status', 'ACTIVE');
+  let jobs: { title?: string | null; country?: string | null; quiz_skill_code?: string | null }[] = [];
+  if (titled.error) {
+    const fallback = await supabase.from('jobs').select('title, country').eq('status', 'ACTIVE');
+    if (fallback.error) throw new Error(fallback.error.message);
+    jobs = fallback.data || [];
+  } else {
+    jobs = titled.data || [];
+  }
+  const { data: items, error: itemError } = await db.from('worker_skill_quiz_items').select('skill_code');
   if (itemError) throw new Error(itemError.message);
-  for (const job of jobs || []) {
-    const code = (job.quiz_skill_code || '').trim();
+  for (const job of jobs) {
     const title = (job.title || '').trim();
-    if (code) names.add(code);
+    const paper = quizPaperForLabel(title, job.quiz_skill_code, job.country);
     if (title) names.add(title);
+    if (paper) names.add(paper);
   }
   for (const row of items || []) {
     const code = String((row as { skill_code?: string }).skill_code || '').trim();
@@ -178,14 +204,15 @@ export async function publishMissingDefaultBanks(): Promise<string[]> {
   if (missingBanksDone) return [];
   if (!missingBanksInflight) {
     missingBanksInflight = (async () => {
-      const { data, error } = await db.from('worker_skill_quiz_items').select('skill_code');
-      if (error) throw new Error(error.message);
-      const have = new Set((data || []).map((row: { skill_code: string }) => row.skill_code));
       const seeded: string[] = [];
-      for (const skill of [...UAE_LISTED_JOBS, ...EUROPE_QUIZ_JOBS]) {
-        if (have.has(skill)) continue;
-        const added = await publishDefaultQuizBank(skill);
-        if (added > 0) seeded.push(skill);
+      const seen = new Set<string>();
+      const choices = await listQuizSkillChoices();
+      for (const skill of choices) {
+        const paper = quizPaperForLabel(skill);
+        if (seen.has(paper) || !bundledMcqBank(paper)?.length) continue;
+        seen.add(paper);
+        const added = await publishDefaultQuizBank(paper);
+        if (added > 0) seeded.push(paper);
       }
       missingBanksDone = true;
       return seeded;

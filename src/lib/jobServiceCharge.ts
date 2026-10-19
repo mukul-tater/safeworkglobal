@@ -1,4 +1,8 @@
 import { ASSESSMENT_FEE_INR } from '@/modules/worker-verification/constants';
+import {
+  getPlatformPaymentSettings,
+  type PlatformPaymentSettings,
+} from '@/lib/platformPaymentSettings';
 
 export const DEFAULT_SERVICE_CHARGE_INR = ASSESSMENT_FEE_INR;
 export const SERVICE_CHARGE_MIN_INR = 1;
@@ -15,8 +19,38 @@ export function formatServiceChargeInr(amount?: number | string | null): string 
   return `₹${resolveServiceChargeInr(amount).toLocaleString('en-IN')}`;
 }
 
-/** Worker-facing label. Shows the admin-entered amount with “+ GST” as text. GST is not calculated. */
+function formatGstPercent(pct: number): string {
+  const rounded = Math.round(pct * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+}
+
+/**
+ * Worker-facing label. The job's saved charge is what the worker pays.
+ * The GST % from Fees & payments is written next to that amount.
+ */
 export function formatServiceChargePlusGst(amount?: number | string | null): string {
   const total = resolveServiceChargeInr(amount);
-  return `₹${total.toLocaleString('en-IN')} + GST`;
+  const formatted = `₹${total.toLocaleString('en-IN')}`;
+  const gst = getPlatformPaymentSettings().gstRatePct;
+  if (!Number.isFinite(gst) || gst <= 0) return formatted;
+  return `${formatted} + ${formatGstPercent(gst)}% GST`;
+}
+
+/** Preset used when an admin posts a new job. Delivery wins over the UAE preset. */
+export function suggestedServiceChargeInr(input: {
+  country?: string | null;
+  title?: string | null;
+  settings?: PlatformPaymentSettings;
+}): { amount: number; label: string } {
+  const settings = input.settings ?? getPlatformPaymentSettings();
+  const country = (input.country || '').trim().toLowerCase();
+  const title = (input.title || '').trim().toLowerCase();
+  const delivery = /\b(delivery|bike rider|bike delivery)\b/.test(title);
+  if (country === 'uae' && delivery) {
+    return { amount: settings.uaeDeliveryServiceChargeInr, label: 'UAE bike delivery' };
+  }
+  if (country === 'uae') return { amount: settings.uaeServiceChargeInr, label: 'UAE trades' };
+  if (country === 'ukraine') return { amount: settings.ukraineServiceChargeInr, label: 'Ukraine listings' };
+  if (country === 'europe') return { amount: settings.europeServiceChargeInr, label: 'Europe listings' };
+  return { amount: settings.defaultServiceChargeInr, label: 'default' };
 }

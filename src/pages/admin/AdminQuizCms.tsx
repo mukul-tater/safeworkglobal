@@ -26,6 +26,7 @@ import {
   listQuizSkillChoices,
   publishDefaultQuizBank,
   publishMissingDefaultBanks,
+  quizPaperForLabel,
   saveQuizConfig,
   saveQuizItem,
 } from '@/modules/worker-verification/services/quizCmsService';
@@ -85,10 +86,13 @@ export default function AdminQuizCms() {
   const [cfgMode, setCfgMode] = useState<'random_active' | 'explicit_ids'>('random_active');
   const [cfgSelected, setCfgSelected] = useState<string[]>([]);
 
+  const paper = quizPaperForLabel(skill);
+
   const load = useCallback(async () => {
     setLoading(true);
+    const bank = quizPaperForLabel(skill);
     try {
-      const [rows, cfgs] = await Promise.all([listQuizItems(skill), listQuizConfigs(skill)]);
+      const [rows, cfgs] = await Promise.all([listQuizItems(bank), listQuizConfigs(bank)]);
       setItems(rows);
       setConfigs(cfgs);
       setDraft(emptyDraft(rows.length + 1));
@@ -166,7 +170,7 @@ export default function AdminQuizCms() {
     try {
       await saveQuizItem({
         id: draft.id,
-        skill_code: skill,
+        skill_code: paper,
         question: draft.question,
         question_hi: draft.question_hi || null,
         image_url: draft.image_url || null,
@@ -195,7 +199,7 @@ export default function AdminQuizCms() {
       );
       await saveQuizConfig({
         id: existing?.id,
-        skill_code: skill,
+        skill_code: paper,
         region: cfgRegion === ALL_REGIONS ? null : cfgRegion,
         questions_to_show: Math.max(1, Number(cfgCount) || QUIZ_QUESTIONS_TO_SHOW),
         selection_mode: cfgMode,
@@ -219,7 +223,7 @@ export default function AdminQuizCms() {
   const onPublishDefaultBank = async () => {
     setSaving(true);
     try {
-      const count = await publishDefaultQuizBank(skill);
+      const count = await publishDefaultQuizBank(paper);
       toast.success(count ? `Added ${count} default questions` : 'Questions already exist');
       await load();
     } catch (e) {
@@ -263,6 +267,11 @@ export default function AdminQuizCms() {
                 ))}
               </SelectContent>
             </Select>
+            {paper !== skill ? (
+              <p className="text-xs text-muted-foreground">
+                This job uses the {paper} question paper. Edits here update that paper in the worker journey.
+              </p>
+            ) : null}
           </div>
 
           <div className="border-t border-border pt-3 space-y-3">

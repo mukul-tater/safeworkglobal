@@ -14,10 +14,7 @@ interface Props {
   className?: string;
 }
 
-/**
- * Sample B: two-row numbered dots with “x of 13 complete”.
- * Steps match My Journey in the sidebar (same PLACEMENT_STEPS source).
- */
+/** Numbered dots for the live GCC journey steps. */
 export default function WorkerPlacementProgress({ statuses, className }: Props) {
   const completed = PLACEMENT_STEPS.filter((s) => statuses[s.id] === "completed").length;
   const current = PLACEMENT_STEPS.find((s) => statuses[s.id] === "current");

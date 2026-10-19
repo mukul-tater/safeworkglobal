@@ -395,7 +395,7 @@ export default function JobVerification() {
               onChange={(e) => setFeeValue(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Workers see this amount with “+ GST” written next to it. GST is not calculated.
+              Workers pay this amount. The GST % from Fees & payments is shown next to it and is not added on top.
             </p>
           </div>
           <DialogFooter>

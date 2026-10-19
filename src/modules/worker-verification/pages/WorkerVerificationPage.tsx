@@ -2293,7 +2293,7 @@ export default function WorkerVerificationPage({
                     onChange={setTenthMarksheetFile}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Optional. You can upload a Class 10 marksheet, or any higher certificate (12th, ITI, diploma, degree).
+                    You can upload a Class 10 marksheet, or any higher certificate (12th, ITI, diploma, degree).
                   </p>
                 </div>
               )}

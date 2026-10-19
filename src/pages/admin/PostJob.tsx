@@ -18,7 +18,7 @@ import { adminJobPostSchema, type AdminJobPostFormData } from "@/lib/validations
 import { firstFormErrorMessage, invalidFieldClass, revealInvalidField } from "@/lib/formErrors";
 import { X, Plus, ArrowLeft, Loader2 } from "lucide-react";
 import { DESTINATION_COUNTRIES } from "@/lib/constants";
-import { DEFAULT_SERVICE_CHARGE_INR } from "@/lib/jobServiceCharge";
+import { suggestedServiceChargeInr } from "@/lib/jobServiceCharge";
 import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
 import {
   benefitsCatalogForTitle,
@@ -76,7 +76,7 @@ export default function AdminPostJob() {
       skills: [],
       employer_id: "",
       benefits: PUBLIC_JOB_BENEFITS_TEXT,
-      service_charge: DEFAULT_SERVICE_CHARGE_INR,
+      service_charge: suggestedServiceChargeInr({}).amount,
       ...EMPTY_JOB_CONFIG,
       use_saved_copy: true,
     },
@@ -94,21 +94,25 @@ export default function AdminPostJob() {
   const remoteAllowed = watch("remote_allowed");
   const employerId = watch("employer_id");
   const serviceCharge = watch("service_charge");
+  const country = watch("country");
   const title = watch("title");
   const benefits = watch("benefits");
   const paymentSettings = usePlatformPaymentSettings();
   useSiteContent();
+  const appliedPreset = useRef<number | null>(null);
   const appliedBenefits = useRef<string | null>(null);
+  const preset = suggestedServiceChargeInr({ country, title, settings: paymentSettings });
   const benefitPreset = catalogBenefitLines(getBenefitCatalog()[benefitsCatalogForTitle(title)]);
 
   useEffect(() => {
-    if (
-      serviceCharge === DEFAULT_SERVICE_CHARGE_INR &&
-      paymentSettings.defaultServiceChargeInr !== DEFAULT_SERVICE_CHARGE_INR
-    ) {
-      setValue("service_charge", paymentSettings.defaultServiceChargeInr);
+    const next = preset.amount;
+    const current = typeof serviceCharge === "number" && Number.isFinite(serviceCharge) ? serviceCharge : next;
+    const canReplace = appliedPreset.current == null || current === appliedPreset.current;
+    if (canReplace && current !== next) {
+      setValue("service_charge", next, { shouldValidate: true });
     }
-  }, [paymentSettings.defaultServiceChargeInr, serviceCharge, setValue]);
+    appliedPreset.current = next;
+  }, [preset.amount, serviceCharge, setValue]);
 
   useEffect(() => {
     const current = benefits ?? "";
@@ -483,7 +487,7 @@ export default function AdminPostJob() {
                   {...register("service_charge", { valueAsNumber: true })}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Workers see this amount with “+ GST” written next to it. GST is not calculated. Default is ₹{paymentSettings.defaultServiceChargeInr.toLocaleString("en-IN")}.
+                  Filled from the {preset.label} preset (₹{preset.amount.toLocaleString("en-IN")}). Change it if this job should charge something else. Workers pay the amount saved here, shown with {paymentSettings.gstRatePct}% GST.
                 </p>
                 {errors.service_charge && (
                   <p className="text-sm text-destructive mt-1">{errors.service_charge.message}</p>

@@ -35,13 +35,22 @@ export function resolveQuizSkillCode(opts: {
   quizSkillCode?: string | null;
 }): QuizSkillCode {
   const explicit = opts.quizSkillCode?.trim();
-  if (explicit) return explicit as QuizSkillCode;
+  if (explicit && isQuizSkillCode(explicit)) return explicit;
 
-  const europe = inferEuropeQuizJob(opts.jobTitle || opts.primarySkill || '');
+  const europe = inferEuropeQuizJob(explicit || opts.jobTitle || opts.primarySkill || '');
   if (europe) return europe;
 
-  const listed = inferUaeListedJob(opts.jobTitle || '', opts.jobDescription || '', opts.country);
+  const listed = inferUaeListedJob(
+    opts.jobTitle || explicit || '',
+    opts.jobDescription || '',
+    opts.country,
+  );
   if (listed) return listed;
+
+  if (explicit) return explicit as QuizSkillCode;
+
+  const title = (opts.jobTitle || '').trim();
+  if (title) return title as QuizSkillCode;
 
   const skill = (opts.primarySkill || '').trim();
   if (isQuizSkillCode(skill)) return skill;

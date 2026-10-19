@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Sparkles, MapPin, Briefcase, Wallet, Star, Eye, ArrowRight, Loader2 } from "lucide-react";
+import { Sparkles, MapPin, Briefcase, Star, Eye, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchEmployerWorkers } from "@/services/employerWorkerAccessService";
 import {
@@ -183,11 +183,6 @@ export default function RecommendedWorkers() {
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <Briefcase className="h-3 w-3" />
                             {w.years_of_experience ?? 0} yrs exp
-                          </div>
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Wallet className="h-3 w-3" />
-                            ₹{(w.expected_salary_min ?? 0).toLocaleString("en-IN")}–
-                            ₹{(w.expected_salary_max ?? 0).toLocaleString("en-IN")} per month
                           </div>
                           <div className="flex items-center gap-1 text-muted-foreground">
                             <MapPin className="h-3 w-3" />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -79,6 +79,7 @@ export default function FeaturedJobs() {
   const [jobs, setJobs] = useState<FeaturedJob[]>([]);
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const poolRef = useRef<FeaturedJob[]>([]);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -96,6 +97,7 @@ export default function FeaturedJobs() {
         const listed = ((data || []) as FeaturedJob[])
           .filter((job) => !isHiddenPublicJob(job.title, job.slug, job.hidden_from_public))
           .map((job) => ({ ...job, title: getPublicJobTitle(job.title, job.description, job.country, listingOptions(job)) }));
+        poolRef.current = listed;
         setJobs(shuffleItems(listed).slice(0, 6));
       } catch (error) {
         console.error('Error loading jobs:', error);
@@ -104,6 +106,15 @@ export default function FeaturedJobs() {
       }
     };
     loadJobs();
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const pool = poolRef.current;
+      if (pool.length <= 6) return;
+      setJobs(shuffleItems(pool).slice(0, 6));
+    }, 15000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const getJobTypeBadge = (type: string) => {

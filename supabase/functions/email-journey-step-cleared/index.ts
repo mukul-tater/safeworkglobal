@@ -8,6 +8,11 @@ const corsHeaders = {
 
 const MUKUL_EMAIL = 'mukultater@safeworkglobal.com'
 const MUKUL_FROM = `SafeWork Global <${MUKUL_EMAIL}>`
+const OPS_EMAILS = [
+  'mukultater@safeworkglobal.com',
+  'admin@safeworkglobal.com',
+  'ops@safeworkglobal.com',
+]
 const JOURNEY_URL = 'https://safeworkglobal.com/worker/journey'
 const ADMIN_URL = 'https://safeworkglobal.com/admin/journey-ops'
 const CENTRE_INBOX_URL = 'https://safeworkglobal.com/partner/ssvn/inbox'
@@ -136,11 +141,109 @@ function bearerToken(req: Request): string | null {
   return webhook || null
 }
 
+function minuteKey(value: unknown): string {
+  const date = new Date(String(value || ''))
+  if (Number.isNaN(date.getTime())) return 'unscheduled'
+  return date.toISOString().slice(0, 16)
+}
+
+async function deliverJourneyMail(input: {
+  workerEmail: string | null
+  idempotencyKey: string
+  workerTemplateData: Record<string, unknown>
+  opsTemplateData: Record<string, unknown>
+  preferNoreply?: boolean
+  skipOps?: boolean
+}): Promise<{ emailed: boolean; opsEmailed: boolean; skipped?: string; to: string | null }> {
+  let emailed = false
+  let skipped: string | undefined
+  if (!input.workerEmail) {
+    skipped = 'no_contact_email'
+  } else if (input.preferNoreply) {
+    try {
+      const result = await sendTemplateEmail('journey-step-cleared', input.workerEmail, {
+        templateData: input.workerTemplateData,
+        idempotencyKey: input.idempotencyKey,
+        replyTo: MUKUL_EMAIL,
+      })
+      emailed = result.sent
+    } catch (workerErr) {
+      console.error('journey email to worker failed', workerErr)
+    }
+  } else {
+    try {
+      const result = await sendTemplateEmail('journey-step-cleared', input.workerEmail, {
+        templateData: input.workerTemplateData,
+        idempotencyKey: input.idempotencyKey,
+        replyTo: MUKUL_EMAIL,
+        from: MUKUL_FROM,
+      })
+      emailed = result.sent
+    } catch (firstErr) {
+      console.warn('journey email from Mukul failed, retrying noreply', firstErr)
+      try {
+        const result = await sendTemplateEmail('journey-step-cleared', input.workerEmail, {
+          templateData: input.workerTemplateData,
+          idempotencyKey: `${input.idempotencyKey}-noreply`,
+          replyTo: MUKUL_EMAIL,
+        })
+        emailed = result.sent
+      } catch (workerErr) {
+        console.error('journey email to worker failed', workerErr)
+      }
+    }
+  }
+
+  let opsEmailed = false
+  if (!input.skipOps) for (const opsEmail of OPS_EMAILS) {
+    try {
+      const opsResult = await sendTemplateEmail('journey-step-cleared-ops', opsEmail, {
+        templateData: input.opsTemplateData,
+        idempotencyKey: `ops-${opsEmail}-${input.idempotencyKey}`,
+      })
+      opsEmailed = opsEmailed || opsResult.sent
+    } catch (opsErr) {
+      console.error('journey ops email failed', opsEmail, opsErr)
+    }
+  }
+
+  return { emailed, opsEmailed, skipped, to: input.workerEmail }
+}
+
 function authorized(req: Request): boolean {
   const expected = Deno.env.get('JOURNEY_EMAIL_WEBHOOK_SECRET')
   const token = bearerToken(req)
   if (!expected || !token) return false
   return token === expected
+}
+
+async function callerUserId(req: Request): Promise<string | null> {
+  const token = bearerToken(req)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
+  if (!token || !supabaseUrl || !anonKey) return null
+  if (token === Deno.env.get('JOURNEY_EMAIL_WEBHOOK_SECRET')) return null
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  })
+  const { data, error } = await userClient.auth.getUser(token)
+  if (error || !data.user) return null
+  return data.user.id
+}
+
+async function callerIsAdmin(req: Request): Promise<boolean> {
+  const userId = await callerUserId(req)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!userId || !supabaseUrl || !serviceKey) return false
+  const service = createClient(supabaseUrl, serviceKey)
+  const { data } = await service
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'admin')
+    .maybeSingle()
+  return !!data
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -155,21 +258,29 @@ Deno.serve(async (req: Request): Promise<Response> => {
     })
   }
 
-  if (!authorized(req)) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
+  const webhookOk = authorized(req)
+  const callerId = webhookOk ? null : await callerUserId(req)
+  const adminOk = callerId ? await callerIsAdmin(req) : false
 
   try {
     const payload = await req.json().catch(() => ({}))
+    const kind = typeof payload?.kind === 'string' ? payload.kind : ''
+    const directUserId = typeof payload?.user_id === 'string' ? payload.user_id : ''
+    const directAllowed = (kind === 'interview_scheduled' && adminOk)
+      || (kind === 'job_selected' && !!callerId && (adminOk || callerId === directUserId))
     const notificationId =
       payload?.notification_id ||
       payload?.record?.id ||
       payload?.new?.id
 
-    if (!notificationId || typeof notificationId !== 'string') {
+    if (!webhookOk && !(directAllowed && directUserId)) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if ((!notificationId || typeof notificationId !== 'string') && !(directAllowed && directUserId)) {
       return new Response(JSON.stringify({ error: 'notification_id required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -182,6 +293,67 @@ Deno.serve(async (req: Request): Promise<Response> => {
       throw new Error('Supabase service credentials are not configured')
     }
     const supabase = createClient(supabaseUrl, serviceKey)
+
+    if (directAllowed && directUserId && (kind === 'interview_scheduled' || kind === 'job_selected')) {
+      const [{ data: verification }, { data: profile }] = await Promise.all([
+        supabase
+          .from('worker_verification')
+          .select('email, primary_skill, city, state, journey_job_id, interview_scheduled_at, interview_meeting_url')
+          .eq('user_id', directUserId)
+          .maybeSingle(),
+        supabase.from('profiles').select('email, full_name, phone').eq('id', directUserId).maybeSingle(),
+      ])
+      let jobTitle: string | null = null
+      let jobTitleHi: string | null = null
+      if (verification?.journey_job_id) {
+        const { data: job } = await supabase
+          .from('jobs')
+          .select('title, title_hi')
+          .eq('id', verification.journey_job_id)
+          .maybeSingle()
+        jobTitle = job?.title ?? null
+        jobTitleHi = job?.title_hi ?? null
+      }
+      const tradeLine = [jobTitle, jobTitleHi].filter((value) => value && String(value).trim()).join(' / ')
+      const when = verification?.interview_scheduled_at
+        ? new Date(verification.interview_scheduled_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+        : ''
+      const workerEmail = displayableEmail(verification?.email) || displayableEmail(profile?.email)
+      const message = kind === 'interview_scheduled'
+        ? `Your video interview${tradeLine ? ` for ${tradeLine}` : ''} is on ${when || 'the scheduled time'} IST.${verification?.interview_meeting_url ? ` Join: ${verification.interview_meeting_url}` : ''}`
+        : `You selected ${tradeLine || 'a job'}. This trade stays on your journey.`
+      const idempotencyKey = kind === 'interview_scheduled'
+        ? `interview-${directUserId}-${minuteKey(verification?.interview_scheduled_at)}`
+        : `job-selected-${directUserId}-${verification?.journey_job_id || 'none'}`
+      const sent = await deliverJourneyMail({
+        workerEmail,
+        idempotencyKey,
+        preferNoreply: true,
+        workerTemplateData: {
+          workerName: displayText(profile?.full_name, 'there'),
+          title: kind === 'interview_scheduled' ? 'Video interview scheduled' : 'Job selected',
+          message,
+          journeyUrl: JOURNEY_URL,
+          isTerminal: false,
+          isReupload: false,
+        },
+        opsTemplateData: {
+          workerName: displayText(profile?.full_name, 'Unknown worker'),
+          workerEmail: workerEmail || '',
+          workerPhone: profile?.phone?.trim() || '',
+          trade: tradeLine || verification?.primary_skill || '',
+          location: [verification?.city, verification?.state].filter(Boolean).join(', '),
+          clearedStep: kind === 'interview_scheduled' ? 'Video interview scheduled' : 'Job selected',
+          nextStep: kind === 'interview_scheduled' ? 'Join the video interview' : (tradeLine || 'Test 1'),
+          isTerminal: false,
+          adminUrl: ADMIN_URL,
+        },
+      })
+      return new Response(JSON.stringify({ success: true, direct: true, ...sent }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     const { data: notification, error: nErr } = await supabase
       .from('notifications')
@@ -450,9 +622,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       trade,
       location,
       clearedStep: notification.type === 'job_selected'
-        ? 'Job selection'
+        ? 'Job selected'
         : notification.type === 'interview_scheduled'
-          ? 'Video interview'
+          ? 'Video interview scheduled'
           : stageLabel(clearedStage),
       nextStep: notification.type === 'job_selected'
         ? (tradeLine || 'Test 1')
@@ -463,58 +635,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
       adminUrl: ADMIN_URL,
     }
 
-    let workerEmailed = false
-    let workerSkipped: string | undefined
-    let workerFromFallback = false
-
-    if (!workerEmail) {
-      workerSkipped = 'no_contact_email'
-    } else {
-      const idempotencyKey = `journey-step-${notification.id}`
-      try {
-        const result = await sendTemplateEmail('journey-step-cleared', workerEmail, {
-          templateData: workerTemplateData,
-          idempotencyKey,
-          replyTo: MUKUL_EMAIL,
-          from: MUKUL_FROM,
-        })
-        workerEmailed = result.sent
-      } catch (firstErr) {
-        console.warn('journey email from Mukul failed, retrying noreply + reply-to', firstErr)
-        try {
-          const result = await sendTemplateEmail('journey-step-cleared', workerEmail, {
-            templateData: workerTemplateData,
-            idempotencyKey: `${idempotencyKey}-noreply`,
-            replyTo: MUKUL_EMAIL,
-          })
-          workerEmailed = result.sent
-          workerFromFallback = true
-        } catch (workerErr) {
-          console.error('journey email to worker failed', workerErr)
-        }
-      }
-    }
-
-    let opsEmailed = false
-    if (!isReupload) {
-      try {
-        const opsResult = await sendTemplateEmail('journey-step-cleared-ops', MUKUL_EMAIL, {
-          templateData: opsTemplateData,
-          idempotencyKey: `journey-step-ops-${notification.id}`,
-        })
-        opsEmailed = opsResult.sent
-      } catch (opsErr) {
-        console.error('journey ops email to Mukul failed', opsErr)
-      }
-    }
+    const mailData = (notification.data || {}) as Record<string, unknown>
+    const tradeMail = notification.type === 'interview_scheduled' || notification.type === 'job_selected'
+    const idempotencyKey = notification.type === 'interview_scheduled'
+      ? `interview-${notification.user_id}-${minuteKey(mailData.scheduled_at)}`
+      : notification.type === 'job_selected'
+        ? `job-selected-${notification.user_id}-${String(mailData.job_id || verification?.journey_job_id || '')}`
+        : `journey-step-${notification.id}`
+    const sent = await deliverJourneyMail({
+      workerEmail,
+      idempotencyKey,
+      workerTemplateData,
+      opsTemplateData,
+      preferNoreply: tradeMail,
+      skipOps: isReupload,
+    })
 
     return new Response(JSON.stringify({
       success: true,
-      emailed: workerEmailed,
+      emailed: sent.emailed,
       to: workerEmail,
-      skipped: workerSkipped,
-      fromFallback: workerFromFallback || undefined,
-      opsEmailed,
+      skipped: sent.skipped,
+      opsEmailed: isReupload ? false : sent.opsEmailed,
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -32,8 +32,6 @@ export async function saveWorkerProfilePartial(userId: string, data: WorkerProfi
       user_id: userId,
       bio: data.bio?.trim() || null,
       years_of_experience: Number.isFinite(data.experience_years) ? data.experience_years : null,
-      expected_salary_min: data.expected_salary_min || null,
-      expected_salary_max: data.expected_salary_max || null,
       visa_countries: preferredCountries?.length ? preferredCountries : null,
       nationality: data.nationality || null,
       availability: data.availability || null,

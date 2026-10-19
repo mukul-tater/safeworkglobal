@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Search, Save, X, MapPin, DollarSign, Briefcase, Award, ShieldCheck, Languages, Settings2 } from 'lucide-react';
+import { Search, Save, X, MapPin, Briefcase, Award, ShieldCheck, Languages, Settings2 } from 'lucide-react';
 import {
   NATIONALITIES,
   AVAILABILITY_OPTIONS,
@@ -160,50 +160,6 @@ export default function WorkerSearchFilters({
             }
             className="w-full"
           />
-        </div>
-      </div>
-
-      {/* Expected Salary Range */}
-      <div className="space-y-4">
-        <Label>
-          <DollarSign className="h-4 w-4 inline mr-2" />
-          Expected Salary Range (USD/month)
-        </Label>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span>${filters.salaryMin.toLocaleString()}</span>
-            <span>${filters.salaryMax.toLocaleString()}</span>
-          </div>
-          <Slider
-            min={0}
-            max={10000}
-            step={500}
-            value={[filters.salaryMin, filters.salaryMax]}
-            onValueChange={([min, max]) => 
-              onFiltersChange({ ...filters, salaryMin: min, salaryMax: max })
-            }
-            className="w-full"
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              type="number"
-              placeholder="Min"
-              value={filters.salaryMin}
-              onChange={(e) => onFiltersChange({ 
-                ...filters, 
-                salaryMin: parseInt(e.target.value) || 0 
-              })}
-            />
-            <Input
-              type="number"
-              placeholder="Max"
-              value={filters.salaryMax}
-              onChange={(e) => onFiltersChange({ 
-                ...filters, 
-                salaryMax: parseInt(e.target.value) || 10000 
-              })}
-            />
-          </div>
         </div>
       </div>
 

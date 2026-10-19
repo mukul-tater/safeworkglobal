@@ -81,8 +81,6 @@ export default function WorkerProfile() {
       certifications: '',
       has_passport: false,
       preferred_countries: '',
-      expected_salary_min: 0,
-      expected_salary_max: 0,
     }
   });
 
@@ -97,8 +95,6 @@ export default function WorkerProfile() {
       certifications: formValues.certifications ?? '',
       has_passport: formValues.has_passport ?? false,
       preferred_countries: formValues.preferred_countries ?? '',
-      expected_salary_min: formValues.expected_salary_min ?? 0,
-      expected_salary_max: formValues.expected_salary_max ?? 0,
       nationality,
       availability,
       registered_state: registeredState,
@@ -165,8 +161,6 @@ export default function WorkerProfile() {
           setValue('bio', workerProfile.bio || '');
           setValue('experience_years', workerProfile.years_of_experience || 0);
           setValue('has_passport', workerProfile.has_passport || false);
-          setValue('expected_salary_min', workerProfile.expected_salary_min || 0);
-          setValue('expected_salary_max', workerProfile.expected_salary_max || 0);
           setNationality(workerProfile.nationality || '');
           setAvailability(workerProfile.availability || '');
           
@@ -185,8 +179,6 @@ export default function WorkerProfile() {
           certifications: '',
           has_passport: workerProfile?.has_passport || false,
           preferred_countries: workerProfile?.visa_countries?.join(', ') || '',
-          expected_salary_min: workerProfile?.expected_salary_min || 0,
-          expected_salary_max: workerProfile?.expected_salary_max || 0,
           nationality: workerProfile?.nationality || '',
           availability: workerProfile?.availability || '',
           registered_state: nextState,
@@ -595,28 +587,6 @@ export default function WorkerProfile() {
               )}
             </div>
 
-            <div>
-              <Label>Expected Salary Range (USD/month)</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1.5">
-                <Input
-                  type="number"
-                  placeholder="Min"
-                  className={`h-11 ${errors.expected_salary_min ? 'border-destructive' : ''}`}
-                  {...register('expected_salary_min', { valueAsNumber: true })}
-                />
-                <Input
-                  type="number"
-                  placeholder="Max"
-                  className={`h-11 ${errors.expected_salary_max ? 'border-destructive' : ''}`}
-                  {...register('expected_salary_max', { valueAsNumber: true })}
-                />
-              </div>
-              {(errors.expected_salary_min || errors.expected_salary_max) && (
-                <p className="text-sm text-destructive mt-1">
-                  {errors.expected_salary_min?.message || errors.expected_salary_max?.message}
-                </p>
-              )}
-            </div>
           </div>
         </ProfileSection>
 

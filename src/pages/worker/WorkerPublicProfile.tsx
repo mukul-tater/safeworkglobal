@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { formatExpectedSalary } from '@/lib/utils';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -495,18 +494,6 @@ export default function WorkerPublicProfile() {
                   <div>
                     <h3 className="font-semibold mb-2">About</h3>
                     <p className="text-muted-foreground whitespace-pre-line">{workerProfile.bio}</p>
-                  </div>
-                </>
-              )}
-
-              {(workerProfile?.expected_salary_min != null || workerProfile?.expected_salary_max != null) && (
-                <>
-                  <Separator className="my-6" />
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">Expected Salary:</span>
-                    <span className="text-primary font-semibold">
-                      {formatExpectedSalary(workerProfile.expected_salary_min, workerProfile.expected_salary_max, workerProfile.currency)}
-                    </span>
                   </div>
                 </>
               )}

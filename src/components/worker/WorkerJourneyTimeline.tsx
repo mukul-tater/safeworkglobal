@@ -1,6 +1,8 @@
 import { Check, Circle, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { GCC_JOURNEY_NAV_STEPS, type VerificationStage } from "@/modules/worker-verification/constants";
+import { deriveNavStatuses } from "@/modules/worker-registration/hooks/useWorkerGccJourneyProgress";
 
 export type JourneyStageStatus =
   | "completed"
@@ -131,91 +133,26 @@ export default function WorkerJourneyTimeline({
   );
 }
 
-/* ---------------------------------------------------------- */
-/* Derivation helper — turns DB rows into the 7 worker stages. */
-/* ---------------------------------------------------------- */
-
-interface DeriveInput {
-  profile: Record<string, unknown> | null;
-  documents: Array<{ document_type?: string; verification_status?: string; created_at?: string }>;
-  skills: Array<{ created_at?: string }>;
-  applications: Array<{ status?: string; applied_at?: string; updated_at?: string }>;
-  createdAt?: string | null;
-}
-
-/** 7-stage GCC migration journey shown on the worker dashboard. */
-export function deriveWorkerJourney({
-  profile,
-  documents,
-  skills,
-  applications,
-  createdAt,
-}: DeriveInput): JourneyStage[] {
-  const p: any = profile ?? {};
-  const hasProfile = Boolean(p.primary_work_type && (p.current_city || p.current_location));
-  const hasSkills = skills.length > 0;
-  const hasPassport = Boolean(p.has_passport);
-  const hired = applications.find((a) => a.status === "HIRED");
-  const offered = applications.find((a) => a.status === "OFFERED");
-  const interviewed = applications.find((a) =>
-    ["INTERVIEW_SCHEDULED", "INTERVIEWED", "SELECTED"].includes(a.status || ""),
-  );
-  const medicalDoc = documents.find(
-    (d) => d.document_type === "medical_certificate" && d.verification_status === "verified",
-  );
-
-  const status = (done: boolean, inProgress = false): JourneyStageStatus =>
-    done ? "completed" : inProgress ? "in_progress" : "pending";
-
-  return [
-    {
-      step: 1,
-      title: "Registered",
-      subtitle: "Sign-up",
-      status: createdAt ? "completed" : "pending",
-      timestamp: createdAt ?? null,
-    },
-    {
-      step: 2,
-      title: "Profile complete",
-      subtitle: "Trade + city",
-      status: status(hasProfile, !!createdAt && !hasProfile),
-      timestamp: hasProfile ? (p.updated_at as string) ?? null : null,
-    },
-    {
-      step: 3,
-      title: "Skills uploaded",
-      subtitle: "Photos + videos",
-      status: status(hasSkills, hasProfile && !hasSkills),
-      timestamp: hasSkills ? skills[0]?.created_at ?? null : null,
-    },
-    {
-      step: 4,
-      title: "Skill test",
-      subtitle: "Verified",
-      status: status(!!interviewed || !!offered || !!hired, hasSkills && !interviewed),
-      timestamp: interviewed?.updated_at ?? offered?.updated_at ?? null,
-    },
-    {
-      step: 5,
-      title: "Passport ready",
-      subtitle: "via E-Mitra",
-      status: status(hasPassport, hasSkills && !hasPassport),
-      timestamp: hasPassport ? (p.updated_at as string) ?? null : null,
-    },
-    {
-      step: 6,
-      title: "Travel ready",
-      subtitle: "Medical + training",
-      status: status(!!medicalDoc || !!hired, hasPassport && !medicalDoc),
-      timestamp: medicalDoc?.created_at ?? null,
-    },
-    {
-      step: 7,
-      title: "Hired",
-      subtitle: "Visa + flight",
-      status: status(!!hired, !!offered && !hired),
-      timestamp: hired?.updated_at ?? null,
-    },
-  ];
+/** Live GCC journey steps for the dashboard timeline. */
+export function deriveWorkerJourney(input: {
+  stage?: VerificationStage | null;
+  tradeRequired?: boolean;
+  declarationsDone?: boolean;
+}): JourneyStage[] {
+  const statuses = deriveNavStatuses(input.stage ?? "essentials", input.tradeRequired !== false, {
+    declarationsDone: input.declarationsDone !== false,
+    includeAccountDetails: false,
+    accountCreated: true,
+  });
+  return GCC_JOURNEY_NAV_STEPS.map((step, index) => {
+    const status = statuses[step.id];
+    const mapped: JourneyStageStatus =
+      status === "completed" ? "completed" : status === "current" ? "in_progress" : "pending";
+    return {
+      step: index + 1,
+      title: step.shortLabel,
+      subtitle: step.navLabel,
+      status: mapped,
+    };
+  });
 }

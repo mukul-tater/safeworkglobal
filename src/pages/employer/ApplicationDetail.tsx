@@ -1,5 +1,4 @@
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { formatExpectedSalary } from '@/lib/utils';
 import { employerNavGroups, employerProfileMenu } from "@/config/employerNav";
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
@@ -15,7 +14,7 @@ import { toast } from 'sonner';
 import { 
   ArrowLeft, Mail, Phone, MapPin, Briefcase, Award, Star, 
   FileText, Download, CheckCircle, XCircle, Clock,
-  Globe, Calendar, DollarSign, Languages, Shield,
+  Globe, Calendar, Languages, Shield,
   BookmarkPlus, CalendarPlus, MessageSquare
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -660,12 +659,6 @@ export default function ApplicationDetail() {
 
                         {/* Additional Info */}
                         <div className="flex flex-wrap gap-4 mt-4 text-sm">
-                          {(workerProfile?.expected_salary_min != null || workerProfile?.expected_salary_max != null) && (
-                            <span className="flex items-center gap-1">
-                              <DollarSign className="h-4 w-4 text-muted-foreground" />
-                              {formatExpectedSalary(workerProfile.expected_salary_min, workerProfile.expected_salary_max, workerProfile.currency || 'USD')}
-                            </span>
-                          )}
                           {workerProfile?.languages && workerProfile.languages.length > 0 && (
                             <span className="flex items-center gap-1">
                               <Languages className="h-4 w-4 text-muted-foreground" />

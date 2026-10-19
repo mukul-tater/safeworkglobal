@@ -167,7 +167,7 @@ export default function AdminPaymentSettings() {
         <div>
           <h1 className="text-2xl font-bold mb-2">Fees & payments</h1>
           <p className="text-sm text-muted-foreground">
-            Each job shows the service charge saved on that job, with “+ GST” written next to it. GST is not calculated. A job with no service charge shows ₹0. The default below is filled in when posting a new job.
+            Each job shows the service charge saved on that job. Workers pay that amount. The GST % below is written next to it and is not added on top. A job with no service charge shows ₹0. Posting a new job fills the matching preset below.
             Razorpay API keys stay in the edge function settings.
           </p>
         </div>
@@ -205,7 +205,7 @@ export default function AdminPaymentSettings() {
                   <Field label="Razorpay extra %" value={gateway} onChange={setGateway} step="0.01" />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  GST % is not added to the service charge. Jobs show the entered amount with “+ GST”. Razorpay extra % is still added only on Razorpay checkout.
+                  GST % is shown next to the job’s service charge. It is not added to the amount the worker pays. Razorpay extra % is still added only on Razorpay checkout.
                 </p>
               </CardContent>
             </Card>

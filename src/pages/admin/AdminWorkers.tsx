@@ -13,7 +13,6 @@ import WorkerExportDialog from "@/components/admin/WorkerExportDialog";
 import type { WorkerExportSource } from "@/lib/exportWorkersPdf";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { formatSalaryINR } from "@/lib/utils";
 import { displayableEmail } from "@/lib/workerAuthEmail";
 import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
 
@@ -566,10 +565,6 @@ export default function AdminWorkers() {
                 <p><span className="font-medium">Location:</span> {viewWorker.country || "—"}</p>
                 <p><span className="font-medium">Experience:</span> {viewWorker.experience_years ?? "—"} years</p>
                 <p><span className="font-medium">Applications:</span> {viewWorker.application_count}</p>
-                <p>
-                  <span className="font-medium">Expected Salary:</span>{" "}
-                  {formatSalaryINR(viewWorker.expected_salary_min, viewWorker.expected_salary_max, viewWorker.currency || "INR")}
-                </p>
                 <p><span className="font-medium">Onboarding:</span> {viewWorker.onboarding_completed ? "Complete" : "Incomplete"}</p>
                 {viewWorker.createdBy && (
                   <p><span className="font-medium">Created by:</span> {creatorSummary(viewWorker.createdBy)}</p>

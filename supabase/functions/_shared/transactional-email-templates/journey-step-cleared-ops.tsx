@@ -48,16 +48,19 @@ const JourneyStepClearedOpsEmail = ({
   const tradeLine = present(trade)
   const locationLine = present(location)
   const stepName = clearedStep.trim() || 'a journey step'
+  const isUpdate = /scheduled|selected/i.test(stepName)
 
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>{`${workerName} completed ${stepName}`}</Preview>
+      <Preview>{isUpdate ? `${workerName}: ${stepName}` : `${workerName} completed ${stepName}`}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>{stepName} completed</Heading>
+          <Heading style={h1}>{isUpdate ? stepName : `${stepName} completed`}</Heading>
           <Text style={lead}>
-            {workerName} has completed {stepName}.
+            {isUpdate
+              ? `${workerName} — ${stepName}.`
+              : `${workerName} has completed ${stepName}.`}
             {isTerminal
               ? ' They are now GCC ready.'
               : ` Next step is ${nextStep}.`}

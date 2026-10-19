@@ -370,6 +370,12 @@ export default function AdminJourneyOps() {
           meetingUrl: pending.meetingUrl,
           interviewerUserId: pending.interviewerUserId,
           confirmRewind: pending.rewind,
+        }).then(async (interviewId) => {
+          const { error } = await supabase.functions.invoke('email-journey-step-cleared', {
+            body: { kind: 'interview_scheduled', user_id: pending.userId },
+          });
+          if (error) console.error('interview email failed', error);
+          return interviewId;
         }),
       pending.rewind
         ? 'Interview scheduled — worker sent back to the interview step'
