@@ -4,7 +4,22 @@
 ALTER TABLE public.journey_rules
   ADD COLUMN IF NOT EXISTS journey_copy jsonb;
 
-DROP FUNCTION IF EXISTS public.admin_save_journey_rules(text[], text, jsonb, jsonb, text, text, jsonb, jsonb);
+-- Drop every existing overload. A shorter function with default arguments
+-- counts as the same signature, so a single DROP of the 8-argument form is not enough.
+DO $$
+DECLARE
+  fn regprocedure;
+BEGIN
+  FOR fn IN
+    SELECT p.oid::regprocedure
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'admin_save_journey_rules'
+  LOOP
+    EXECUTE format('DROP FUNCTION %s', fn);
+  END LOOP;
+END $$;
 
 CREATE FUNCTION public.admin_save_journey_rules(
   p_trade_test_skills text[],
