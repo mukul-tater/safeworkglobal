@@ -3,7 +3,7 @@ import {
   BarChart3, AlertTriangle, Mail, Store, HardHat, Building2, FileText, Briefcase, UserCog,
   MessageSquare, ShieldAlert, IndianRupee,
   ClipboardCheck, Wallet, BarChartBig, Network, BookOpen, PlusCircle, MapPin, Video, Wrench,
-  Banknote, ListChecks,
+  Banknote, ListChecks, Languages,
 } from "lucide-react";
 import type { NavGroup } from "@/components/layout/DashboardSidebar";
 
@@ -23,6 +23,7 @@ export const adminNavGroups: NavGroup[] = [
     items: [
       { path: "/admin/journey-ops", icon: ClipboardCheck, label: "Worker queue" },
       { path: "/admin/journey-rules", icon: ListChecks, label: "Journey rules" },
+      { path: "/admin/site-content", icon: Languages, label: "Site content" },
       { path: "/admin/interviews", icon: Video, label: "Conduct interviews" },
       { path: "/admin/trade-test-allocations", icon: MapPin, label: "Assign trade test" },
       { path: "/admin/trade-tests", icon: Wrench, label: "Conduct trade tests" },

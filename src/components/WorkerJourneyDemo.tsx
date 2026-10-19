@@ -33,7 +33,7 @@ import { ASSESSMENT_FEE_INCLUSIONS, MEDICAL_REQUIRED_TESTS, MEDICAL_TEST_INTRO }
 import { getAssessmentFeeInclusions, getRazorpayGatewayFeePct, withConfiguredStamp } from "@/lib/platformPaymentSettings";
 import { getMedicalIntro, getMedicalTests } from "@/lib/journeyRules";
 import IndemnityBondAgreement from "@/modules/worker-verification/components/agreement/IndemnityBondAgreement";
-import { INDEMNITY_BOND_HIGHLIGHTS } from "@/modules/worker-verification/agreement/indemnityBondContent";
+import { getSiteContent, useSiteContent } from "@/lib/siteContent";
 import { cn } from "@/lib/utils";
 
 type JourneyStep = {
@@ -144,7 +144,7 @@ const STEPS: JourneyStep[] = [
     description:
       "Overseas employment consent, declaration and Indemnity Bond. Two-year service, six-month probation, security cheques and a family guarantor — read the full text below.",
     icon: FileSignature,
-    bullets: [...INDEMNITY_BOND_HIGHLIGHTS.en],
+    bullets: [...getSiteContent().indemnity.highlights.en],
   },
   {
     id: "travel",
@@ -397,7 +397,7 @@ function liveJourneySteps(): JourneyStep[] {
     if (step.id === 'agreement') {
       return {
         ...step,
-        bullets: INDEMNITY_BOND_HIGHLIGHTS.en.map((line) => withConfiguredStamp(line)),
+        bullets: getSiteContent().indemnity.highlights.en.map((line) => withConfiguredStamp(line)),
       };
     }
     return step;
@@ -405,6 +405,7 @@ function liveJourneySteps(): JourneyStep[] {
 }
 
 export default function WorkerJourneyDemo() {
+  useSiteContent();
   const steps = liveJourneySteps();
   const [activeId, setActiveId] = useState<string | null>(steps[0].id);
   const activeStep = activeId ? steps.find((s) => s.id === activeId) ?? null : null;

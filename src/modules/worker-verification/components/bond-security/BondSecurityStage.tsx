@@ -14,7 +14,7 @@ import type { BondTemplate, WorkerVerification } from '@/modules/worker-verifica
 import { BOND_SECURITY_COPY, type EnHi } from '@/modules/worker-verification/bond-security/copy';
 import { formatStampInr } from '@/modules/worker-verification/bond-security/stampPaper';
 import IndemnityBondAgreement from '@/modules/worker-verification/components/agreement/IndemnityBondAgreement';
-import { INDEMNITY_BOND_EXECUTION } from '@/modules/worker-verification/agreement/indemnityBondContent';
+import { useSiteContent } from '@/lib/siteContent';
 import { getIndemnityBondStampInr, withConfiguredStamp } from '@/lib/platformPaymentSettings';
 import { bondChecklist, checklistComplete, displayBondStatus, isBondLockedForEdit } from '@/modules/worker-verification/bond-security/status';
 import type { BondFileKind, BondSecurityDraftPayload, BondSecurityRow, StampPaperValue } from '@/modules/worker-verification/bond-security/types';
@@ -205,6 +205,7 @@ export default function BondSecurityStage({
   template,
   onChanged,
 }: Props) {
+  const execution = useSiteContent().indemnity.execution;
   const [row, setRow] = useState<BondSecurityRow | null>(null);
   const [catalog, setCatalog] = useState<StampPaperValue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -438,16 +439,16 @@ export default function BondSecurityStage({
 
       <Card className="border-primary/30 bg-primary/5 shadow-sm">
         <CardContent className="space-y-3 p-5 sm:p-6">
-          <Dual copy={INDEMNITY_BOND_EXECUTION.title} as="h3" className="font-heading text-base font-semibold" />
-          <Dual copy={INDEMNITY_BOND_EXECUTION.body} className="text-sm text-foreground" />
+          <Dual copy={execution.title} as="h3" className="font-heading text-base font-semibold" />
+          <Dual copy={execution.body} className="text-sm text-foreground" />
           <ul className="space-y-2">
-            {INDEMNITY_BOND_EXECUTION.bullets.en.map((en, i) => (
+            {execution.bullets.en.map((en, i) => (
               <li key={en} className="flex items-start gap-2 text-sm">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                 <span>
                     <span className="block">{withConfiguredStamp(en)}</span>
                     <span className="block text-xs text-muted-foreground">
-                    {withConfiguredStamp(INDEMNITY_BOND_EXECUTION.bullets.hi[i])}
+                    {withConfiguredStamp(execution.bullets.hi[i])}
                     </span>
                 </span>
               </li>

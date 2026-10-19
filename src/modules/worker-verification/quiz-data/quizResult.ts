@@ -16,7 +16,9 @@ export const DELIVERY_QUIZ_DISCLAIMER = {
   hi: 'यह टेस्ट केवल सड़क सुरक्षा, डिलीवरी हैंडलिंग और ग्राहक सेवा का बुनियादी ज्ञान जाँचता है। यह ड्राइविंग क्षमता प्रमाणित नहीं करता और नौकरी की गारंटी नहीं देता। उम्मीदवारों को UAE ड्राइविंग लाइसेंस, नियोक्ता और नौकरी की अलग शर्तें पूरी करनी होंगी।',
 };
 
-export function quizPassScoreForSkill(skill: string | null | undefined): number {
+export function quizPassScoreForSkill(skill: string | null | undefined, override?: number | null): number {
+  const score = Number(override);
+  if (Number.isInteger(score) && score >= 1 && score <= 100) return score;
   return skill === 'Delivery' ? DELIVERY_QUIZ_PASS_SCORE : QUIZ_PASS_SCORE;
 }
 
@@ -25,8 +27,12 @@ export function quizPassScoreForSkill(skill: string | null | undefined): number 
  * Default 10-question paper: 9–10 strong / 6–8 pass / 5 needs review / 0–4 insufficient.
  * Delivery: 9–10 strong / 7–8 pass / 5–6 needs review / 0–4 insufficient.
  */
-export function describeQuizResult(scorePercent: number, skill?: string | null): QuizResultBand {
-  const passScore = quizPassScoreForSkill(skill);
+export function describeQuizResult(
+  scorePercent: number,
+  skill?: string | null,
+  override?: number | null,
+): QuizResultBand {
+  const passScore = quizPassScoreForSkill(skill, override);
   const passed = scorePercent >= passScore;
   const screeningEn = passed
     ? 'Basic Trade Knowledge Screening: PASSED'

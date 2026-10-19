@@ -463,7 +463,16 @@ export async function submitQuiz(
     const result = Array.isArray(graded) ? graded[0] : graded;
     score = Number(result?.score ?? 0);
   }
-  const passed = score >= quizPassScoreForSkill(items[0]?.skill_code);
+  let passOverride: number | null = null;
+  if (row.journey_job_id) {
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('quiz_pass_score')
+      .eq('id', row.journey_job_id)
+      .maybeSingle();
+    if (!jobError) passOverride = job?.quiz_pass_score ?? null;
+  }
+  const passed = score >= quizPassScoreForSkill(items[0]?.skill_code, passOverride);
   const now = new Date().toISOString();
 
   const { data, error } = await supabase

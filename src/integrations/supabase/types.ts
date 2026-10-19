@@ -1800,6 +1800,7 @@ export type Database = {
           work_phrase: string | null
           benefits_hi: string | null
           quiz_skill_code: string | null
+          quiz_pass_score: number | null
           card_image_url: string | null
           hidden_from_public: boolean
           use_saved_copy: boolean
@@ -1850,6 +1851,7 @@ export type Database = {
           work_phrase?: string | null
           benefits_hi?: string | null
           quiz_skill_code?: string | null
+          quiz_pass_score?: number | null
           card_image_url?: string | null
           hidden_from_public?: boolean
           use_saved_copy?: boolean
@@ -1900,6 +1902,7 @@ export type Database = {
           work_phrase?: string | null
           benefits_hi?: string | null
           quiz_skill_code?: string | null
+          quiz_pass_score?: number | null
           card_image_url?: string | null
           hidden_from_public?: boolean
           use_saved_copy?: boolean
@@ -4197,6 +4200,42 @@ export type Database = {
           updated_at?: string
           visit_count?: number
           visit_date?: string
+        }
+        Relationships: []
+      }
+      site_content: {
+        Row: {
+          acknowledgements: Json | null
+          country_cards: Json | null
+          id: number
+          indemnity_bond: Json | null
+          job_templates: Json | null
+          popular_titles: Json | null
+          pre_journey: Json | null
+          trade_card_images: Json | null
+          updated_at: string
+        }
+        Insert: {
+          acknowledgements?: Json | null
+          country_cards?: Json | null
+          id?: number
+          indemnity_bond?: Json | null
+          job_templates?: Json | null
+          popular_titles?: Json | null
+          pre_journey?: Json | null
+          trade_card_images?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          acknowledgements?: Json | null
+          country_cards?: Json | null
+          id?: number
+          indemnity_bond?: Json | null
+          job_templates?: Json | null
+          popular_titles?: Json | null
+          pre_journey?: Json | null
+          trade_card_images?: Json | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -6624,6 +6663,10 @@ export type Database = {
         Returns: undefined
       }
       admin_rotate_lsp_secret: { Args: { p_lsp_id: string }; Returns: Json }
+      admin_save_site_content: {
+        Args: { p_section: string; p_value: Json }
+        Returns: undefined
+      }
       admin_save_journey_rules: {
         Args: {
           p_deployment_checklist: Json

@@ -372,6 +372,7 @@ export default function WorkerVerificationPage({
   const [journeyJobDescription, setJourneyJobDescription] = useState<string | null>(null);
   const [journeyJobCountry, setJourneyJobCountry] = useState<string | null>(null);
   const [journeyQuizSkill, setJourneyQuizSkill] = useState<string | null>(null);
+  const [journeyQuizPass, setJourneyQuizPass] = useState<number | null>(null);
   const [journeyWorkPhrase, setJourneyWorkPhrase] = useState<string | null>(null);
   const journeyRules = useJourneyRules();
 
@@ -494,10 +495,20 @@ export default function WorkerVerificationPage({
       };
       if (gen !== loadGen.current) return;
       setRow(v);
+      let passOverride: number | null = null;
+      if (v.journey_job_id) {
+        const { data: jobPass, error: passError } = await supabase
+          .from('jobs')
+          .select('quiz_pass_score')
+          .eq('id', v.journey_job_id)
+          .maybeSingle();
+        if (!passError) passOverride = jobPass?.quiz_pass_score ?? null;
+      }
+      if (gen !== loadGen.current) return;
       if (
         v.quiz_score != null &&
         !v.quiz_completed_at &&
-        Number(v.quiz_score) < quizPassScoreForSkill(v.primary_skill)
+        Number(v.quiz_score) < quizPassScoreForSkill(v.primary_skill, passOverride)
       ) {
         setQuizFailScore(Number(v.quiz_score));
         setQuizNeedsRetake(true);
@@ -701,6 +712,7 @@ export default function WorkerVerificationPage({
       setJourneyJobDescription(null);
       setJourneyJobCountry(null);
       setJourneyQuizSkill(null);
+      setJourneyQuizPass(null);
       setJourneyWorkPhrase(null);
       return;
     }
@@ -713,7 +725,7 @@ export default function WorkerVerificationPage({
       });
     void supabase
       .from('jobs')
-      .select('title, description, country, quiz_skill_code, work_phrase')
+      .select('title, description, country, quiz_skill_code, quiz_pass_score, work_phrase')
       .eq('id', jobId)
       .maybeSingle()
       .then(({ data }) => {
@@ -723,12 +735,14 @@ export default function WorkerVerificationPage({
           description?: string;
           country?: string;
           quiz_skill_code?: string | null;
+          quiz_pass_score?: number | null;
           work_phrase?: string | null;
         } | null;
         setJourneyJobTitle(job?.title ?? null);
         setJourneyJobDescription(job?.description ?? null);
         setJourneyJobCountry(job?.country ?? null);
         setJourneyQuizSkill(job?.quiz_skill_code ?? null);
+        setJourneyQuizPass(job?.quiz_pass_score ?? null);
         setJourneyWorkPhrase(job?.work_phrase ?? null);
       });
     return () => {
@@ -1239,7 +1253,7 @@ export default function WorkerVerificationPage({
     country: journeyJobCountry,
     quizSkillCode: journeyQuizSkill,
   });
-  const quizPassScore = quizPassScoreForSkill(quizSkill);
+  const quizPassScore = quizPassScoreForSkill(quizSkill, journeyQuizPass);
   const workPhrase = appliedJobWorkPhrase(
     row.primary_skill,
     journeyJobTitle,
@@ -1388,6 +1402,7 @@ export default function WorkerVerificationPage({
             appliedJobDescription={journeyJobDescription}
             appliedJobCountry={journeyJobCountry}
             quizSkillCode={journeyQuizSkill}
+            quizPassScore={journeyQuizPass}
             photoCount={photoCount}
             videoCount={videoCount}
             kycStatus={kycStatusValue}

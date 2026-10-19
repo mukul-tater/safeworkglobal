@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { POPULAR_JOB_TITLES } from "@/lib/constants";
+import { useSiteContent } from "@/lib/siteContent";
 import { Check, Sparkles, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +18,10 @@ export default function JobTitleAutocomplete({
   onChange,
   placeholder,
   id,
-  suggestions = POPULAR_JOB_TITLES,
+  suggestions: suggestionsProp,
 }: JobTitleAutocompleteProps) {
+  const savedTitles = useSiteContent().popularTitles;
+  const suggestions = suggestionsProp ?? (savedTitles.length ? savedTitles : POPULAR_JOB_TITLES);
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const [customMode, setCustomMode] = useState(false);

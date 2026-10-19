@@ -151,6 +151,7 @@ export default function EditJob() {
         work_phrase: job.work_phrase || "",
         benefits_hi: job.benefits_hi || "",
         quiz_skill_code: job.quiz_skill_code || "",
+        quiz_pass_score: job.quiz_pass_score == null ? "" : String(job.quiz_pass_score),
         card_image_url: job.card_image_url || "",
         salary_display: job.salary_display || "",
         slug: job.slug || "",

@@ -7,12 +7,14 @@ import {
   type UaeListedJob,
 } from '@/lib/uaeListedJobs';
 import { UAE_LISTED_JOB_CARD_VISUALS } from '@/components/jobs/listedJobCardVisuals';
+import { useSiteContent } from '@/lib/siteContent';
 
 interface Props {
   onSelect: (job: UaeListedJob) => void;
 }
 
 export default function JobTradeGrid({ onSelect }: Props) {
+  const images = useSiteContent().tradeCardImages;
   return (
     <div className="space-y-4">
       <div>
@@ -34,7 +36,7 @@ export default function JobTradeGrid({ onSelect }: Props) {
             >
               <div className="relative h-32 w-full overflow-hidden sm:h-44 lg:h-48">
                 <img
-                  src={card.image}
+                  src={images[job] || card.image}
                   alt={`${label.en} / ${label.hi}`}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   style={{ objectPosition: card.position ?? 'center' }}

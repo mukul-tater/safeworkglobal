@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MapPin } from 'lucide-react';
 import HindiText from '@/components/indian-workforce/HindiText';
+import { useSiteContent } from '@/lib/siteContent';
 
 const UAE_EMIRATES: { name: string; hindi?: boolean }[] = [
   { name: 'Abu Dhabi' },
@@ -84,7 +85,18 @@ interface Props {
 
 export default function JobCountryGrid({ onSelect }: Props) {
   const [europeOpen, setEuropeOpen] = useState(false);
-  const cards = europeOpen ? EUROPE_CARDS : ROOT_CARDS;
+  const saved = useSiteContent().countryCards;
+  const cards = (europeOpen ? EUROPE_CARDS : ROOT_CARDS).map((card) => {
+    const stored = saved.find((item) => item.key === card.key);
+    if (!stored) return card;
+    return {
+      ...card,
+      image: stored.image || card.image,
+      position: stored.position || card.position,
+      title: { hi: stored.titleHi || card.title.hi, en: stored.titleEn || card.title.en },
+      places: stored.places.length ? stored.places : card.places,
+    };
+  });
 
   return (
     <div className="space-y-4">

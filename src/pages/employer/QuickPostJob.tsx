@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { Briefcase, ArrowRight, Loader2, Sparkles, CalendarIcon } from "lucide-react";
 import { DESTINATION_COUNTRIES, JOB_CATEGORIES } from "@/lib/constants";
 import EmployerFlowStepper from "@/components/employer/EmployerFlowStepper";
-import { JOB_TEMPLATES, resolveTemplate } from "@/lib/jobTemplates";
+import { resolveTemplate } from "@/lib/jobTemplates";
+import { useSiteContent } from "@/lib/siteContent";
 import { Badge } from "@/components/ui/badge";
 
 export default function QuickPostJob() {
@@ -32,8 +33,8 @@ export default function QuickPostJob() {
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
   );
 
-  // Quick-pick popular roles for one-tap auto-fill
-  const QUICK_ROLES = ["Electrician", "Welder", "Plumber", "Helper", "Driver"];
+  const quickRoles = useSiteContent().jobTemplates.slice(0, 5).map((template) => template.role);
+  const QUICK_ROLES = quickRoles.length ? quickRoles : ["Electrician", "Welder", "Plumber", "Helper", "Driver"];
   const template = resolveTemplate(role);
 
   const applyTemplate = (selectedRole: string) => {

@@ -16,6 +16,7 @@ export type JobConfigValues = {
   work_phrase: string;
   benefits_hi: string;
   quiz_skill_code: string;
+  quiz_pass_score: string;
   card_image_url: string;
   salary_display: string;
   slug: string;
@@ -35,6 +36,7 @@ export const EMPTY_JOB_CONFIG: JobConfigValues = {
   work_phrase: '',
   benefits_hi: '',
   quiz_skill_code: '',
+  quiz_pass_score: '',
   card_image_url: '',
   salary_display: '',
   slug: '',
@@ -61,6 +63,7 @@ export function configValues(data: Partial<JobConfigValues> | null | undefined):
     work_phrase: source.work_phrase || '',
     benefits_hi: source.benefits_hi || '',
     quiz_skill_code: source.quiz_skill_code || '',
+    quiz_pass_score: source.quiz_pass_score || '',
     card_image_url: source.card_image_url || '',
     salary_display: source.salary_display || '',
     slug: source.slug || '',
@@ -92,6 +95,7 @@ export function jobConfigSaveFields(values: JobConfigValues) {
     work_phrase: blank(values.work_phrase),
     benefits_hi: blank(values.benefits_hi),
     quiz_skill_code: blank(values.quiz_skill_code),
+    quiz_pass_score: blank(values.quiz_pass_score),
     card_image_url: blank(values.card_image_url),
     salary_display: blank(values.salary_display),
     slug: blank(values.slug),
@@ -250,6 +254,19 @@ export default function AdminJobConfigurationFields({ values, onChange, cardImag
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label htmlFor="quiz_pass_score">Test 1 pass score</Label>
+            <Input
+              id="quiz_pass_score"
+              inputMode="numeric"
+              value={values.quiz_pass_score}
+              onChange={(event) => onChange({ quiz_pass_score: event.target.value.replace(/[^\d]/g, '').slice(0, 3) })}
+              placeholder="60, or 70 for Delivery"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Leave blank to use the paper default. 1–100 is the percent a worker must reach.
+            </p>
           </div>
           <div>
             <Label htmlFor="card_image_url">Card image URL</Label>

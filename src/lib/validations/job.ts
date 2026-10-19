@@ -161,6 +161,12 @@ const adminJobFieldsSchema = jobPostingBaseSchema
     work_phrase: z.string().trim().max(80, "Skill-proof phrase must be less than 80 characters").optional().or(z.literal("")),
     benefits_hi: z.string().trim().max(2000).optional().or(z.literal("")),
     quiz_skill_code: z.string().trim().max(80).optional().or(z.literal("")),
+    quiz_pass_score: z.string().trim().optional().or(z.literal(""))
+      .refine((value) => {
+        if (!value) return true;
+        const score = Number(value);
+        return Number.isInteger(score) && score >= 1 && score <= 100;
+      }, "Pass score must be a whole number from 1 to 100"),
     card_image_url: z.string().trim().max(500).optional().or(z.literal(""))
       .refine((value) => !value || /^https?:\/\//i.test(value), "Enter a full image URL starting with https://"),
     salary_display: z.string().trim().max(300).optional().or(z.literal("")),

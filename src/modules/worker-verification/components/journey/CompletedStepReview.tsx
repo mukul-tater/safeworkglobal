@@ -70,6 +70,7 @@ interface Props {
   appliedJobDescription?: string | null;
   appliedJobCountry?: string | null;
   quizSkillCode?: string | null;
+  quizPassScore?: number | null;
   onGoToCurrent: () => void;
   /** Shown on the finished Find jobs card so a worker can switch after leaving that step. */
   onChangeJob?: () => void;
@@ -272,6 +273,7 @@ export default function CompletedStepReview({
   appliedJobDescription,
   appliedJobCountry,
   quizSkillCode,
+  quizPassScore: quizPassOverride,
   onGoToCurrent,
   onChangeJob,
   children,
@@ -289,8 +291,8 @@ export default function CompletedStepReview({
     country: appliedJobCountry,
     quizSkillCode,
   });
-  const quizPassScore = quizPassScoreForSkill(quizSkill);
-  const quizResult = row.quiz_score == null ? null : describeQuizResult(row.quiz_score, quizSkill);
+  const quizPassScore = quizPassScoreForSkill(quizSkill, quizPassOverride);
+  const quizResult = row.quiz_score == null ? null : describeQuizResult(row.quiz_score, quizSkill, quizPassOverride);
   const kycTone: Tone =
     kycStatus === 'verified' ? 'success' : kycStatus === 'rejected' ? 'error' : 'pending';
   const kycLabel =

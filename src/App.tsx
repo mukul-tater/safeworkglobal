@@ -88,6 +88,7 @@ import ContactSubmissions from "./pages/admin/ContactSubmissions";
 import AdminPartnerRewards from "./pages/admin/AdminPartnerRewards";
 import AdminPaymentSettings from "./pages/admin/AdminPaymentSettings";
 import AdminJourneyRules from "./pages/admin/AdminJourneyRules";
+import AdminSiteContent from "./pages/admin/AdminSiteContent";
 import AdminWorkers from "./pages/admin/AdminWorkers";
 import SharedWorkerPage from "./pages/shared/SharedWorkerPage";
 import AdminEmployers from "./pages/admin/AdminEmployers";
@@ -432,6 +433,7 @@ function AppShell() {
           <Route path="/admin/verification-queue" element={<AdminRoute><AdminVerificationQueue /></AdminRoute>} />
           <Route path="/admin/journey-ops" element={<AdminRoute><AdminJourneyOps /></AdminRoute>} />
           <Route path="/admin/journey-rules" element={<AdminRoute><AdminJourneyRules /></AdminRoute>} />
+          <Route path="/admin/site-content" element={<AdminRoute><AdminSiteContent /></AdminRoute>} />
           <Route path="/admin/quiz-cms" element={<AdminRoute><AdminQuizCms /></AdminRoute>} />
           {!USERS_ONLY_LAUNCH && (
             <Route path="/interviewer/login" element={<InterviewerLoginPage />} />

@@ -13,11 +13,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
-  CANDIDATE_ACKNOWLEDGEMENT_ITEMS,
-  PRE_JOURNEY_COPY,
   type WorkerPreJourneyDeclaration,
 } from '@/modules/worker-verification/types/declarations.types';
 import HindiText from '@/components/indian-workforce/HindiText';
+import { useSiteContent } from '@/lib/siteContent';
 
 interface Props {
   declaration: WorkerPreJourneyDeclaration;
@@ -42,6 +41,8 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 export default function WorkerDeclarationsSummary({ declaration, className }: Props) {
+  const screeningCopy = useSiteContent().preJourney;
+  const acknowledgementItems = useSiteContent().acknowledgements;
   const [expanded, setExpanded] = useState(false);
 
   const formattedDate = declaration.completed_at
@@ -52,7 +53,7 @@ export default function WorkerDeclarationsSummary({ declaration, className }: Pr
       })
     : 'Completed';
 
-  const acceptedCount = CANDIDATE_ACKNOWLEDGEMENT_ITEMS.filter(
+  const acceptedCount = acknowledgementItems.filter(
     (item) => declaration.acknowledgements?.[item.key],
   ).length;
 
@@ -64,13 +65,13 @@ export default function WorkerDeclarationsSummary({ declaration, className }: Pr
             <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <div className="min-w-0">
               <CardTitle className="text-sm font-bold text-foreground">
-                {PRE_JOURNEY_COPY.summary.title.en}
+                {screeningCopy.summary.title.en}
               </CardTitle>
               <HindiText className="text-xs text-muted-foreground">
-                {PRE_JOURNEY_COPY.summary.title.hi}
+                {screeningCopy.summary.title.hi}
               </HindiText>
               <p className="text-xs text-muted-foreground">
-                Completed on {formattedDate} • {acceptedCount}/{CANDIDATE_ACKNOWLEDGEMENT_ITEMS.length}{' '}
+                Completed on {formattedDate} • {acceptedCount}/{acknowledgementItems.length}{' '}
                 Candidate Acknowledgements Verified
               </p>
             </div>
@@ -224,10 +225,10 @@ export default function WorkerDeclarationsSummary({ declaration, className }: Pr
           <div className="space-y-1.5">
             <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <FileCheck2 className="h-3.5 w-3.5 text-primary" /> Candidate Acknowledgements (
-              {acceptedCount}/{CANDIDATE_ACKNOWLEDGEMENT_ITEMS.length} verified)
+              {acceptedCount}/{acknowledgementItems.length} verified)
             </h4>
             <ul className="grid grid-cols-1 gap-2">
-              {CANDIDATE_ACKNOWLEDGEMENT_ITEMS.map((item, idx) => {
+              {acknowledgementItems.map((item, idx) => {
                 const accepted = Boolean(declaration.acknowledgements?.[item.key]);
                 return (
                   <li

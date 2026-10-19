@@ -11,11 +11,13 @@ import WorkerPhotoCollage from "./WorkerPhotoCollage";
 import TradeCategoryCard from "./TradeCategoryCard";
 import ManyMoreTradeCard from "./ManyMoreTradeCard";
 import { COMING_SOON_PATHS, USERS_ONLY_LAUNCH, showEmployerChrome } from "@/lib/launchGate";
+import { useSiteContent } from "@/lib/siteContent";
 
 export default function IndianWorkforceSection() {
   const navigate = useNavigate();
   const { isAuthenticated, role } = useAuth();
   const { t } = useI18n();
+  const tradeImages = useSiteContent().tradeCardImages;
   const isEmployer = showEmployerChrome(role);
 
   const handleFindJobs = () => {
@@ -107,7 +109,11 @@ export default function IndianWorkforceSection() {
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {tradeCategories.map((trade, index) => (
-              <TradeCategoryCard key={trade.id} trade={trade} index={index} />
+              <TradeCategoryCard
+                key={trade.id}
+                trade={{ ...trade, image: tradeImages[trade.id] || trade.image }}
+                index={index}
+              />
             ))}
             <ManyMoreTradeCard index={tradeCategories.length} />
           </div>

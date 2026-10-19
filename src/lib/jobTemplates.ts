@@ -1,6 +1,8 @@
 // Role-based smart templates for Quick Job Post auto-fill
 // + Worker-Job matching algorithm (skill 40 / salary 20 / experience 20 / location 20)
 
+import { getSiteContent, installDefaultTemplates, resolveStoredTemplate } from '@/lib/siteContent';
+
 export interface JobTemplate {
   role: string;
   category: string;
@@ -146,6 +148,8 @@ export const JOB_TEMPLATES: Record<string, JobTemplate> = {
  */
 export function resolveTemplate(role: string): JobTemplate | null {
   if (!role) return null;
+  const stored = resolveStoredTemplate(role);
+  if (getSiteContent().fromDatabase || stored) return stored;
   const key = role.toLowerCase().trim();
   if (JOB_TEMPLATES[key]) return JOB_TEMPLATES[key];
 
@@ -164,6 +168,16 @@ export function resolveTemplate(role: string): JobTemplate | null {
   }
   return null;
 }
+
+const TEMPLATE_KEYWORDS: Record<string, string[]> = {
+  electrician: ['electric'],
+  welder: ['weld'],
+  plumber: ['plumb', 'pipe'],
+  driver: ['driver'],
+  helper: ['helper', 'labour', 'labor'],
+};
+
+installDefaultTemplates(JOB_TEMPLATES, TEMPLATE_KEYWORDS);
 
 // ---------- MATCHING ENGINE ----------
 
