@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { inferEuropeQuizJob } from '@/lib/europeQuizJobs';
-import { inferUaeListedJob } from '@/lib/uaeListedJobs';
+import { inferUaeListedJob, listedJobDisplayName } from '@/lib/uaeListedJobs';
 import { bundledMcqBank } from '../quiz-data/mcqBank';
 import { QUIZ_PASS_SCORE, QUIZ_QUESTIONS_TO_SHOW } from '../constants';
 import { isQuizSkillCode, QUIZ_SKILL_CODES } from '../quiz-data/quizSkill';
@@ -169,25 +169,81 @@ export async function publishDefaultQuizBank(skill: string): Promise<number> {
   return rows.length;
 }
 
-/** Every Test 1 paper: built-in trades, saved quiz rows, and each live job. */
-export async function listQuizSkillChoices(): Promise<string[]> {
-  const names = new Set<string>(QUIZ_SKILL_CODES);
-  const titled = await supabase.from('jobs').select('title, country, quiz_skill_code').eq('status', 'ACTIVE');
-  let jobs: { title?: string | null; country?: string | null; quiz_skill_code?: string | null }[] = [];
+type ActiveJobRow = {
+  id: string;
+  title: string;
+  country: string | null;
+  quiz_skill_code: string | null;
+};
+
+export type ActiveQuizJob = ActiveJobRow & { paper: string };
+
+async function fetchActiveJobs(): Promise<ActiveJobRow[]> {
+  const titled = await supabase
+    .from('jobs')
+    .select('id, title, country, quiz_skill_code')
+    .eq('status', 'ACTIVE');
+  let jobs: {
+    id?: string | null;
+    title?: string | null;
+    country?: string | null;
+    quiz_skill_code?: string | null;
+  }[] = [];
   if (titled.error) {
-    const fallback = await supabase.from('jobs').select('title, country').eq('status', 'ACTIVE');
+    const fallback = await supabase.from('jobs').select('id, title, country').eq('status', 'ACTIVE');
     if (fallback.error) throw new Error(fallback.error.message);
     jobs = fallback.data || [];
   } else {
     jobs = titled.data || [];
   }
+  return jobs
+    .map((job) => ({
+      id: String(job.id || '').trim(),
+      title: (job.title || '').trim(),
+      country: job.country?.trim() || null,
+      quiz_skill_code: job.quiz_skill_code?.trim() || null,
+    }))
+    .filter((job) => job.id && job.title);
+}
+
+function paperKey(paper: string): string {
+  return paper.trim().toLowerCase();
+}
+
+function isCanonicalPaperJob(job: ActiveJobRow, paper: string): boolean {
+  const key = paperKey(paper);
+  return paperKey(job.title) === key || paperKey(job.quiz_skill_code || '') === key;
+}
+
+/** ACTIVE listings only, one row per Test 1 paper so the same trade is not listed twice. */
+export async function listActiveQuizJobs(): Promise<ActiveQuizJob[]> {
+  const jobs = await fetchActiveJobs();
+  const byPaper = new Map<string, ActiveQuizJob>();
+  for (const job of jobs) {
+    const paper = quizPaperForLabel(job.title, job.quiz_skill_code, job.country);
+    const key = paperKey(paper);
+    const next: ActiveQuizJob = { ...job, paper };
+    const existing = byPaper.get(key);
+    if (!existing || (!isCanonicalPaperJob(existing, existing.paper) && isCanonicalPaperJob(job, paper))) {
+      byPaper.set(key, next);
+    }
+  }
+  return [...byPaper.values()].sort((a, b) => {
+    const aLabel = listedJobDisplayName(a.paper);
+    const bLabel = listedJobDisplayName(b.paper);
+    return aLabel.localeCompare(bLabel) || a.paper.localeCompare(b.paper);
+  });
+}
+
+/** Paper ids for job configuration: built-in trades, saved quiz rows, and live jobs. */
+export async function listQuizSkillChoices(): Promise<string[]> {
+  const names = new Set<string>(QUIZ_SKILL_CODES);
+  const jobs = await fetchActiveJobs();
   const { data: items, error: itemError } = await db.from('worker_skill_quiz_items').select('skill_code');
   if (itemError) throw new Error(itemError.message);
   for (const job of jobs) {
-    const title = (job.title || '').trim();
-    const paper = quizPaperForLabel(title, job.quiz_skill_code, job.country);
-    if (title) names.add(title);
-    if (paper) names.add(paper);
+    names.add(job.title);
+    names.add(quizPaperForLabel(job.title, job.quiz_skill_code, job.country));
   }
   for (const row of items || []) {
     const code = String((row as { skill_code?: string }).skill_code || '').trim();
@@ -206,9 +262,9 @@ export async function publishMissingDefaultBanks(): Promise<string[]> {
     missingBanksInflight = (async () => {
       const seeded: string[] = [];
       const seen = new Set<string>();
-      const choices = await listQuizSkillChoices();
-      for (const skill of choices) {
-        const paper = quizPaperForLabel(skill);
+      const choices = await listActiveQuizJobs();
+      for (const job of choices) {
+        const paper = job.paper;
         if (seen.has(paper) || !bundledMcqBank(paper)?.length) continue;
         seen.add(paper);
         const added = await publishDefaultQuizBank(paper);

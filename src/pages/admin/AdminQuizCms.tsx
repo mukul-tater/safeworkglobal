@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Plus, Save, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
-import { QUIZ_SKILL_CODES } from '@/modules/worker-verification/quiz-data/quizSkill';
+import { listedJobDisplayName } from '@/lib/uaeListedJobs';
 import { indianStates } from '@/lib/validations/partner';
 import { QUIZ_PASS_SCORE, QUIZ_QUESTIONS_TO_SHOW, youtubeEmbedUrl } from '@/modules/worker-verification/constants';
 import type { QuizOption, SkillQuizConfig, SkillQuizItem } from '@/modules/worker-verification/types';
@@ -21,14 +21,14 @@ import { isMcqQuizItem } from '@/modules/worker-verification/types';
 import {
   defaultQuizBankForSkill,
   deleteQuizItem,
+  listActiveQuizJobs,
   listQuizConfigs,
   listQuizItems,
-  listQuizSkillChoices,
   publishDefaultQuizBank,
   publishMissingDefaultBanks,
-  quizPaperForLabel,
   saveQuizConfig,
   saveQuizItem,
+  type ActiveQuizJob,
 } from '@/modules/worker-verification/services/quizCmsService';
 import { loadQuizItems } from '@/modules/worker-verification/services/verificationService';
 
@@ -67,8 +67,8 @@ const emptyDraft = (sort: number): Draft => ({
 });
 
 export default function AdminQuizCms() {
-  const [skills, setSkills] = useState<string[]>([...QUIZ_SKILL_CODES]);
-  const [skill, setSkill] = useState<string>(QUIZ_SKILL_CODES[0]);
+  const [jobs, setJobs] = useState<ActiveQuizJob[]>([]);
+  const [paper, setPaper] = useState('');
   const [items, setItems] = useState<SkillQuizItem[]>([]);
   const [configs, setConfigs] = useState<SkillQuizConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,13 +86,21 @@ export default function AdminQuizCms() {
   const [cfgMode, setCfgMode] = useState<'random_active' | 'explicit_ids'>('random_active');
   const [cfgSelected, setCfgSelected] = useState<string[]>([]);
 
-  const paper = quizPaperForLabel(skill);
+  const selected = jobs.find((job) => job.paper === paper) ?? null;
+  const skill = selected?.title || paper;
 
   const load = useCallback(async () => {
+    if (!paper) {
+      setItems([]);
+      setConfigs([]);
+      setDraft(emptyDraft(1));
+      setPreview(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const bank = quizPaperForLabel(skill);
     try {
-      const [rows, cfgs] = await Promise.all([listQuizItems(bank), listQuizConfigs(bank)]);
+      const [rows, cfgs] = await Promise.all([listQuizItems(paper), listQuizConfigs(paper)]);
       setItems(rows);
       setConfigs(cfgs);
       setDraft(emptyDraft(rows.length + 1));
@@ -102,7 +110,7 @@ export default function AdminQuizCms() {
     } finally {
       setLoading(false);
     }
-  }, [skill]);
+  }, [paper]);
 
   useEffect(() => {
     void load();
@@ -110,14 +118,18 @@ export default function AdminQuizCms() {
 
   useEffect(() => {
     let cancelled = false;
-    void listQuizSkillChoices()
+    void listActiveQuizJobs()
       .then((rows) => {
-        if (cancelled || !rows.length) return;
-        setSkills(rows);
-        setSkill((current) => (rows.includes(current) ? current : rows[0]));
+        if (cancelled) return;
+        setJobs(rows);
+        setPaper((current) => (rows.some((job) => job.paper === current) ? current : rows[0]?.paper ?? ''));
+        if (!rows.length) setLoading(false);
       })
-      .catch(() => {
-        /* Keep the built-in trade list when the job list cannot be loaded. */
+      .catch((e) => {
+        if (!cancelled) {
+          toast.error(e instanceof Error ? e.message : 'Could not load active jobs');
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;
@@ -155,6 +167,10 @@ export default function AdminQuizCms() {
   }, [configs, cfgRegion]);
 
   const onSaveItem = async () => {
+    if (!paper) {
+      toast.error('Select an active job first');
+      return;
+    }
     if (draft.question.trim().length < 5) {
       toast.error('English question is required');
       return;
@@ -192,6 +208,10 @@ export default function AdminQuizCms() {
   };
 
   const onSaveConfig = async () => {
+    if (!paper) {
+      toast.error('Select an active job first');
+      return;
+    }
     setSaving(true);
     try {
       const existing = configs.find((c) =>
@@ -218,7 +238,7 @@ export default function AdminQuizCms() {
     }
   };
 
-  const defaultBank = useMemo(() => defaultQuizBankForSkill(skill), [skill]);
+  const defaultBank = useMemo(() => defaultQuizBankForSkill(paper || skill), [paper, skill]);
 
   const onPublishDefaultBank = async () => {
     setSaving(true);
@@ -235,7 +255,7 @@ export default function AdminQuizCms() {
 
   const onPreview = async () => {
     try {
-      const rows = await loadQuizItems(skill, previewRegion === ALL_REGIONS ? null : previewRegion);
+      const rows = await loadQuizItems(paper || skill, previewRegion === ALL_REGIONS ? null : previewRegion);
       setPreview(rows);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Preview failed');
@@ -258,16 +278,18 @@ export default function AdminQuizCms() {
       <div className="grid gap-4 lg:grid-cols-[320px_1fr] items-start">
         <Card className="p-4 space-y-4">
           <div className="space-y-1.5">
-            <Label>Skill</Label>
-            <Select value={skill} onValueChange={setSkill}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Label>Job</Label>
+            <Select value={paper} onValueChange={setPaper} disabled={!jobs.length}>
+              <SelectTrigger><SelectValue placeholder={jobs.length ? 'Select a job' : 'No active jobs'} /></SelectTrigger>
               <SelectContent>
-                {skills.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                {jobs.map((job) => (
+                  <SelectItem key={job.paper} value={job.paper}>
+                    {listedJobDisplayName(job.paper)}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {paper !== skill ? (
+            {paper && paper !== skill ? (
               <p className="text-xs text-muted-foreground">
                 This job uses the {paper} question paper. Edits here update that paper in the worker journey.
               </p>
