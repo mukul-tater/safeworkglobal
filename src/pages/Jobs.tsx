@@ -178,6 +178,9 @@ export default function Jobs() {
 
   useLayoutEffect(() => {
     scrollToTop();
+    // Both mobile Filters sheets share one open state; close it whenever the browse step
+    // changes so it never reappears already-open on the next screen.
+    setFiltersSheetOpen(false);
   }, [filters.country, filters.jobCategory]);
 
   const goBrowse = useCallback(
