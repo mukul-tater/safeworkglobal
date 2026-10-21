@@ -30,3 +30,7 @@
 
 ## Razorpay Saved Job Service Charge
 - [x] Enforce saved job charges plus the configured Razorpay percentage, reject missing amounts, preserve service-only completion, deploy and test pricing and recovery (mocked orders; no real payment charged).
+
+## Find Jobs Catalog
+- [ ] Remove Filters from Find Jobs on desktop and phones.
+- [ ] Audit missing Dubai listings and previous category changes; correct confirmed browsing defects and verify live catalog visibility.
