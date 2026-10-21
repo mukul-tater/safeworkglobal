@@ -36,4 +36,4 @@
 - [x] Audit missing Dubai listings and previous category changes; correct confirmed browsing defects and verify all 20 UAE trade choices against live data on phone and desktop (20 UAE records, including 12 Dubai; no records changed).
 
 ## Journey Email Trade Labels
-- [ ] Confirm the reported worker's application/job linkage; unify journey email trade labels, test the Helper regression, and deploy the correction without replaying old emails.
+- [x] Confirm the reported worker's application/job linkage; unify journey email trade labels, test the Helper regression (2 passing tests), and deploy the correction without replaying old emails.
