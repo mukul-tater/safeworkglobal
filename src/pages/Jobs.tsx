@@ -6,16 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { BookmarkCheck, ChevronLeft, ChevronRight, Save, SlidersHorizontal, X } from 'lucide-react';
-import JobSearchFilters, {
+import { ChevronLeft, ChevronRight, Save, X } from 'lucide-react';
+import {
   ANY_CATEGORY,
   ANY_COUNTRY,
   ANY_EXPERIENCE,
   EMPTY_JOB_FILTERS,
   JOB_EXPERIENCE_OPTIONS,
-  countActiveFilters,
   isSalaryFilterActive,
   type JobFilters,
 } from '@/components/search/JobSearchFilters';
@@ -29,7 +27,7 @@ import JobsEmptyState, { type JobFacet } from '@/components/jobs/JobsEmptyState'
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { JOB_CATEGORIES } from '@/lib/constants';
+import { jobBrowseCategory } from '@/lib/jobBrowseCategory';
 import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPublicJobTitle, inferUaeListedJob, isHiddenPublicJob, listedJobDisplayName, listedSalaryIsMonthly, listingOptions, publicJobBenefitsText, publicJobHindiTitle, publicSkillName, UAE_LISTED_JOBS } from '@/lib/uaeListedJobs';
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
@@ -57,15 +55,6 @@ const SORT_OPTIONS = [
 ] as const;
 
 type SortOption = (typeof SORT_OPTIONS)[number]['value'];
-
-const KNOWN_CATEGORIES = JOB_CATEGORIES.filter((c) => c !== ANY_CATEGORY);
-
-/** Prefer the UAE listed trades; fall back to the broader industry list. */
-function inferCategory(title: string, description: string, country?: string): string {
-  return inferUaeListedJob(title, description, country)
-    ?? KNOWN_CATEGORIES.find((category) => `${title} ${description}`.toLowerCase().includes(category.toLowerCase()))
-    ?? 'Other';
-}
 
 function experienceLabel(value: string): string {
   return JOB_EXPERIENCE_OPTIONS.find((option) => option.value === value)?.label ?? value;
@@ -144,7 +133,7 @@ function topFacets(jobs: JobListItem[], key: 'category' | 'country', limit: numb
 }
 
 export default function Jobs() {
-  const { user, isAuthenticated, role } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialBrowse = browseFromSearchParams(searchParams);
@@ -160,7 +149,6 @@ export default function Jobs() {
   const [sortOption, setSortOption] = useState<SortOption>('recent');
   const [currentPage, setCurrentPage] = useState(1);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
   const [savePendingId, setSavePendingId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
@@ -178,9 +166,6 @@ export default function Jobs() {
 
   useLayoutEffect(() => {
     scrollToTop();
-    // Both mobile Filters sheets share one open state; close it whenever the browse step
-    // changes so it never reappears already-open on the next screen.
-    setFiltersSheetOpen(false);
   }, [filters.country, filters.jobCategory]);
 
   const goBrowse = useCallback(
@@ -199,17 +184,6 @@ export default function Jobs() {
       );
     },
     [navigate, searchParams],
-  );
-
-  const handleFiltersChange = useCallback(
-    (next: JobFilters) => {
-      const browseChanged = next.country !== filters.country || next.jobCategory !== filters.jobCategory;
-      setFilters(next);
-      if (browseChanged) {
-        goBrowse({ country: next.country, jobCategory: next.jobCategory, keyword: next.keyword });
-      }
-    },
-    [filters.country, filters.jobCategory, goBrowse],
   );
 
   useEffect(() => {
@@ -264,7 +238,7 @@ export default function Jobs() {
               ? (job.local_salary_max ?? job.local_salary_min ?? null)
               : rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
             type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
-            category: (typeof job.category === 'string' && job.category.trim()) || inferCategory(job.title, description, job.country),
+            category: jobBrowseCategory(job.title, job.description || '', job.country, job.category),
             experienceLevel: job.experience_level ?? '',
             visaSponsorship: job.visa_sponsorship || false,
             postedAt: new Date(job.posted_at),
@@ -358,8 +332,6 @@ export default function Jobs() {
     () => jobs.slice((currentPage - 1) * JOBS_PER_PAGE, currentPage * JOBS_PER_PAGE),
     [jobs, currentPage],
   );
-
-  const activeFilterCount = countActiveFilters(filters);
 
   const activeChips = useMemo(() => {
     const chips: { label: string; clear: () => void }[] = [];
@@ -546,39 +518,10 @@ export default function Jobs() {
     <>
       <JobSearchHero />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[288px_1fr] xl:grid-cols-[312px_1fr]">
-        <aside className="hidden self-start lg:sticky lg:top-24 lg:block">
-          <JobSearchFilters filters={filters} onFiltersChange={handleFiltersChange} />
-
-          {isAuthenticated && role === 'worker' && (
-            <Button variant="outline" asChild className="mt-3 w-full gap-2">
-              <Link to="/worker/saved-searches">
-                <BookmarkCheck className="h-4 w-4" />
-                Saved searches
-              </Link>
-            </Button>
-          )}
-        </aside>
-
+      <div className="grid grid-cols-1 gap-6">
         <div className="min-w-0">
           {!countrySelected ? (
             <div className="space-y-4">
-              <div className="flex lg:hidden">
-                <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <SlidersHorizontal className="h-4 w-4" />
-                      Filters
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-full overflow-y-auto p-0 sm:max-w-sm">
-                    <SheetHeader className="border-b border-border/60 px-5 py-4">
-                      <SheetTitle className="text-base">Filters</SheetTitle>
-                    </SheetHeader>
-                    <JobSearchFilters filters={filters} onFiltersChange={handleFiltersChange} className="rounded-none border-0" />
-                  </SheetContent>
-                </Sheet>
-              </div>
               <JobCountryGrid
                 onSelect={(country) => goBrowse({ country, jobCategory: ANY_CATEGORY })}
               />
@@ -625,31 +568,6 @@ export default function Jobs() {
             </p>
 
             <div className="flex min-w-0 items-center gap-2">
-              <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 lg:hidden">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Filters
-                    {activeFilterCount > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-full overflow-y-auto p-0 sm:max-w-sm">
-                  <SheetHeader className="border-b border-border/60 px-5 py-4">
-                    <SheetTitle className="text-base">Filters</SheetTitle>
-                  </SheetHeader>
-                  <JobSearchFilters filters={filters} onFiltersChange={handleFiltersChange} className="rounded-none border-0" />
-                  <div className="sticky bottom-0 border-t border-border/60 bg-card p-4">
-                    <Button className="w-full" onClick={() => setFiltersSheetOpen(false)}>
-                      Show {jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}
-                    </Button>
-                  </div>
-                </SheetContent>
-              </Sheet>
-
               <Button variant="ghost" size="sm" className="hidden gap-2 sm:inline-flex" onClick={() => setShowSaveDialog(true)}>
                 <Save className="h-4 w-4" />
                 Save search

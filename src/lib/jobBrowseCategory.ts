@@ -5,7 +5,7 @@ import { inferUaeListedJob } from './uaeListedJobs';
 export function jobBrowseCategory(title: string, description: string, country: string, savedCategory?: string | null): string {
   const trade = inferUaeListedJob(title.replace(/\s*\/\s*/g, '/'), description, country);
   return trade
-    ?? savedCategory?.trim()
+    || savedCategory?.trim()
     || JOB_CATEGORIES.find((category) => category !== 'All Categories' && `${title} ${description}`.toLowerCase().includes(category.toLowerCase()))
     || 'Other';
 }
