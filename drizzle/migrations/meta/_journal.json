@@ -85,6 +85,13 @@
       "when": 1791740683769,
       "tag": "0011_enforce_saved_assessment_payment_amount",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792581610358,
+      "tag": "0012_restore_kyc_reupload_journey_email",
+      "breakpoints": true
     }
   ]
 }
