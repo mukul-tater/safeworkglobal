@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -670,6 +670,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      custom_amount_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          provider: string
+          razorpay_payment_id: string | null
+          razorpay_payment_link_id: string | null
+          short_url: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          provider?: string
+          razorpay_payment_id?: string | null
+          razorpay_payment_link_id?: string | null
+          short_url?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          provider?: string
+          razorpay_payment_id?: string | null
+          razorpay_payment_link_id?: string | null
+          short_url?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       disputes: {
         Row: {
@@ -1758,8 +1800,13 @@ export type Database = {
       }
       jobs: {
         Row: {
+          accommodation_image_urls: string[]
+          age_max: number | null
+          age_min: number | null
           benefits: string | null
+          benefits_hi: string | null
           canonical_url: string | null
+          card_image_url: string | null
           category: string | null
           city: string | null
           country: string
@@ -1771,6 +1818,7 @@ export type Database = {
           experience_level: string
           expires_at: string | null
           first_published_at: string | null
+          hidden_from_public: boolean
           id: string
           indexable: boolean
           job_type: string
@@ -1782,6 +1830,10 @@ export type Database = {
           openings: number
           posted_at: string | null
           posted_by_role: string
+          processing_time: string | null
+          processing_time_hi: string | null
+          quiz_pass_score: number | null
+          quiz_skill_code: string | null
           remote_allowed: boolean | null
           requirements: string | null
           responsibilities: string | null
@@ -1795,26 +1847,21 @@ export type Database = {
           status: string
           title: string
           title_hi: string | null
-          processing_time: string | null
-          processing_time_hi: string | null
-          work_phrase: string | null
-          benefits_hi: string | null
-          quiz_skill_code: string | null
-          quiz_pass_score: number | null
-          age_min: number | null
-          age_max: number | null
-          accommodation_image_urls: string[]
-          card_image_url: string | null
-          hidden_from_public: boolean
-          use_saved_copy: boolean
           updated_at: string | null
-          visa_sponsorship: boolean | null
-          youtube_urls: string[]
+          use_saved_copy: boolean
           video_urls: string[]
+          visa_sponsorship: boolean | null
+          work_phrase: string | null
+          youtube_urls: string[]
         }
         Insert: {
+          accommodation_image_urls?: string[]
+          age_max?: number | null
+          age_min?: number | null
           benefits?: string | null
+          benefits_hi?: string | null
           canonical_url?: string | null
+          card_image_url?: string | null
           category?: string | null
           city?: string | null
           country: string
@@ -1826,6 +1873,7 @@ export type Database = {
           experience_level: string
           expires_at?: string | null
           first_published_at?: string | null
+          hidden_from_public?: boolean
           id?: string
           indexable?: boolean
           job_type: string
@@ -1837,6 +1885,10 @@ export type Database = {
           openings?: number
           posted_at?: string | null
           posted_by_role?: string
+          processing_time?: string | null
+          processing_time_hi?: string | null
+          quiz_pass_score?: number | null
+          quiz_skill_code?: string | null
           remote_allowed?: boolean | null
           requirements?: string | null
           responsibilities?: string | null
@@ -1850,26 +1902,21 @@ export type Database = {
           status?: string
           title: string
           title_hi?: string | null
-          processing_time?: string | null
-          processing_time_hi?: string | null
-          work_phrase?: string | null
-          benefits_hi?: string | null
-          quiz_skill_code?: string | null
-          quiz_pass_score?: number | null
-          age_min?: number | null
-          age_max?: number | null
-          accommodation_image_urls?: string[]
-          card_image_url?: string | null
-          hidden_from_public?: boolean
-          use_saved_copy?: boolean
           updated_at?: string | null
-          visa_sponsorship?: boolean | null
-          youtube_urls?: string[]
+          use_saved_copy?: boolean
           video_urls?: string[]
+          visa_sponsorship?: boolean | null
+          work_phrase?: string | null
+          youtube_urls?: string[]
         }
         Update: {
+          accommodation_image_urls?: string[]
+          age_max?: number | null
+          age_min?: number | null
           benefits?: string | null
+          benefits_hi?: string | null
           canonical_url?: string | null
+          card_image_url?: string | null
           category?: string | null
           city?: string | null
           country?: string
@@ -1881,6 +1928,7 @@ export type Database = {
           experience_level?: string
           expires_at?: string | null
           first_published_at?: string | null
+          hidden_from_public?: boolean
           id?: string
           indexable?: boolean
           job_type?: string
@@ -1892,6 +1940,10 @@ export type Database = {
           openings?: number
           posted_at?: string | null
           posted_by_role?: string
+          processing_time?: string | null
+          processing_time_hi?: string | null
+          quiz_pass_score?: number | null
+          quiz_skill_code?: string | null
           remote_allowed?: boolean | null
           requirements?: string | null
           responsibilities?: string | null
@@ -1905,22 +1957,12 @@ export type Database = {
           status?: string
           title?: string
           title_hi?: string | null
-          processing_time?: string | null
-          processing_time_hi?: string | null
-          work_phrase?: string | null
-          benefits_hi?: string | null
-          quiz_skill_code?: string | null
-          quiz_pass_score?: number | null
-          age_min?: number | null
-          age_max?: number | null
-          accommodation_image_urls?: string[]
-          card_image_url?: string | null
-          hidden_from_public?: boolean
-          use_saved_copy?: boolean
           updated_at?: string | null
-          visa_sponsorship?: boolean | null
-          youtube_urls?: string[]
+          use_saved_copy?: boolean
           video_urls?: string[]
+          visa_sponsorship?: boolean | null
+          work_phrase?: string | null
+          youtube_urls?: string[]
         }
         Relationships: [
           {
@@ -1960,9 +2002,9 @@ export type Database = {
           journey_copy: Json | null
           medical_intro: string
           medical_tests: Json
+          stage_expectations: Json
           terms_sections: Json
           terms_summary: string
-          stage_expectations: Json
           terms_version: string
           trade_test_skills: string[]
           updated_at: string
@@ -1973,9 +2015,9 @@ export type Database = {
           journey_copy?: Json | null
           medical_intro: string
           medical_tests: Json
+          stage_expectations?: Json
           terms_sections: Json
           terms_summary: string
-          stage_expectations?: Json
           terms_version: string
           trade_test_skills: string[]
           updated_at?: string
@@ -1986,9 +2028,9 @@ export type Database = {
           journey_copy?: Json | null
           medical_intro?: string
           medical_tests?: Json
+          stage_expectations?: Json
           terms_sections?: Json
           terms_summary?: string
-          stage_expectations?: Json
           terms_version?: string
           trade_test_skills?: string[]
           updated_at?: string
@@ -4200,24 +4242,6 @@ export type Database = {
         }
         Relationships: []
       }
-      site_visits_daily: {
-        Row: {
-          updated_at: string
-          visit_count: number
-          visit_date: string
-        }
-        Insert: {
-          updated_at?: string
-          visit_count?: number
-          visit_date: string
-        }
-        Update: {
-          updated_at?: string
-          visit_count?: number
-          visit_date?: string
-        }
-        Relationships: []
-      }
       site_content: {
         Row: {
           acknowledgements: Json | null
@@ -4257,13 +4281,31 @@ export type Database = {
         }
         Relationships: []
       }
+      site_visits_daily: {
+        Row: {
+          updated_at: string
+          visit_count: number
+          visit_date: string
+        }
+        Insert: {
+          updated_at?: string
+          visit_count?: number
+          visit_date: string
+        }
+        Update: {
+          updated_at?: string
+          visit_count?: number
+          visit_date?: string
+        }
+        Relationships: []
+      }
       skill_quiz_configs: {
         Row: {
           active: boolean
           created_at: string
-          id: string
           disclaimer_en: string | null
           disclaimer_hi: string | null
+          id: string
           pass_score: number
           questions_to_show: number
           region: string | null
@@ -6687,19 +6729,15 @@ export type Database = {
         Returns: undefined
       }
       admin_rotate_lsp_secret: { Args: { p_lsp_id: string }; Returns: Json }
-      admin_save_site_content: {
-        Args: { p_section: string; p_value: Json }
-        Returns: undefined
-      }
       admin_save_journey_rules: {
         Args: {
           p_deployment_checklist: Json
+          p_journey_copy?: Json
           p_medical_intro: string
           p_medical_tests: Json
+          p_stage_expectations?: Json
           p_terms_sections: Json
           p_terms_summary: string
-          p_journey_copy?: Json
-          p_stage_expectations?: Json
           p_terms_version: string
           p_trade_test_skills: string[]
         }
@@ -6722,6 +6760,10 @@ export type Database = {
           p_uae_service_charge_inr: number
           p_ukraine_service_charge_inr: number
         }
+        Returns: undefined
+      }
+      admin_save_site_content: {
+        Args: { p_section: string; p_value: Json }
         Returns: undefined
       }
       admin_schedule_worker_assessment: {
@@ -7487,6 +7529,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      normalize_job_file_urls: { Args: { p_urls: Json }; Returns: string[] }
       normalize_job_youtube_urls: { Args: { p_urls: Json }; Returns: string[] }
       partner_attach_registered_worker: {
         Args: {

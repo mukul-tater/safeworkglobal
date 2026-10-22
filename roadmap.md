@@ -30,3 +30,10 @@
 
 ## Razorpay Saved Job Service Charge
 - [x] Enforce saved job charges plus the configured Razorpay percentage, reject missing amounts, preserve service-only completion, deploy and test pricing and recovery (mocked orders; no real payment charged).
+
+## Find Jobs Catalog
+- [x] Remove Filters from Find Jobs on desktop and phones.
+- [x] Audit missing Dubai listings and previous category changes; correct confirmed browsing defects and verify all 20 UAE trade choices against live data on phone and desktop (20 UAE records, including 12 Dubai; no records changed).
+
+## Journey Email Trade Labels
+- [x] Confirm the reported worker's application/job linkage; unify journey email trade labels, test the Helper regression (2 passing tests), and deploy the correction without replaying old emails.

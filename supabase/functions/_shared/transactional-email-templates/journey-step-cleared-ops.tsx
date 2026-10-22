@@ -93,7 +93,6 @@ export const template = {
   subject: (data: Record<string, any>) =>
     `${data?.clearedStep || 'Journey step'} completed — ${data?.workerName || 'Worker'}`,
   displayName: 'Journey step cleared (ops)',
-  to: 'mukultater@safeworkglobal.com',
   previewData: {
     workerName: 'Ramesh Kumar',
     workerEmail: 'ramesh@example.com',

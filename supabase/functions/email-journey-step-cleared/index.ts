@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts'
+import { journeyEmailTrade } from '../_shared/journeyEmailTrade.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -341,7 +342,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           workerName: displayText(profile?.full_name, 'Unknown worker'),
           workerEmail: workerEmail || '',
           workerPhone: profile?.phone?.trim() || '',
-          trade: tradeLine || verification?.primary_skill || '',
+          trade: journeyEmailTrade(tradeLine, verification?.primary_skill),
           location: [verification?.city, verification?.state].filter(Boolean).join(', '),
           clearedStep: kind === 'interview_scheduled' ? 'Video interview scheduled' : 'Job selected',
           nextStep: kind === 'interview_scheduled' ? 'Join the video interview' : (tradeLine || 'Test 1'),
@@ -417,7 +418,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           .eq('id', assessmentId)
           .maybeSingle()
         centrePartnerId = assessment?.partner_id || ''
-        let skill = verification?.primary_skill || ''
+        const skill = verification?.primary_skill || ''
         let jobTitle = ''
         let jobCountry = ''
         let jobLocation = ''
@@ -434,7 +435,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           jobLocation = job?.location || ''
           experience = job?.experience_level || ''
         }
-        const trade = (skill || jobTitle || 'your trade').trim()
+        const trade = journeyEmailTrade(jobTitle, skill) || 'your trade'
         let centreName = ''
         let address = ''
         let contact = ''
@@ -490,7 +491,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       ].filter(Boolean).join(', ')
       const aadhaarEnding = (workerProfile?.aadhaar_last4 || '').replace(/\D/g, '').slice(-4)
       const trade = String(slipData.appliedFor || '').replace(/^Applied for:\s*/i, '')
-        || verification?.primary_skill
+        || journeyEmailTrade(jobTitle, verification?.primary_skill)
         || 'trade'
       const centreEmail = centrePartnerId
         ? await emailTradeTestCentre(supabase, {
@@ -612,9 +613,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       isTerminal: isReupload ? false : isTerminal,
       isReupload,
     }
-    const trade = [verification?.primary_skill, jobTitle]
-      .map((value) => value?.trim() ?? '')
-      .find((value) => value.length > 0) || ''
+    const trade = journeyEmailTrade(jobTitle, verification?.primary_skill)
     const opsTemplateData = {
       workerName,
       workerEmail: workerEmail || '',

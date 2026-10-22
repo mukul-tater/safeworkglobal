@@ -1,3 +1,4 @@
+import { jobBrowseCategory } from '@/lib/jobBrowseCategory';
 import { useState, useEffect, type ReactNode } from 'react';
 import ShareJobDialog from '@/components/jobs/ShareJobDialog';
 import { recordJobShareOpen } from '@/lib/jobShare';
@@ -557,7 +558,7 @@ export default function JobDetail() {
   const hindiTitle = devJob ? null : publicJobHindiTitle(job.title, job.description, job.country, job.title_hi);
   const backToJobs = jobsBrowsePath({
     country: job.country || 'UAE',
-    category: job.category?.trim() || inferUaeListedJob(job.title, job.description, job.country),
+    category: jobBrowseCategory(job.title, job.description, job.country || 'UAE', job.category),
   });
   const aboutTheRole = devJob ? job.description : getPublicJobAbout(job.title, job.description, '', job.country, listing);
   const responsibilities = devJob
