@@ -50,6 +50,7 @@ interface JobRow {
   title: string | null;
   country: string | null;
   location: string | null;
+  service_charge: number | null;
 }
 
 interface ApplicationRow {
@@ -261,10 +262,13 @@ function applicationSummary(app: ApplicationRow): string {
   const job = extractJob(app.jobs);
   const title = job?.title || "Untitled job";
   const country = job?.country ? ` · ${job.country}` : "";
+  const fee = job?.service_charge != null && Number.isFinite(job.service_charge)
+    ? ` · ₹${Number(job.service_charge).toLocaleString("en-IN")}`
+    : "";
   const status = app.status ? ` (${app.status.toLowerCase().replace(/_/g, " ")})` : "";
   const applied = dateCell(app.applied_at);
   const dateStr = applied ? ` · ${applied}` : "";
-  return `${title}${country}${status}${dateStr}`;
+  return `${title}${country}${fee}${status}${dateStr}`;
 }
 
 function needs(fieldIds: string[], ids: string[]): boolean {
@@ -321,6 +325,7 @@ export async function buildWorkersPdf(workers: WorkerExportSource[], fieldIds: s
   const wantApplications = needs(fieldIds, [
     "applied_job",
     "applied_country",
+    "applied_service_charge",
     "applied_applications",
   ]);
   const documentFieldIds = Object.keys(DOCUMENT_EXPORT_TYPES).filter((id) => selected.has(id));
@@ -400,7 +405,7 @@ export async function buildWorkersPdf(workers: WorkerExportSource[], fieldIds: s
           (slice) =>
             supabase
               .from("job_applications")
-              .select("worker_id, status, applied_at, job_id, jobs(id, title, country, location)")
+              .select("worker_id, status, applied_at, job_id, jobs(id, title, country, location, service_charge)")
               .in("worker_id", slice)
               .order("applied_at", { ascending: false }),
           ids,
@@ -435,7 +440,7 @@ export async function buildWorkersPdf(workers: WorkerExportSource[], fieldIds: s
   const extraJobs = missingJobIds.length
     ? await rowsIn<JobRow>(
         (slice) =>
-          supabase.from("jobs").select("id, title, country, location").in("id", slice),
+          supabase.from("jobs").select("id, title, country, location, service_charge").in("id", slice),
         missingJobIds,
       )
     : [];
@@ -544,14 +549,27 @@ export async function buildWorkersPdf(workers: WorkerExportSource[], fieldIds: s
       jobTitles.push(jJob.title.trim());
     }
 
+    const serviceCharges = Array.from(
+      new Set(
+        workerApps
+          .map((a) => extractJob(a.jobs)?.service_charge)
+          .filter((fee): fee is number => fee != null && Number.isFinite(fee))
+          .map((fee) => `₹${Number(fee).toLocaleString("en-IN")}`),
+      ),
+    );
+    if (serviceCharges.length === 0 && jJob?.service_charge != null && Number.isFinite(jJob.service_charge)) {
+      serviceCharges.push(`₹${Number(jJob.service_charge).toLocaleString("en-IN")}`);
+    }
+
     const appsListText = workerApps.length
       ? workerApps.map(applicationSummary).join("\n")
       : jJob
-        ? `${jJob.title || "Untitled job"}${jJob.country ? ` · ${jJob.country}` : ""} (journey job)`
+        ? `${jJob.title || "Untitled job"}${jJob.country ? ` · ${jJob.country}` : ""}${jJob.service_charge != null && Number.isFinite(jJob.service_charge) ? ` · ₹${Number(jJob.service_charge).toLocaleString("en-IN")}` : ""} (journey job)`
         : "";
 
     use("applied_job", textField(label("applied_job"), jobTitles.join(", ")));
     use("applied_country", textField(label("applied_country"), countries.join(", ")));
+    use("applied_service_charge", textField(label("applied_service_charge"), serviceCharges.join(", ")));
     use("applied_applications", textField(label("applied_applications"), appsListText));
 
     use("stage", textField(label("stage"), cell(verification?.stage)));

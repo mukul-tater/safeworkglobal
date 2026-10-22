@@ -47,6 +47,7 @@ interface WorkerApplicationDetail {
   applied_at: string | null;
   title: string;
   country: string | null;
+  serviceCharge: number | null;
 }
 
 interface WorkerChangeDetail {
@@ -84,14 +85,16 @@ function formatWhen(value: string): string {
 interface JobEmbed {
   title?: string | null;
   country?: string | null;
+  service_charge?: number | null;
 }
 
-function jobInfoFromEmbed(jobs: JobEmbed | JobEmbed[] | null): { title: string; country: string | null } {
-  if (!jobs) return { title: "Untitled job", country: null };
+function jobInfoFromEmbed(jobs: JobEmbed | JobEmbed[] | null): { title: string; country: string | null; serviceCharge: number | null } {
+  if (!jobs) return { title: "Untitled job", country: null, serviceCharge: null };
   const row = Array.isArray(jobs) ? jobs[0] : jobs;
   return {
     title: row?.title || "Untitled job",
     country: row?.country || null,
+    serviceCharge: row?.service_charge ?? null,
   };
 }
 
@@ -280,7 +283,7 @@ export default function AdminWorkers() {
       const [appsRes, logRes] = await Promise.all([
         supabase
           .from("job_applications")
-          .select("id, status, applied_at, jobs(title, country)")
+          .select("id, status, applied_at, jobs(title, country, service_charge)")
           .eq("worker_id", workerId)
           .order("applied_at", { ascending: false }),
         (supabase as any)
@@ -305,6 +308,7 @@ export default function AdminWorkers() {
             applied_at: row.applied_at,
             title: info.title,
             country: info.country,
+            serviceCharge: info.serviceCharge,
           };
         });
         setApplications(appRows);
@@ -601,6 +605,11 @@ export default function AdminWorkers() {
                           {app.country && (
                             <Badge variant="secondary" className="text-xs font-normal">
                               {app.country}
+                            </Badge>
+                          )}
+                          {app.serviceCharge != null && (
+                            <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
+                              ₹{Number(app.serviceCharge).toLocaleString("en-IN")}
                             </Badge>
                           )}
                         </div>
