@@ -12,7 +12,7 @@ export const SAFEWORK_CONTACT = {
   workingAddress: "Near Ajanta Marble PVT LTD, NH 8, Karjia Ghati, Gunjol, Nathdwara, Rajasthan 313001",
   /** Shown on the public Contact page in place of the registered address. */
   contactOfficeAddressLine:
-    "SafeWorkGlobal-Vesta Office address: 4th Floor, Ozone Arcade, Jupiter Enclave, D1, Hazipur, Sector 104, Noida, Uttar Pradesh, India",
+    "4th Floor, Ozone Arcade, Jupiter Enclave, D1, Hazipur, Sector 104, Noida, Uttar Pradesh, India",
   /** Shown in the site footer in place of the registered and working addresses. */
   vestaOfficeAddresses: [
     "Near Ajanta Marble PVT LTD, NH 8, Karjia Ghati, Gunjol, Nathdwara, Rajasthan 313001",
