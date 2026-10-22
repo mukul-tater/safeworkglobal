@@ -545,7 +545,7 @@ export default function ContactUs() {
                     <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                       Registered Address
                     </p>
-                    <p className="text-sm font-semibold text-foreground leading-relaxed">{SAFEWORK_CONTACT.officeAddress}</p>
+                    <p className="text-sm font-semibold text-foreground leading-relaxed">{SAFEWORK_CONTACT.contactOfficeAddressLine}</p>
                   </div>
                 </CardContent>
               </Card>
