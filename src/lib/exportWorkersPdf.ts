@@ -42,6 +42,22 @@ interface VerificationRow {
   deploy_insurance_status: string;
   deploy_emigration_status: string;
   deployed_at: string | null;
+  journey_job_id?: string | null;
+}
+
+interface JobRow {
+  id: string;
+  title: string | null;
+  country: string | null;
+  location: string | null;
+}
+
+interface ApplicationRow {
+  worker_id: string;
+  status: string;
+  applied_at: string | null;
+  job_id: string;
+  jobs: JobRow | JobRow[] | null;
 }
 
 interface DocumentRow {
@@ -236,6 +252,21 @@ function certificationText(rows: CertificationRow[]): string {
     .join("\n");
 }
 
+function extractJob(jobs: JobRow | JobRow[] | null | undefined): JobRow | null {
+  if (!jobs) return null;
+  return Array.isArray(jobs) ? jobs[0] || null : jobs;
+}
+
+function applicationSummary(app: ApplicationRow): string {
+  const job = extractJob(app.jobs);
+  const title = job?.title || "Untitled job";
+  const country = job?.country ? ` · ${job.country}` : "";
+  const status = app.status ? ` (${app.status.toLowerCase().replace(/_/g, " ")})` : "";
+  const applied = dateCell(app.applied_at);
+  const dateStr = applied ? ` · ${applied}` : "";
+  return `${title}${country}${status}${dateStr}`;
+}
+
 function needs(fieldIds: string[], ids: string[]): boolean {
   return ids.some((id) => fieldIds.includes(id));
 }
@@ -287,20 +318,25 @@ export async function buildWorkersPdf(workers: WorkerExportSource[], fieldIds: s
     "deploy_emigration_status",
     "deployed_at",
   ]);
+  const wantApplications = needs(fieldIds, [
+    "applied_job",
+    "applied_country",
+    "applied_applications",
+  ]);
   const documentFieldIds = Object.keys(DOCUMENT_EXPORT_TYPES).filter((id) => selected.has(id));
   const wantSkills = selected.has("skills_detail");
   const wantExperience = selected.has("work_history");
   const wantCertifications = selected.has("certifications");
   const wantMedia = selected.has("work_photos") || selected.has("work_videos");
 
-  const [verifications, documents, skills, experience, certifications, media] = await Promise.all([
-    wantVerification
+  const [verifications, documents, skills, experience, certifications, media, applications] = await Promise.all([
+    (wantVerification || wantApplications)
       ? rowsIn<VerificationRow>(
           (slice) =>
             supabase
               .from("worker_verification")
               .select(
-                "user_id, city, state, district, education_level, gender, kyc_verified_at, kyc_rejection_reason, stage, quiz_score, interview_status, interview_score, trade_test_status, medical_status, pdot_status, payment_status, payment_amount, bond_status, deploy_offer_status, deploy_visa_status, deploy_ticket_status, deploy_contract_status, deploy_insurance_status, deploy_emigration_status, deployed_at",
+                "user_id, city, state, district, education_level, gender, kyc_verified_at, kyc_rejection_reason, stage, quiz_score, interview_status, interview_score, trade_test_status, medical_status, pdot_status, payment_status, payment_amount, bond_status, deploy_offer_status, deploy_visa_status, deploy_ticket_status, deploy_contract_status, deploy_insurance_status, deploy_emigration_status, deployed_at, journey_job_id",
               )
               .in("user_id", slice),
           ids,
@@ -359,6 +395,17 @@ export async function buildWorkersPdf(workers: WorkerExportSource[], fieldIds: s
           ids,
         )
       : Promise.resolve([] as MediaRow[]),
+    wantApplications
+      ? rowsIn<ApplicationRow>(
+          (slice) =>
+            supabase
+              .from("job_applications")
+              .select("worker_id, status, applied_at, job_id, jobs(id, title, country, location)")
+              .in("worker_id", slice)
+              .order("applied_at", { ascending: false }),
+          ids,
+        )
+      : Promise.resolve([] as ApplicationRow[]),
   ]);
 
   const documentUrls = await signPaths(
@@ -370,7 +417,32 @@ export async function buildWorkersPdf(workers: WorkerExportSource[], fieldIds: s
     media.map((item) => item.file_path),
   );
 
+  const knownJobIds = new Set(
+    applications
+      .map((a) => a.job_id)
+      .concat(applications.map((a) => extractJob(a.jobs)?.id || "").filter(Boolean)),
+  );
+  const missingJobIds = wantApplications
+    ? Array.from(
+        new Set(
+          verifications
+            .map((v) => v.journey_job_id)
+            .filter((id): id is string => Boolean(id && !knownJobIds.has(id))),
+        ),
+      )
+    : [];
+
+  const extraJobs = missingJobIds.length
+    ? await rowsIn<JobRow>(
+        (slice) =>
+          supabase.from("jobs").select("id, title, country, location").in("id", slice),
+        missingJobIds,
+      )
+    : [];
+  const extraJobsById = new Map(extraJobs.map((j) => [j.id, j]));
+
   const verificationByUser = new Map(verifications.map((row) => [row.user_id, row]));
+  const applicationsByWorker = groupBy(applications, (row) => row.worker_id);
   const documentsByWorker = groupBy(documents, (row) => row.worker_id);
   const skillsByWorker = groupBy(skills, (row) => row.worker_id);
   const experienceByWorker = groupBy(experience, (row) => row.worker_id);
@@ -446,6 +518,42 @@ export async function buildWorkersPdf(workers: WorkerExportSource[], fieldIds: s
     use("created_by", textField(label("created_by"), worker.createdBy));
     use("joined", textField(label("joined"), worker.joined));
     use("application_count", textField(label("application_count"), String(worker.applicationCount)));
+
+    const workerApps = applicationsByWorker.get(worker.id) || [];
+    const jJob = verification?.journey_job_id ? extraJobsById.get(verification.journey_job_id) : null;
+
+    const countries = Array.from(
+      new Set(
+        workerApps
+          .map((a) => extractJob(a.jobs)?.country?.trim())
+          .filter((c): c is string => Boolean(c)),
+      ),
+    );
+    if (countries.length === 0 && jJob?.country?.trim()) {
+      countries.push(jJob.country.trim());
+    }
+
+    const jobTitles = Array.from(
+      new Set(
+        workerApps
+          .map((a) => extractJob(a.jobs)?.title?.trim())
+          .filter((t): t is string => Boolean(t)),
+      ),
+    );
+    if (jobTitles.length === 0 && jJob?.title?.trim()) {
+      jobTitles.push(jJob.title.trim());
+    }
+
+    const appsListText = workerApps.length
+      ? workerApps.map(applicationSummary).join("\n")
+      : jJob
+        ? `${jJob.title || "Untitled job"}${jJob.country ? ` · ${jJob.country}` : ""} (journey job)`
+        : "";
+
+    use("applied_job", textField(label("applied_job"), jobTitles.join(", ")));
+    use("applied_country", textField(label("applied_country"), countries.join(", ")));
+    use("applied_applications", textField(label("applied_applications"), appsListText));
+
     use("stage", textField(label("stage"), cell(verification?.stage)));
     use("quiz_score", textField(label("quiz_score"), cell(verification?.quiz_score)));
     use("interview_status", textField(label("interview_status"), cell(verification?.interview_status)));

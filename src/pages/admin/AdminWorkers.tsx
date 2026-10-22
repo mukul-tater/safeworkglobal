@@ -46,6 +46,7 @@ interface WorkerApplicationDetail {
   status: string;
   applied_at: string | null;
   title: string;
+  country: string | null;
 }
 
 interface WorkerChangeDetail {
@@ -80,10 +81,18 @@ function formatWhen(value: string): string {
   return date.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 }
 
-function jobTitleFromEmbed(jobs: { title: string } | { title: string }[] | null): string {
-  if (!jobs) return "Untitled job";
+interface JobEmbed {
+  title?: string | null;
+  country?: string | null;
+}
+
+function jobInfoFromEmbed(jobs: JobEmbed | JobEmbed[] | null): { title: string; country: string | null } {
+  if (!jobs) return { title: "Untitled job", country: null };
   const row = Array.isArray(jobs) ? jobs[0] : jobs;
-  return row?.title || "Untitled job";
+  return {
+    title: row?.title || "Untitled job",
+    country: row?.country || null,
+  };
 }
 
 function changeSentence(row: WorkerChangeDetail): string {
@@ -271,7 +280,7 @@ export default function AdminWorkers() {
       const [appsRes, logRes] = await Promise.all([
         supabase
           .from("job_applications")
-          .select("id, status, applied_at, jobs(title)")
+          .select("id, status, applied_at, jobs(title, country)")
           .eq("worker_id", workerId)
           .order("applied_at", { ascending: false }),
         (supabase as any)
@@ -288,12 +297,16 @@ export default function AdminWorkers() {
         setApplications([]);
         setApplicationsError("Could not load applications");
       } else {
-        const appRows = (appsRes.data || []).map((row) => ({
-          id: row.id,
-          status: row.status,
-          applied_at: row.applied_at,
-          title: jobTitleFromEmbed(row.jobs as { title: string } | { title: string }[] | null),
-        }));
+        const appRows = (appsRes.data || []).map((row) => {
+          const info = jobInfoFromEmbed(row.jobs as JobEmbed | JobEmbed[] | null);
+          return {
+            id: row.id,
+            status: row.status,
+            applied_at: row.applied_at,
+            title: info.title,
+            country: info.country,
+          };
+        });
         setApplications(appRows);
       }
 
@@ -583,7 +596,14 @@ export default function AdminWorkers() {
                   <ul className="space-y-2">
                     {applications.map((app) => (
                       <li key={app.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
-                        <span className="font-medium">{app.title}</span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{app.title}</span>
+                          {app.country && (
+                            <Badge variant="secondary" className="text-xs font-normal">
+                              {app.country}
+                            </Badge>
+                          )}
+                        </div>
                         <span className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline">{applicationStatusLabel(app.status)}</Badge>
                           <span>{formatDate(app.applied_at)}</span>

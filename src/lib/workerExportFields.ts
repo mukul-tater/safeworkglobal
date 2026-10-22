@@ -96,6 +96,9 @@ export const WORKER_EXPORT_FIELDS: WorkerExportField[] = [
   { id: "joined", label: "Joined date", group: "account" },
   { id: "application_count", label: "Number of applications", group: "account" },
 
+  { id: "applied_job", label: "Applied job", group: "journey" },
+  { id: "applied_country", label: "Applied job country", group: "journey" },
+  { id: "applied_applications", label: "All applied jobs & countries", group: "journey" },
   { id: "stage", label: "Current stage", group: "journey" },
   { id: "quiz_score", label: "Quiz score", group: "journey" },
   { id: "interview_status", label: "Interview status", group: "journey" },
