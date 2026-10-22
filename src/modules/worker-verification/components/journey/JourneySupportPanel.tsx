@@ -1,4 +1,4 @@
-import { HelpCircle, ShieldCheck, ListChecks } from 'lucide-react';
+import { ShieldCheck, ListChecks } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useJourneyRules } from '@/lib/journeyRules';
 import {
@@ -9,14 +9,13 @@ import {
 } from '@/modules/worker-verification/constants';
 
 /**
- * Context column beside the active stage: what's coming, data safety, and help.
+ * Context column beside the active stage: what's coming and data safety.
  * Keeps the worker oriented without crowding the task itself.
  */
 export default function JourneySupportPanel({ stage }: { stage: VerificationStage }) {
   const support = useJourneyRules().copy.support;
   const currentIdx = navStepIndex(navStepForStage(stage));
   const upcoming = GCC_JOURNEY_NAV_STEPS.slice(currentIdx + 1, currentIdx + 4);
-  const whatsappUrl = `https://wa.me/${support.whatsappDigits}`;
 
   return (
     <>
@@ -54,26 +53,6 @@ export default function JourneySupportPanel({ stage }: { stage: VerificationStag
               <li key={line}>{line}</li>
             ))}
           </ul>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/70 bg-muted/20">
-        <CardContent className="p-4">
-          <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-            <HelpCircle className="h-4 w-4 text-primary" />
-            {support.helpTitle}
-          </p>
-          <p className="mt-1.5 text-xs text-muted-foreground">{support.helpBody}</p>
-          <div className="mt-3 space-y-1 text-xs">
-            <a className="block text-primary hover:underline" href={`mailto:${support.email}`}>
-              {support.email}
-            </a>
-            <a className="block text-primary hover:underline" href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-              WhatsApp {support.whatsappDisplay}
-            </a>
-            <p className="text-muted-foreground">{support.officeAddress}</p>
-            <p className="text-muted-foreground">{support.workingAddress}</p>
-          </div>
         </CardContent>
       </Card>
     </>
