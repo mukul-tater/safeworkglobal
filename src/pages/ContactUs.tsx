@@ -542,8 +542,7 @@ export default function ContactUs() {
                     <MapPin className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                      Registered Address
+                      Vesta Office Address
                     </p>
                     <p className="text-sm font-semibold text-foreground leading-relaxed">{SAFEWORK_CONTACT.contactOfficeAddressLine}</p>
                   </div>
