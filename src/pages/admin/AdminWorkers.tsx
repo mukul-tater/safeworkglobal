@@ -32,6 +32,9 @@ interface WorkerRow {
   currency: string | null;
   profile: Record<string, unknown> | null;
   createdBy: WorkerCreator | null;
+  applied_job_title?: string | null;
+  applied_country?: string | null;
+  service_charge?: number | null;
 }
 
 interface WorkerCreator {
@@ -373,12 +376,25 @@ export default function AdminWorkers() {
       const [{ data: profiles }, { data: workerProfiles }, { data: applications }] = await Promise.all([
         supabase.from("profiles").select("id, email, full_name, phone, created_at").in("id", workerIds),
         supabase.from("worker_profiles").select("*").in("user_id", workerIds),
-        supabase.from("job_applications").select("worker_id").in("worker_id", workerIds),
+        supabase
+          .from("job_applications")
+          .select("worker_id, applied_at, jobs(title, country, service_charge)")
+          .in("worker_id", workerIds)
+          .order("applied_at", { ascending: false }),
       ]);
 
       const appCounts: Record<string, number> = {};
-      (applications || []).forEach((a) => {
+      const primaryApps: Record<string, { title: string; country: string | null; serviceCharge: number | null }> = {};
+      (applications || []).forEach((a: any) => {
         appCounts[a.worker_id] = (appCounts[a.worker_id] || 0) + 1;
+        if (!primaryApps[a.worker_id]) {
+          const info = jobInfoFromEmbed(a.jobs);
+          primaryApps[a.worker_id] = {
+            title: info.title,
+            country: info.country,
+            serviceCharge: info.serviceCharge,
+          };
+        }
       });
 
       const profileIds = Array.from(
@@ -398,6 +414,7 @@ export default function AdminWorkers() {
           ...(wp?.primary_work_type ? [wp.primary_work_type] : []),
           ...(wp?.secondary_skills || []),
         ];
+        const primaryApp = primaryApps[p.id];
         return {
           id: p.id,
           email: displayableEmail(p.email) || "",
@@ -414,6 +431,9 @@ export default function AdminWorkers() {
           currency: wp?.currency ?? "INR",
           profile: wp,
           createdBy: creatorForWorker(wp, centres, orgs),
+          applied_job_title: primaryApp?.title || null,
+          applied_country: primaryApp?.country || null,
+          service_charge: primaryApp?.serviceCharge ?? null,
         };
       });
 
@@ -502,12 +522,28 @@ export default function AdminWorkers() {
                     {w.application_count > 0 && (
                       <Badge variant="outline">{w.application_count} applications</Badge>
                     )}
+                    {w.applied_country && (
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        {w.applied_country}
+                      </Badge>
+                    )}
+                    {w.service_charge != null && (
+                      <Badge variant="outline" className="text-xs font-normal text-muted-foreground">
+                        ₹{Number(w.service_charge).toLocaleString("en-IN")}
+                      </Badge>
+                    )}
                     {w.createdBy && (
                       <Badge variant="outline">{w.createdBy.label}</Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{w.email || w.phone || "No contact email yet"}</p>
                   <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                    {w.applied_job_title && (
+                      <span className="flex items-center gap-1 font-medium text-foreground">
+                        <Briefcase className="h-3 w-3 text-primary" />
+                        {w.applied_job_title}
+                      </span>
+                    )}
                     {w.country && (
                       <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{w.country}</span>
                     )}
@@ -580,6 +616,17 @@ export default function AdminWorkers() {
                 <p><span className="font-medium">Email:</span> {viewWorker.email || "Not provided yet"}</p>
                 <p><span className="font-medium">Phone:</span> {viewWorker.phone || "—"}</p>
                 <p><span className="font-medium">Location:</span> {viewWorker.country || "—"}</p>
+                {applications.length > 0 && (
+                  <>
+                    <p><span className="font-medium">Applied Job:</span> {applications.map((a) => a.title).join(", ")}</p>
+                    {Array.from(new Set(applications.map((a) => a.country).filter((c): c is string => Boolean(c)))).length > 0 && (
+                      <p><span className="font-medium">Applied Country:</span> {Array.from(new Set(applications.map((a) => a.country).filter((c): c is string => Boolean(c)))).join(", ")}</p>
+                    )}
+                    {Array.from(new Set(applications.map((a) => a.serviceCharge).filter((s): s is number => s != null && Number.isFinite(s)))).length > 0 && (
+                      <p><span className="font-medium">Service Charge:</span> {Array.from(new Set(applications.map((a) => a.serviceCharge).filter((s): s is number => s != null && Number.isFinite(s)))).map((s) => `₹${Number(s).toLocaleString("en-IN")}`).join(", ")}</p>
+                    )}
+                  </>
+                )}
                 <p><span className="font-medium">Experience:</span> {viewWorker.experience_years ?? "—"} years</p>
                 <p><span className="font-medium">Applications:</span> {viewWorker.application_count}</p>
                 <p><span className="font-medium">Onboarding:</span> {viewWorker.onboarding_completed ? "Complete" : "Incomplete"}</p>
