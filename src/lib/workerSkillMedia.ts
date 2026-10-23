@@ -2,6 +2,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_BUCKET = 'worker-videos';
 
+/** Worker skill photo/video links stay valid for 10 years (owner request: no expiry for now). */
+export const SKILL_MEDIA_LINK_SECONDS = 60 * 60 * 24 * 365 * 10;
+
 export interface SkillMediaItem {
   id: string;
   media_type: 'photo' | 'video';
@@ -13,7 +16,7 @@ export interface WorkerSkillMediaFile extends SkillMediaItem {
   file_path: string;
 }
 
-export async function resolveSkillMediaUrl(filePath: string, expiresIn = 3600): Promise<string> {
+export async function resolveSkillMediaUrl(filePath: string, expiresIn = SKILL_MEDIA_LINK_SECONDS): Promise<string> {
   const { data } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(filePath, expiresIn);
   return data?.signedUrl ?? '';
 }

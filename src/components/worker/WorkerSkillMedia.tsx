@@ -1,3 +1,4 @@
+import { SKILL_MEDIA_LINK_SECONDS } from '@/lib/workerSkillMedia';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,7 @@ interface WorkerSkillMediaProps {
 }
 
 async function resolveMediaUrl(filePath: string): Promise<string> {
-  const { data } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(filePath, 3600);
+  const { data } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(filePath, SKILL_MEDIA_LINK_SECONDS);
   return data?.signedUrl ?? '';
 }
 

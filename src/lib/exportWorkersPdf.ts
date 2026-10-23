@@ -1,3 +1,4 @@
+import { SKILL_MEDIA_LINK_SECONDS } from "@/lib/workerSkillMedia";
 import { supabase } from "@/integrations/supabase/client";
 import { DOCUMENT_EXPORT_TYPES, WORKER_EXPORT_FIELDS, WORKER_EXPORT_GROUPS, fieldsInGroup } from "@/lib/workerExportFields";
 import { buildWorkerExportPdf, type PdfField, type PdfLinkItem, type PdfWorkerRecord } from "@/lib/workerPdfDocument";
@@ -178,7 +179,7 @@ async function signPaths(bucket: string, paths: string[]): Promise<Map<string, s
   const unique = Array.from(new Set(paths.filter(Boolean)));
   for (let i = 0; i < unique.length; i += 40) {
     const slice = unique.slice(i, i + 40);
-    const { data, error } = await supabase.storage.from(bucket).createSignedUrls(slice, SIGNED_URL_SECONDS);
+    const { data, error } = await supabase.storage.from(bucket).createSignedUrls(slice, bucket === 'worker-videos' ? SKILL_MEDIA_LINK_SECONDS : SIGNED_URL_SECONDS);
     if (error || !data) continue;
     for (const row of data) {
       if (row.path && row.signedUrl) urls.set(row.path, row.signedUrl);
