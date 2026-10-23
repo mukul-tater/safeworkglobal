@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { adminSetUserEnabled, adminSetUserRole } from "@/services/AdminService";
 import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
+import AdminUserMediaSection from "@/components/admin/AdminUserMediaSection";
 
 const BANNED_ACTIONS = new Set(["banned", "blocked", "suspended"]);
 
@@ -426,6 +427,8 @@ export default function UserManagement() {
                   </div>
                 </div>
               )}
+
+              {viewUser.role === "worker" && <AdminUserMediaSection userId={viewUser.id} />}
 
               <div className="flex justify-end gap-2 pt-2">
                 {viewUser.role !== "admin" && viewUser.id !== currentUser?.id && (
