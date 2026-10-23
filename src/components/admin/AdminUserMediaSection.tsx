@@ -1,3 +1,4 @@
+import { SKILL_MEDIA_LINK_SECONDS } from '@/lib/workerSkillMedia';
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, FileText, Download } from "lucide-react";
@@ -48,7 +49,7 @@ export default function AdminUserMediaSection({ userId }: { userId: string }) {
         for (const bucket of BUCKETS) {
           const paths = await listRecursive(bucket, userId);
           if (!paths.length) continue;
-          const { data } = await supabase.storage.from(bucket).createSignedUrls(paths, SIGNED_URL_SECONDS);
+          const { data } = await supabase.storage.from(bucket).createSignedUrls(paths, bucket === 'worker-videos' ? SKILL_MEDIA_LINK_SECONDS : SIGNED_URL_SECONDS);
           (data || []).forEach((s, i) => {
             if (s.signedUrl) all.push({ bucket, path: paths[i], url: s.signedUrl, kind: kindOf(paths[i]) });
           });
