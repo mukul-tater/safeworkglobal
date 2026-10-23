@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Search, UserX, UserCheck } from "lucide-react";
+import { Eye, Search, UserX, UserCheck, ExternalLink, FileText, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { displayableEmail } from "@/lib/workerAuthEmail";
@@ -60,6 +60,81 @@ function accountKind(role: string, partnerTypeCode: string | null): { kind: stri
   return { kind: "worker", kindLabel: "Worker" };
 }
 
+interface UserMediaItem {
+  id: string;
+  title: string;
+  type: "image" | "video" | "pdf" | "document";
+  url: string;
+  category: string;
+  status?: string | null;
+  uploadedAt?: string | null;
+}
+
+function documentStoragePath(urlOrPath: string): string {
+  if (!urlOrPath) return "";
+  const marker = "/worker-documents/";
+  const idx = urlOrPath.indexOf(marker);
+  if (idx === -1) return urlOrPath.split("?")[0];
+  let path = urlOrPath.substring(idx + marker.length);
+  const query = path.indexOf("?");
+  if (query !== -1) path = path.substring(0, query);
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
+function formatMediaTitle(raw: string): string {
+  const map: Record<string, string> = {
+    aadhaar_front: "Aadhaar Card (Front)",
+    aadhaar_back: "Aadhaar Card (Back)",
+    aadhaar: "Aadhaar Card",
+    pan: "PAN Card",
+    pan_card: "PAN Card",
+    passport: "Passport",
+    passport_front: "Passport (Front Page)",
+    passport_last: "Passport (Last Page)",
+    selfie: "Face Selfie",
+    visa: "Visa",
+    tenth_marksheet: "10th Marksheet",
+    resume: "Resume / CV",
+    certificate: "Certificate",
+    id_proof: "ID Proof",
+    shop_photo: "Center / Shop Photo",
+    emitra_certificate: "e-Mitra Certificate",
+    address_proof: "Address Proof",
+    owner_photo: "Owner Photo",
+  };
+  if (map[raw]) return map[raw];
+  return raw
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function detectFileType(url: string, rawType?: string): "image" | "video" | "pdf" | "document" {
+  const clean = (url || "").split("?")[0].toLowerCase();
+  const typeLower = (rawType || "").toLowerCase();
+  if (
+    clean.match(/\.(jpeg|jpg|png|webp|gif|svg)$/i) ||
+    typeLower.includes("photo") ||
+    typeLower.includes("selfie") ||
+    typeLower.includes("image")
+  ) {
+    return "image";
+  }
+  if (
+    clean.match(/\.(mp4|webm|mov|mkv|avi)$/i) ||
+    typeLower.includes("video")
+  ) {
+    return "video";
+  }
+  if (clean.endsWith(".pdf") || typeLower.includes("pdf")) {
+    return "pdf";
+  }
+  return "document";
+}
+
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
@@ -74,6 +149,8 @@ export default function UserManagement() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewUser, setViewUser] = useState<User | null>(null);
   const [viewProfile, setViewProfile] = useState<any>(null);
+  const [viewMedia, setViewMedia] = useState<UserMediaItem[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
 
   useEffect(() => { fetchUsers(); }, []);
 
@@ -181,19 +258,176 @@ export default function UserManagement() {
   const handleViewUser = async (user: User) => {
     setViewUser(user);
     setViewProfile(null);
+    setViewMedia([]);
+    setMediaLoading(true);
+
     try {
       if (user.role === "worker") {
-        const { data } = await supabase.from("worker_profiles").select("*").eq("user_id", user.id).maybeSingle();
-        setViewProfile(data);
+        const { data: profile } = await supabase.from("worker_profiles").select("*").eq("user_id", user.id).maybeSingle();
+        setViewProfile(profile);
+
+        const [docsRes, skillMediaRes, videosRes] = await Promise.all([
+          supabase
+            .from("worker_documents")
+            .select("id, document_type, document_name, file_url, verification_status, uploaded_at")
+            .eq("worker_id", user.id)
+            .order("uploaded_at", { ascending: false }),
+          supabase
+            .from("worker_skill_media")
+            .select("id, skill_id, media_type, file_path, created_at, worker_skills(skill_name)")
+            .eq("worker_id", user.id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("worker_videos")
+            .select("id, title, video_url, thumbnail_url, created_at")
+            .eq("worker_id", user.id),
+        ]);
+
+        const items: UserMediaItem[] = [];
+
+        // 1. Skill media (photos / videos in worker-videos bucket)
+        if (skillMediaRes.data && skillMediaRes.data.length > 0) {
+          await Promise.all(
+            skillMediaRes.data.map(async (sm) => {
+              try {
+                const { data: signed } = await supabase.storage
+                  .from("worker-videos")
+                  .createSignedUrl(sm.file_path, 3600);
+                if (signed?.signedUrl) {
+                  const skillRow = sm.worker_skills as { skill_name?: string } | { skill_name?: string }[] | null;
+                  const skillName = Array.isArray(skillRow) ? skillRow[0]?.skill_name : skillRow?.skill_name;
+                  items.push({
+                    id: sm.id,
+                    title: skillName ? `${skillName} (${sm.media_type})` : `Skill Work (${sm.media_type})`,
+                    type: sm.media_type === "video" ? "video" : "image",
+                    url: signed.signedUrl,
+                    category: "Skill Media",
+                    uploadedAt: sm.created_at,
+                  });
+                }
+              } catch (e) {
+                console.error("Error signing skill media url:", e);
+              }
+            })
+          );
+        }
+
+        // 2. Documents & KYC (Aadhaar, Passport, Selfie, Resume, etc.)
+        if (docsRes.data && docsRes.data.length > 0) {
+          await Promise.all(
+            docsRes.data.map(async (doc) => {
+              try {
+                let url = doc.file_url;
+                const path = documentStoragePath(doc.file_url);
+                if (path) {
+                  const { data: signed } = await supabase.storage
+                    .from("worker-documents")
+                    .createSignedUrl(path, 3600);
+                  if (signed?.signedUrl) url = signed.signedUrl;
+                }
+                if (url) {
+                  items.push({
+                    id: doc.id,
+                    title: formatMediaTitle(doc.document_type || doc.document_name || "Document"),
+                    type: detectFileType(url, doc.document_type),
+                    url,
+                    category: "Documents & KYC",
+                    status: doc.verification_status,
+                    uploadedAt: doc.uploaded_at,
+                  });
+                }
+              } catch (e) {
+                console.error("Error signing document url:", e);
+              }
+            })
+          );
+        }
+
+        // 3. Worker intro videos
+        if (videosRes.data && videosRes.data.length > 0) {
+          for (const v of videosRes.data) {
+            if (v.video_url) {
+              items.push({
+                id: v.id,
+                title: v.title || "Intro Video",
+                type: "video",
+                url: v.video_url,
+                category: "Video Portfolio",
+                uploadedAt: v.created_at,
+              });
+            }
+          }
+        }
+
+        setViewMedia(items);
       } else if (user.role === "employer") {
-        const { data } = await supabase.from("employer_profiles").select("*").eq("user_id", user.id).maybeSingle();
-        setViewProfile(data);
+        const { data: profile } = await supabase.from("employer_profiles").select("*").eq("user_id", user.id).maybeSingle();
+        setViewProfile(profile);
+
+        const items: UserMediaItem[] = [];
+        if (profile?.company_logo_url) {
+          items.push({
+            id: "logo",
+            title: "Company Logo",
+            type: "image",
+            url: profile.company_logo_url,
+            category: "Employer Media",
+          });
+        }
+        if (profile?.company_profile_path) {
+          const { data: signed } = await supabase.storage
+            .from("employer-documents")
+            .createSignedUrl(profile.company_profile_path, 3600);
+          if (signed?.signedUrl) {
+            items.push({
+              id: "profile_doc",
+              title: "Company Profile Document",
+              type: detectFileType(signed.signedUrl),
+              url: signed.signedUrl,
+              category: "Employer Media",
+            });
+          }
+        }
+        setViewMedia(items);
       } else if (user.role === "partner") {
-        const { data } = await supabase.from("partner_profiles").select("*").eq("user_id", user.id).maybeSingle();
-        setViewProfile(data);
+        const { data: profile } = await supabase.from("partner_profiles").select("*").eq("user_id", user.id).maybeSingle();
+        setViewProfile(profile);
+
+        const items: UserMediaItem[] = [];
+        if (profile) {
+          const partnerDocFields: [string, string][] = [
+            ["aadhaar_front_url", "Aadhaar Front"],
+            ["aadhaar_back_url", "Aadhaar Back"],
+            ["pan_card_url", "PAN Card"],
+            ["shop_photo_url", "Center / Shop Photo"],
+            ["emitra_certificate_url", "e-Mitra Certificate"],
+            ["address_proof_url", "Address Proof"],
+            ["owner_photo_url", "Owner Photo"],
+          ];
+          for (const [key, label] of partnerDocFields) {
+            const rawPath = (profile as Record<string, any>)[key];
+            if (rawPath) {
+              const { data: signed } = await supabase.storage
+                .from("partner-documents")
+                .createSignedUrl(rawPath, 3600);
+              if (signed?.signedUrl) {
+                items.push({
+                  id: key,
+                  title: label,
+                  type: detectFileType(signed.signedUrl, key),
+                  url: signed.signedUrl,
+                  category: "Partner Documents",
+                });
+              }
+            }
+          }
+        }
+        setViewMedia(items);
       }
     } catch (err) {
-      console.error("Error fetching profile:", err);
+      console.error("Error fetching profile & media:", err);
+    } finally {
+      setMediaLoading(false);
     }
   };
 
@@ -350,7 +584,7 @@ export default function UserManagement() {
 
       {/* View User Dialog */}
       <Dialog open={!!viewUser} onOpenChange={() => setViewUser(null)}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
           </DialogHeader>
@@ -426,6 +660,112 @@ export default function UserManagement() {
                   </div>
                 </div>
               )}
+
+              {/* Media & Documents Section */}
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-sm">Media & Documents</h4>
+                  {viewMedia.length > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {viewMedia.length} {viewMedia.length === 1 ? "item" : "items"}
+                    </Badge>
+                  )}
+                </div>
+
+                {mediaLoading ? (
+                  <div className="flex items-center gap-2 py-4 text-xs text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span>Loading media and documents...</span>
+                  </div>
+                ) : viewMedia.length === 0 ? (
+                  <p className="text-xs text-muted-foreground py-2">
+                    No media or documents uploaded for this user yet.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {viewMedia.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-lg border border-border p-3 bg-muted/20 flex flex-col justify-between gap-2 text-xs"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-foreground truncate" title={item.title}>
+                              {item.title}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">{item.category}</p>
+                          </div>
+                          {item.status && (
+                            <Badge
+                              variant={
+                                item.status === "verified"
+                                  ? "default"
+                                  : item.status === "rejected"
+                                  ? "destructive"
+                                  : "outline"
+                              }
+                              className="text-[10px] capitalize shrink-0"
+                            >
+                              {item.status}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {item.type === "image" && (
+                          <div className="relative rounded overflow-hidden bg-muted aspect-video flex items-center justify-center border border-border">
+                            <img
+                              src={item.url}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        )}
+
+                        {item.type === "video" && (
+                          <div className="relative rounded overflow-hidden bg-black aspect-video flex items-center justify-center border border-border">
+                            <video
+                              src={item.url}
+                              controls
+                              preload="metadata"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        )}
+
+                        {item.type === "pdf" && (
+                          <div className="rounded bg-muted/60 p-4 flex flex-col items-center justify-center gap-1.5 text-muted-foreground border border-border">
+                            <FileText className="h-8 w-8 text-destructive" />
+                            <span className="text-[11px] font-medium">PDF Document</span>
+                          </div>
+                        )}
+
+                        {item.type === "document" && (
+                          <div className="rounded bg-muted/60 p-4 flex flex-col items-center justify-center gap-1.5 text-muted-foreground border border-border">
+                            <FileText className="h-8 w-8 text-primary" />
+                            <span className="text-[11px] font-medium">Document File</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] text-muted-foreground">
+                            {item.uploadedAt ? new Date(item.uploadedAt).toLocaleDateString("en-IN") : ""}
+                          </span>
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline ml-auto"
+                          >
+                            <span>Open file</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="flex justify-end gap-2 pt-2">
                 {viewUser.role !== "admin" && viewUser.id !== currentUser?.id && (
