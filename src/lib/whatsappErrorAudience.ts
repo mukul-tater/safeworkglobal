@@ -22,6 +22,10 @@ export function shouldOfferWhatsAppErrorHelp(
   pathname = typeof window !== "undefined" ? window.location.pathname : "/",
   role: string | null = audienceRole,
 ) {
+  // Errors show only their own text everywhere; no WhatsApp forwarding prompt.
+  void pathname;
+  void role;
+  return false;
   if (role && STAFF_ROLES.has(role)) return false;
   return !isStaffPortalPath(pathname);
 }

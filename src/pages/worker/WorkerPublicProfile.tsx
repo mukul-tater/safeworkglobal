@@ -1,3 +1,4 @@
+import { SKILL_MEDIA_LINK_SECONDS } from '@/lib/workerSkillMedia';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -176,7 +177,7 @@ export default function WorkerPublicProfile() {
             mediaData.map(async (m) => {
               const { data: signed } = await supabase.storage
                 .from('worker-videos')
-                .createSignedUrl(m.file_path, 3600);
+                .createSignedUrl(m.file_path, SKILL_MEDIA_LINK_SECONDS);
               return {
                 id: m.id,
                 skill_id: m.skill_id,

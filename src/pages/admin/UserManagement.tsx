@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { adminSetUserEnabled, adminSetUserRole } from "@/services/AdminService";
 import AdminDeleteUserButton from "@/components/admin/AdminDeleteUserButton";
+import AdminUserMediaSection from "@/components/admin/AdminUserMediaSection";
 
 const BANNED_ACTIONS = new Set(["banned", "blocked", "suspended"]);
 
@@ -661,111 +662,114 @@ export default function UserManagement() {
                 </div>
               )}
 
-              {/* Media & Documents Section */}
-              <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-sm">Media & Documents</h4>
-                  {viewMedia.length > 0 && (
-                    <Badge variant="outline" className="text-xs">
-                      {viewMedia.length} {viewMedia.length === 1 ? "item" : "items"}
-                    </Badge>
+              {viewUser.role === "worker" && <AdminUserMediaSection userId={viewUser.id} />}
+
+              {viewUser.role !== "worker" && (
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-sm">Media & Documents</h4>
+                    {viewMedia.length > 0 && (
+                      <Badge variant="outline" className="text-xs">
+                        {viewMedia.length} {viewMedia.length === 1 ? "item" : "items"}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {mediaLoading ? (
+                    <div className="flex items-center gap-2 py-4 text-xs text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span>Loading media and documents...</span>
+                    </div>
+                  ) : viewMedia.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-2">
+                      No media or documents uploaded for this user yet.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {viewMedia.map((item) => (
+                        <div
+                          key={item.id}
+                          className="rounded-lg border border-border p-3 bg-muted/20 flex flex-col justify-between gap-2 text-xs"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-foreground truncate" title={item.title}>
+                                {item.title}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">{item.category}</p>
+                            </div>
+                            {item.status && (
+                              <Badge
+                                variant={
+                                  item.status === "verified"
+                                    ? "default"
+                                    : item.status === "rejected"
+                                    ? "destructive"
+                                    : "outline"
+                                }
+                                className="text-[10px] capitalize shrink-0"
+                              >
+                                {item.status}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {item.type === "image" && (
+                            <div className="relative rounded overflow-hidden bg-muted aspect-video flex items-center justify-center border border-border">
+                              <img
+                                src={item.url}
+                                alt={item.title}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            </div>
+                          )}
+
+                          {item.type === "video" && (
+                            <div className="relative rounded overflow-hidden bg-black aspect-video flex items-center justify-center border border-border">
+                              <video
+                                src={item.url}
+                                controls
+                                preload="metadata"
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          )}
+
+                          {item.type === "pdf" && (
+                            <div className="rounded bg-muted/60 p-4 flex flex-col items-center justify-center gap-1.5 text-muted-foreground border border-border">
+                              <FileText className="h-8 w-8 text-destructive" />
+                              <span className="text-[11px] font-medium">PDF Document</span>
+                            </div>
+                          )}
+
+                          {item.type === "document" && (
+                            <div className="rounded bg-muted/60 p-4 flex flex-col items-center justify-center gap-1.5 text-muted-foreground border border-border">
+                              <FileText className="h-8 w-8 text-primary" />
+                              <span className="text-[11px] font-medium">Document File</span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[10px] text-muted-foreground">
+                              {item.uploadedAt ? new Date(item.uploadedAt).toLocaleDateString("en-IN") : ""}
+                            </span>
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline ml-auto"
+                            >
+                              <span>Open file</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
-
-                {mediaLoading ? (
-                  <div className="flex items-center gap-2 py-4 text-xs text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <span>Loading media and documents...</span>
-                  </div>
-                ) : viewMedia.length === 0 ? (
-                  <p className="text-xs text-muted-foreground py-2">
-                    No media or documents uploaded for this user yet.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {viewMedia.map((item) => (
-                      <div
-                        key={item.id}
-                        className="rounded-lg border border-border p-3 bg-muted/20 flex flex-col justify-between gap-2 text-xs"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-foreground truncate" title={item.title}>
-                              {item.title}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground">{item.category}</p>
-                          </div>
-                          {item.status && (
-                            <Badge
-                              variant={
-                                item.status === "verified"
-                                  ? "default"
-                                  : item.status === "rejected"
-                                  ? "destructive"
-                                  : "outline"
-                              }
-                              className="text-[10px] capitalize shrink-0"
-                            >
-                              {item.status}
-                            </Badge>
-                          )}
-                        </div>
-
-                        {item.type === "image" && (
-                          <div className="relative rounded overflow-hidden bg-muted aspect-video flex items-center justify-center border border-border">
-                            <img
-                              src={item.url}
-                              alt={item.title}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          </div>
-                        )}
-
-                        {item.type === "video" && (
-                          <div className="relative rounded overflow-hidden bg-black aspect-video flex items-center justify-center border border-border">
-                            <video
-                              src={item.url}
-                              controls
-                              preload="metadata"
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                        )}
-
-                        {item.type === "pdf" && (
-                          <div className="rounded bg-muted/60 p-4 flex flex-col items-center justify-center gap-1.5 text-muted-foreground border border-border">
-                            <FileText className="h-8 w-8 text-destructive" />
-                            <span className="text-[11px] font-medium">PDF Document</span>
-                          </div>
-                        )}
-
-                        {item.type === "document" && (
-                          <div className="rounded bg-muted/60 p-4 flex flex-col items-center justify-center gap-1.5 text-muted-foreground border border-border">
-                            <FileText className="h-8 w-8 text-primary" />
-                            <span className="text-[11px] font-medium">Document File</span>
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-[10px] text-muted-foreground">
-                            {item.uploadedAt ? new Date(item.uploadedAt).toLocaleDateString("en-IN") : ""}
-                          </span>
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline ml-auto"
-                          >
-                            <span>Open file</span>
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2">
                 {viewUser.role !== "admin" && viewUser.id !== currentUser?.id && (
