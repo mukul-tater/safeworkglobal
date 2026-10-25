@@ -6,3 +6,4 @@
 - Assessment checkout must price the journey job server-side and persist the charged total; verification and recovery must use that stored total, never recompute from mutable job prices or default charges.
 - Find Jobs resolves specific UAE trade keys independently of broad stored SEO/admin categories, so category backfills cannot make active listings unreachable.
 - Journey email trade labels prefer the applied job title over the stored quiz skill bucket, so stage and assessment emails cannot misrepresent the selected job.
+- New-account emails are triggered after committed role assignment through a secret-protected feature function with account-based idempotency, so every signup path is covered without altering authentication or replaying existing accounts; never add email queues or email-state tables.
