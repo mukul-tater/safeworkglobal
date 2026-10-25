@@ -182,6 +182,7 @@ function AppShell() {
     <>
       <OAuthLandingHandler />
       <PageTransition>
+        <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Original SafeWork Global home */}
           <Route path="/" element={<Index />} />
@@ -492,6 +493,7 @@ function AppShell() {
 
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </PageTransition>
     </>
   );
