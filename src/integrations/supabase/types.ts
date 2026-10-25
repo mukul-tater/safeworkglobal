@@ -7584,6 +7584,10 @@ export type Database = {
         Args: { p_notification_id: string }
         Returns: undefined
       }
+      request_onboarding_email: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }
       resolve_worker_auth_email: {
         Args: { p_identifier: string }
