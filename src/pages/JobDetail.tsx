@@ -558,7 +558,10 @@ export default function JobDetail() {
   const hindiTitle = devJob ? null : publicJobHindiTitle(job.title, job.description, job.country, job.title_hi);
   const backToJobs = jobsBrowsePath({
     country: job.country || 'UAE',
-    category: jobBrowseCategory(job.title, job.description, job.country || 'UAE', job.category),
+    // Ukraine and Europe list jobs directly, without a trade step.
+    category: ['europe', 'ukraine'].includes((job.country || '').trim().toLowerCase())
+      ? null
+      : jobBrowseCategory(job.title, job.description, job.country || 'UAE', job.category),
   });
   const aboutTheRole = devJob ? job.description : getPublicJobAbout(job.title, job.description, '', job.country, listing);
   const responsibilities = devJob
