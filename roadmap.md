@@ -39,4 +39,5 @@
 - [x] Confirm the reported worker's application/job linkage; unify journey email trade labels, test the Helper regression (2 passing tests), and deploy the correction without replaying old emails.
 
 ## Onboarding Emails
-- [ ] Add and deploy new-account welcome emails and a single admin notification per signup; preserve existing signup and journey flows and verify delivery outcomes.
+- [x] Add and deploy new-account welcome emails and an admin notification per signup, preserving OTP/journey flows; recipient rules passed tests, live preflight returned 200, unauthorized sends returned 401, and helpers remain service-only.
+- [ ] Confirm both onboarding emails arrive after a real new signup. Blocked: no new account has registered since activation; inbox receipt cannot be verified without a new signup and recipient confirmation.
