@@ -37,3 +37,6 @@
 
 ## Journey Email Trade Labels
 - [x] Confirm the reported worker's application/job linkage; unify journey email trade labels, test the Helper regression (2 passing tests), and deploy the correction without replaying old emails.
+
+## Onboarding Emails
+- [ ] Add and deploy new-account welcome emails and a single admin notification per signup; preserve existing signup and journey flows and verify delivery outcomes.
