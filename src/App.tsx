@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { usePlatformPaymentSettings } from "@/lib/platformPaymentSettings";
 import { useJourneyRules } from "@/lib/journeyRules";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
@@ -18,118 +18,127 @@ import { ThemeProvider } from "./components/ThemeProvider";
 import PageTransition from "./components/PageTransition";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Jobs from "./pages/Jobs";
-import JobDetail from "./pages/JobDetail";
-import JobCategories from "./pages/JobCategories";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import AboutUs from "./pages/AboutUs";
-import ContactUs from "./pages/ContactUs";
-import Payments from "./pages/Payments";
-import PaymentComplete from "./pages/PaymentComplete";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import PartnerOnboarding from "./pages/partner/PartnerOnboarding";
-import PartnerRegister from "./modules/partner/pages/PartnerRegister";
-import PartnerRegisterLegacy from "./modules/partner/pages/PartnerRegisterLegacy";
-import PendingApproval from "./modules/partner/pages/PendingApproval";
-import PartnerDashboardRouter from "./modules/partner/pages/PartnerDashboardRouter";
-import PartnerAddWorkerPage from "./modules/partner/pages/PartnerAddWorkerPage";
-import PartnerWorkerJourneyPage from "./modules/partner/pages/PartnerWorkerJourneyPage";
-import PartnerMyWorkersPage from "./modules/partner/pages/PartnerMyWorkersPage";
-import SsvnDashboard from "./modules/partner/pages/ssvn/SsvnDashboard";
-import SsvnAssessments from "./modules/partner/pages/ssvn/SsvnAssessments";
-import SsvnCheckin from "./modules/partner/pages/ssvn/SsvnCheckin";
-import SsvnAssessmentWizard from "./modules/partner/pages/ssvn/SsvnAssessmentWizard";
-import SsvnLoginPage from "./modules/partner/pages/ssvn/SsvnLoginPage";
-import WorkerBindMobilePage from "./pages/worker/WorkerBindMobilePage";
-import ItiDashboard from "./modules/partner/pages/iti/ItiDashboard";
-import ConsultantDashboard from "./modules/partner/pages/consultant/ConsultantDashboard";
-import PartnerLoginChooser from "./modules/partner/pages/PartnerLoginChooser";
-import AdminTradeTestAllocations from "./pages/admin/AdminTradeTestAllocations";
-import AdminTradeTestsPage from "./pages/admin/AdminTradeTestsPage";
-import PartnerWallet from "./modules/partner/pages/shared/PartnerWallet";
-import PartnerReports from "./modules/partner/pages/shared/PartnerReports";
-import PartnerSupport from "./modules/partner/pages/shared/PartnerSupport";
-import PartnerInvoices from "./modules/partner/pages/shared/PartnerInvoices";
-import PartnerPayouts from "./modules/partner/pages/shared/PartnerPayouts";
-import PartnerTickets from "./modules/partner/pages/shared/PartnerTickets";
-import SrnDashboard from "./modules/partner/pages/srn/SrnDashboard";
-import SrnWorkers from "./modules/partner/pages/srn/SrnWorkers";
-import SrnSharedWorkers from "./modules/partner/pages/srn/SrnSharedWorkers";
-import SrnStageManager from "./modules/partner/pages/srn/SrnStageManager";
-import SenGlobalDashboard from "./modules/partner/pages/senGlobal/SenGlobalDashboard";
-import SenGlobalLeads from "./modules/partner/pages/senGlobal/SenGlobalLeads";
-import SenGlobalRevenue from "./modules/partner/pages/senGlobal/SenGlobalRevenue";
-import AdminPartnerPayouts from "./pages/admin/AdminPartnerPayouts";
-import AdminPartnerTickets from "./pages/admin/AdminPartnerTickets";
-import AdminPartnersV2 from "./pages/admin/AdminPartnersV2";
-import BenefitsForEmployers from "./pages/BenefitsForEmployers";
-import Dashboard from "./pages/Dashboard";
 import { comingSoonPortalRoutes } from "./routes/comingSoonPortalRoutes";
 import { USERS_ONLY_LAUNCH } from "./lib/launchGate";
 import { legacyEmployerRoutes } from "./routes/legacyEmployerRoutes";
 import { legacyPublicRoutes } from "./routes/legacyPublicRoutes";
 import { legacyWorkerRoutes } from "./routes/legacyWorkerRoutes";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import PartnerApprovals from "./pages/admin/PartnerApprovals";
-import AdminLoginPage from "./pages/admin/AdminLoginPage";
-import AdminRegisterPage from "./pages/admin/AdminRegisterPage";
-import InvestorDashboard from "./pages/admin/InvestorDashboard";
-import UserManagement from "./pages/admin/UserManagement";
-import DocumentVerification from "./pages/admin/DocumentVerification";
-import IDVerification from "./pages/admin/IDVerification";
-import ECRManagement from "./pages/admin/ECRManagement";
-import JobVerification from "./pages/admin/JobVerification";
-import EditJob from "./pages/admin/EditJob";
-import AdminPostJob from "./pages/admin/PostJob";
-import ComplianceCheck from "./pages/admin/ComplianceCheck";
-import Reports from "./pages/admin/Reports";
-import DisputeResolution from "./pages/admin/DisputeResolution";
-import ContactSubmissions from "./pages/admin/ContactSubmissions";
-import AdminPartnerRewards from "./pages/admin/AdminPartnerRewards";
-import AdminPaymentSettings from "./pages/admin/AdminPaymentSettings";
-import AdminJourneyRules from "./pages/admin/AdminJourneyRules";
-import AdminSiteContent from "./pages/admin/AdminSiteContent";
-import AdminWorkers from "./pages/admin/AdminWorkers";
-import SharedWorkerPage from "./pages/shared/SharedWorkerPage";
-import AdminEmployers from "./pages/admin/AdminEmployers";
-import EmployerAccessControl from "./pages/admin/EmployerAccessControl";
-import AdminApplications from "./pages/admin/AdminApplications";
-import AdminPartnerWorkers from "./pages/admin/AdminPartnerWorkers";
-import AdminContentModeration from "./pages/admin/AdminContentModeration";
-import AdminMessages from "./pages/admin/AdminMessages";
-import {
-  EmitraOnboardingPage,
-  EmitraLoginPage,
-  EmitraDashboardPage,
-  EmitraWorkersPage,
-  EmitraRegisterWorkerPage,
-  EmitraWorkerDetailPage,
-  EmitraNotificationsPage,
-  EmitraCompliancePage,
-  EmitraMyWorkersPage,
-  EmitraRewardsPage,
-  EmitraWithdrawalsPage,
-} from "./modules/emitra";
-import AdminEmitraWorkerReview from "./pages/admin/AdminEmitraWorkerReview";
-import AdminEmitraWithdrawals from "./pages/admin/AdminEmitraWithdrawals";
-import AdminEmitraAnalytics from "./pages/admin/AdminEmitraAnalytics";
-import AdminVerificationQueue from "./pages/admin/AdminVerificationQueue";
-import AdminQuizCms from "./pages/admin/AdminQuizCms";
-import AdminJourneyOps from "./pages/admin/AdminJourneyOps";
-import InterviewerLoginPage from "./modules/interviewer/pages/InterviewerLoginPage";
-import InterviewerQueuePage from "./modules/interviewer/pages/InterviewerQueuePage";
-import AdminLsps from "./pages/admin/AdminLsps";
-import AdminLspDeveloperDocs from "./pages/admin/AdminLspDeveloperDocs";
-import LspEntryPage from "./modules/lsp/pages/LspEntryPage";
-import LspVerifyPage from "./modules/lsp/pages/LspVerifyPage";
-import LspDeniedPage from "./modules/lsp/pages/LspDeniedPage";
 import {
   WorkerAuthProvider,
   WorkerLanguageProvider,
 } from "./modules/worker-registration";
 import OfflineNotice from "./components/OfflineNotice";
+
+// Route-level code splitting: every page below downloads only when visited.
+const Jobs = lazy(() => import("./pages/Jobs"));
+const JobDetail = lazy(() => import("./pages/JobDetail"));
+const JobCategories = lazy(() => import("./pages/JobCategories"));
+const Auth = lazy(() => import("./pages/Auth"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+const Payments = lazy(() => import("./pages/Payments"));
+const PaymentComplete = lazy(() => import("./pages/PaymentComplete"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const PartnerOnboarding = lazy(() => import("./pages/partner/PartnerOnboarding"));
+const PartnerRegister = lazy(() => import("./modules/partner/pages/PartnerRegister"));
+const PartnerRegisterLegacy = lazy(() => import("./modules/partner/pages/PartnerRegisterLegacy"));
+const PendingApproval = lazy(() => import("./modules/partner/pages/PendingApproval"));
+const PartnerDashboardRouter = lazy(() => import("./modules/partner/pages/PartnerDashboardRouter"));
+const PartnerAddWorkerPage = lazy(() => import("./modules/partner/pages/PartnerAddWorkerPage"));
+const PartnerWorkerJourneyPage = lazy(() => import("./modules/partner/pages/PartnerWorkerJourneyPage"));
+const PartnerMyWorkersPage = lazy(() => import("./modules/partner/pages/PartnerMyWorkersPage"));
+const SsvnDashboard = lazy(() => import("./modules/partner/pages/ssvn/SsvnDashboard"));
+const SsvnAssessments = lazy(() => import("./modules/partner/pages/ssvn/SsvnAssessments"));
+const SsvnCheckin = lazy(() => import("./modules/partner/pages/ssvn/SsvnCheckin"));
+const SsvnAssessmentWizard = lazy(() => import("./modules/partner/pages/ssvn/SsvnAssessmentWizard"));
+const SsvnLoginPage = lazy(() => import("./modules/partner/pages/ssvn/SsvnLoginPage"));
+const WorkerBindMobilePage = lazy(() => import("./pages/worker/WorkerBindMobilePage"));
+const ItiDashboard = lazy(() => import("./modules/partner/pages/iti/ItiDashboard"));
+const ConsultantDashboard = lazy(() => import("./modules/partner/pages/consultant/ConsultantDashboard"));
+const PartnerLoginChooser = lazy(() => import("./modules/partner/pages/PartnerLoginChooser"));
+const AdminTradeTestAllocations = lazy(() => import("./pages/admin/AdminTradeTestAllocations"));
+const AdminTradeTestsPage = lazy(() => import("./pages/admin/AdminTradeTestsPage"));
+const PartnerWallet = lazy(() => import("./modules/partner/pages/shared/PartnerWallet"));
+const PartnerReports = lazy(() => import("./modules/partner/pages/shared/PartnerReports"));
+const PartnerSupport = lazy(() => import("./modules/partner/pages/shared/PartnerSupport"));
+const PartnerInvoices = lazy(() => import("./modules/partner/pages/shared/PartnerInvoices"));
+const PartnerPayouts = lazy(() => import("./modules/partner/pages/shared/PartnerPayouts"));
+const PartnerTickets = lazy(() => import("./modules/partner/pages/shared/PartnerTickets"));
+const SrnDashboard = lazy(() => import("./modules/partner/pages/srn/SrnDashboard"));
+const SrnWorkers = lazy(() => import("./modules/partner/pages/srn/SrnWorkers"));
+const SrnSharedWorkers = lazy(() => import("./modules/partner/pages/srn/SrnSharedWorkers"));
+const SrnStageManager = lazy(() => import("./modules/partner/pages/srn/SrnStageManager"));
+const SenGlobalDashboard = lazy(() => import("./modules/partner/pages/senGlobal/SenGlobalDashboard"));
+const SenGlobalLeads = lazy(() => import("./modules/partner/pages/senGlobal/SenGlobalLeads"));
+const SenGlobalRevenue = lazy(() => import("./modules/partner/pages/senGlobal/SenGlobalRevenue"));
+const AdminPartnerPayouts = lazy(() => import("./pages/admin/AdminPartnerPayouts"));
+const AdminPartnerTickets = lazy(() => import("./pages/admin/AdminPartnerTickets"));
+const AdminPartnersV2 = lazy(() => import("./pages/admin/AdminPartnersV2"));
+const BenefitsForEmployers = lazy(() => import("./pages/BenefitsForEmployers"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const PartnerApprovals = lazy(() => import("./pages/admin/PartnerApprovals"));
+const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
+const AdminRegisterPage = lazy(() => import("./pages/admin/AdminRegisterPage"));
+const InvestorDashboard = lazy(() => import("./pages/admin/InvestorDashboard"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const DocumentVerification = lazy(() => import("./pages/admin/DocumentVerification"));
+const IDVerification = lazy(() => import("./pages/admin/IDVerification"));
+const ECRManagement = lazy(() => import("./pages/admin/ECRManagement"));
+const JobVerification = lazy(() => import("./pages/admin/JobVerification"));
+const EditJob = lazy(() => import("./pages/admin/EditJob"));
+const AdminPostJob = lazy(() => import("./pages/admin/PostJob"));
+const ComplianceCheck = lazy(() => import("./pages/admin/ComplianceCheck"));
+const Reports = lazy(() => import("./pages/admin/Reports"));
+const DisputeResolution = lazy(() => import("./pages/admin/DisputeResolution"));
+const ContactSubmissions = lazy(() => import("./pages/admin/ContactSubmissions"));
+const AdminPartnerRewards = lazy(() => import("./pages/admin/AdminPartnerRewards"));
+const AdminPaymentSettings = lazy(() => import("./pages/admin/AdminPaymentSettings"));
+const AdminJourneyRules = lazy(() => import("./pages/admin/AdminJourneyRules"));
+const AdminSiteContent = lazy(() => import("./pages/admin/AdminSiteContent"));
+const AdminWorkers = lazy(() => import("./pages/admin/AdminWorkers"));
+const SharedWorkerPage = lazy(() => import("./pages/shared/SharedWorkerPage"));
+const AdminEmployers = lazy(() => import("./pages/admin/AdminEmployers"));
+const EmployerAccessControl = lazy(() => import("./pages/admin/EmployerAccessControl"));
+const AdminApplications = lazy(() => import("./pages/admin/AdminApplications"));
+const AdminPartnerWorkers = lazy(() => import("./pages/admin/AdminPartnerWorkers"));
+const AdminContentModeration = lazy(() => import("./pages/admin/AdminContentModeration"));
+const AdminMessages = lazy(() => import("./pages/admin/AdminMessages"));
+const EmitraOnboardingPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraOnboardingPage })));
+const EmitraLoginPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraLoginPage })));
+const EmitraDashboardPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraDashboardPage })));
+const EmitraWorkersPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraWorkersPage })));
+const EmitraRegisterWorkerPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraRegisterWorkerPage })));
+const EmitraWorkerDetailPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraWorkerDetailPage })));
+const EmitraNotificationsPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraNotificationsPage })));
+const EmitraCompliancePage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraCompliancePage })));
+const EmitraMyWorkersPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraMyWorkersPage })));
+const EmitraRewardsPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraRewardsPage })));
+const EmitraWithdrawalsPage = lazy(() => import("./modules/emitra").then((m) => ({ default: m.EmitraWithdrawalsPage })));
+const AdminEmitraWorkerReview = lazy(() => import("./pages/admin/AdminEmitraWorkerReview"));
+const AdminEmitraWithdrawals = lazy(() => import("./pages/admin/AdminEmitraWithdrawals"));
+const AdminEmitraAnalytics = lazy(() => import("./pages/admin/AdminEmitraAnalytics"));
+const AdminVerificationQueue = lazy(() => import("./pages/admin/AdminVerificationQueue"));
+const AdminQuizCms = lazy(() => import("./pages/admin/AdminQuizCms"));
+const AdminJourneyOps = lazy(() => import("./pages/admin/AdminJourneyOps"));
+const InterviewerLoginPage = lazy(() => import("./modules/interviewer/pages/InterviewerLoginPage"));
+const InterviewerQueuePage = lazy(() => import("./modules/interviewer/pages/InterviewerQueuePage"));
+const AdminLsps = lazy(() => import("./pages/admin/AdminLsps"));
+const AdminLspDeveloperDocs = lazy(() => import("./pages/admin/AdminLspDeveloperDocs"));
+const LspEntryPage = lazy(() => import("./modules/lsp/pages/LspEntryPage"));
+const LspVerifyPage = lazy(() => import("./modules/lsp/pages/LspVerifyPage"));
+const LspDeniedPage = lazy(() => import("./modules/lsp/pages/LspDeniedPage"));
+
+/** Shown briefly while a page's code downloads on first visit. */
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center" role="status" aria-label="Loading page">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  );
+}
 
 const qc = new QueryClient({
   defaultOptions: {

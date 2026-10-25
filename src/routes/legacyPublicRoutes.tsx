@@ -1,17 +1,20 @@
+import { lazy } from 'react';
 import { Navigate, Route } from 'react-router-dom';
-import Workers from '@/pages/Workers';
-import WorkerPublicProfile from '@/pages/worker/WorkerPublicProfile';
-import EmailVerificationPending from '@/pages/EmailVerificationPending';
-import VisaGuide from '@/pages/resources/VisaGuide';
-import SuccessStories from '@/pages/resources/SuccessStories';
-import SupportCenter from '@/pages/resources/SupportCenter';
-import CountryInsightsPage from '@/pages/resources/CountryInsightsPage';
-import CountryInsightDetailPage from '@/pages/resources/CountryInsightDetailPage';
-import LegalAdvice from '@/pages/resources/LegalAdvice';
-import CulturalGuides from '@/pages/resources/CulturalGuides';
-import FaqPage from '@/pages/resources/FaqPage';
 import ComingSoon from '@/pages/ComingSoon';
 import { USERS_ONLY_LAUNCH } from '@/lib/launchGate';
+
+// Route-level code splitting: each public page downloads only when visited.
+const Workers = lazy(() => import('@/pages/Workers'));
+const WorkerPublicProfile = lazy(() => import('@/pages/worker/WorkerPublicProfile'));
+const EmailVerificationPending = lazy(() => import('@/pages/EmailVerificationPending'));
+const VisaGuide = lazy(() => import('@/pages/resources/VisaGuide'));
+const SuccessStories = lazy(() => import('@/pages/resources/SuccessStories'));
+const SupportCenter = lazy(() => import('@/pages/resources/SupportCenter'));
+const CountryInsightsPage = lazy(() => import('@/pages/resources/CountryInsightsPage'));
+const CountryInsightDetailPage = lazy(() => import('@/pages/resources/CountryInsightDetailPage'));
+const LegalAdvice = lazy(() => import('@/pages/resources/LegalAdvice'));
+const CulturalGuides = lazy(() => import('@/pages/resources/CulturalGuides'));
+const FaqPage = lazy(() => import('@/pages/resources/FaqPage'));
 
 /** Public routes restored from legacy App.tsx — hiring directory is gated during users-only launch. */
 export const legacyPublicRoutes = (
