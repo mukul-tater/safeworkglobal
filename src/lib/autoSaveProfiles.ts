@@ -143,8 +143,6 @@ export interface WorkerOnboardingAutoSaveData {
   projectTypes: string[];
   availability: string;
   openToRelocation: boolean;
-  wageType: string;
-  wageAmount: string;
   preferredShift: string;
   workPreference: string;
 }
@@ -175,8 +173,6 @@ export async function saveWorkerOnboardingPartial(userId: string, data: WorkerOn
       project_types_worked: data.projectTypes.length > 0 ? data.projectTypes : null,
       availability: data.availability || null,
       open_to_relocation: data.openToRelocation,
-      expected_wage_type: data.wageType || null,
-      expected_wage_amount: data.wageAmount ? Number(data.wageAmount) : null,
       preferred_shift: data.preferredShift || null,
       work_preference: data.workPreference || null,
     },

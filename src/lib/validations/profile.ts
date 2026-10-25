@@ -28,12 +28,6 @@ export const workerProfileSchema = profileSchema.extend({
   preferred_countries: z.string()
     .max(200, 'Preferred countries must be less than 200 characters')
     .optional(),
-  expected_salary_min: z.number()
-    .min(0, 'Salary must be positive')
-    .optional(),
-  expected_salary_max: z.number()
-    .min(0, 'Salary must be positive')
-    .optional(),
 });
 
 export const employerProfileSchema = profileSchema.extend({

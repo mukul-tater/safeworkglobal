@@ -511,11 +511,7 @@ export async function buildWorkersPdf(workers: WorkerExportSource[], fieldIds: s
     use("preferred_shift", textField(label("preferred_shift"), profileCell(profile, "preferred_shift")));
     use("primary_work_type", textField(label("primary_work_type"), profileCell(profile, "primary_work_type")));
     use("work_preference", textField(label("work_preference"), profileCell(profile, "work_preference")));
-    use("expected_salary_min", textField(label("expected_salary_min"), profileCell(profile, "expected_salary_min")));
-    use("expected_salary_max", textField(label("expected_salary_max"), profileCell(profile, "expected_salary_max")));
     use("currency", textField(label("currency"), profileCell(profile, "currency")));
-    use("expected_wage_amount", textField(label("expected_wage_amount"), profileCell(profile, "expected_wage_amount")));
-    use("expected_wage_type", textField(label("expected_wage_type"), profileCell(profile, "expected_wage_type")));
     use("review_status", textField(label("review_status"), profileCell(profile, "review_status")));
     use("onboarding_completed", textField(label("onboarding_completed"), profileCell(profile, "onboarding_completed")));
     use("ecr_status", textField(label("ecr_status"), profileCell(profile, "ecr_status")));

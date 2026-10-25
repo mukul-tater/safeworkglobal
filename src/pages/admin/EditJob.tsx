@@ -41,6 +41,7 @@ import AdminJobConfigurationFields, {
 } from "@/components/admin/AdminJobConfigurationFields";
 import { adminSalarySaveFields, currencyForDestination } from "@/lib/jobSalaryUtils";
 import PostedByBadge from "@/components/jobs/PostedByBadge";
+import { applicantTypeValue } from '@/lib/jobApplicantType';
 
 export default function EditJob() {
   const { jobId } = useParams();
@@ -127,6 +128,7 @@ export default function EditJob() {
 
       // Set form values
       reset({
+        applicant_type: applicantTypeValue(job.applicant_type),
         title: job.title,
         description: job.description,
         requirements: job.requirements || "",
