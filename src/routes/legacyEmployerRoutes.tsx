@@ -1,35 +1,37 @@
-import type { ReactNode } from 'react';
+import { lazy, type ReactNode } from 'react';
 import { Navigate, Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import QuickEmployerSignup from '@/pages/employer/QuickEmployerSignup';
-import EmployerLoginPage from '@/pages/employer/EmployerLoginPage';
-import WorkerBindMobilePage from '@/pages/worker/WorkerBindMobilePage';
-import QuickPostJob from '@/pages/employer/QuickPostJob';
-import PilotOffer from '@/pages/employer/PilotOffer';
-import RecommendedWorkers from '@/pages/employer/RecommendedWorkers';
-import EmployerDashboard from '@/pages/employer/EmployerDashboard';
-import EmployerRequirement from '@/pages/employer/EmployerRequirement';
-import EmployerProfile from '@/pages/employer/EmployerProfile';
-import CompanyProfile from '@/pages/employer/CompanyProfile';
-import PostJob from '@/pages/employer/PostJob';
-import ManageJobs from '@/pages/employer/ManageJobs';
-import EmployerEditJob from '@/pages/employer/EditJob';
-import SearchWorkers from '@/pages/employer/SearchWorkers';
-import SharedWorkers from '@/pages/employer/SharedWorkers';
-import EmployerInterviews from '@/pages/employer/InterviewScheduling';
-import EmployerOffers from '@/pages/employer/OfferManagement';
-import EmployerOfferLetters from '@/pages/employer/EmployerOfferLetters';
-import EmployerCompliance from '@/pages/employer/ComplianceReports';
-import EmployerMessaging from '@/pages/employer/EmployerMessaging';
-import EmployerSavedSearches from '@/pages/employer/SavedSearches';
-import ApplicationReview from '@/pages/employer/ApplicationReview';
-import ApplicationDetail from '@/pages/employer/ApplicationDetail';
-import WorkerShortlist from '@/pages/employer/WorkerShortlist';
-import ManageFormalities from '@/pages/employer/ManageFormalities';
-import EmployerPayments from '@/pages/employer/EmployerPayments';
-import ContractManagement from '@/pages/employer/ContractManagement';
-import EmployerContractHistory from '@/pages/employer/ContractHistory';
-import EmployerReports from '@/pages/employer/EmployerReports';
+
+// Route-level code splitting: each employer page downloads only when visited.
+const QuickEmployerSignup = lazy(() => import('@/pages/employer/QuickEmployerSignup'));
+const EmployerLoginPage = lazy(() => import('@/pages/employer/EmployerLoginPage'));
+const WorkerBindMobilePage = lazy(() => import('@/pages/worker/WorkerBindMobilePage'));
+const QuickPostJob = lazy(() => import('@/pages/employer/QuickPostJob'));
+const PilotOffer = lazy(() => import('@/pages/employer/PilotOffer'));
+const RecommendedWorkers = lazy(() => import('@/pages/employer/RecommendedWorkers'));
+const EmployerDashboard = lazy(() => import('@/pages/employer/EmployerDashboard'));
+const EmployerRequirement = lazy(() => import('@/pages/employer/EmployerRequirement'));
+const EmployerProfile = lazy(() => import('@/pages/employer/EmployerProfile'));
+const CompanyProfile = lazy(() => import('@/pages/employer/CompanyProfile'));
+const PostJob = lazy(() => import('@/pages/employer/PostJob'));
+const ManageJobs = lazy(() => import('@/pages/employer/ManageJobs'));
+const EmployerEditJob = lazy(() => import('@/pages/employer/EditJob'));
+const SearchWorkers = lazy(() => import('@/pages/employer/SearchWorkers'));
+const SharedWorkers = lazy(() => import('@/pages/employer/SharedWorkers'));
+const EmployerInterviews = lazy(() => import('@/pages/employer/InterviewScheduling'));
+const EmployerOffers = lazy(() => import('@/pages/employer/OfferManagement'));
+const EmployerOfferLetters = lazy(() => import('@/pages/employer/EmployerOfferLetters'));
+const EmployerCompliance = lazy(() => import('@/pages/employer/ComplianceReports'));
+const EmployerMessaging = lazy(() => import('@/pages/employer/EmployerMessaging'));
+const EmployerSavedSearches = lazy(() => import('@/pages/employer/SavedSearches'));
+const ApplicationReview = lazy(() => import('@/pages/employer/ApplicationReview'));
+const ApplicationDetail = lazy(() => import('@/pages/employer/ApplicationDetail'));
+const WorkerShortlist = lazy(() => import('@/pages/employer/WorkerShortlist'));
+const ManageFormalities = lazy(() => import('@/pages/employer/ManageFormalities'));
+const EmployerPayments = lazy(() => import('@/pages/employer/EmployerPayments'));
+const ContractManagement = lazy(() => import('@/pages/employer/ContractManagement'));
+const EmployerContractHistory = lazy(() => import('@/pages/employer/ContractHistory'));
+const EmployerReports = lazy(() => import('@/pages/employer/EmployerReports'));
 
 function employerRoute(path: string, page: ReactNode) {
   return (
