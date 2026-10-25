@@ -8,6 +8,12 @@
 - [ ] Confirm inbox receipt and successful ticket verification for signup email OTP. Blocked: the requested Gmail address hard-bounced and is globally suppressed until 2026-10-22; a working recipient must supply the received code.
 - [x] Fix expired Firebase SMS token reuse after the email OTP step and verify worker account creation reaches validation with a fresh token.
 
+## Requested Profile and Job Updates
+- [ ] Set search branding to SafeWorkGlobal.
+- [ ] Add persisted male/female/couples options to admin job creation and editing.
+- [ ] Remove expected salary from worker profile screens.
+- [ ] Remove the completed-step Journey job Linked preview.
+
 ## SEO, Google Jobs & AI Search
 - [ ] Technical SEO foundation, stable slugs, redirects, canonical host, and crawler rules.
 - [ ] Complete public job pages with accurate structured data, status handling, and related jobs.
