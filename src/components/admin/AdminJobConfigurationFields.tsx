@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { applicantTypeValue, type JobApplicantType } from '@/lib/jobApplicantType';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { QUIZ_SKILL_CODES } from '@/modules/worker-verification/quiz-data/quizSk
 import { listQuizSkillChoices } from '@/modules/worker-verification/services/quizCmsService';
 
 export type JobConfigValues = {
+  applicant_type: JobApplicantType;
   title_hi: string;
   processing_time: string;
   processing_time_hi: string;
@@ -33,6 +35,7 @@ export type JobConfigValues = {
 };
 
 export const EMPTY_JOB_CONFIG: JobConfigValues = {
+  applicant_type: '',
   title_hi: '',
   processing_time: '',
   processing_time_hi: '',
@@ -64,6 +67,7 @@ export function configValues(data: Partial<JobConfigValues> | null | undefined):
   const source = data || {};
   return {
     title_hi: source.title_hi || '',
+    applicant_type: applicantTypeValue(source.applicant_type),
     processing_time: source.processing_time || '',
     processing_time_hi: source.processing_time_hi || '',
     category: source.category || '',
@@ -112,6 +116,7 @@ export function jobConfigPatch(values: JobConfigValues, generatedPaySentence?: s
 /** Columns written with the rest of the admin job patch. */
 export function jobConfigSaveFields(values: JobConfigValues) {
   return {
+    applicant_type: values.applicant_type || null,
     title_hi: blank(values.title_hi),
     processing_time: blank(values.processing_time),
     processing_time_hi: blank(values.processing_time_hi),
@@ -172,6 +177,18 @@ export default function AdminJobConfigurationFields({ values, onChange, cardImag
         <CardTitle>Listing configuration</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div>
+          <Label htmlFor="applicant_type">Job applicants</Label>
+          <Select value={values.applicant_type || AUTO} onValueChange={(value) => onChange({ applicant_type: applicantTypeValue(value === AUTO ? '' : value) })}>
+            <SelectTrigger id="applicant_type"><SelectValue placeholder="Not specified" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={AUTO}>Not specified</SelectItem>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+              <SelectItem value="couples">Couples</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex items-start gap-2">
           <Checkbox
             id="use_saved_copy"

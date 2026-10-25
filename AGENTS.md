@@ -1,4 +1,7 @@
 # Project Architecture Rules
+- Admin job applicant groups share a validated configuration field saved by the existing admin job RPCs; unspecified jobs remain unset and application eligibility is unchanged.
+- Search brand metadata is centralized in the SEO constants with matching crawlable homepage WebSite data, so page titles and search site-name signals stay consistent.
+- Worker profile forms and exports omit expected-pay fields while preserving historical stored values, so profile edits cannot erase old records.
 
 - Admin user deletion must release the target's Firebase phone identity server-side before removing storage or database records, so failed Firebase cleanup cannot leave a partially deleted account.
 - Signup identity checks must run through service-role functions with explicit RPC arguments and safe client errors, so browser clients cannot access cross-account uniqueness queries.

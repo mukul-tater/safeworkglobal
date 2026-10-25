@@ -81,11 +81,7 @@ export const WORKER_EXPORT_FIELDS: WorkerExportField[] = [
   { id: "preferred_shift", label: "Preferred shift", group: "preferences" },
   { id: "primary_work_type", label: "Work type", group: "preferences" },
   { id: "work_preference", label: "Work preference", group: "preferences" },
-  { id: "expected_salary_min", label: "Expected salary min", group: "preferences" },
-  { id: "expected_salary_max", label: "Expected salary max", group: "preferences" },
   { id: "currency", label: "Currency", group: "preferences" },
-  { id: "expected_wage_amount", label: "Expected wage amount", group: "preferences" },
-  { id: "expected_wage_type", label: "Expected wage type", group: "preferences" },
 
   { id: "review_status", label: "Review status", group: "account" },
   { id: "onboarding_completed", label: "Onboarding completed", group: "account" },
