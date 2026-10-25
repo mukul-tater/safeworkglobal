@@ -9,10 +9,10 @@
 - [x] Fix expired Firebase SMS token reuse after the email OTP step and verify worker account creation reaches validation with a fresh token.
 
 ## Requested Profile and Job Updates
-- [ ] Set search branding to SafeWorkGlobal.
-- [ ] Add persisted male/female/couples options to admin job creation and editing.
-- [ ] Remove expected salary from worker profile screens.
-- [ ] Remove the completed-step Journey job Linked preview.
+- [x] Set search branding to SafeWorkGlobal; confirmed homepage title and site-name data. Google refresh requires publishing and recrawling.
+- [x] Add persisted male/female/couples options to admin job creation and editing; five rule tests pass and existing admin guards retained. Live admin save walkthrough unavailable with the current worker session.
+- [x] Remove expected salary and wage controls from worker onboarding/profile exports without deleting stored data; signed-in profile checked.
+- [x] Remove the completed-step Journey job Linked preview; checked signed-in Find jobs review.
 
 ## SEO, Google Jobs & AI Search
 - [ ] Technical SEO foundation, stable slugs, redirects, canonical host, and crawler rules.
