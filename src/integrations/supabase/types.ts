@@ -1803,6 +1803,7 @@ export type Database = {
           accommodation_image_urls: string[]
           age_max: number | null
           age_min: number | null
+          applicant_type: string | null
           benefits: string | null
           benefits_hi: string | null
           canonical_url: string | null
@@ -1858,6 +1859,7 @@ export type Database = {
           accommodation_image_urls?: string[]
           age_max?: number | null
           age_min?: number | null
+          applicant_type?: string | null
           benefits?: string | null
           benefits_hi?: string | null
           canonical_url?: string | null
@@ -1913,6 +1915,7 @@ export type Database = {
           accommodation_image_urls?: string[]
           age_max?: number | null
           age_min?: number | null
+          applicant_type?: string | null
           benefits?: string | null
           benefits_hi?: string | null
           canonical_url?: string | null
@@ -7582,6 +7585,10 @@ export type Database = {
       }
       request_journey_step_email: {
         Args: { p_notification_id: string }
+        Returns: undefined
+      }
+      request_onboarding_email: {
+        Args: { p_user_id: string }
         Returns: undefined
       }
       resolve_active_lsp_id: { Args: { p_code: string }; Returns: string }

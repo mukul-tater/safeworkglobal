@@ -1,31 +1,33 @@
-import type { ReactNode } from 'react';
+import { lazy, type ReactNode } from 'react';
 import { Navigate, Route } from 'react-router-dom';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import WorkerDashboard from '@/pages/worker/WorkerDashboard';
-import WorkerProfile from '@/pages/worker/WorkerProfile';
-import WorkerApplications from '@/pages/worker/WorkerApplications';
-import WorkerApplicationDetail from '@/pages/worker/WorkerApplicationDetail';
-import ApplicationTracking from '@/pages/worker/ApplicationTracking';
-import WorkerMessaging from '@/pages/worker/WorkerMessaging';
-import WorkerDocuments from '@/pages/worker/WorkerDocuments';
-import WorkerNotifications from '@/pages/worker/WorkerNotifications';
-import WorkerTraining from '@/pages/worker/Training';
-import WorkerContracts from '@/pages/worker/Contracts';
-import WorkerTravelStatus from '@/pages/worker/TravelStatus';
-import WorkerInsurance from '@/pages/worker/Insurance';
-import WorkerSavedSearches from '@/pages/worker/SavedSearches';
-import WorkerSavedJobs from '@/pages/worker/SavedJobs';
-import WorkerPublicProfile from '@/pages/worker/WorkerPublicProfile';
-import WorkerOffers from '@/pages/worker/WorkerOffers';
-import WorkerInterviews from '@/pages/worker/WorkerInterviews';
-import WorkerCalendar from '@/pages/worker/WorkerCalendar';
-import WorkerContractHistory from '@/pages/worker/ContractHistory';
-import WorkerPayments from '@/pages/worker/WorkerPayments';
-import ApplicationSuccess from '@/pages/worker/ApplicationSuccess';
-import WorkerGoogleLandingRedirect from '@/modules/worker-registration/pages/WorkerGoogleLandingRedirect';
-import WorkerLoginPage from '@/pages/worker/WorkerLoginPage';
-import WorkerBindMobilePage from '@/pages/worker/WorkerBindMobilePage';
-import WorkerVerificationPage from '@/modules/worker-verification/pages/WorkerVerificationPage';
+
+// Route-level code splitting: each worker page downloads only when visited.
+const WorkerDashboard = lazy(() => import('@/pages/worker/WorkerDashboard'));
+const WorkerProfile = lazy(() => import('@/pages/worker/WorkerProfile'));
+const WorkerApplications = lazy(() => import('@/pages/worker/WorkerApplications'));
+const WorkerApplicationDetail = lazy(() => import('@/pages/worker/WorkerApplicationDetail'));
+const ApplicationTracking = lazy(() => import('@/pages/worker/ApplicationTracking'));
+const WorkerMessaging = lazy(() => import('@/pages/worker/WorkerMessaging'));
+const WorkerDocuments = lazy(() => import('@/pages/worker/WorkerDocuments'));
+const WorkerNotifications = lazy(() => import('@/pages/worker/WorkerNotifications'));
+const WorkerTraining = lazy(() => import('@/pages/worker/Training'));
+const WorkerContracts = lazy(() => import('@/pages/worker/Contracts'));
+const WorkerTravelStatus = lazy(() => import('@/pages/worker/TravelStatus'));
+const WorkerInsurance = lazy(() => import('@/pages/worker/Insurance'));
+const WorkerSavedSearches = lazy(() => import('@/pages/worker/SavedSearches'));
+const WorkerSavedJobs = lazy(() => import('@/pages/worker/SavedJobs'));
+const WorkerPublicProfile = lazy(() => import('@/pages/worker/WorkerPublicProfile'));
+const WorkerOffers = lazy(() => import('@/pages/worker/WorkerOffers'));
+const WorkerInterviews = lazy(() => import('@/pages/worker/WorkerInterviews'));
+const WorkerCalendar = lazy(() => import('@/pages/worker/WorkerCalendar'));
+const WorkerContractHistory = lazy(() => import('@/pages/worker/ContractHistory'));
+const WorkerPayments = lazy(() => import('@/pages/worker/WorkerPayments'));
+const ApplicationSuccess = lazy(() => import('@/pages/worker/ApplicationSuccess'));
+const WorkerGoogleLandingRedirect = lazy(() => import('@/modules/worker-registration/pages/WorkerGoogleLandingRedirect'));
+const WorkerLoginPage = lazy(() => import('@/pages/worker/WorkerLoginPage'));
+const WorkerBindMobilePage = lazy(() => import('@/pages/worker/WorkerBindMobilePage'));
+const WorkerVerificationPage = lazy(() => import('@/modules/worker-verification/pages/WorkerVerificationPage'));
 
 /** Must return <Route> directly — wrapper components break React Router v6 matching. */
 function workerRoute(path: string, page: ReactNode) {

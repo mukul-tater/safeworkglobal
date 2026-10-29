@@ -591,12 +591,12 @@ export default function Jobs() {
           {activeChips.length > 0 && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
               {activeChips.map((chip) => (
-                <Badge key={chip.label} variant="secondary" className="gap-1.5 py-1 pl-3 pr-2 font-normal">
+                <span key={chip.label} className="inline-flex h-7 items-center gap-1 rounded-full border border-primary/30 bg-primary/10 pl-3 pr-1 text-xs font-medium text-primary">
                   {chip.label}
-                  <button type="button" aria-label={`Remove ${chip.label} filter`} onClick={chip.clear}>
+                  <button type="button" aria-label={`Remove ${chip.label} filter`} onClick={chip.clear} className="inline-flex h-5 w-5 items-center justify-center rounded-full hover:bg-primary/15">
                     <X className="h-3 w-3" />
                   </button>
-                </Badge>
+                </span>
               ))}
               <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={resetFilters}>
                 Clear all

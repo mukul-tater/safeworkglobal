@@ -17,7 +17,7 @@ import { Loader2, ChevronRight, ChevronLeft, CheckCircle2, MapPin, Briefcase, Se
 import {
   JOB_CATEGORIES, POPULAR_SKILLS, SKILL_LEVELS, EXPERIENCE_RANGES,
   PROJECT_TYPES, AVAILABILITY_CHOICES, SHIFT_PREFERENCES,
-  WORK_PREFERENCES, WAGE_TYPES, NATIONALITIES,
+  WORK_PREFERENCES, NATIONALITIES,
 } from '@/lib/constants';
 import AutoSaveStatus from '@/components/profile/AutoSaveStatus';
 import { useMaxReachedStep } from '@/components/FormStepPills';
@@ -63,8 +63,6 @@ export default function WorkerOnboarding() {
   // Step 3 — Availability
   const [availability, setAvailability] = useState('');
   const [openToRelocation, setOpenToRelocation] = useState(false);
-  const [wageType, setWageType] = useState('');
-  const [wageAmount, setWageAmount] = useState('');
   const [preferredShift, setPreferredShift] = useState('');
   const [workPreference, setWorkPreference] = useState('');
 
@@ -90,15 +88,13 @@ export default function WorkerOnboarding() {
       projectTypes,
       availability,
       openToRelocation,
-      wageType,
-      wageAmount,
       preferredShift,
       workPreference,
     }),
     [
       fullName, mobile, currentCity, country, preferredWorkCity, primaryWorkType,
       secondarySkills, experienceRange, skillLevel, projectTypes, availability,
-      openToRelocation, wageType, wageAmount, preferredShift, workPreference,
+      openToRelocation, preferredShift, workPreference,
     ],
   );
 
@@ -147,8 +143,6 @@ export default function WorkerOnboarding() {
           projectTypes: [],
           availability: '',
           openToRelocation: false,
-          wageType: '',
-          wageAmount: '',
           preferredShift: '',
           workPreference: '',
         });
@@ -172,8 +166,6 @@ export default function WorkerOnboarding() {
         projectTypes: (wp.project_types_worked as string[]) || [],
         availability: (wp.availability as string) || '',
         openToRelocation: Boolean(wp.open_to_relocation),
-        wageType: (wp.expected_wage_type as string) || '',
-        wageAmount: wp.expected_wage_amount != null ? String(wp.expected_wage_amount) : '',
         preferredShift: (wp.preferred_shift as string) || '',
         workPreference: (wp.work_preference as string) || '',
       };
@@ -188,8 +180,6 @@ export default function WorkerOnboarding() {
       setProjectTypes(next.projectTypes);
       setAvailability(next.availability);
       setOpenToRelocation(next.openToRelocation);
-      setWageType(next.wageType);
-      setWageAmount(next.wageAmount);
       setPreferredShift(next.preferredShift);
       setWorkPreference(next.workPreference);
       markReady(next);
@@ -323,8 +313,6 @@ export default function WorkerOnboarding() {
           project_types_worked: projectTypes.length > 0 ? projectTypes : null,
           availability: availability || null,
           open_to_relocation: openToRelocation,
-          expected_wage_type: wageType || null,
-          expected_wage_amount: wageAmount ? Number(wageAmount) : null,
           preferred_shift: preferredShift || null,
           work_preference: workPreference || null,
           onboarding_completed: true,
@@ -555,24 +543,6 @@ export default function WorkerOnboarding() {
                 <div className="flex items-center justify-between py-2">
                   <Label className="cursor-pointer">Open to Relocation</Label>
                   <Switch checked={openToRelocation} onCheckedChange={setOpenToRelocation} />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Expected Wage Type</Label>
-                    <Select value={wageType} onValueChange={setWageType}>
-                      <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent>
-                        {WAGE_TYPES.map(w => (
-                          <SelectItem key={w} value={w}>{w}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Expected Amount (₹)</Label>
-                    <Input type="number" value={wageAmount} onChange={e => setWageAmount(e.target.value)} placeholder="e.g. 800" />
-                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

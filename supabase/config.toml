@@ -11,6 +11,8 @@ project_id = "etpiadoqryvtlpmiuxia"
     verify_jwt = false
   [functions.email-journey-step-cleared]
     verify_jwt = false
+  [functions.email-onboarding]
+    verify_jwt = false
   [functions.phone-verified-account]
     verify_jwt = false
   [functions.preview-transactional-email]

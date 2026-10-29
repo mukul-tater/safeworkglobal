@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import SEOHead from "@/components/SEOHead";
-import { DEFAULT_DESCRIPTION, DEFAULT_OG_DESCRIPTION, DEFAULT_TITLE, canonicalUrl } from "@/lib/seo";
+import { DEFAULT_DESCRIPTION, DEFAULT_OG_DESCRIPTION, DEFAULT_TITLE, canonicalUrl, websiteJsonLd } from "@/lib/seo";
 import HeroSection from "@/components/HeroSection";
 import HomeTradesStrip from "@/components/HomeTradesStrip";
 import WhySafeWork from "@/components/WhySafeWork";
@@ -53,6 +53,7 @@ const Index = () => {
         ogDescription={DEFAULT_OG_DESCRIPTION}
         twitterDescription="India's skilled workforce. Global opportunities."
         canonicalUrl={canonicalUrl("/")}
+        structuredData={websiteJsonLd()}
       />
       <Header />
 

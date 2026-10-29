@@ -357,7 +357,6 @@ export default function CompletedStepReview({
           <div className="space-y-3">
             <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
               <Detail label="Applied job" value={appliedSkill} />
-              <Detail label="Journey job" value={row.journey_job_id ? 'Linked' : 'Not applied yet'} />
             </dl>
             {onChangeJob && row.journey_job_id && (
               <Button type="button" variant="outline" onClick={onChangeJob}>

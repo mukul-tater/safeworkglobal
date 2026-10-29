@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { jobApplicantTypeSchema } from '@/lib/jobApplicantType';
 import { CURRENCIES } from "@/lib/constants";
 import { SERVICE_CHARGE_MAX_INR, SERVICE_CHARGE_MIN_INR } from "@/lib/jobServiceCharge";
 import { requiredFutureDateString, parseDateInput } from "@/lib/validations/common";
@@ -154,6 +155,7 @@ const adminJobFieldsSchema = jobPostingBaseSchema
       errorMap: () => ({ message: "Select a local currency" }),
     }).default("INR"),
     title_hi: z.string().trim().max(200, "Hindi name must be less than 200 characters").optional().or(z.literal("")),
+    applicant_type: jobApplicantTypeSchema,
     processing_time: z.string().trim().max(160, "Processing time must be less than 160 characters").optional().or(z.literal("")),
     processing_time_hi: z.string().trim().max(160, "Hindi processing time must be less than 160 characters").optional().or(z.literal("")),
     category: z.string().trim().max(80).optional().or(z.literal("")),

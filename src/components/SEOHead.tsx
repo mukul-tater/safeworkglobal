@@ -15,7 +15,7 @@ function formatDocumentTitle(title: string): string {
   const trimmed = title.trim();
   if (!trimmed) return BRAND;
 
-  const alreadyBranded = trimmed.replace(/^SafeWorkGlobal\b/i, BRAND);
+  const alreadyBranded = trimmed.replace(/^SafeWork\s*Global\b/i, BRAND);
   if (/^safework\s*global\b/i.test(alreadyBranded)) return alreadyBranded;
 
   const page = trimmed
