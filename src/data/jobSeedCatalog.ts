@@ -56,8 +56,8 @@ const CATEGORY_DEFINITIONS: Record<string, CategorySeedDefinition> = {
     skills: ['HVAC Systems', 'Refrigeration', 'Duct Installation', 'Preventive Maintenance'],
   },
   Manufacturing: {
-    titles: ['CNC Operator', 'Assembly Line Worker', 'Quality Inspector', 'Machine Operator', 'Production Supervisor'],
-    skills: ['CNC Programming', 'Quality Control', 'Lean Manufacturing', 'Machine Operation'],
+    titles: ['CNC Operator', 'Assembly Line Worker', 'Packer', 'Quality Inspector', 'Machine Operator', 'Production Supervisor'],
+    skills: ['CNC Programming', 'Quality Control', 'Packing', 'Lean Manufacturing', 'Machine Operation'],
   },
   Carpentry: {
     titles: ['Finish Carpenter', 'Formwork Carpenter', 'Furniture Carpenter', 'Joinery Specialist', 'Wood Frame Installer'],

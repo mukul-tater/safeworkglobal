@@ -23,6 +23,7 @@ export const UAE_LISTED_JOBS = [
   'Painter',
   'Aluminium Fixer/Fabricator',
   'Delivery',
+  'Nanny / House Maid',
 ] as const;
 
 export type UaeListedJob = (typeof UAE_LISTED_JOBS)[number];
@@ -52,6 +53,7 @@ export const UAE_LISTED_JOB_LABELS: Record<UaeListedJob, { en: string; hi: strin
   Painter: { en: 'Painter', hi: 'पेंटर' },
   'Aluminium Fixer/Fabricator': { en: 'Aluminium Fixer', hi: 'एल्युमिनियम फिक्सर' },
   Delivery: { en: 'Bike delivery persons (Food and Parcel)', hi: 'बाइक डिलीवरी (खाना और पार्सल)' },
+  'Nanny / House Maid': { en: 'Nanny / House Maid', hi: 'नैनी / हाउस मेड' },
 };
 
 /**
@@ -79,9 +81,11 @@ export const UAE_LISTED_JOB_WORK: Record<UaeListedJob, string> = {
   Painter: 'painting',
   'Aluminium Fixer/Fabricator': 'aluminium fitting',
   Delivery: 'bike delivery',
+  'Nanny / House Maid': 'housekeeping and child care',
 };
 
 export const UAE_LISTED_JOB_MATCHERS: Array<{ job: UaeListedJob; needles: string[] }> = [
+  { job: 'Nanny / House Maid', needles: ['nanny / house maid', 'nanny/ house maid', 'nanny/house maid', 'nanny/housemaid', 'nanny / housemaid', 'house maid', 'housemaid', 'nanny', 'maid cc', 'house help', 'maid'] },
   { job: 'Delivery', needles: ['bike rider', 'delivery rider', 'bike delivery', 'delivery boy'] },
   { job: 'Aluminium Fixer/Fabricator', needles: ['aluminium fixer', 'aluminum fixer', 'aluminium fabricator', 'aluminum fabricator', 'glazing fabricator'] },
   { job: 'Shuttering Carpenter', needles: ['shuttering carpenter', 'shuttering', 'formwork carpenter', 's. carpenter'] },
@@ -257,6 +261,11 @@ export const UAE_LISTED_JOB_SALARIES: Record<UaeListedJob, ListedJobSalary> = {
     salary_max: 91000,
     salary_display: 'AED 3,000 – 3,500 (₹78,000 – ₹91,000)',
   },
+  'Nanny / House Maid': {
+    salary_min: 18400,
+    salary_max: 36800,
+    salary_display: 'AED 800 – 1,600 (₹18,400 – ₹36,800)',
+  },
 };
 
 /** UAE trades other than bike delivery. Stored total is ₹30,000 + 18% GST. */
@@ -336,6 +345,8 @@ export const UAE_LISTED_JOB_ABOUT: Record<UaeListedJob, string> = {
     'Aluminium fixer and fabricator openings for UAE windows, doors, cladding and shop-fronts. You will cut, mill, assemble and install aluminium frames from fabrication drawings, join sections and prepare surfaces for powder coat or anodising. Visa sponsorship for shortlisted candidates.',
   Delivery:
     'Bike rider openings for full-time delivery work in the UAE (Keta). You need a valid Indian driving license and an ECNR passport, and you must be physically fit for flexible shifts. Riding experience is preferred; freshers may be considered. Pay is AED 3,000 – 3,500 (₹78,000 – ₹91,000) per month. Duty is 8–10 hours a day, with overtime paid extra. Age 22–37 years. The UAE license fee of AED 4,500 is deducted over up to 10 months. Accommodation is provided until the license is issued. Food is usually included in the salary, with a minimum of 200 and kitchen facilities until the 2-wheeler license is issued. Selection is through an online interview. Visa sponsorship for shortlisted candidates.',
+  'Nanny / House Maid':
+    'Nanny and House Maid recruitment in the UAE for employer Maid Cc. Openings for cleaning, cooking, and house help across residences. Total demand 200+ vacancies. Salary is AED 1,600 per month after work allocation, and AED 800 per month while on standby. Food and accommodation are provided in both conditions. Duty is 12 hours a day. Selection is through personal or video interview. Requirements: basic English is mandatory, ECNR passport only, minimum 1 year of experience, and age 25–45 years. Processing time is 20–25 days. Service charge is ₹25,000 including flight ticket. Visa sponsorship and legal contract for shortlisted candidates.',
 };
 
 export function getPublicJobAbout(
@@ -584,6 +595,14 @@ export const UAE_LISTED_JOB_RESPONSIBILITIES: Record<UaeListedJob, string[]> = {
     'Follow UAE traffic and road-safety rules',
     'Complete the deliveries assigned for the day',
   ],
+  'Nanny / House Maid': [
+    'Perform household cleaning including sweeping, mopping, dusting, and tidying',
+    'Assist with daily family cooking, meal preparation, and kitchen maintenance',
+    'Provide caring and attentive childcare and nanny supervision',
+    'Handle laundry, ironing, and general housekeeping duties',
+    'Maintain high standards of hygiene and cleanliness throughout the home',
+    'Communicate in basic English and follow household instructions and routines',
+  ],
 };
 
 export function listPublicJobResponsibilities(
@@ -720,6 +739,7 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
     { youtubeId: 'KvA00e5EIwk' },
     { youtubeId: 'gl-UDyQIq8Y' },
   ],
+  'Nanny / House Maid': [],
 };
 
 export function getPublicJobVideos(title: string, description = '', country?: string | null): ListedJobVideo[] {

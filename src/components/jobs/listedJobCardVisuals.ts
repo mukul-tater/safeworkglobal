@@ -17,6 +17,7 @@ import aluminiumImg from '@/assets/trades/aluminium.jpg';
 import cleanerMaleImg from '@/assets/trades/cleaner-male.jpg';
 import cleanerFemaleImg from '@/assets/trades/cleaner-female.jpg';
 import deliveryImg from '@/assets/trades/delivery.jpg';
+import nannyHouseMaidImg from '@/assets/trades/nanny-house-maid.jpg';
 import type { UaeListedJob } from '@/lib/uaeListedJobs';
 
 export const UAE_LISTED_JOB_CARD_VISUALS: Record<UaeListedJob, { image: string; position?: string }> = {
@@ -40,6 +41,7 @@ export const UAE_LISTED_JOB_CARD_VISUALS: Record<UaeListedJob, { image: string; 
   Painter: { image: painterImg, position: 'center 40%' },
   'Aluminium Fixer/Fabricator': { image: aluminiumImg, position: 'center 32%' },
   Delivery: { image: deliveryImg, position: 'center 42%' },
+  'Nanny / House Maid': { image: nannyHouseMaidImg, position: 'center 35%' },
 };
 
 export const UAE_LISTED_JOB_SKILLS: Record<UaeListedJob, string[]> = {
@@ -63,4 +65,5 @@ export const UAE_LISTED_JOB_SKILLS: Record<UaeListedJob, string[]> = {
   Painter: ['Prep', 'Emulsion', 'Spray'],
   'Aluminium Fixer/Fabricator': ['Frames', 'Cladding', 'Fabrication'],
   Delivery: ['Licence', 'Riding', 'Road safety'],
+  'Nanny / House Maid': ['Cleaning', 'Cooking', 'Childcare', 'House Help'],
 };

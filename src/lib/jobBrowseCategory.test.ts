@@ -15,6 +15,8 @@ const affectedTrades = [
   ['Warehouse Helper', 'Driver & Logistics', 'Warehouse Helper'],
   ['Mason (Bricks / Plaster)', 'Mason', 'Mason (bricks/plaster)'],
   ['Mason (Raj Mistri / Tiles / Marble)', 'Mason', 'Mason (tiles/marble)'],
+  ['Nanny / House Maid', 'Cleaning & Maintenance', 'Nanny / House Maid'],
+  ['Nanny/ House Maid', 'Cleaning & Maintenance', 'Nanny / House Maid'],
 ];
 
 for (const [title, saved, expected] of affectedTrades) {

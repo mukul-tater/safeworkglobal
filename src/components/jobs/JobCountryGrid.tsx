@@ -14,6 +14,7 @@ const UAE_EMIRATES: { name: string; hindi?: boolean }[] = [
 ];
 
 const UKRAINE_PLACES = [
+  { name: 'Kyiv' },
   { name: 'Rivne' },
   { name: 'Cherkasy' },
   { name: 'Kyiv Region' },

@@ -131,6 +131,100 @@ const CLEANER_TRADE_KNOWLEDGE: TradeQuizQuestion[] = [
   ),
 ];
 
+/** Screening paper for UAE Nanny / House Maid listings. */
+const NANNY_HOUSE_MAID_TRADE_KNOWLEDGE: TradeQuizQuestion[] = [
+  q(
+    'What are the main duties of a house maid and nanny?',
+    'हाउस मेड और नैनी का मुख्य काम क्या होता है?',
+    ['Cleaning, cooking, childcare, and household assistance', 'सफाई, खाना बनाना, बच्चों की देखभाल और घरेलू सहायता'],
+    ['Driving heavy commercial vehicles', 'भारी व्यावसायिक वाहन चलाना'],
+    ['Electrical repairs and welding', 'इलेक्ट्रिकल मरम्मत और वेल्डिंग'],
+    ['Security patrolling', 'सुरक्षा गश्त करना'],
+    'A',
+  ),
+  q(
+    'What is the most important step before preparing food or feeding a child?',
+    'खाना बनाने या बच्चे को खाना खिलाने से पहले सबसे जरूरी कदम क्या है?',
+    ['Wash your hands thoroughly with soap and water', 'साबुन और पानी से अपने हाथ अच्छी तरह धोना'],
+    ['Apply perfume on hands', 'हाथों पर परफ्यूम लगाना'],
+    ['Turn off the refrigerator', 'फ्रिज बंद कर देना'],
+    ['Leave food uncovered', 'खाने को खुला छोड़ देना'],
+    'A',
+  ),
+  q(
+    'When looking after a young child, what is the most important safety rule?',
+    'छोटे बच्चे की देखभाल करते समय सबसे महत्वपूर्ण सुरक्षा नियम क्या है?',
+    ['Never leave the child unattended near hot stoves, water, or balconies', 'बच्चे को गर्म चूल्हे, पानी या बालकनी के पास कभी अकेला न छोड़ें'],
+    ['Allow the child to play with sharp kitchen knives', 'बच्चे को रसोई के तेज चाकू से खेलने दें'],
+    ['Keep medicines open within reach', 'दवाइयों को बच्चे की पहुंच में खुला रखें'],
+    ['Lock the child in a dark room alone', 'बच्चे को अकेले अंधेरे कमरे में बंद कर दें'],
+    'A',
+  ),
+  q(
+    'How should household cleaning chemicals (bleach, floor cleaner) be stored?',
+    'घर में इस्तेमाल होने वाले सफाई के केमिकल (ब्लीच, फिनाइल आदि) को कैसे रखना चाहिए?',
+    ['In a secure place away from food and out of children’s reach', 'खाने से दूर और बच्चों की पहुंच से बाहर सुरक्षित स्थान पर'],
+    ['Next to baby milk bottles', 'बच्चे के दूध की बोतल के पास'],
+    ['In open bowls on the floor', 'फर्श पर खुले बर्तनों में'],
+    ['Inside the microwave oven', 'माइक्रोवेव ओवन के अंदर'],
+    'A',
+  ),
+  q(
+    'What should you do before washing colored and white clothes?',
+    'रंगीन और सफेद कपड़े धोने से पहले क्या करना चाहिए?',
+    ['Separate white clothes from colored clothes to prevent staining', 'रंग चढ़ने से बचाने के लिए सफेद और रंगीन कपड़ों को अलग करना'],
+    ['Wash everything together in boiling hot water', 'सभी कपड़ों को एक साथ उबलते पानी में धोना'],
+    ['Add bleach to all colored clothes', 'सभी रंगीन कपड़ों में ब्लीच मिला देना'],
+    ['Dry clothes without washing', 'बिना धोए कपड़े सुखा देना'],
+    'A',
+  ),
+  q(
+    'What should you do immediately if water or oil spills on the kitchen floor?',
+    'यदि रसोई के फर्श पर पानी या तेल गिर जाए तो तुरंत क्या करना चाहिए?',
+    ['Wipe and dry the floor immediately to prevent slips and falls', 'फिसलने और गिरने से बचाने के लिए तुरंत पोंछकर सुखाना'],
+    ['Leave it until someone slips', 'किसी के फिसलने तक उसे वैसे ही छोड़ देना'],
+    ['Cover it with a rug and ignore it', 'उस पर कपड़ा डालकर अनदेखा करना'],
+    ['Pour more water on it', 'उस पर और पानी डाल देना'],
+    'A',
+  ),
+  q(
+    'If a child is injured or there is an emergency at home, what is your first action?',
+    'यदि बच्चे को चोट लगे या घर में कोई आपात स्थिति हो, तो आपकी पहली कार्रवाई क्या होनी चाहिए?',
+    ['Immediately inform the employer and call emergency services if needed', 'तुरंत नियोक्ता को सूचित करें और जरूरत पड़ने पर आपातकालीन नंबर पर कॉल करें'],
+    ['Hide the incident and do not tell anyone', 'घटना को छिपाएं और किसी को न बताएं'],
+    ['Leave the house quietly', 'चुपचाप घर से बाहर चले जाएं'],
+    ['Blame another person', 'किसी अन्य व्यक्ति पर दोष मढ़ें'],
+    'A',
+  ),
+  q(
+    'Why is basic English communication necessary for this job in the UAE?',
+    'UAE में इस नौकरी के लिए बुनियादी अंग्रेजी बातचीत क्यों जरूरी है?',
+    ['To understand employer instructions and communicate clearly', 'नियोक्ता के निर्देशों को समझने और स्पष्ट बातचीत करने के लिए'],
+    ['To teach school classes', 'स्कूल की कक्षाएं पढ़ाने के लिए'],
+    ['To write legal contracts', 'कानूनी अनुबंध लिखने के लिए'],
+    ['It is not required', 'इसकी कोई आवश्यकता नहीं है'],
+    'A',
+  ),
+  q(
+    'How should perishable food items like milk, cooked meals, and meat be stored?',
+    'दूध, पका हुआ खाना और मांस जैसी जल्दी खराब होने वाली चीजों को कैसे रखना चाहिए?',
+    ['Stored inside the refrigerator at the right temperature', 'सही तापमान पर फ्रिज के अंदर रखना'],
+    ['Left in direct sunlight outside', 'बाहर सीधी धूप में छोड़ देना'],
+    ['Kept open in a warm room for days', 'गर्म कमरे में दिनों तक खुला रखना'],
+    ['Stored with cleaning chemicals', 'सफाई के केमिकल के साथ रखना'],
+    'A',
+  ),
+  q(
+    'What is expected of you regarding the employer’s household privacy and valuables?',
+    'नियोक्ता के घर की निजता और कीमती सामान के संबंध में आपसे क्या अपेक्षा की जाती है?',
+    ['Respect family privacy, be honest, and never touch belongings without permission', 'परिवार की निजता का सम्मान करना, ईमानदार रहना और बिना अनुमति सामान न छूना'],
+    ['Share family photos and details on social media', 'सोशल मीडिया पर परिवार की तस्वीरें और जानकारी साझा करना'],
+    ['Open private drawers and cupboards', 'निजी दराज और अलमारी खोलना'],
+    ['Invite strangers into the home without permission', 'बिना अनुमति अजनबियों को घर के अंदर बुलाना'],
+    'A',
+  ),
+];
+
 /** Entry-level bilingual MCQ bank — 10 questions per UAE listed trade. */
 const CORE_TRADE_KNOWLEDGE_BANK = {
   Electrician: [
@@ -1437,6 +1531,7 @@ const CORE_TRADE_KNOWLEDGE_BANK = {
 
   'Cleaner (Male)': CLEANER_TRADE_KNOWLEDGE,
   'Cleaner (Female)': CLEANER_TRADE_KNOWLEDGE,
+  'Nanny / House Maid': NANNY_HOUSE_MAID_TRADE_KNOWLEDGE,
 
   Scaffolder: [
     q(

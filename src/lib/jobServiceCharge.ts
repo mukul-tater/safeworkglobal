@@ -49,6 +49,10 @@ export function suggestedServiceChargeInr(input: {
   if (country === 'uae' && delivery) {
     return { amount: settings.uaeDeliveryServiceChargeInr, label: 'UAE bike delivery' };
   }
+  const nanny = /\b(nanny|house maid|maid|house help)\b/.test(title);
+  if (country === 'uae' && nanny) {
+    return { amount: 25000, label: 'UAE Nanny / House Maid' };
+  }
   if (country === 'uae') return { amount: settings.uaeServiceChargeInr, label: 'UAE trades' };
   if (country === 'ukraine') return { amount: settings.ukraineServiceChargeInr, label: 'Ukraine listings' };
   if (country === 'europe') return { amount: settings.europeServiceChargeInr, label: 'Europe listings' };
