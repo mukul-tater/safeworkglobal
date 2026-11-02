@@ -617,6 +617,7 @@ export function listPublicJobResponsibilities(
     .map((line) => line.trim())
     .filter(Boolean);
   if (options?.useSavedCopy) return saved;
+  if (isSecurityGuardTitle(title)) return SECURITY_GUARD_RESPONSIBILITIES;
   const listed = inferUaeListedJob(title, description, country);
   if (listed) return UAE_LISTED_JOB_RESPONSIBILITIES[listed];
   return saved;
@@ -739,10 +740,31 @@ export const UAE_LISTED_JOB_VIDEOS: Record<UaeListedJob, ListedJobVideo[]> = {
     { youtubeId: 'KvA00e5EIwk' },
     { youtubeId: 'gl-UDyQIq8Y' },
   ],
-  'Nanny / House Maid': [],
+  'Nanny / House Maid': [{ youtubeId: 'RRO5WlOKHEY' }, { youtubeId: '_2KfkWREdwc' }],
 };
 
+/** Security Guard listings are not a UAE catalog trade yet; match them by title. */
+export const SECURITY_GUARD_VIDEOS: ListedJobVideo[] = [
+  { youtubeId: 'W-v_bbPeq6Q' },
+  { youtubeId: 'Xo_8xaVkSCQ' },
+  { youtubeId: 'h_A5SotBhuc' },
+];
+
+export const SECURITY_GUARD_RESPONSIBILITIES = [
+  'Access Control: Monitor and control the entry and exit of visitors, employees, contractors, and vehicles, checking IDs and issuing visitor passes.',
+  'Patrolling: Conduct regular foot or vehicle patrols across assigned residential, commercial, industrial, or event properties to deter unauthorized access and security breaches.',
+  'CCTV & Surveillance: Monitor closed-circuit television (CCTV) systems, alarms, and perimeter security equipment.',
+  'Incident Response: Respond promptly to alarms, emergencies, medical calls, or suspicious activities, and coordinate with Dubai Police or emergency services when necessary.',
+  'Reporting & Documentation: Maintain accurate daily shift logs, visitor registers, key logs, and detailed incident reports.',
+  'Customer Service: Provide polite guidance, directions, and assistance to tenants, guests, and the public.',
+];
+
+export function isSecurityGuardTitle(title: string | null | undefined): boolean {
+  return /security\s*guard|सिक्योरिटी/i.test(title || '');
+}
+
 export function getPublicJobVideos(title: string, description = '', country?: string | null): ListedJobVideo[] {
+  if (isSecurityGuardTitle(title)) return SECURITY_GUARD_VIDEOS;
   const listed = inferUaeListedJob(title, description, country);
   return listed ? UAE_LISTED_JOB_VIDEOS[listed] : [];
 }
