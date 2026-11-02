@@ -617,6 +617,7 @@ export function listPublicJobResponsibilities(
     .map((line) => line.trim())
     .filter(Boolean);
   if (options?.useSavedCopy) return saved;
+  if (isSecurityGuardTitle(title)) return SECURITY_GUARD_RESPONSIBILITIES;
   const listed = inferUaeListedJob(title, description, country);
   if (listed) return UAE_LISTED_JOB_RESPONSIBILITIES[listed];
   return saved;
