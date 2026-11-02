@@ -1,9 +1,9 @@
 import { EUROPE_QUIZ_JOBS, inferEuropeQuizJob } from '@/lib/europeQuizJobs';
-import { inferUaeListedJob, UAE_LISTED_JOBS, type UaeListedJob } from '@/lib/uaeListedJobs';
+import { inferUaeListedJob, isSecurityGuardTitle, UAE_LISTED_JOBS, type UaeListedJob } from '@/lib/uaeListedJobs';
 import { WORKER_SKILLS } from '@/modules/emitra/config/constants';
 
 /** Skills that have a Test 1 question bank (UAE trades, Czech papers, Driver/Other fallbacks). */
-export const QUIZ_SKILL_CODES = [...UAE_LISTED_JOBS, ...EUROPE_QUIZ_JOBS, 'Driver', 'Other'] as const;
+export const QUIZ_SKILL_CODES = [...UAE_LISTED_JOBS, ...EUROPE_QUIZ_JOBS, 'Security Guard', 'Driver', 'Other'] as const;
 export type QuizSkillCode = (typeof QUIZ_SKILL_CODES)[number];
 
 const COARSE_SKILL_TO_QUIZ: Record<(typeof WORKER_SKILLS)[number], QuizSkillCode> = {
@@ -39,6 +39,8 @@ export function resolveQuizSkillCode(opts: {
 
   const europe = inferEuropeQuizJob(explicit || opts.jobTitle || opts.primarySkill || '');
   if (europe) return europe;
+
+  if (isSecurityGuardTitle(opts.jobTitle || explicit)) return 'Security Guard';
 
   const listed = inferUaeListedJob(
     opts.jobTitle || explicit || '',
