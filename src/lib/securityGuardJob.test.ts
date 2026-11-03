@@ -1,8 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { getPublicJobVideos, listPublicJobResponsibilities } from './uaeListedJobs';
 import { resolveQuizSkillCode } from '@/modules/worker-verification/quiz-data/quizSkill';
+import { jobBrowseCategory } from './jobBrowseCategory';
 
 describe('Security Guard and Nanny jobs', () => {
+  test('Security Guard is reachable through its UAE trade choice', () => {
+    expect(jobBrowseCategory('Security Guard', '', 'UAE', 'Other')).toBe('Security Guard');
+  });
   test('Security Guard job uses the Security Guard Test 1 paper', () => {
     expect(resolveQuizSkillCode({ jobTitle: 'Security Guard', country: 'UAE' })).toBe('Security Guard');
   });
