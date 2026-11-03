@@ -119,11 +119,24 @@ function usesUaeListingTemplate(country?: string | null): boolean {
 }
 
 /** Map a job title/description onto the UAE listed trades. Exact title, then specific needles. */
-export function inferUaeListedJob(title: string, description = '', country?: string | null): UaeListedJob | null {
+export function inferUaeListedJob(
+  title: string,
+  description = '',
+  country?: string | null,
+  applicantType?: string | null,
+): UaeListedJob | null {
   if (!usesUaeListingTemplate(country)) return null;
   const titleLower = title.toLowerCase().trim();
   const exact = UAE_LISTED_JOBS.find((job) => job.toLowerCase() === titleLower);
   if (exact) return exact;
+
+  const appType = applicantType?.toLowerCase().trim();
+  if (appType === 'female' && (titleLower.includes('cleaner') || description.toLowerCase().includes('cleaner'))) {
+    return 'Cleaner (Female)';
+  }
+  if (appType === 'male' && (titleLower.includes('cleaner') || description.toLowerCase().includes('cleaner'))) {
+    return 'Cleaner (Male)';
+  }
 
   const titleMatch = UAE_LISTED_JOB_MATCHERS.find(({ needles }) =>
     needles.some((needle) => titleLower.includes(needle)),
@@ -162,10 +175,11 @@ export function publicJobHindiTitle(
   description = '',
   country?: string | null,
   titleHi?: string | null,
+  applicantType?: string | null,
 ): string | null {
   const custom = titleHi?.trim();
   if (custom) return custom;
-  const listed = inferUaeListedJob(title, description, country);
+  const listed = inferUaeListedJob(title, description, country, applicantType);
   return listed ? UAE_LISTED_JOB_LABELS[listed].hi : null;
 }
 
@@ -179,11 +193,17 @@ export function getPublicJobTitle(
   _description = '',
   _country?: string | null,
   _options?: PublicListingOptions,
+  applicantType?: string | null,
 ): string {
   const saved = title.trim();
   if (!saved) return title;
   const exact = UAE_LISTED_JOBS.find((job) => job.toLowerCase() === saved.toLowerCase());
   if (exact && UAE_LISTED_JOB_LABELS[exact].en !== exact) return UAE_LISTED_JOB_LABELS[exact].en;
+  if (saved.toLowerCase() === 'cleaner') {
+    const appType = applicantType?.toLowerCase().trim();
+    if (appType === 'female') return UAE_LISTED_JOB_LABELS['Cleaner (Female)'].en;
+    if (appType === 'male') return UAE_LISTED_JOB_LABELS['Cleaner (Male)'].en;
+  }
   return saved;
 }
 

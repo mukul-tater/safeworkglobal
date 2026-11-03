@@ -2,10 +2,11 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Bookmark, BriefcaseBusiness, Clock, Loader2, MapPin, ShieldCheck, Wallet } from 'lucide-react';
+import { Bookmark, BriefcaseBusiness, Building2, Clock, Loader2, MapPin, ShieldCheck, Users, Wallet } from 'lucide-react';
 import JobSalaryText from '@/components/JobSalaryText';
 import JobServiceFee from '@/components/jobs/JobServiceFee';
 import { usesStoredPayText } from '@/lib/jobsBrowse';
+import { formatApplicantTypeLabel } from '@/lib/jobApplicantType';
 import { cn } from '@/lib/utils';
 
 export interface JobListItem {
@@ -13,6 +14,8 @@ export interface JobListItem {
   slug: string;
   title: string;
   company: string;
+  companies?: string[];
+  customFields?: Array<{ label: string; value: string }>;
   companyLogoUrl: string | null;
   location: string;
   /** City or area, without the country. Used by job comparison. */
@@ -30,6 +33,7 @@ export interface JobListItem {
   category: string;
   experienceLevel: string;
   visaSponsorship: boolean;
+  applicantType?: string | null;
   postedAt: Date;
   description: string;
   skills: string[];
@@ -119,6 +123,17 @@ export default function JobResultCard({
             {job.titleHi ? (
               <p className="truncate text-sm text-muted-foreground">{job.titleHi}</p>
             ) : null}
+            {job.companies && job.companies.length > 0 ? (
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs sm:text-sm font-medium text-foreground/80 truncate">
+                <Building2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="truncate">{job.companies.join(' • ')}</span>
+              </p>
+            ) : job.company ? (
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs sm:text-sm font-medium text-foreground/80 truncate">
+                <Building2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                <span className="truncate">{job.company}</span>
+              </p>
+            ) : null}
             {job.ageLabel ? (
               <p className="mt-1 truncate text-xs text-muted-foreground">{job.ageLabel}</p>
             ) : null}
@@ -159,6 +174,12 @@ export default function JobResultCard({
               <Badge variant="outline" className="gap-1 border-success/30 bg-success/10 font-normal text-success">
                 <ShieldCheck className="h-3 w-3" />
                 Visa sponsored
+              </Badge>
+            )}
+            {job.applicantType && formatApplicantTypeLabel(job.applicantType) && (
+              <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/10 font-normal text-primary">
+                <Users className="h-3 w-3" />
+                {formatApplicantTypeLabel(job.applicantType)?.en}
               </Badge>
             )}
             <JobServiceFee amount={job.serviceCharge} />

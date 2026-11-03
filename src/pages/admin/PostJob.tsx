@@ -37,7 +37,9 @@ import {
   type PendingJobMedia,
 } from "@/lib/jobMediaUpload";
 import JobExtraFieldsEditor from "@/components/admin/JobExtraFieldsEditor";
+import JobCustomFieldsEditor from "@/components/admin/JobCustomFieldsEditor";
 import { saveJobExtraFields, validateJobExtraFieldDrafts, type JobExtraFieldDraft } from "@/lib/jobExtraFields";
+import { cleanJobCustomFieldsForSave, type JobCustomField } from "@/lib/jobCustomFields";
 import JobTitleAutocomplete from "@/components/employer/JobTitleAutocomplete";
 import { adminCreateJob, adminUpdateJob } from "@/services/AdminService";
 import AdminSalaryRanges from "@/components/admin/AdminSalaryRanges";
@@ -65,6 +67,7 @@ export default function AdminPostJob() {
   const [pendingPhotos, setPendingPhotos] = useState<PendingJobMedia[]>([]);
   const [pendingVideos, setPendingVideos] = useState<PendingJobMedia[]>([]);
   const [extraFields, setExtraFields] = useState<JobExtraFieldDraft[]>([]);
+  const [customFields, setCustomFields] = useState<JobCustomField[]>([]);
   const [employers, setEmployers] = useState<EmployerOption[]>([]);
   const [loadingEmployers, setLoadingEmployers] = useState(true);
 
@@ -229,6 +232,7 @@ export default function AdminPostJob() {
         posted_at: data.status === "ACTIVE" ? new Date().toISOString() : null,
         service_charge: data.service_charge,
         youtube_urls: youtubeUrls,
+        custom_fields: cleanJobCustomFieldsForSave(customFields),
         ...jobConfigPatch(configValues(data), pay.salary_display),
       };
 
@@ -392,6 +396,15 @@ export default function AdminPostJob() {
                   error={errors.benefits?.message}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Company & Dynamic Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <JobCustomFieldsEditor value={customFields} onChange={setCustomFields} />
             </CardContent>
           </Card>
 

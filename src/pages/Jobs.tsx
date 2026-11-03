@@ -32,6 +32,7 @@ import { getPublicJobAbout, getPublicJobSalary, getPublicJobServiceCharge, getPu
 import { SALARY_FILTER_MIN, SALARY_FILTER_MAX, adminRangeSalaryDisplay, convertSalaryToINR, withCzkAndInrPay } from '@/lib/jobSalaryUtils';
 import { formatINRAmount } from '@/lib/utils';
 import { browseFromSearchParams, formatAgeRange, formatJobPlace, jobsBrowsePath } from '@/lib/jobsBrowse';
+import { extractCompanyNames, parseJobCustomFields } from '@/lib/jobCustomFields';
 import { devCompareListItem } from '@/lib/devCompareJob';
 import { JOB_COMPARE_ENABLED } from '@/lib/jobCompareFeature';
 import { scrollToTop } from '@/lib/scrollToTop';
@@ -212,15 +213,21 @@ export default function Jobs() {
           const rawSalaryMax = monthlyListed ? listedSalary.salary_max : (job.salary_max ?? null);
           const currency = monthlyListed ? 'INR' : (job.currency || 'INR');
 
+          const customFields = parseJobCustomFields(job.custom_fields);
+          const companies = extractCompanyNames(customFields);
+          const company = companies[0] || '';
+
           return {
             id: job.id,
             slug: job.slug || job.id,
-            title: getPublicJobTitle(job.title, job.description ?? '', job.country, options),
-            titleHi: publicJobHindiTitle(job.title, job.description ?? '', job.country, job.title_hi),
+            title: getPublicJobTitle(job.title, job.description ?? '', job.country, options, job.applicant_type),
+            titleHi: publicJobHindiTitle(job.title, job.description ?? '', job.country, job.title_hi, job.applicant_type),
             processingTime: job.processing_time || null,
             processingTimeHi: job.processing_time_hi || null,
             ageLabel: formatAgeRange(job.age_min, job.age_max),
-            company: '',
+            company,
+            companies,
+            customFields,
             companyLogoUrl: null,
             city: job.location || '',
             location: formatJobPlace(job.location, job.country),
@@ -238,9 +245,10 @@ export default function Jobs() {
               ? (job.local_salary_max ?? job.local_salary_min ?? null)
               : rawSalaryMax == null ? null : convertSalaryToINR(rawSalaryMax, currency),
             type: job.job_type === 'FULL_TIME' ? 'Full-time' : job.job_type === 'PART_TIME' ? 'Part-time' : 'Contract',
-            category: jobBrowseCategory(job.title, job.description || '', job.country, job.category),
+            category: jobBrowseCategory(job.title, job.description || '', job.country, job.category, job.applicant_type),
             experienceLevel: job.experience_level ?? '',
             visaSponsorship: job.visa_sponsorship || false,
+            applicantType: job.applicant_type,
             postedAt: new Date(job.posted_at),
             description: description.length > 180 ? `${description.slice(0, 180).trimEnd()}…` : description,
             skills: job.job_skills?.map((s: any) => publicSkillName(s.skill_name)) || [],

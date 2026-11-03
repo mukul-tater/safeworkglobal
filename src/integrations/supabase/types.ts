@@ -1814,6 +1814,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           currency: string
+          custom_fields: Json | null
           description: string
           employer_id: string
           experience_level: string
@@ -1870,6 +1871,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           currency?: string
+          custom_fields?: Json | null
           description: string
           employer_id: string
           experience_level: string
@@ -1926,6 +1928,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           currency?: string
+          custom_fields?: Json | null
           description?: string
           employer_id?: string
           experience_level?: string

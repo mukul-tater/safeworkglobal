@@ -25,6 +25,7 @@ import JobYoutubeLinksField from "@/components/admin/JobYoutubeLinksField";
 import JobMediaFilesField from "@/components/admin/JobMediaFilesField";
 import { mediaUrlsFromText, type PendingJobMedia } from "@/lib/jobMediaUpload";
 import JobExtraFieldsEditor from "@/components/admin/JobExtraFieldsEditor";
+import JobCustomFieldsEditor from "@/components/admin/JobCustomFieldsEditor";
 import {
   draftsFromFields,
   listJobExtraFields,
@@ -32,6 +33,11 @@ import {
   validateJobExtraFieldDrafts,
   type JobExtraFieldDraft,
 } from "@/lib/jobExtraFields";
+import {
+  cleanJobCustomFieldsForSave,
+  parseJobCustomFields,
+  type JobCustomField,
+} from "@/lib/jobCustomFields";
 import { adminUpdateJob } from "@/services/AdminService";
 import AdminSalaryRanges from "@/components/admin/AdminSalaryRanges";
 import AdminJobConfigurationFields, {
@@ -55,6 +61,7 @@ export default function EditJob() {
   const [pendingPhotos, setPendingPhotos] = useState<PendingJobMedia[]>([]);
   const [pendingVideos, setPendingVideos] = useState<PendingJobMedia[]>([]);
   const [extraFields, setExtraFields] = useState<JobExtraFieldDraft[]>([]);
+  const [customFields, setCustomFields] = useState<JobCustomField[]>([]);
   const [companyName, setCompanyName] = useState<string>("");
   const [postedByRole, setPostedByRole] = useState<string>("employer");
   const hadLocalRange = useRef(false);
@@ -124,6 +131,7 @@ export default function EditJob() {
       setVideoUrls(Array.isArray(job.video_urls) ? job.video_urls : []);
       const extra = await listJobExtraFields(job.id);
       setExtraFields(draftsFromFields(extra));
+      setCustomFields(parseJobCustomFields(job.custom_fields));
       hadLocalRange.current = job.local_salary_min != null || job.local_salary_max != null;
 
       // Set form values
@@ -234,6 +242,7 @@ export default function EditJob() {
         service_charge: data.service_charge,
         youtube_urls: youtubeUrls,
         video_urls: videoUrls,
+        custom_fields: cleanJobCustomFieldsForSave(customFields),
         ...jobConfigPatch(configValues(data), pay.salary_display),
       };
 
@@ -349,6 +358,15 @@ export default function EditJob() {
                     error={errors.benefits?.message}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Company & Dynamic Details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <JobCustomFieldsEditor value={customFields} onChange={setCustomFields} />
               </CardContent>
             </Card>
 

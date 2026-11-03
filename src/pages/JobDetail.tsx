@@ -26,7 +26,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   MapPin, 
   CheckCircle2, ArrowLeft, Shield, Calendar, Clock,
-  Share2, Bookmark, Loader2, Pencil
+  Share2, Bookmark, Loader2, Pencil, Building2, Users
 } from 'lucide-react';
 import { SAFEWORK_CONTACT } from '@/config/workerSupport';
 import HindiText from '@/components/indian-workforce/HindiText';
@@ -38,6 +38,8 @@ import PostedByBadge from '@/components/jobs/PostedByBadge';
 import JobRoleVideo from '@/components/jobs/JobRoleVideo';
 import JobExtraAnswersDialog, { type JobExtraAnswerInput } from '@/components/jobs/JobExtraAnswersDialog';
 import { listJobExtraFields, saveJobApplicationAnswers, uploadJobExtraPhoto, type JobExtraField } from '@/lib/jobExtraFields';
+import { formatApplicantTypeLabel } from '@/lib/jobApplicantType';
+import { extractCompanyNames, parseJobCustomFields } from '@/lib/jobCustomFields';
 import ChangeJobDialog from '@/modules/worker-verification/components/journey/ChangeJobDialog';
 import JobChangeFeeDialog from '@/modules/worker-verification/components/journey/JobChangeFeeDialog';
 import {
@@ -141,6 +143,8 @@ interface JobData {
   salary_display?: string | null;
   youtube_urls?: string[] | null;
   video_urls?: string[] | null;
+  applicant_type?: string | null;
+  custom_fields?: unknown;
   job_skills: { skill_name: string }[];
 }
 
@@ -553,15 +557,17 @@ export default function JobDetail() {
 
   const lockedJobId = journeyRow?.journey_job_id || null;
   const devJob = isDevCompareJob(job.slug);
+  const customFields = parseJobCustomFields(job.custom_fields);
+  const companies = extractCompanyNames(customFields);
   const listing = devJob ? undefined : listingOptions(job);
-  const displayTitle = devJob ? job.title : getPublicJobTitle(job.title, job.description, job.country, listing);
-  const hindiTitle = devJob ? null : publicJobHindiTitle(job.title, job.description, job.country, job.title_hi);
+  const displayTitle = devJob ? job.title : getPublicJobTitle(job.title, job.description, job.country, listing, job.applicant_type);
+  const hindiTitle = devJob ? null : publicJobHindiTitle(job.title, job.description, job.country, job.title_hi, job.applicant_type);
   const backToJobs = jobsBrowsePath({
     country: job.country || 'UAE',
     // Ukraine and Europe list jobs directly, without a trade step.
     category: ['europe', 'ukraine'].includes((job.country || '').trim().toLowerCase())
       ? null
-      : jobBrowseCategory(job.title, job.description, job.country || 'UAE', job.category),
+      : jobBrowseCategory(job.title, job.description, job.country || 'UAE', job.category, job.applicant_type),
   });
   const aboutTheRole = devJob ? job.description : getPublicJobAbout(job.title, job.description, '', job.country, listing);
   const responsibilities = devJob
@@ -671,6 +677,13 @@ export default function JobDetail() {
                         Visa Sponsorship
                       </Badge>
                     )}
+                    {job.applicant_type && formatApplicantTypeLabel(job.applicant_type) && (
+                      <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/10 text-primary font-normal">
+                        <Users className="h-3 w-3 mr-1" />
+                        {formatApplicantTypeLabel(job.applicant_type)?.en}
+                        <span className="text-primary/70 ml-1">/ {formatApplicantTypeLabel(job.applicant_type)?.hi}</span>
+                      </Badge>
+                    )}
                     <JobServiceFee amount={serviceCharge} />
                     <Badge variant={job.status === 'ACTIVE' ? 'default' : 'secondary'}>
                       {job.status}
@@ -682,6 +695,12 @@ export default function JobDetail() {
                   {hindiTitle ? (
                     <HindiText className="mb-2 text-lg text-muted-foreground">{hindiTitle}</HindiText>
                   ) : null}
+                  {companies.length > 0 && (
+                    <div className="mb-3 flex items-center gap-2 text-sm sm:text-base font-semibold text-foreground">
+                      <Building2 className="h-4 w-4 text-primary shrink-0" />
+                      <span>{companies.join(' • ')}</span>
+                    </div>
+                  )}
                   {job.card_image_url ? (
                     <img
                       src={job.card_image_url}
@@ -955,6 +974,23 @@ export default function JobDetail() {
                   <CardTitle className="text-lg">Job Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
+                  {companies.length > 0 && (
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">{companies.length > 1 ? 'Companies' : 'Company'}</span>
+                      <span className="font-medium text-right break-words">{companies.join(', ')}</span>
+                    </div>
+                  )}
+                  {job.applicant_type && formatApplicantTypeLabel(job.applicant_type) && (
+                    <div className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">Applicants / लिंग</span>
+                      <span className="font-medium text-right">
+                        {formatApplicantTypeLabel(job.applicant_type)?.en}
+                        <span className="text-muted-foreground text-xs ml-1">
+                          ({formatApplicantTypeLabel(job.applicant_type)?.hi})
+                        </span>
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Job Type</span>
                     <span className="font-medium">{job.job_type.replace('_', ' ')}</span>
@@ -967,6 +1003,12 @@ export default function JobDetail() {
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium">{job.country}</span>
                   </div>
+                  {customFields.map((field) => (
+                    <div key={field.id} className="flex justify-between gap-2 border-t border-border/50 pt-2">
+                      <span className="text-muted-foreground">{field.label}</span>
+                      <span className="font-medium text-right break-words">{field.value}</span>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
               {showApply ? (
