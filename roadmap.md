@@ -39,7 +39,7 @@
 
 ## Find Jobs Catalog
 - [x] Activate the prepared nanny listing in the live catalog; verified live search, details and Apply now entry. Preserved both 20-question banks.
-- [ ] Publish Security Guard in UAE at ₹35,400 with three supplied videos and 10 random questions from the existing 20-question bank; leave undisclosed terms unset.
+- [x] Activate Security Guard in UAE at ₹35,400 with three supplied videos and 10 random questions from the existing 20-question bank; browsing/details checked and publishing requested, completion not yet verified.
 - [x] Remove Filters from Find Jobs on desktop and phones.
 - [x] Audit missing Dubai listings and previous category changes; correct confirmed browsing defects and verify all 20 UAE trade choices against live data on phone and desktop (20 UAE records, including 12 Dubai; no records changed).
 
