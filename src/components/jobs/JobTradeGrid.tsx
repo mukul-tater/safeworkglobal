@@ -1,4 +1,5 @@
-import { HardHat } from 'lucide-react';
+import { HardHat, ShieldCheck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import HindiText from '@/components/indian-workforce/HindiText';
 import {
   UAE_LISTED_JOBS,
@@ -10,7 +11,7 @@ import { UAE_LISTED_JOB_CARD_VISUALS } from '@/components/jobs/listedJobCardVisu
 import { useSiteContent } from '@/lib/siteContent';
 
 interface Props {
-  onSelect: (job: UaeListedJob) => void;
+  onSelect: (job: UaeListedJob | 'Security Guard') => void;
 }
 
 export default function JobTradeGrid({ onSelect }: Props) {
@@ -24,6 +25,10 @@ export default function JobTradeGrid({ onSelect }: Props) {
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+        <Button variant="outline" onClick={() => onSelect('Security Guard')} className="h-auto min-h-32 flex-col whitespace-normal rounded-lg sm:min-h-44 lg:min-h-48">
+          <ShieldCheck className="size-10" />
+          <span>Security Guard / सिक्योरिटी गार्ड</span>
+        </Button>
         {UAE_LISTED_JOBS.filter((job) => !isHiddenPublicJob(job)).map((job) => {
           const card = UAE_LISTED_JOB_CARD_VISUALS[job];
           const label = UAE_LISTED_JOB_LABELS[job];
