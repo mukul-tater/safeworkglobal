@@ -173,7 +173,6 @@ export default function JobDetail() {
   const [feeDue, setFeeDue] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [extraFields, setExtraFields] = useState<JobExtraField[]>([]);
-  const [companyName, setCompanyName] = useState<string | null>(null);
   const [answersOpen, setAnswersOpen] = useState(false);
   const [applyChange, setApplyChange] = useState(false);
   const shareCode = searchParams.get('s');
@@ -241,16 +240,6 @@ export default function JobDetail() {
 
         if (cancelled) return;
         setJob(jobData as any);
-        try {
-          const { data: employerRow } = await supabase
-            .from('employer_profiles_public' as any)
-            .select('company_name')
-            .eq('user_id', jobData.employer_id)
-            .maybeSingle();
-          if (!cancelled) setCompanyName((employerRow as any)?.company_name || null);
-        } catch {
-          if (!cancelled) setCompanyName(null);
-        }
         try {
           const fields = await listJobExtraFields(jobData.id);
           if (!cancelled) setExtraFields(fields);
@@ -706,12 +695,6 @@ export default function JobDetail() {
                   {hindiTitle ? (
                     <HindiText className="mb-2 text-lg text-muted-foreground">{hindiTitle}</HindiText>
                   ) : null}
-                  {companies.length > 0 && (
-                    <div className="mb-3 flex items-center gap-2 text-sm sm:text-base font-semibold text-foreground">
-                      <Building2 className="h-4 w-4 text-primary shrink-0" />
-                      <span>{companies.join(' • ')}</span>
-                    </div>
-                  )}
                   {job.card_image_url ? (
                     <img
                       src={job.card_image_url}
@@ -761,6 +744,25 @@ export default function JobDetail() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Current Companies */}
+              {companies.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Current Companies</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {companies.map((name) => (
+                        <li key={name} className="flex items-center gap-2 text-muted-foreground">
+                          <Building2 className="h-4 w-4 text-primary shrink-0" />
+                          <span className="font-medium text-foreground">{name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Job Description */}
               <Card>
@@ -853,13 +855,6 @@ export default function JobDetail() {
                         </li>
                       ))}
                     </ul>
-                    {companyName && (
-                      <div className="mt-4 pt-4 border-t flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-sm text-muted-foreground">Company:</span>
-                        <span className="text-sm font-medium">{companyName}</span>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               )}
