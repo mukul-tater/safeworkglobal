@@ -706,12 +706,6 @@ export default function JobDetail() {
                   {hindiTitle ? (
                     <HindiText className="mb-2 text-lg text-muted-foreground">{hindiTitle}</HindiText>
                   ) : null}
-                  {companies.length > 0 && (
-                    <div className="mb-3 flex items-center gap-2 text-sm sm:text-base font-semibold text-foreground">
-                      <Building2 className="h-4 w-4 text-primary shrink-0" />
-                      <span>{companies.join(' • ')}</span>
-                    </div>
-                  )}
                   {job.card_image_url ? (
                     <img
                       src={job.card_image_url}
@@ -761,6 +755,25 @@ export default function JobDetail() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Current Companies */}
+              {companies.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Current Companies</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {companies.map((name) => (
+                        <li key={name} className="flex items-center gap-2 text-muted-foreground">
+                          <Building2 className="h-4 w-4 text-primary shrink-0" />
+                          <span className="font-medium text-foreground">{name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Job Description */}
               <Card>
