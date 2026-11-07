@@ -245,7 +245,7 @@ export default function JobDetail() {
           const { data: employerRow } = await supabase
             .from('employer_profiles_public' as any)
             .select('company_name')
-            .eq('id', jobData.employer_id)
+            .eq('user_id', jobData.employer_id)
             .maybeSingle();
           if (!cancelled) setCompanyName((employerRow as any)?.company_name || null);
         } catch {
