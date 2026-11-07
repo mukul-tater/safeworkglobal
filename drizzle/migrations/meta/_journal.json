@@ -113,6 +113,27 @@
       "when": 1793000000000,
       "tag": "0015_job_custom_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794035303294,
+      "tag": "0016_employer_company_public",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794035334548,
+      "tag": "0017_employer_company_public_any",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794035364787,
+      "tag": "0018_employer_company_public_user_id",
+      "breakpoints": true
     }
   ]
 }
