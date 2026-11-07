@@ -173,6 +173,7 @@ export default function JobDetail() {
   const [feeDue, setFeeDue] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
   const [extraFields, setExtraFields] = useState<JobExtraField[]>([]);
+  const [companyName, setCompanyName] = useState<string | null>(null);
   const [answersOpen, setAnswersOpen] = useState(false);
   const [applyChange, setApplyChange] = useState(false);
   const shareCode = searchParams.get('s');
