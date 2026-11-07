@@ -1978,6 +1978,13 @@ export type Database = {
             referencedRelation: "employer_profiles"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "jobs_employer_id_fkey"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "employer_profiles_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       journey_job_settings: {
@@ -6479,14 +6486,17 @@ export type Database = {
         Row: {
           company_name: string | null
           id: string | null
+          user_id: string | null
         }
         Insert: {
           company_name?: string | null
           id?: string | null
+          user_id?: string | null
         }
         Update: {
           company_name?: string | null
           id?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
