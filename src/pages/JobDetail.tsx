@@ -987,12 +987,6 @@ export default function JobDetail() {
                   <CardTitle className="text-lg">Job Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
-                  {companies.length > 0 && (
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">{companies.length > 1 ? 'Companies' : 'Company'}</span>
-                      <span className="font-medium text-right break-words">{companies.join(', ')}</span>
-                    </div>
-                  )}
                   {job.applicant_type && formatApplicantTypeLabel(job.applicant_type) && (
                     <div className="flex justify-between gap-2">
                       <span className="text-muted-foreground">Applicants / लिंग</span>
@@ -1016,7 +1010,12 @@ export default function JobDetail() {
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium">{job.country}</span>
                   </div>
-                  {customFields.map((field) => (
+                  {customFields
+                    .filter((field) => {
+                      const label = (field.label || '').toLowerCase();
+                      return !label.includes('company') && !label.includes('employer');
+                    })
+                    .map((field) => (
                     <div key={field.id} className="flex justify-between gap-2 border-t border-border/50 pt-2">
                       <span className="text-muted-foreground">{field.label}</span>
                       <span className="font-medium text-right break-words">{field.value}</span>
