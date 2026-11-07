@@ -853,6 +853,13 @@ export default function JobDetail() {
                         </li>
                       ))}
                     </ul>
+                    {companyName && (
+                      <div className="mt-4 pt-4 border-t flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-sm text-muted-foreground">Company:</span>
+                        <span className="text-sm font-medium">{companyName}</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
