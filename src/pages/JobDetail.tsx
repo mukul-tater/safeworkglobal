@@ -987,12 +987,6 @@ export default function JobDetail() {
                   <CardTitle className="text-lg">Job Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
-                  {companies.length > 0 && (
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">{companies.length > 1 ? 'Companies' : 'Company'}</span>
-                      <span className="font-medium text-right break-words">{companies.join(', ')}</span>
-                    </div>
-                  )}
                   {job.applicant_type && formatApplicantTypeLabel(job.applicant_type) && (
                     <div className="flex justify-between gap-2">
                       <span className="text-muted-foreground">Applicants / लिंग</span>
