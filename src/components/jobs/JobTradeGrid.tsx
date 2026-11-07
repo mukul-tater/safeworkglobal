@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { HardHat } from 'lucide-react';
 import HindiText from '@/components/indian-workforce/HindiText';
 import securityGuardImg from '@/assets/trades/security-guard.jpg';
@@ -87,6 +88,7 @@ export default function JobTradeGrid({ onSelect }: Props) {
                 </div>
               </div>
             </button>
+            </Fragment>
           );
         })}
       </div>
