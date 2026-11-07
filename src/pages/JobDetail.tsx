@@ -242,6 +242,16 @@ export default function JobDetail() {
         if (cancelled) return;
         setJob(jobData as any);
         try {
+          const { data: employerRow } = await supabase
+            .from('employer_profiles_public' as any)
+            .select('company_name')
+            .eq('id', jobData.employer_id)
+            .maybeSingle();
+          if (!cancelled) setCompanyName((employerRow as any)?.company_name || null);
+        } catch {
+          if (!cancelled) setCompanyName(null);
+        }
+        try {
           const fields = await listJobExtraFields(jobData.id);
           if (!cancelled) setExtraFields(fields);
         } catch {
