@@ -1010,7 +1010,12 @@ export default function JobDetail() {
                     <span className="text-muted-foreground">Location</span>
                     <span className="font-medium">{job.country}</span>
                   </div>
-                  {customFields.map((field) => (
+                  {customFields
+                    .filter((field) => {
+                      const label = (field.label || '').toLowerCase();
+                      return !label.includes('company') && !label.includes('employer');
+                    })
+                    .map((field) => (
                     <div key={field.id} className="flex justify-between gap-2 border-t border-border/50 pt-2">
                       <span className="text-muted-foreground">{field.label}</span>
                       <span className="font-medium text-right break-words">{field.value}</span>
