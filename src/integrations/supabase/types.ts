@@ -6475,6 +6475,21 @@ export type Database = {
       }
     }
     Views: {
+      employer_profiles_public: {
+        Row: {
+          company_name: string | null
+          id: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          id?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          id?: string | null
+        }
+        Relationships: []
+      }
       lsp_partners_public: {
         Row: {
           code: string | null
