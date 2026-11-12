@@ -134,6 +134,13 @@
       "when": 1794035364787,
       "tag": "0018_employer_company_public_user_id",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794479149106,
+      "tag": "0019_restrict_platform_payment_settings_read",
+      "breakpoints": true
     }
   ]
 }
