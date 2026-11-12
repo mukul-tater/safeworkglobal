@@ -163,7 +163,7 @@ function Detail({
 }
 
 function DocumentTile({ doc }: { doc: KycDocument }) {
-  const isImage = !/\.pdf(\?|$)/i.test(doc.file_url);
+  const isImage = /\.(jpe?g|png|webp|gif|heic|heif)(\?|$)/i.test(doc.file_url);
   return (
     <a
       href={doc.file_url}

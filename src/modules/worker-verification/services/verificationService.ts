@@ -698,6 +698,7 @@ const KYC_REVIEW_DOC_TYPES = [
   'passport_front',
   'passport_last',
   'tenth_marksheet',
+  'resume',
   'certificate',
   'selfie',
   'id_proof',

@@ -111,6 +111,27 @@ export async function applyToJobForJourney(opts: {
   });
   if (error) throw new Error(error.message);
 
+  if (data) {
+    try {
+      const { data: resumeDoc } = await supabase
+        .from('worker_documents')
+        .select('file_url')
+        .eq('worker_id', opts.workerUserId)
+        .eq('document_type', 'resume')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (resumeDoc?.file_url) {
+        await supabase
+          .from('job_applications')
+          .update({ resume_url: resumeDoc.file_url })
+          .eq('id', String(data));
+      }
+    } catch {
+      // Non-blocking sync
+    }
+  }
+
   const row = await getOrCreateVerification(opts.workerUserId);
   const updated = await syncSkillFromJob(row, { ...opts, advanceFromFindJobs: true });
 
@@ -146,6 +167,27 @@ export async function changeJourneyJob(opts: {
     p_trade_test_required: skillRequiresTradeTest(skill),
   });
   if (error) throw new Error(error.message);
+
+  if (data) {
+    try {
+      const { data: resumeDoc } = await supabase
+        .from('worker_documents')
+        .select('file_url')
+        .eq('worker_id', opts.workerUserId)
+        .eq('document_type', 'resume')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (resumeDoc?.file_url) {
+        await supabase
+          .from('job_applications')
+          .update({ resume_url: resumeDoc.file_url })
+          .eq('id', String(data));
+      }
+    } catch {
+      // Non-blocking sync
+    }
+  }
 
   const row = await getOrCreateVerification(opts.workerUserId);
   if (row.primary_skill) {

@@ -16,7 +16,7 @@ import {
   Loader2, ArrowRight, CheckCircle2, Upload, Video, ImagePlus,
   Calendar, ShieldCheck,
   GraduationCap, Plane, Lock, AlertTriangle, UserRound, ClipboardList,
-  Search,
+  Search, Info,
 } from 'lucide-react';
 import IndiaLocationFields from '@/components/IndiaLocationFields';
 import SearchSelect from '@/components/SearchSelect';
@@ -122,6 +122,7 @@ const KYC_DOC_TYPES = [
   'certificate',
   'id_proof',
   'selfie',
+  'resume',
 ];
 
 const INTERVIEW_MOBILE_CALL_NOTE =
@@ -139,11 +140,12 @@ function kycTypeFallbacks(docType: string): string[] {
   if (docType === 'passport_last') return ['passport_last', 'passport', 'id_proof'];
   if (docType === 'tenth_marksheet') return ['tenth_marksheet', 'certificate'];
   if (docType === 'selfie') return ['selfie'];
+  if (docType === 'resume') return ['resume', 'certificate', 'other'];
   if (docType === 'aadhaar' || docType === 'passport') return [docType, 'id_proof'];
   return [docType];
 }
 
-const SAFE_UPLOAD_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'pdf']);
+const SAFE_UPLOAD_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'pdf', 'doc', 'docx']);
 
 /** Camera / WhatsApp / signed-URL picks often put a full URL in File.name. */
 function displayFileName(name: string, max = 42): string {
@@ -168,6 +170,9 @@ function safeUploadExt(file: File, fallback = 'jpg'): string {
   const mime = file.type.split('/')[1]?.toLowerCase() || '';
   if (mime === 'jpeg') return 'jpg';
   if (SAFE_UPLOAD_EXTS.has(mime)) return mime;
+  if (file.type === 'application/pdf') return 'pdf';
+  if (file.type === 'application/msword') return 'doc';
+  if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'docx';
   return fallback;
 }
 
@@ -176,12 +181,14 @@ function KycPhotoField({
   required,
   file,
   disabled,
+  accept = 'image/*,.pdf',
   onChange,
 }: {
   label: string;
   required?: boolean;
   file: File | null;
   disabled?: boolean;
+  accept?: string;
   onChange: (file: File | null) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -195,7 +202,7 @@ function KycPhotoField({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,.pdf"
+        accept={accept}
         className="sr-only"
         disabled={disabled}
         onChange={(e) => onChange(e.target.files?.[0] || null)}
@@ -260,6 +267,44 @@ function SkillProofClarityLine({ phrase }: { phrase: string }) {
         video upload करें, जिसमें आपका चेहरा साफ दिखे और आप जो काम कर रहे हैं वो भी साफ दिखे।
       </span>
     </>
+  );
+}
+
+function SkillProofNoProofNotice({
+  jobTitle,
+  country,
+  workerName,
+}: {
+  jobTitle: string;
+  country: string;
+  workerName?: string | null;
+}) {
+  return (
+    <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 text-left space-y-2.5">
+      <div className="flex items-start gap-2.5">
+        <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+        <div className="min-w-0 space-y-1.5 text-sm">
+          <p className="font-semibold text-foreground">
+            Don’t have work proof photos or videos? / काम का प्रूफ नहीं है?
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            If you do not have proof of your work, upload <strong>your selfie</strong> in the photos section and <strong>a video saying your name and that you are applying for {jobTitle} in {country}</strong> in the videos section.
+          </p>
+          <p className="text-foreground text-xs sm:text-sm leading-relaxed" lang="hi">
+            अगर आपके पास काम का प्रूफ नहीं है, तो फोटो में अपनी <strong>सेल्फी</strong> और वीडियो में एक वीडियो अपलोड करें जिसमें <strong>अपना नाम बोलें और कहें कि आप {country} में {jobTitle} के लिए अप्लाई कर रहे हैं</strong>।
+          </p>
+          <div className="mt-2 rounded-lg border border-border/60 bg-background/90 p-2.5 text-xs text-muted-foreground space-y-1">
+            <span className="font-medium text-foreground">What to say in your video / वीडियो में क्या बोलें:</span>
+            <p className="italic text-foreground">
+              “My name is {workerName || '[Your Name]'} and I am applying for {jobTitle} in {country}.”
+            </p>
+            <p className="italic text-foreground" lang="hi">
+              “मेरा नाम {workerName || '[आपका नाम]'} है और मैं {country} में {jobTitle} के लिए अप्लाई कर रहा हूँ।”
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -410,6 +455,8 @@ export default function WorkerVerificationPage({
   const [passportFrontFile, setPassportFrontFile] = useState<File | null>(null);
   const [passportLastFile, setPassportLastFile] = useState<File | null>(null);
   const [tenthMarksheetFile, setTenthMarksheetFile] = useState<File | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [uploadingResumeWait, setUploadingResumeWait] = useState(false);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
   const [languages, setLanguages] = useState<string[]>(['Hindi']);
   const [savedLanguages, setSavedLanguages] = useState<string[]>([]);
@@ -927,7 +974,7 @@ export default function WorkerVerificationPage({
       }
 
       const uploadDoc = async (file: File, docType: string, name: string) => {
-        const ext = safeUploadExt(file);
+        const ext = safeUploadExt(file, docType === 'resume' ? 'pdf' : 'jpg');
         const path = `${subjectId}/kyc/${docType}-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from('worker-documents')
@@ -958,6 +1005,17 @@ export default function WorkerVerificationPage({
           lastErr = new Error(dbErr.message);
         }
         if (lastErr) throw lastErr;
+
+        if (docType === 'resume' && signed?.signedUrl) {
+          try {
+            await supabase
+              .from('job_applications')
+              .update({ resume_url: signed.signedUrl })
+              .eq('worker_id', subjectId);
+          } catch {
+            // Non-blocking sync to job_applications
+          }
+        }
       };
 
       if (panFile) await uploadDoc(panFile, 'pan', 'PAN Card Front');
@@ -968,6 +1026,9 @@ export default function WorkerVerificationPage({
       if (selfieFile) await uploadDoc(selfieFile, 'selfie', 'Face selfie');
       if (tenthMarksheetFile) {
         await uploadDoc(tenthMarksheetFile, 'tenth_marksheet', '10th or higher education certificate');
+      }
+      if (resumeFile) {
+        await uploadDoc(resumeFile, 'resume', 'Resume / CV');
       }
 
       const next = await completeIdentityKyc(subjectId, {
@@ -986,6 +1047,7 @@ export default function WorkerVerificationPage({
       setPassportLastFile(null);
       setSelfieFile(null);
       setTenthMarksheetFile(null);
+      setResumeFile(null);
       notifyVerificationUpdated();
       toast.success('Identity submitted — SafeWork will verify your documents before the video interview');
       await load();
@@ -996,6 +1058,58 @@ export default function WorkerVerificationPage({
       setSaving(false);
     }
   };
+
+  const handleDirectResumeUpload = async (file: File) => {
+    if (!subjectId) return;
+    setUploadingResumeWait(true);
+    try {
+      const ext = safeUploadExt(file, 'pdf');
+      const path = `${subjectId}/kyc/resume-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('worker-documents')
+        .upload(path, file, { cacheControl: '3600', upsert: false });
+      if (upErr) throw new Error(upErr.message || 'Upload failed');
+      const { data: signed, error: urlErr } = await supabase.storage
+        .from('worker-documents')
+        .createSignedUrl(path, 31536000);
+      if (urlErr || !signed?.signedUrl) {
+        throw new Error(urlErr?.message || 'Could not create file URL');
+      }
+      const tryTypes = kycTypeFallbacks('resume');
+      let lastErr: Error | null = null;
+      for (const type of tryTypes) {
+        const { error: dbErr } = await supabase.from('worker_documents').insert({
+          worker_id: subjectId,
+          document_name: 'Resume / CV',
+          document_type: type,
+          file_url: signed.signedUrl,
+          file_size: file.size,
+          verification_status: 'pending',
+        } as any);
+        if (!dbErr) {
+          lastErr = null;
+          break;
+        }
+        lastErr = new Error(dbErr.message);
+      }
+      if (lastErr) throw lastErr;
+      try {
+        await supabase
+          .from('job_applications')
+          .update({ resume_url: signed.signedUrl })
+          .eq('worker_id', subjectId);
+      } catch {
+        // Non-blocking
+      }
+      toast.success('Resume uploaded successfully / बायोडाटा सफलतापूर्वक अपलोड हो गया');
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not upload resume');
+    } finally {
+      setUploadingResumeWait(false);
+    }
+  };
+
   const onSaveEssentials = async () => {
     if (!subjectId) return;
     const trimmedEmail = email.trim().toLowerCase();
@@ -1017,6 +1131,46 @@ export default function WorkerVerificationPage({
     }
     setSaving(true);
     try {
+      if (resumeFile) {
+        try {
+          const ext = safeUploadExt(resumeFile, 'pdf');
+          const path = `${subjectId}/kyc/resume-${Date.now()}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from('worker-documents')
+            .upload(path, resumeFile, { cacheControl: '3600', upsert: false });
+          if (!upErr) {
+            const { data: signed } = await supabase.storage
+              .from('worker-documents')
+              .createSignedUrl(path, 31536000);
+            if (signed?.signedUrl) {
+              const tryTypes = kycTypeFallbacks('resume');
+              for (const type of tryTypes) {
+                const { error: dbErr } = await supabase.from('worker_documents').insert({
+                  worker_id: subjectId,
+                  document_name: 'Resume / CV',
+                  document_type: type,
+                  file_url: signed.signedUrl,
+                  file_size: resumeFile.size,
+                  verification_status: 'pending',
+                } as any);
+                if (!dbErr) break;
+              }
+              try {
+                await supabase
+                  .from('job_applications')
+                  .update({ resume_url: signed.signedUrl })
+                  .eq('worker_id', subjectId);
+              } catch {
+                // Non-blocking
+              }
+              setResumeFile(null);
+            }
+          }
+        } catch (err) {
+          console.warn('Resume upload during essentials skipped or failed:', err);
+        }
+      }
+
       const next = await saveEssentials(subjectId, {
         email: trimmedEmail,
         city: city.trim(),
@@ -1235,12 +1389,12 @@ export default function WorkerVerificationPage({
   const onCompleteMedia = async () => {
     if (!subjectId) return;
     if (photoCount < 1 || videoCount < 1) {
-      toast.error('Upload at least 1 photo and 1 video of your work');
+      toast.error('Upload at least 1 photo (or selfie) and 1 video (intro or work video)');
       return;
     }
     if (photoCount < PHOTO_TARGET_MIN || videoCount < VIDEO_TARGET_MIN) {
       const proceed = window.confirm(
-        `Hint: 8–10 photos and 4–5 videos work best (आप अभी ${photoCount} photos, ${videoCount} videos).\nContinue anyway?`,
+        `Tip: Work proof with ${PHOTO_TARGET_MIN}–${PHOTO_TARGET_MAX} photos and ${VIDEO_TARGET_MIN}–${VIDEO_TARGET_MAX} videos is recommended. If you don't have work proof, 1 selfie and 1 intro video are accepted. (Currently uploaded: ${photoCount} photo, ${videoCount} video).\n\nContinue anyway? / आगे बढ़ें?`,
       );
       if (!proceed) return;
     }
@@ -1306,6 +1460,8 @@ export default function WorkerVerificationPage({
     journeyJobCountry,
     journeyWorkPhrase,
   );
+  const displayJobTitle = journeyJobTitle || (appliedSkillLabel !== '—' ? appliedSkillLabel : 'your trade');
+  const displayCountry = journeyJobCountry || 'UAE';
 
   if (rawStage === 'gcc_ready' && !forceIdentity) {
     return (
@@ -1493,15 +1649,22 @@ export default function WorkerVerificationPage({
                     />
                   </div>
                 )}
-              <div className="rounded-xl border border-dashed border-border p-4">
-                <p className="text-sm font-medium">Add more work proof</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Stronger portfolios get picked faster. You can keep adding photos and videos any
-                  time — employers see the latest.
-                </p>
-                <div className="mt-2 text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-border p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-medium">Add more work proof</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Stronger portfolios get picked faster. You can keep adding photos and videos any
+                    time — employers see the latest.
+                  </p>
+                </div>
+                <div className="text-sm text-muted-foreground">
                   <SkillProofClarityLine phrase={workPhrase} />
                 </div>
+                <SkillProofNoProofNotice
+                  jobTitle={displayJobTitle}
+                  country={displayCountry}
+                  workerName={displayProfile?.full_name}
+                />
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <input
                     ref={photoRef}
@@ -1709,6 +1872,27 @@ export default function WorkerVerificationPage({
                       );
                     })}
                   </div>
+                </div>
+                <div className="space-y-1.5 sm:col-span-2 pt-2 border-t border-border/60">
+                  <div className="flex items-center justify-between">
+                    <Label className="inline-flex items-center gap-1.5 font-medium">
+                      Resume / CV (Optional) / बायोडाटा (वैकल्पिक)
+                    </Label>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                      Optional
+                    </span>
+                  </div>
+                  <KycPhotoField
+                    label="Upload resume or CV (PDF, Word, or photo)"
+                    file={resumeFile}
+                    disabled={saving}
+                    accept=".pdf,.doc,.docx,image/*"
+                    onChange={setResumeFile}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    If you have a written resume, CV, or biodata, upload it here. You can also upload or update it later in the Identity step.
+                    {hasKycDoc(kycDocs, ['resume']) ? ' (A resume is already on file).' : ''}
+                  </p>
                 </div>
               </div>
           </StageActionShell>
@@ -1947,6 +2131,12 @@ export default function WorkerVerificationPage({
               </Button>
             }
           >
+              <SkillProofNoProofNotice
+                jobTitle={displayJobTitle}
+                country={displayCountry}
+                workerName={displayProfile?.full_name}
+              />
+
               {uploadingKind && (
                 <div
                   role="status"
@@ -1977,7 +2167,7 @@ export default function WorkerVerificationPage({
                     Photos ({photoCount}/{PHOTO_TARGET_MAX})
                   </p>
                   <p className="text-[11px] text-muted-foreground mb-2">
-                    Target {PHOTO_TARGET_MIN}–{PHOTO_TARGET_MAX}
+                    Work photos (Target {PHOTO_TARGET_MIN}–{PHOTO_TARGET_MAX}) or 1 selfie
                   </p>
                   <input
                     ref={photoRef}
@@ -2021,7 +2211,7 @@ export default function WorkerVerificationPage({
                     Videos ({videoCount}/{VIDEO_TARGET_MAX})
                   </p>
                   <p className="text-[11px] text-muted-foreground mb-2">
-                    Target {VIDEO_TARGET_MIN}–{VIDEO_TARGET_MAX}
+                    Work videos (Target {VIDEO_TARGET_MIN}–{VIDEO_TARGET_MAX}) or 1 intro video
                   </p>
                   <input
                     ref={videoRef}
@@ -2067,7 +2257,7 @@ export default function WorkerVerificationPage({
             timeline={[
               {
                 label: 'Identity documents submitted',
-                detail: 'Aadhaar and face photo uploaded. A 10th certificate can be added too.',
+                detail: 'Aadhaar and face photo uploaded. A 10th certificate and resume can be added too.',
                 status: 'done',
               },
               { label: 'SafeWork verifying your documents', status: 'current' },
@@ -2084,6 +2274,46 @@ export default function WorkerVerificationPage({
                 submittedOn={row.kyc_verified_at || row.updated_at}
                 verified={kycStatusValue === 'verified'}
               />
+              <div className="rounded-xl border border-dashed border-border bg-background/60 p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                    {hasKycDoc(kycDocs, ['resume']) ? 'Resume / CV on file' : 'Add Resume / CV (Optional)'}
+                  </p>
+                  <span className="text-[11px] text-muted-foreground">PDF, Word, or photo</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,image/*"
+                    className="hidden"
+                    id="wait-screen-resume-input"
+                    disabled={uploadingResumeWait}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void handleDirectResumeUpload(file);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingResumeWait}
+                    onClick={() => document.getElementById('wait-screen-resume-input')?.click()}
+                  >
+                    {uploadingResumeWait ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    )}
+                    {uploadingResumeWait ? 'Uploading…' : hasKycDoc(kycDocs, ['resume']) ? 'Upload new resume' : 'Upload resume / CV'}
+                  </Button>
+                  {hasKycDoc(kycDocs, ['resume']) && (
+                    <span className="text-xs text-success flex items-center gap-1 font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Resume attached
+                    </span>
+                  )}
+                </div>
+              </div>
               <div className="flex items-start gap-2 border-t border-border pt-3">
                 <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <p className="text-xs text-muted-foreground">
@@ -2290,6 +2520,27 @@ export default function WorkerVerificationPage({
                   </p>
                 </div>
               )}
+              <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-foreground">
+                    Resume / CV (Optional) / बायोडाटा (वैकल्पिक)
+                  </p>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    Optional
+                  </span>
+                </div>
+                <KycPhotoField
+                  label="Upload your resume or CV (PDF, Word, or photo)"
+                  file={resumeFile}
+                  disabled={saving}
+                  accept=".pdf,.doc,.docx,image/*"
+                  onChange={setResumeFile}
+                />
+                <p className="text-xs text-muted-foreground">
+                  If you have a written resume, CV, or biodata, upload it here (PDF, Word, or image). Employers can review your full work history.
+                  {hasKycDoc(kycDocs, ['resume']) ? ' A resume is already on file.' : ''}
+                </p>
+              </div>
               <label className="flex items-start gap-2 text-xs cursor-pointer">
                 <input
                   type="checkbox"
