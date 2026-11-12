@@ -116,8 +116,8 @@ const InvestorRelations = () => {
       icon: CheckCircle
     },
     {
-      title: "Escrow Protection",
-      description: "Secure payment escrow system protecting both workers and employers",
+      title: "Payment Protection",
+      description: "Secure payment workflows protecting both workers and employers",
       icon: Shield
     },
     {

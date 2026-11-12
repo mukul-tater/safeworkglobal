@@ -58,7 +58,7 @@ export default function WorkerPayments() {
     const displayStatus = escrowStatus || status;
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
       PENDING: { variant: "secondary", label: "Pending" },
-      HELD: { variant: "outline", label: "In Escrow" },
+      HELD: { variant: "outline", label: "Processing" },
       RELEASED: { variant: "default", label: "Released" },
       REFUNDED: { variant: "destructive", label: "Refunded" },
       completed: { variant: "default", label: "Completed" },
@@ -76,7 +76,7 @@ export default function WorkerPayments() {
         completed: true,
       },
       {
-        label: "Held in Escrow",
+        label: "Payment Verified",
         date: payment.created_at,
         completed: payment.escrow_status === "HELD" || payment.escrow_status === "RELEASED" || payment.escrow_status === "REFUNDED",
       },
@@ -118,7 +118,7 @@ export default function WorkerPayments() {
               <div>
                 <h1 className="text-3xl font-bold text-foreground">My Payments</h1>
                 <p className="text-muted-foreground mt-1">
-                  View your payment history and escrow details
+                  View your payment history and transaction details
                 </p>
               </div>
 
@@ -151,7 +151,7 @@ export default function WorkerPayments() {
                       ${pendingAmount.toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      In escrow
+                      Pending processing
                     </p>
                   </CardContent>
                 </Card>
@@ -190,7 +190,7 @@ export default function WorkerPayments() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Shield className="h-5 w-5 text-primary" />
-                    How Escrow Protects You
+                    How Safe Payments Work
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -200,8 +200,8 @@ export default function WorkerPayments() {
                         <span className="text-primary font-bold">1</span>
                       </div>
                       <div>
-                        <p className="font-medium">Employer Funds</p>
-                        <p className="text-sm text-muted-foreground">Employer deposits payment into escrow</p>
+                        <p className="font-medium">Employer Authorizes</p>
+                        <p className="text-sm text-muted-foreground">Employer authorizes payment milestone</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -240,7 +240,7 @@ export default function WorkerPayments() {
                 <CardHeader>
                   <CardTitle>Payment History</CardTitle>
                   <CardDescription>
-                    Your escrow payments and fee breakdown
+                    Your payments and transaction breakdown
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

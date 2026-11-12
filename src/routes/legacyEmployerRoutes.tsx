@@ -74,7 +74,6 @@ export const legacyEmployerRoutes = (
     {employerRoute('/employer/interviews', <EmployerInterviews />)}
     {employerRoute('/employer/offers', <EmployerOffers />)}
     {employerRoute('/employer/offer-letters', <EmployerOfferLetters />)}
-    <Route path="/employer/escrow" element={<Navigate to="/employer/dashboard" replace />} />
     {employerRoute('/employer/compliance', <EmployerCompliance />)}
     {employerRoute('/employer/messaging', <EmployerMessaging />)}
     {employerRoute('/employer/saved-searches', <EmployerSavedSearches />)}

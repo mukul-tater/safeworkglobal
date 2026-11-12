@@ -491,7 +491,7 @@ export default function Reports() {
                         stroke="hsl(var(--primary))" 
                         fillOpacity={1} 
                         fill="url(#colorRevenue)" 
-                        name="Escrow Volume"
+                        name="Payment Volume"
                       />
                       <Area 
                         type="monotone" 

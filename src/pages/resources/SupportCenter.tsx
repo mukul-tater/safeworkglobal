@@ -22,7 +22,7 @@ const faqs = [
   },
   {
     q: "What if my contract terms change after I arrive?",
-    a: "Report it immediately via the in-app dispute system. We hold the employer's payment in escrow until the agreed terms are met, and our compliance team intervenes within 48 hours.",
+    a: "Report it immediately via the in-app dispute system. Our compliance and dispute resolution team intervenes within 48 hours to enforce agreed contractual terms.",
   },
   {
     q: "Can I apply if I don't have a passport yet?",

@@ -11,7 +11,7 @@ const WORKER_PROOF = [
 const EMPLOYER_PROOF = [
   { icon: Users, value: "Verified", label: "Worker profiles" },
   { icon: WalletCards, value: "₹0", label: "Upfront fees" },
-  { icon: ShieldCheck, value: "Escrow", label: "Secure payments" },
+  { icon: ShieldCheck, value: "Protected", label: "Secure payments" },
   { icon: FileCheck2, value: "Built-in", label: "Hiring compliance" },
 ];
 

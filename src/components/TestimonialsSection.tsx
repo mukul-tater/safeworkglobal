@@ -59,7 +59,7 @@ const TestimonialsSection = () => {
       country: "Japan",
       avatar: "TH",
       rating: 5,
-      text: "We hired 24 verified construction workers in just 6 weeks. Pre-screening saved us months of effort and the escrow model gave us complete peace of mind.",
+      text: "We hired 24 verified construction workers in just 6 weeks. Pre-screening saved us months of effort and the secure payment model gave us complete peace of mind.",
       placement: "24 workers hired",
       salary: "Saved ₹18L vs agents"
     },

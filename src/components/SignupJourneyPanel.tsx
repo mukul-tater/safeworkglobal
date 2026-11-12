@@ -69,11 +69,11 @@ const COPY = {
       badge: 'Employer sign in',
       BadgeIcon: LogIn,
       headline: 'Welcome back — hire with confidence',
-      body: 'Sign in to manage jobs, review verified workers, and release escrow-secured payments.',
+      body: 'Sign in to manage jobs, review verified workers, and complete secure payments.',
       steps: [
         { n: '1', title: 'Sign in', detail: 'Work email + password' },
         { n: '2', title: 'Manage hiring', detail: 'Jobs, shortlist & offers' },
-        { n: '3', title: 'Pay safely', detail: 'Escrow release after you hire' },
+        { n: '3', title: 'Pay safely', detail: 'Protected payment after you hire' },
       ],
     },
     continue: {

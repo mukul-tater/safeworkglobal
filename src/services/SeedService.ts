@@ -640,7 +640,7 @@ class SeedService {
         { type: 'job_expiring', title: 'Job Posting Expiring Soon', message: 'Your job posting for Construction Manager will expire in 3 days. Renew now to keep receiving applications.' },
         { type: 'verification_complete', title: 'Background Verification Complete', message: 'Background verification for Li Wei has been completed successfully.' },
         { type: 'shortlist_update', title: 'Shortlist Updated', message: 'You have 3 new candidates matching your criteria for the Welding positions.' },
-        { type: 'payment_reminder', title: 'Payment Pending', message: 'Your escrow payment of $2,500 for the upcoming contract is pending confirmation.' },
+        { type: 'payment_reminder', title: 'Payment Pending', message: 'Your payment of $2,500 for the upcoming contract is pending confirmation.' },
         { type: 'message', title: 'New Message from Candidate', message: 'Maria Garcia has sent you a message regarding the interview schedule.' },
       ];
 

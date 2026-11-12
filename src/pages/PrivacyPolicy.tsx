@@ -30,7 +30,7 @@ export default function PrivacyPolicy() {
               <li><strong>Profile Information:</strong> Work experience, skills, certifications, education, passport details, and profile photos.</li>
               <li><strong>Documents:</strong> Resumes, identification documents, medical certificates, and other documents you upload for verification.</li>
               <li><strong>Communications:</strong> Messages exchanged through our platform's messaging system.</li>
-              <li><strong>Payment Information:</strong> Payment details processed through our secure escrow system.</li>
+              <li><strong>Payment Information:</strong> Payment details processed through our secure payment processing systems.</li>
             </ul>
 
             <h3 className="text-lg font-medium text-foreground mt-4">2.2 Information Collected Automatically</h3>
@@ -48,7 +48,7 @@ export default function PrivacyPolicy() {
               <li>To provide, maintain, and improve our Services</li>
               <li>To match workers with relevant job opportunities</li>
               <li>To verify identities and documents for trust and safety</li>
-              <li>To process payments and manage escrow transactions</li>
+              <li>To process payments and manage billing transactions</li>
               <li>To communicate with you about opportunities, updates, and support</li>
               <li>To comply with legal obligations, including immigration and labor laws</li>
               <li>To detect and prevent fraud, abuse, and security incidents</li>

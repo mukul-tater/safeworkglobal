@@ -33,7 +33,7 @@ export default function TermsOfService() {
 
           <section>
             <h2 className="text-xl font-semibold font-heading text-foreground">3. Platform Description</h2>
-            <p>SafeWorkGlobal is an international job marketplace that connects workers with employers across borders. We provide tools for job discovery, application management, document verification, interview scheduling, contract management, and escrow-based payments.</p>
+            <p>SafeWorkGlobal is an international job marketplace that connects workers with employers across borders. We provide tools for job discovery, application management, document verification, interview scheduling, contract management, and secure payments.</p>
             <p className="mt-2"><strong>Important:</strong> SafeWorkGlobal is a platform facilitator. We are not an employer, staffing agency, or immigration consultant. We do not guarantee employment, visa approval, or placement outcomes.</p>
           </section>
 
@@ -51,7 +51,7 @@ export default function TermsOfService() {
             <ul className="list-disc pl-6 space-y-1">
               <li>Post only genuine job opportunities with accurate descriptions and compensation.</li>
               <li>Comply with all applicable labor laws, including fair wage requirements.</li>
-              <li>Process payments through the platform's escrow system when applicable.</li>
+              <li>Process agreed payments through the platform when applicable.</li>
               <li>Not engage in deceptive recruitment practices or charge workers illegal fees.</li>
             </ul>
           </section>
@@ -70,8 +70,8 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold font-heading text-foreground">6. Payments & Escrow</h2>
-            <p>Payments processed through our escrow system are held securely until agreed-upon conditions are met. Platform fees and commission structures are disclosed at the time of transaction. Disputes related to payments will be handled through our dispute resolution process.</p>
+            <h2 className="text-xl font-semibold font-heading text-foreground">6. Payments & Billing</h2>
+            <p>Payments processed through our platform are handled securely according to agreed-upon milestones and terms. Platform fees and service charges are disclosed at the time of transaction. Disputes related to payments will be handled through our dispute resolution process.</p>
           </section>
 
           <section>

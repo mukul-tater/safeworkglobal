@@ -45,9 +45,9 @@ export default function PilotOffer() {
           <div className="rounded-xl bg-muted/50 p-4 mb-6">
             <h3 className="font-semibold text-sm mb-3">How payments work</h3>
             <ol className="space-y-2 text-xs text-muted-foreground">
-              <li><strong className="text-foreground">1.</strong> You deposit monthly salary into escrow</li>
-              <li><strong className="text-foreground">2.</strong> Funds are held securely</li>
-              <li><strong className="text-foreground">3.</strong> Released after work completion</li>
+              <li><strong className="text-foreground">1.</strong> Select and interview verified candidates</li>
+              <li><strong className="text-foreground">2.</strong> Issue contract and confirm start date</li>
+              <li><strong className="text-foreground">3.</strong> Pay transparently upon successful onboarding</li>
             </ol>
             <p className="text-xs text-muted-foreground mt-2 italic">No full upfront payment required.</p>
           </div>

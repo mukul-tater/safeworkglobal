@@ -24,7 +24,7 @@ export default function EmployerTrust() {
   const points = [
     { icon: Coins, title: "Save 95%+ vs traditional agents", desc: "No upfront fees — only pay after you hire." },
     { icon: ShieldCheck, title: "Verified workers", desc: "Every worker is ID, document and skill verified." },
-    { icon: CheckCircle2, title: "Escrow-secured payments", desc: "Funds held safely. Released after work completion." },
+    { icon: CheckCircle2, title: "Protected payments", desc: "Safe, transparent payments released after agreed hiring milestones." },
     { icon: Zap, title: "Faster hiring", desc: "Shortlists in 7–10 days for your pilot batch." },
   ];
 

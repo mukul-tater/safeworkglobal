@@ -26,7 +26,7 @@ export default function WorkerTrust() {
     {
       icon: Lock,
       title: 'Salary protected',
-      desc: 'Escrow holds your wages until work is delivered.',
+      desc: 'Guaranteed wage protection with zero hidden deductions.',
     },
     {
       icon: Phone,
