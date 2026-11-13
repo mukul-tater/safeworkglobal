@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Eye, MapPin, Briefcase, Share2, Store, Download } from "lucide-react";
+import { Search, Eye, MapPin, Briefcase, Share2, Store, Download, UserPlus } from "lucide-react";
 import WorkerShareDialog from "@/components/admin/WorkerShareDialog";
 import WorkerExportDialog from "@/components/admin/WorkerExportDialog";
+import AddAdLeadDialog from "@/components/admin/AddAdLeadDialog";
 import type { WorkerExportSource } from "@/lib/exportWorkersPdf";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -263,6 +264,7 @@ export default function AdminWorkers() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [applicationsError, setApplicationsError] = useState<string | null>(null);
   const [changesError, setChangesError] = useState<string | null>(null);
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
 
   useEffect(() => { fetchWorkers(); }, []);
 
@@ -502,6 +504,9 @@ export default function AdminWorkers() {
         <Button variant="outline" disabled={filtered.length === 0} onClick={() => setExportWorkers(filtered)}>
           <Download className="h-4 w-4 mr-2" /> Export
         </Button>
+        <Button onClick={() => setAddLeadOpen(true)} className="gap-1.5 bg-gradient-to-r from-pink-600 via-rose-600 to-indigo-600 text-white hover:opacity-95 shadow-sm">
+          <UserPlus className="h-4 w-4" /> Add Ad / DM Lead
+        </Button>
       </div>
 
       {loading ? (
@@ -713,6 +718,7 @@ export default function AdminWorkers() {
           )}
         </DialogContent>
       </Dialog>
+      <AddAdLeadDialog open={addLeadOpen} onOpenChange={setAddLeadOpen} onLeadAdded={() => void fetchWorkers()} />
     </DashboardLayout>
   );
 }

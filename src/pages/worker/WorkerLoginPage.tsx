@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, Lock } from 'lucide-react';
 import { signOut as firebaseSignOut } from 'firebase/auth';
 import { Input } from '@/components/ui/input';
@@ -54,6 +54,10 @@ async function resolveAuthEmail(identifier: string): Promise<string | null> {
  */
 export default function WorkerLoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialMobile = normalizeIndianMobile(
+    searchParams.get('m') || searchParams.get('mobile') || searchParams.get('phone') || ''
+  );
   const {
     login,
     loginWithSession,
@@ -68,7 +72,7 @@ export default function WorkerLoginPage() {
   const [step, setStep] = useState<Step>('identifier');
   const [method, setMethod] = useState<AuthIdentifierMethod>('mobile');
   const [email, setEmail] = useState('');
-  const [mobile, setMobile] = useState('');
+  const [mobile, setMobile] = useState(initialMobile);
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [showPassword, setShowPassword] = useState(false);

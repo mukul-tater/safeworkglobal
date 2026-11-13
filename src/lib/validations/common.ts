@@ -5,12 +5,20 @@ export const INDIAN_MOBILE_REGEX = /^[6-9]\d{9}$/;
 /** Strip formatting and optional +91 prefix; keep last 10 digits. */
 export function normalizeIndianMobile(value: string): string {
   const digits = value.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('0')) return digits.slice(1);
+  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
+  if (digits.length === 13 && digits.startsWith('091')) return digits.slice(3);
   if (digits.length <= 10) return digits;
   return digits.slice(-10);
 }
 
 export function isValidIndianMobile(value: string): boolean {
-  return INDIAN_MOBILE_REGEX.test(normalizeIndianMobile(value));
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 10) return INDIAN_MOBILE_REGEX.test(digits);
+  if (digits.length === 11 && digits.startsWith('0')) return INDIAN_MOBILE_REGEX.test(digits.slice(1));
+  if (digits.length === 12 && digits.startsWith('91')) return INDIAN_MOBILE_REGEX.test(digits.slice(2));
+  if (digits.length === 13 && digits.startsWith('091')) return INDIAN_MOBILE_REGEX.test(digits.slice(3));
+  return false;
 }
 
 export const indianMobileRequired = z

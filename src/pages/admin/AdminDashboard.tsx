@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Users, Briefcase, AlertTriangle, CheckCircle, Building2, UserCheck, FileText, TrendingUp,
-  DollarSign, Clock, Globe, Shield
+  DollarSign, Clock, Globe, Shield, UserPlus
 } from "lucide-react";
 import { getSiteVisitStats, type SiteVisitStats } from "@/lib/recordSiteVisit";
 import { loadAdminActionInbox, type AdminActionItem } from "@/lib/adminActionInbox";
 import SiteTrafficCard from "@/components/admin/SiteTrafficCard";
 import AdminActionInbox from "@/components/admin/AdminActionInbox";
+import MarketingLeadsMatrixCard from "@/components/admin/MarketingLeadsMatrixCard";
+import AddAdLeadDialog from "@/components/admin/AddAdLeadDialog";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DisputeManagementCard from "@/components/admin/DisputeManagementCard";
@@ -74,7 +76,8 @@ export default function AdminDashboard() {
   });
   const [actionItems, setActionItems] = useState<AdminActionItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const sections = ['actions', 'overview', 'users', 'disputes', 'activity'];
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
+  const sections = ['actions', 'marketing', 'overview', 'users', 'disputes', 'activity'];
 
   useSwipe({
     onSwipeLeft: () => {
@@ -205,28 +208,37 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout navGroups={adminNavGroups} portalLabel="Admin Panel" portalName="Admin Panel" profileMenuItems={adminProfileMenu}>
       <PortalBreadcrumb />
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold mb-2">Admin Dashboard</h1>
-        <p className="text-muted-foreground text-sm md:text-base">
-          Approvals and reviews that need you show at the top. Open a row to take action.
-        </p>
-        {isMobile && (
-          <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-            {sections.map((section, idx) => (
-              <button
-                key={section}
-                onClick={() => {
-                  setCurrentSection(idx);
-                  document.getElementById(`section-${section}`)?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${currentSection === idx ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-              >
-                {section.charAt(0).toUpperCase() + section.slice(1)}
-              </button>
-            ))}
-          </div>
-        )}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Admin Dashboard</h1>
+          <p className="text-muted-foreground text-sm md:text-base">
+            Approvals and reviews that need you show at the top. Open a row to take action.
+          </p>
+        </div>
+        <Button
+          onClick={() => setAddLeadOpen(true)}
+          className="gap-2 shrink-0 bg-gradient-to-r from-pink-600 via-rose-600 to-indigo-600 text-white hover:opacity-95 shadow-md"
+        >
+          <UserPlus className="h-4 w-4" />
+          Add Ad / DM Lead
+        </Button>
       </div>
+      {isMobile && (
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {sections.map((section, idx) => (
+            <button
+              key={section}
+              onClick={() => {
+                setCurrentSection(idx);
+                document.getElementById(`section-${section}`)?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${currentSection === idx ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+            >
+              {section.charAt(0).toUpperCase() + section.slice(1)}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div id="section-actions" className="mb-8">
         <AdminActionInbox items={actionItems} />
@@ -236,6 +248,7 @@ export default function AdminDashboard() {
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Quick Access</h2>
         <div className="flex flex-wrap gap-2">
           {[
+            { label: "Ad Leads & Matrix", path: "#section-marketing" },
             { label: "Workers", path: "/admin/workers" },
             { label: "Employers", path: "/admin/employers" },
             { label: "Partners", path: "/admin/partners" },
@@ -245,11 +258,26 @@ export default function AdminDashboard() {
             { label: "E-Mitra Workers", path: "/admin/partner-workers" },
             { label: "All Users", path: "/admin/users" },
           ].map((link) => (
-            <Button key={link.path} variant="outline" size="sm" onClick={() => navigate(link.path)}>
+            <Button
+              key={link.path}
+              variant={link.path.startsWith('#') ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => {
+                if (link.path.startsWith('#')) {
+                  document.querySelector(link.path)?.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  navigate(link.path);
+                }
+              }}
+            >
               {link.label}
             </Button>
           ))}
         </div>
+      </div>
+
+      <div id="section-marketing" className="mb-8">
+        <MarketingLeadsMatrixCard />
       </div>
 
       <div id="section-overview" className="mb-8">
@@ -421,6 +449,8 @@ export default function AdminDashboard() {
         <UserManagementCard moderationActions={moderationActions} onRefresh={fetchAdminData} />
         <MessageMonitoringCard messages={messages} />
       </div>
+
+      <AddAdLeadDialog open={addLeadOpen} onOpenChange={setAddLeadOpen} />
     </DashboardLayout>
   );
 }
