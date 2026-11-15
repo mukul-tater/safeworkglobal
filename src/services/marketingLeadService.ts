@@ -197,7 +197,7 @@ export async function createMarketingLead(input: CreateMarketingLeadInput): Prom
     campaign_name: input.campaign_name?.trim() || null,
     job_interest: input.job_interest?.trim() || null,
     notes: input.notes?.trim() || null,
-    status: existingWorkerUserId ? 'registered' : 'lead_created',
+    status: (existingWorkerUserId ? 'registered' : 'lead_created') as MarketingLeadStatus,
     worker_user_id: existingWorkerUserId,
     created_by: adminId,
   };
