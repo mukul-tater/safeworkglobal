@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type JobExtraValueType = "photo" | "text";
+export type JobExtraValueType = "photo" | "text" | "date";
 
 export type JobExtraField = {
   id: string;
@@ -54,7 +54,9 @@ export function validateJobExtraFieldDrafts(fields: JobExtraFieldDraft[]): strin
     const key = label.toLowerCase();
     if (labels.has(key)) return "Two requirements on the same job cannot share a label";
     labels.add(key);
-    if (field.valueType !== "photo" && field.valueType !== "text") return "Choose photo or text";
+    if (field.valueType !== "photo" && field.valueType !== "text" && field.valueType !== "date") {
+      return "Choose photo, text, or date";
+    }
   }
   return null;
 }

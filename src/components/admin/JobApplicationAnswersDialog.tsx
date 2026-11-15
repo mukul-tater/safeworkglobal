@@ -7,6 +7,7 @@ import {
   type JobApplicationAnswer,
   type JobExtraField,
 } from "@/lib/jobExtraFields";
+import { Calendar } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -16,6 +17,14 @@ type Props = {
   workerName: string;
   jobTitle: string;
 };
+
+function formatDisplayDate(val: string): string {
+  if (!val) return "—";
+  const d = val.length <= 10 ? new Date(`${val}T00:00:00`) : new Date(val);
+  return Number.isNaN(d.getTime())
+    ? val
+    : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
 
 export default function JobApplicationAnswersDialog({
   open,
@@ -95,6 +104,11 @@ export default function JobApplicationAnswersDialog({
                   <p className="text-sm font-medium">{field.label}</p>
                   {!answer ? (
                     <p className="text-sm text-muted-foreground">Not provided</p>
+                  ) : field.value_type === "date" ? (
+                    <p className="text-sm font-medium flex items-center gap-1.5 text-foreground">
+                      <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                      {answer.text_value ? formatDisplayDate(answer.text_value) : "—"}
+                    </p>
                   ) : field.value_type === "text" ? (
                     <p className="text-sm whitespace-pre-wrap">{answer.text_value}</p>
                   ) : photoUrl ? (

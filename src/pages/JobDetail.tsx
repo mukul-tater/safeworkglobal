@@ -829,7 +829,7 @@ export default function JobDetail() {
                             <li key={field.id} className="flex items-start gap-2 text-muted-foreground">
                               <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                               <span className="break-words">
-                                {field.label} ({field.value_type === 'photo' ? 'photo' : 'text'})
+                                {field.label} ({field.value_type === 'photo' ? 'photo' : field.value_type === 'date' ? 'date' : 'text'})
                               </span>
                             </li>
                           ))}

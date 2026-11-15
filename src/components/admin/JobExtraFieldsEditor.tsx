@@ -20,7 +20,7 @@ export default function JobExtraFieldsEditor({ value, onChange }: Props) {
       <div>
         <Label>Extra details from the worker</Label>
         <p className="text-sm text-muted-foreground mt-1">
-          Add as many as this job needs. Each one is a photo or a short text answer, and the worker must provide all of them to apply.
+          Add as many as this job needs. Each one is a photo, date, or a short text answer, and the worker must provide all of them to apply.
         </p>
       </div>
 
@@ -38,7 +38,13 @@ export default function JobExtraFieldsEditor({ value, onChange }: Props) {
                   id={`extra-label-${row.key}`}
                   value={row.label}
                   maxLength={120}
-                  placeholder="Driving license"
+                  placeholder={
+                    row.valueType === "date"
+                      ? "Driving license expiry date"
+                      : row.valueType === "photo"
+                        ? "Driving license photo"
+                        : "Driving license number"
+                  }
                   onChange={(event) => update(row.key, { label: event.target.value })}
                 />
               </div>
@@ -48,12 +54,13 @@ export default function JobExtraFieldsEditor({ value, onChange }: Props) {
                   value={row.valueType}
                   onValueChange={(next) => update(row.key, { valueType: next as JobExtraValueType })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id={`extra-type-${row.key}`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="photo">Photo</SelectItem>
                     <SelectItem value="text">Text</SelectItem>
+                    <SelectItem value="date">Date</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

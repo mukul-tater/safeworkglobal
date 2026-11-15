@@ -36,10 +36,10 @@ export default function JobExtraAnswersDialog({ open, onOpenChange, fields, subm
   const submit = async () => {
     const answers: JobExtraAnswerInput[] = [];
     for (const field of fields) {
-      if (field.value_type === "text") {
+      if (field.value_type === "text" || field.value_type === "date") {
         const text = (texts[field.id] ?? "").trim();
         if (!text) {
-          setError(`Enter ${field.label}`);
+          setError(field.value_type === "date" ? `Select a date for ${field.label}` : `Enter ${field.label}`);
           return;
         }
         answers.push({ fieldId: field.id, text });
@@ -73,13 +73,23 @@ export default function JobExtraAnswersDialog({ open, onOpenChange, fields, subm
           {fields.map((field) => (
             <div key={field.id} className="space-y-1.5">
               <Label htmlFor={`answer-${field.id}`}>
-                {field.label} <span className="text-muted-foreground font-normal">({field.value_type === "photo" ? "photo" : "text"})</span>
+                {field.label}{" "}
+                <span className="text-muted-foreground font-normal">
+                  ({field.value_type === "photo" ? "photo" : field.value_type === "date" ? "date" : "text"})
+                </span>
               </Label>
               {field.value_type === "text" ? (
                 <Textarea
                   id={`answer-${field.id}`}
                   rows={3}
                   maxLength={2000}
+                  value={texts[field.id] ?? ""}
+                  onChange={(event) => setTexts((current) => ({ ...current, [field.id]: event.target.value }))}
+                />
+              ) : field.value_type === "date" ? (
+                <Input
+                  id={`answer-${field.id}`}
+                  type="date"
                   value={texts[field.id] ?? ""}
                   onChange={(event) => setTexts((current) => ({ ...current, [field.id]: event.target.value }))}
                 />
