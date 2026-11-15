@@ -289,7 +289,7 @@ export async function listMarketingLeads(filters?: {
   if (workerIds.length > 0) {
     try {
       const { data: verifications } = await supabase
-        .from('worker_verifications')
+        .from('worker_verification')
         .select('user_id, stage, quiz_completed_at, quiz_score, media_submitted_at, kyc_status, payment_status')
         .in('user_id', workerIds);
 
