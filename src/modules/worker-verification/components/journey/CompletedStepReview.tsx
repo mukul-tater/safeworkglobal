@@ -367,35 +367,62 @@ export default function CompletedStepReview({
         )}
 
         {stepId === 'essentials' && (
-          <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-            <Detail label="Email" value={displayableEmail(row.email) || '—'} />
-            <Detail
-              label="Location"
-              value={[row.city, row.district, row.state].filter(Boolean).join(', ') || '—'}
-            />
-            <Detail
-              label="Gender"
-              value={
-                row.gender === 'male'
-                  ? 'Male'
-                  : row.gender === 'female'
-                    ? 'Female'
-                    : row.gender === 'other'
-                      ? 'Other'
-                      : '—'
-              }
-            />
-            <Detail label="Education" value={row.education_level || '—'} />
-            <Detail label="Languages" value={languages?.length ? languages.join(', ') : '—'} />
-            <Detail
-              label="Class 10"
-              value={tenthPass === true ? 'Passed' : tenthPass === false ? 'Not passed' : '—'}
-            />
-            <Detail
-              label="ECR category"
-              value={ecrCategory === 'ECNR' ? 'ECNR (no clearance required)' : ecrCategory === 'ECR' ? 'ECR (clearance required)' : '—'}
-            />
-          </dl>
+          <div className="space-y-4">
+            <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              <Detail label="Email" value={displayableEmail(row.email) || '—'} />
+              <Detail
+                label="Location"
+                value={[row.city, row.district, row.state].filter(Boolean).join(', ') || '—'}
+              />
+              <Detail
+                label="Gender"
+                value={
+                  row.gender === 'male'
+                    ? 'Male'
+                    : row.gender === 'female'
+                      ? 'Female'
+                      : row.gender === 'other'
+                        ? 'Other'
+                        : '—'
+                }
+              />
+              <Detail label="Education" value={row.education_level || '—'} />
+              <Detail label="Languages" value={languages?.length ? languages.join(', ') : '—'} />
+              <Detail
+                label="Class 10"
+                value={tenthPass === true ? 'Passed' : tenthPass === false ? 'Not passed' : '—'}
+              />
+              <Detail
+                label="ECR category"
+                value={ecrCategory === 'ECNR' ? 'ECNR (no clearance required)' : ecrCategory === 'ECR' ? 'ECR (clearance required)' : '—'}
+              />
+              {(() => {
+                const resumeDoc = kycDocs?.find(
+                  (d) => d.document_type === 'resume' || d.document_name?.toLowerCase().includes('resume'),
+                );
+                return resumeDoc ? (
+                  <div className="min-w-0">
+                    <dt className="text-xs text-muted-foreground">Resume / CV</dt>
+                    <dd className="mt-0.5 flex items-center gap-1.5">
+                      <a
+                        href={resumeDoc.file_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                      >
+                        <FileText className="h-4 w-4" />
+                        View uploaded resume
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </dd>
+                  </div>
+                ) : (
+                  <Detail label="Resume / CV" value="Not uploaded" />
+                );
+              })()}
+            </dl>
+            {children}
+          </div>
         )}
 
         {stepId === 'test1' && (

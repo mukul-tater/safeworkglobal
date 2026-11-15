@@ -1627,6 +1627,52 @@ export default function WorkerVerificationPage({
                 : undefined
             }
           >
+            {viewingJourney === 'essentials' && (
+              <div className="rounded-xl border border-dashed border-border bg-background/60 p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                    {hasKycDoc(kycDocs, ['resume']) ? 'Resume / CV on file' : 'Resume / CV'}
+                  </p>
+                  <span className="text-[11px] text-muted-foreground">PDF, Word, or photo</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,image/*"
+                    className="hidden"
+                    id="essentials-screen-resume-input"
+                    disabled={uploadingResumeWait}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void handleDirectResumeUpload(file);
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingResumeWait}
+                    onClick={() => document.getElementById('essentials-screen-resume-input')?.click()}
+                  >
+                    {uploadingResumeWait ? (
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    )}
+                    {uploadingResumeWait
+                      ? 'Uploading…'
+                      : hasKycDoc(kycDocs, ['resume'])
+                        ? 'Upload new resume'
+                        : 'Upload resume / CV'}
+                  </Button>
+                  {hasKycDoc(kycDocs, ['resume']) && (
+                    <span className="text-xs text-success flex items-center gap-1 font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Resume attached
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
             {viewingJourney === 'skill_proof' && (
               <div className="space-y-4">
                 {(skillMedia.some((m) => m.media_type === 'photo' && m.url) ||
@@ -1876,11 +1922,8 @@ export default function WorkerVerificationPage({
                 <div className="space-y-1.5 sm:col-span-2 pt-2 border-t border-border/60">
                   <div className="flex items-center justify-between">
                     <Label className="inline-flex items-center gap-1.5 font-medium">
-                      Resume / CV (Optional) / बायोडाटा (वैकल्पिक)
+                      Resume / CV / बायोडाटा
                     </Label>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                      Optional
-                    </span>
                   </div>
                   <KycPhotoField
                     label="Upload resume or CV (PDF, Word, or photo)"
@@ -1890,7 +1933,7 @@ export default function WorkerVerificationPage({
                     onChange={setResumeFile}
                   />
                   <p className="text-xs text-muted-foreground">
-                    If you have a written resume, CV, or biodata, upload it here. You can also upload or update it later in the Identity step.
+                    Upload your resume, CV, or biodata here (PDF, Word, or photo). You can also update it later in the Identity step.
                     {hasKycDoc(kycDocs, ['resume']) ? ' (A resume is already on file).' : ''}
                   </p>
                 </div>
@@ -2277,7 +2320,7 @@ export default function WorkerVerificationPage({
               <div className="rounded-xl border border-dashed border-border bg-background/60 p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
-                    {hasKycDoc(kycDocs, ['resume']) ? 'Resume / CV on file' : 'Add Resume / CV (Optional)'}
+                    {hasKycDoc(kycDocs, ['resume']) ? 'Resume / CV on file' : 'Add Resume / CV'}
                   </p>
                   <span className="text-[11px] text-muted-foreground">PDF, Word, or photo</span>
                 </div>
@@ -2523,11 +2566,8 @@ export default function WorkerVerificationPage({
               <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-foreground">
-                    Resume / CV (Optional) / बायोडाटा (वैकल्पिक)
+                    Resume / CV / बायोडाटा
                   </p>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                    Optional
-                  </span>
                 </div>
                 <KycPhotoField
                   label="Upload your resume or CV (PDF, Word, or photo)"
@@ -2537,7 +2577,7 @@ export default function WorkerVerificationPage({
                   onChange={setResumeFile}
                 />
                 <p className="text-xs text-muted-foreground">
-                  If you have a written resume, CV, or biodata, upload it here (PDF, Word, or image). Employers can review your full work history.
+                  Upload your resume, CV, or biodata here (PDF, Word, or image). Employers can review your full work history.
                   {hasKycDoc(kycDocs, ['resume']) ? ' A resume is already on file.' : ''}
                 </p>
               </div>
