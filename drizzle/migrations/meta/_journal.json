@@ -141,6 +141,13 @@
       "when": 1794479149106,
       "tag": "0019_restrict_platform_payment_settings_read",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794728077958,
+      "tag": "0020_notify_kyc_submission",
+      "breakpoints": true
     }
   ]
 }

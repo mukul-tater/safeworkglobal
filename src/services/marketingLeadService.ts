@@ -197,7 +197,7 @@ export async function createMarketingLead(input: CreateMarketingLeadInput): Prom
     campaign_name: input.campaign_name?.trim() || null,
     job_interest: input.job_interest?.trim() || null,
     notes: input.notes?.trim() || null,
-    status: existingWorkerUserId ? 'registered' : 'lead_created',
+    status: (existingWorkerUserId ? 'registered' : 'lead_created') as MarketingLeadStatus,
     worker_user_id: existingWorkerUserId,
     created_by: adminId,
   };
@@ -289,7 +289,7 @@ export async function listMarketingLeads(filters?: {
   if (workerIds.length > 0) {
     try {
       const { data: verifications } = await supabase
-        .from('worker_verifications')
+        .from('worker_verification')
         .select('user_id, stage, quiz_completed_at, quiz_score, media_submitted_at, kyc_status, payment_status')
         .in('user_id', workerIds);
 
