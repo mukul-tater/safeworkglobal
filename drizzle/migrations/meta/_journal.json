@@ -148,6 +148,13 @@
       "when": 1794728077958,
       "tag": "0020_notify_kyc_submission",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794731494095,
+      "tag": "0021_tighten_selected_rls_policies",
+      "breakpoints": true
     }
   ]
 }
