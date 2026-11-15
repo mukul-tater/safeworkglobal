@@ -620,12 +620,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       workerPhone: profile?.phone?.trim() || '',
       trade,
       location,
-      clearedStep: notification.type === 'job_selected'
+      clearedStep: data.event === 'kyc_submitted'
+        ? 'Identity (KYC) submitted'
+        : notification.type === 'job_selected'
         ? 'Job selected'
         : notification.type === 'interview_scheduled'
           ? 'Video interview scheduled'
           : stageLabel(clearedStage),
-      nextStep: notification.type === 'job_selected'
+      nextStep: data.event === 'kyc_submitted'
+        ? 'Admin identity review'
+        : notification.type === 'job_selected'
         ? (tradeLine || 'Test 1')
         : notification.type === 'interview_scheduled'
           ? 'Join the video interview'

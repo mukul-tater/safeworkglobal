@@ -2185,6 +2185,54 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_leads: {
+        Row: {
+          campaign_name: string | null
+          created_at: string
+          created_by: string | null
+          full_name: string | null
+          id: string
+          invite_sent_at: string | null
+          job_interest: string | null
+          notes: string | null
+          phone: string
+          source: string
+          status: string
+          updated_at: string
+          worker_user_id: string | null
+        }
+        Insert: {
+          campaign_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          full_name?: string | null
+          id?: string
+          invite_sent_at?: string | null
+          job_interest?: string | null
+          notes?: string | null
+          phone: string
+          source?: string
+          status?: string
+          updated_at?: string
+          worker_user_id?: string | null
+        }
+        Update: {
+          campaign_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          full_name?: string | null
+          id?: string
+          invite_sent_at?: string | null
+          job_interest?: string | null
+          notes?: string | null
+          phone?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          worker_user_id?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string

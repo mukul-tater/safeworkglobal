@@ -1,4 +1,5 @@
 # Project Architecture Rules
+- KYC submission notifications originate from committed worker-profile status transitions, independently of journey stage changes, so awaiting admin review still triggers email without approving identity.
 - Admin job applicant groups share a validated configuration field saved by the existing admin job RPCs; unspecified jobs remain unset and application eligibility is unchanged.
 - Search brand metadata is centralized in the SEO constants with matching crawlable homepage WebSite data, so page titles and search site-name signals stay consistent.
 - Worker profile forms and exports omit expected-pay fields while preserving historical stored values, so profile edits cannot erase old records.
