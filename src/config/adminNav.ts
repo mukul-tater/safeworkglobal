@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, TrendingUp, Users, FileCheck, CreditCard, Plane, Shield,
+  LayoutDashboard, TrendingUp, Users, CreditCard, Plane, Shield,
   BarChart3, AlertTriangle, Mail, Store, HardHat, Building2, FileText, Briefcase, UserCog,
   MessageSquare, ShieldAlert, IndianRupee,
   ClipboardCheck, Wallet, BarChartBig, Network, BookOpen, PlusCircle, MapPin, Video, Wrench,
@@ -74,7 +74,6 @@ export const adminNavGroups: NavGroup[] = [
     label: "Records",
     items: [
       { path: "/admin/quiz-cms", icon: BookOpen, label: "Quiz CMS (Test 1)" },
-      { path: "/admin/document-verification", icon: FileCheck, label: "Documents" },
       { path: "/admin/id-verification", icon: CreditCard, label: "ID Verification" },
       { path: "/admin/ecr-management", icon: Plane, label: "ECR" },
     ],

@@ -39,7 +39,6 @@ export async function loadAdminActionInbox(): Promise<AdminActionItem[]> {
     disputes,
     flags,
     contacts,
-    documents,
     jobs,
   ] = await Promise.all([
     countRows('worker_verification', (q) => q.eq('kyc_status', 'submitted')),
@@ -60,7 +59,6 @@ export async function loadAdminActionInbox(): Promise<AdminActionItem[]> {
     countRows('disputes', (q) => q.eq('status', 'open')),
     countRows('content_flags', (q) => q.eq('status', 'pending')),
     countRows('contact_submissions', (q) => q.eq('status', 'new')),
-    countRows('worker_documents', (q) => q.eq('verification_status', 'pending')),
     countRows('jobs', (q) => q.eq('status', 'PENDING')),
   ]);
 
@@ -136,14 +134,6 @@ export async function loadAdminActionInbox(): Promise<AdminActionItem[]> {
       count: withdrawals,
       href: '/admin/emitra/withdrawals',
       tone: 'urgent',
-    },
-    {
-      id: 'documents',
-      title: 'Documents to verify',
-      detail: 'Worker documents pending verification',
-      count: documents,
-      href: '/admin/document-verification',
-      tone: 'warn',
     },
     {
       id: 'jobs',

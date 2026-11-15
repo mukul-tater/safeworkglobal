@@ -54,7 +54,6 @@ const routeLabels: BreadcrumbConfig = {
   admin: "Admin Portal",
   "user-management": "User Management",
   "job-verification": "Job Verification",
-  "document-verification": "Document Verification",
   "dispute-resolution": "Dispute Resolution",
   "compliance-check": "Compliance Check",
   "edit-job": "Edit Job",

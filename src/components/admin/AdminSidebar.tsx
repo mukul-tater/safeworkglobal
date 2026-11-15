@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, CheckCircle, Shield, BarChart3, AlertTriangle, Menu, FileCheck, CreditCard, Plane, Mail, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Users, CheckCircle, Shield, BarChart3, AlertTriangle, Menu, CreditCard, Plane, Mail, TrendingUp } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,7 +15,6 @@ export default function AdminSidebar() {
     { path: "/admin/investor-dashboard", icon: TrendingUp, label: "Investor Dashboard" },
     { path: "/admin/users", icon: Users, label: "User Management" },
     { path: "/admin/job-verification", icon: CheckCircle, label: "Job Verification" },
-    { path: "/admin/document-verification", icon: FileCheck, label: "Document Verification" },
     { path: "/admin/id-verification", icon: CreditCard, label: "ID Verification" },
     { path: "/admin/ecr-management", icon: Plane, label: "ECR Management" },
     { path: "/admin/compliance", icon: Shield, label: "Compliance Check" },

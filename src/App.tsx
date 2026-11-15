@@ -84,7 +84,6 @@ const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
 const AdminRegisterPage = lazy(() => import("./pages/admin/AdminRegisterPage"));
 const InvestorDashboard = lazy(() => import("./pages/admin/InvestorDashboard"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
-const DocumentVerification = lazy(() => import("./pages/admin/DocumentVerification"));
 const IDVerification = lazy(() => import("./pages/admin/IDVerification"));
 const ECRManagement = lazy(() => import("./pages/admin/ECRManagement"));
 const JobVerification = lazy(() => import("./pages/admin/JobVerification"));
@@ -470,7 +469,7 @@ function AppShell() {
           <Route path="/admin/trade-tests/:assessmentId" element={<AdminRoute><SsvnAssessmentWizard /></AdminRoute>} />
           <Route path="/admin/trade-tests" element={<AdminRoute><AdminTradeTestsPage /></AdminRoute>} />
           <Route path="/admin/interviews" element={<AdminRoute><InterviewerQueuePage /></AdminRoute>} />
-          <Route path="/admin/document-verification" element={<AdminRoute><DocumentVerification /></AdminRoute>} />
+          <Route path="/admin/document-verification" element={<Navigate to="/admin/journey-ops?tab=kyc" replace />} />
           <Route path="/admin/id-verification" element={<AdminRoute><IDVerification /></AdminRoute>} />
           <Route path="/admin/ecr-management" element={<AdminRoute><ECRManagement /></AdminRoute>} />
           <Route path="/admin/job-verification" element={<AdminRoute><JobVerification /></AdminRoute>} />
