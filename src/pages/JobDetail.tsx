@@ -723,6 +723,7 @@ export default function JobDetail() {
                       <span className="break-words">{formatJobPlace(job.location, job.country)}</span>
                     </div>
                     <div className="flex min-w-0 items-start gap-2 text-muted-foreground">
+                      <span className="shrink-0">Salary:</span>
                       <JobSalaryText
                         min={salaryMin}
                         max={salaryMax}
