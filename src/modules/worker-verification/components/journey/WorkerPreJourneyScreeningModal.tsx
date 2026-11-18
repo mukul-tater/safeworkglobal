@@ -118,12 +118,17 @@ export default function WorkerPreJourneyScreeningModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
+  const scrollToTop = () => {
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  };
+
   if (!isOpen) return null;
 
   const handleNextStep = () => {
     setErrors({});
     if (step === 0) {
       setStep(1);
+      scrollToTop();
       return;
     }
     if (step === 1) {
@@ -134,6 +139,7 @@ export default function WorkerPreJourneyScreeningModal({
         return;
       }
       setStep(2);
+      scrollToTop();
     } else if (step === 2) {
       const res = validateStep2(overseas);
       if (!res.isValid) {
@@ -142,6 +148,7 @@ export default function WorkerPreJourneyScreeningModal({
         return;
       }
       setStep(3);
+      scrollToTop();
     } else if (step === 3) {
       const res = validateStep3(recruitment);
       if (!res.isValid) {
@@ -150,12 +157,16 @@ export default function WorkerPreJourneyScreeningModal({
         return;
       }
       setStep(4);
+      scrollToTop();
     }
   };
 
   const handlePrevStep = () => {
     setErrors({});
-    if (step > 0) setStep((step - 1) as Step);
+    if (step > 0) {
+      setStep((step - 1) as Step);
+      scrollToTop();
+    }
   };
 
   const handleSubmit = async () => {
@@ -174,6 +185,7 @@ export default function WorkerPreJourneyScreeningModal({
       const result = await saveWorkerDeclarations(userId, medical, overseas, recruitment, ack);
       toast.success('Pre-journey screening declarations submitted successfully!');
       onCompleted(result);
+      scrollToTop();
     } catch (err: any) {
       toast.error(err.message || 'Failed to submit declarations.');
     } finally {

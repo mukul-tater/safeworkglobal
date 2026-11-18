@@ -51,6 +51,8 @@ import AdminJobConfigurationFields, {
 } from "@/components/admin/AdminJobConfigurationFields";
 import { adminSalarySaveFields, currencyForDestination } from "@/lib/jobSalaryUtils";
 import SearchSelect from "@/components/SearchSelect";
+import JobEligibilityRequirementsEditor from "@/components/admin/JobEligibilityRequirementsEditor";
+import type { JobEligibilityRequirements } from "@/lib/jobEligibilityRequirements";
 
 interface EmployerOption {
   userId: string;
@@ -68,6 +70,7 @@ export default function AdminPostJob() {
   const [pendingVideos, setPendingVideos] = useState<PendingJobMedia[]>([]);
   const [extraFields, setExtraFields] = useState<JobExtraFieldDraft[]>([]);
   const [customFields, setCustomFields] = useState<JobCustomField[]>([]);
+  const [eligibilityRequirements, setEligibilityRequirements] = useState<JobEligibilityRequirements>({});
   const [employers, setEmployers] = useState<EmployerOption[]>([]);
   const [loadingEmployers, setLoadingEmployers] = useState(true);
 
@@ -233,6 +236,7 @@ export default function AdminPostJob() {
         service_charge: data.service_charge,
         youtube_urls: youtubeUrls,
         custom_fields: cleanJobCustomFieldsForSave(customFields),
+        journey_requirements: eligibilityRequirements,
         ...jobConfigPatch(configValues(data), pay.salary_display),
       };
 
@@ -623,6 +627,8 @@ export default function AdminPostJob() {
             cardImageError={errors.card_image_url?.message}
             slugError={errors.slug?.message}
           />
+
+          <JobEligibilityRequirementsEditor value={eligibilityRequirements} onChange={setEligibilityRequirements} />
 
           <JobMediaFilesField
             title="Accommodation photos"

@@ -109,6 +109,7 @@ import {
   toDateInputValueFromIso,
 } from '@/lib/validations/passport';
 import { validatePAN } from '@/lib/security';
+import { formatHeight, parseJobEligibilityRequirements, type JobEligibilityRequirements } from '@/lib/jobEligibilityRequirements';
 
 const KYC_DOC_TYPES = [
   'pan',
@@ -415,6 +416,12 @@ export default function WorkerVerificationPage({
   const [quizDisclaimer, setQuizDisclaimer] = useState<{ en: string | null; hi: string | null } | null>(null);
   const [jobChangeEnabled, setJobChangeEnabled] = useState(false);
   const [journeyWorkPhrase, setJourneyWorkPhrase] = useState<string | null>(null);
+  const [journeyRequirements, setJourneyRequirements] = useState<JobEligibilityRequirements>({});
+  const [eligibilityHeight, setEligibilityHeight] = useState('');
+  const [licenseIssueDate, setLicenseIssueDate] = useState('');
+  const [licensePhoto, setLicensePhoto] = useState<File | null>(null);
+  const [eligibilitySaving, setEligibilitySaving] = useState(false);
+  const [eligibilityComplete, setEligibilityComplete] = useState(false);
   const journeyRules = useJourneyRules();
 
   const [email, setEmail] = useState('');
@@ -543,10 +550,11 @@ export default function WorkerVerificationPage({
       if (v.journey_job_id) {
         const { data: jobPass, error: passError } = await supabase
           .from('jobs')
-          .select('title, description, country, quiz_skill_code, quiz_pass_score')
+          .select('title, description, country, quiz_skill_code, quiz_pass_score, journey_requirements')
           .eq('id', v.journey_job_id)
           .maybeSingle();
         if (!passError && jobPass) {
+          setJourneyRequirements(parseJobEligibilityRequirements(jobPass.journey_requirements));
           passOverride = jobPass.quiz_pass_score ?? null;
           passSkill = resolveQuizSkillCode({
             primarySkill: v.primary_skill,
@@ -556,6 +564,19 @@ export default function WorkerVerificationPage({
             quizSkillCode: jobPass.quiz_skill_code,
           });
         }
+      } else {
+        setJourneyRequirements({});
+      }
+      const savedEligibility = (vRaw as any).screening_declarations?.job_eligibility_by_job?.[v.journey_job_id || ''];
+      if (savedEligibility) {
+        setEligibilityComplete(true);
+        setEligibilityHeight(savedEligibility.height_inches == null ? '' : String(savedEligibility.height_inches));
+        setLicenseIssueDate(savedEligibility.driving_license_issue_date || '');
+      } else {
+        setEligibilityComplete(false);
+        setEligibilityHeight('');
+        setLicenseIssueDate('');
+        setLicensePhoto(null);
       }
       const quizSettings = await loadQuizSkillSettings(passSkill, v.state);
       if (gen !== loadGen.current) return;
@@ -763,6 +784,8 @@ export default function WorkerVerificationPage({
     let cancelled = false;
     const jobId = row?.journey_job_id;
     if (!jobId) {
+      setJourneyRequirements({});
+      setEligibilityComplete(false);
       setAssessmentFee(0);
       setJourneyJobTitle(null);
       setJourneyJobDescription(null);
@@ -781,7 +804,7 @@ export default function WorkerVerificationPage({
       });
     void supabase
       .from('jobs')
-      .select('title, description, country, quiz_skill_code, quiz_pass_score, work_phrase')
+      .select('title, description, country, quiz_skill_code, quiz_pass_score, work_phrase, journey_requirements')
       .eq('id', jobId)
       .maybeSingle()
       .then(({ data }) => {
@@ -793,7 +816,9 @@ export default function WorkerVerificationPage({
           quiz_skill_code?: string | null;
           quiz_pass_score?: number | null;
           work_phrase?: string | null;
+          journey_requirements?: unknown;
         } | null;
+        setJourneyRequirements(parseJobEligibilityRequirements(job?.journey_requirements));
         setJourneyJobTitle(job?.title ?? null);
         setJourneyJobDescription(job?.description ?? null);
         setJourneyJobCountry(job?.country ?? null);
@@ -801,10 +826,23 @@ export default function WorkerVerificationPage({
         setJourneyQuizPass(job?.quiz_pass_score ?? null);
         setJourneyWorkPhrase(job?.work_phrase ?? null);
       });
+    void (supabase as any)
+      .from('worker_verification')
+      .select('screening_declarations')
+      .eq('user_id', subjectId)
+      .maybeSingle()
+      .then(({ data }: { data: any }) => {
+        if (cancelled) return;
+        const saved = data?.screening_declarations?.job_eligibility_by_job?.[jobId];
+        setEligibilityComplete(Boolean(saved));
+        setEligibilityHeight(saved?.height_inches == null ? '' : String(saved.height_inches));
+        setLicenseIssueDate(saved?.driving_license_issue_date || '');
+        setLicensePhoto(null);
+      });
     return () => {
       cancelled = true;
     };
-  }, [row?.journey_job_id]);
+  }, [row?.journey_job_id, subjectId]);
 
   useEffect(() => {
     if (!row) return;
@@ -1462,6 +1500,58 @@ export default function WorkerVerificationPage({
   );
   const displayJobTitle = journeyJobTitle || (appliedSkillLabel !== '—' ? appliedSkillLabel : 'your trade');
   const displayCountry = journeyJobCountry || 'UAE';
+  const needsEligibilityScreen = Boolean(
+    declaration?.completed_at && Object.keys(journeyRequirements).length > 0 && !eligibilityComplete,
+  );
+  const meetsMinimumHeight = journeyRequirements.minimum_height_inches == null ||
+    (Number(eligibilityHeight) || 0) >= journeyRequirements.minimum_height_inches;
+
+  const submitJobEligibility = async () => {
+    if (!subjectId || !row?.journey_job_id) return;
+    const heightInches = eligibilityHeight ? Number(eligibilityHeight) : null;
+    if (journeyRequirements.minimum_height_inches != null && (!heightInches || heightInches < 1)) {
+      toast.error('Enter your height in inches to check this job requirement.');
+      return;
+    }
+    if (journeyRequirements.driving_license && (!licenseIssueDate || !licensePhoto)) {
+      toast.error('Enter your driving licence issue date and add a photo.');
+      return;
+    }
+    setEligibilitySaving(true);
+    try {
+      const licensePhotoUrl = licensePhoto
+        ? await uploadJourneyDoc(subjectId, licensePhoto, 'job-eligibility')
+        : null;
+      const { data: current, error: readError } = await (supabase as any)
+        .from('worker_verification')
+        .select('screening_declarations')
+        .eq('user_id', subjectId)
+        .maybeSingle();
+      if (readError) throw new Error(readError.message);
+      const screening = current?.screening_declarations && typeof current.screening_declarations === 'object'
+        ? current.screening_declarations : {};
+      const byJob = screening.job_eligibility_by_job && typeof screening.job_eligibility_by_job === 'object'
+        ? screening.job_eligibility_by_job : {};
+      const saved = {
+        height_inches: heightInches,
+        driving_license_issue_date: journeyRequirements.driving_license ? licenseIssueDate : null,
+        driving_license_photo_url: licensePhotoUrl,
+        submitted_at: new Date().toISOString(),
+      };
+      const { error } = await (supabase as any)
+        .from('worker_verification')
+        .update({ screening_declarations: { ...screening, job_eligibility_by_job: { ...byJob, [row.journey_job_id]: saved } } })
+        .eq('user_id', subjectId);
+      if (error) throw new Error(error.message);
+      setEligibilityComplete(true);
+      toast.success(meetsMinimumHeight ? 'Eligibility details saved.' : 'Requirement saved. This job requires a greater minimum height.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save eligibility details.');
+    } finally {
+      setEligibilitySaving(false);
+    }
+  };
 
   if (rawStage === 'gcc_ready' && !forceIdentity) {
     return (
@@ -1529,8 +1619,59 @@ export default function WorkerVerificationPage({
               setDeclaration(decl);
               setShowDeclarationModal(false);
               notifyVerificationUpdated();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           />
+        </div>
+      ) : needsEligibilityScreen ? (
+        <div className="mx-auto w-full min-w-0 max-w-2xl space-y-4">
+          <Card>
+            <CardContent className="space-y-5 p-5 sm:p-7">
+              <div>
+                <p className="text-sm font-medium text-primary">Job eligibility</p>
+                <h1 className="mt-1 text-2xl font-bold">Check requirements for {journeyJobTitle || 'this job'}</h1>
+                <p className="mt-2 text-sm text-muted-foreground">These job-specific details are separate from your identity KYC.</p>
+              </div>
+              {journeyRequirements.minimum_height_inches != null && (
+                <div className="space-y-2">
+                  <Label htmlFor="eligibility-height">Your height (inches)</Label>
+                  <Input
+                    id="eligibility-height"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="For example, 68"
+                    value={eligibilityHeight}
+                    onChange={(event) => setEligibilityHeight(event.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">Minimum required: {formatHeight(journeyRequirements.minimum_height_inches)} ({journeyRequirements.minimum_height_inches} inches).</p>
+                </div>
+              )}
+              {journeyRequirements.driving_license && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="license-issue-date">Driving licence issue date</Label>
+                    <Input id="license-issue-date" type="date" value={licenseIssueDate} onChange={(event) => setLicenseIssueDate(event.target.value)} />
+                  </div>
+                  <KycPhotoField label="Driving licence photo" required file={licensePhoto} accept="image/*,.pdf" onChange={setLicensePhoto} />
+                </>
+              )}
+              <Button type="button" className="w-full" disabled={eligibilitySaving} onClick={() => void submitJobEligibility()}>
+                {eligibilitySaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Check eligibility
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      ) : eligibilityComplete && !meetsMinimumHeight ? (
+        <div className="mx-auto w-full min-w-0 max-w-2xl">
+          <StageResultShell
+            tone="error"
+            title="You don’t meet this job’s height requirement"
+            body={`This job requires a minimum height of ${formatHeight(journeyRequirements.minimum_height_inches || 0)}. You can browse other jobs that match your requirements.`}
+          >
+            <Button asChild className="rounded-xl"><Link to="/jobs">Browse other jobs</Link></Button>
+          </StageResultShell>
         </div>
       ) : (
       <>

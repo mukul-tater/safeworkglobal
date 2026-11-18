@@ -48,6 +48,8 @@ import AdminJobConfigurationFields, {
 import { adminSalarySaveFields, currencyForDestination } from "@/lib/jobSalaryUtils";
 import PostedByBadge from "@/components/jobs/PostedByBadge";
 import { applicantTypeValue } from '@/lib/jobApplicantType';
+import JobEligibilityRequirementsEditor from "@/components/admin/JobEligibilityRequirementsEditor";
+import { parseJobEligibilityRequirements, type JobEligibilityRequirements } from "@/lib/jobEligibilityRequirements";
 
 export default function EditJob() {
   const { jobId } = useParams();
@@ -62,6 +64,7 @@ export default function EditJob() {
   const [pendingVideos, setPendingVideos] = useState<PendingJobMedia[]>([]);
   const [extraFields, setExtraFields] = useState<JobExtraFieldDraft[]>([]);
   const [customFields, setCustomFields] = useState<JobCustomField[]>([]);
+  const [eligibilityRequirements, setEligibilityRequirements] = useState<JobEligibilityRequirements>({});
   const [companyName, setCompanyName] = useState<string>("");
   const [postedByRole, setPostedByRole] = useState<string>("employer");
   const hadLocalRange = useRef(false);
@@ -132,6 +135,7 @@ export default function EditJob() {
       const extra = await listJobExtraFields(job.id);
       setExtraFields(draftsFromFields(extra));
       setCustomFields(parseJobCustomFields(job.custom_fields));
+      setEligibilityRequirements(parseJobEligibilityRequirements(job.journey_requirements));
       hadLocalRange.current = job.local_salary_min != null || job.local_salary_max != null;
 
       // Set form values
@@ -243,6 +247,7 @@ export default function EditJob() {
         youtube_urls: youtubeUrls,
         video_urls: videoUrls,
         custom_fields: cleanJobCustomFieldsForSave(customFields),
+        journey_requirements: eligibilityRequirements,
         ...jobConfigPatch(configValues(data), pay.salary_display),
       };
 
@@ -588,6 +593,8 @@ export default function EditJob() {
               cardImageError={errors.card_image_url?.message}
               slugError={errors.slug?.message}
             />
+
+            <JobEligibilityRequirementsEditor value={eligibilityRequirements} onChange={setEligibilityRequirements} />
 
             <JobMediaFilesField
               title="Accommodation photos"

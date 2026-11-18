@@ -1804,6 +1804,7 @@ export type Database = {
           age_max: number | null
           age_min: number | null
           applicant_type: string | null
+          journey_requirements: Json
           benefits: string | null
           benefits_hi: string | null
           canonical_url: string | null
@@ -1861,6 +1862,7 @@ export type Database = {
           age_max?: number | null
           age_min?: number | null
           applicant_type?: string | null
+          journey_requirements?: Json
           benefits?: string | null
           benefits_hi?: string | null
           canonical_url?: string | null
@@ -1918,6 +1920,7 @@ export type Database = {
           age_max?: number | null
           age_min?: number | null
           applicant_type?: string | null
+          journey_requirements?: Json
           benefits?: string | null
           benefits_hi?: string | null
           canonical_url?: string | null

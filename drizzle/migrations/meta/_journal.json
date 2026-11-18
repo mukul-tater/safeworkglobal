@@ -155,6 +155,13 @@
       "when": 1794731494095,
       "tag": "0021_tighten_selected_rls_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795000000000,
+      "tag": "0022_job_journey_requirements",
+      "breakpoints": true
     }
   ]
 }
