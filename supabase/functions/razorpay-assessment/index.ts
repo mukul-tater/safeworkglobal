@@ -160,6 +160,9 @@ serve(async (req) => {
     razorpay_payment_link_id?: string;
     worker_user_id?: string;
     amount_inr?: number;
+    registered_mobile?: string;
+    payer_email?: string;
+    passport_number?: string;
   };
   try {
     body = await req.json();
@@ -333,6 +336,18 @@ serve(async (req) => {
         if (!amountInr) {
           return json(400, { error: "Enter a whole rupee amount from 1 to 5,00,000" });
         }
+        const registeredMobile = String(body.registered_mobile || "").trim();
+        const payerEmail = String(body.payer_email || "").trim().toLowerCase();
+        const passportNumber = String(body.passport_number || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+        if (!/^\+?\d{10,15}$/.test(registeredMobile.replace(/[\s()-]/g, ""))) {
+          return json(400, { error: "Enter a valid registered mobile number" });
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payerEmail)) {
+          return json(400, { error: "Enter a valid email address" });
+        }
+        if (!/^[A-Z0-9]{6,9}$/.test(passportNumber)) {
+          return json(400, { error: "Enter a valid passport number" });
+        }
         const origin = callbackOrigin(req);
         if (!origin) return json(400, { error: "Open Payments in the browser to pay" });
 
@@ -341,6 +356,9 @@ serve(async (req) => {
           .insert({
             user_id: payerId,
             amount: amountInr,
+            registered_mobile: registeredMobile.replace(/[\s()-]/g, ""),
+            payer_email: payerEmail,
+            passport_number: passportNumber,
             status: "pending",
             provider: "razorpay",
           })
@@ -354,6 +372,10 @@ serve(async (req) => {
           currency: "INR",
           accept_partial: false,
           description: "SafeWork Global payment",
+          customer: {
+            contact: registeredMobile.replace(/[\s()-]/g, ""),
+            email: payerEmail,
+          },
           reference_id: referenceId,
           callback_url: `${origin}/payments/complete`,
           callback_method: "get",

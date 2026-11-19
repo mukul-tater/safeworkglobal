@@ -678,7 +678,10 @@ export type Database = {
           currency: string
           id: string
           paid_at: string | null
+          payer_email: string | null
+          passport_number: string | null
           provider: string
+          registered_mobile: string | null
           razorpay_payment_id: string | null
           razorpay_payment_link_id: string | null
           short_url: string | null
@@ -691,7 +694,10 @@ export type Database = {
           currency?: string
           id?: string
           paid_at?: string | null
+          payer_email?: string | null
+          passport_number?: string | null
           provider?: string
+          registered_mobile?: string | null
           razorpay_payment_id?: string | null
           razorpay_payment_link_id?: string | null
           short_url?: string | null
@@ -704,7 +710,10 @@ export type Database = {
           currency?: string
           id?: string
           paid_at?: string | null
+          payer_email?: string | null
+          passport_number?: string | null
           provider?: string
+          registered_mobile?: string | null
           razorpay_payment_id?: string | null
           razorpay_payment_link_id?: string | null
           short_url?: string | null

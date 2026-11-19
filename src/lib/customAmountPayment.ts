@@ -45,8 +45,17 @@ async function callRazorpayFn(body: Record<string, unknown>): Promise<RazorpayFn
 }
 
 /** Razorpay payment link for the rupee amount the user typed. The charged total is stored first. */
-export function createCustomPaymentLink(amountInr: number): Promise<CustomPaymentLink> {
-  return callRazorpayFn({ action: 'create_payment_link', amount_inr: amountInr });
+export function createCustomPaymentLink(
+  amountInr: number,
+  payer: { registeredMobile: string; email: string; passportNumber: string },
+): Promise<CustomPaymentLink> {
+  return callRazorpayFn({
+    action: 'create_payment_link',
+    amount_inr: amountInr,
+    registered_mobile: payer.registeredMobile,
+    payer_email: payer.email,
+    passport_number: payer.passportNumber,
+  });
 }
 
 /** Confirm a payment link against the amount saved when it was created. */
